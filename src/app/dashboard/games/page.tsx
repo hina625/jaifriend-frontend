@@ -1,19 +1,24 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, FC } from 'react';
 import { Plus, Gamepad2 } from 'lucide-react';
 
 const GamesPage = () => {
-  const [activeTab, setActiveTab] = useState('Latest games');
+  const [activeTab, setActiveTab] = useState<'Latest games' | 'My Games'>('Latest games');
 
-  const tabs = ['Latest games', 'My Games'];
+  const tabs: Array<'Latest games' | 'My Games'> = ['Latest games', 'My Games'];
 
-  const GamepadIcon = () => (
+  const GamepadIcon: FC = () => (
     <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
       <Gamepad2 className="w-8 h-8 text-blue-500" />
     </div>
   );
 
-  const EmptyGamesSection = ({ title }) => (
+  // ✅ Define props type for EmptyGamesSection
+  interface EmptyGamesSectionProps {
+    title: string;
+  }
+
+  const EmptyGamesSection: FC<EmptyGamesSectionProps> = ({ title }) => (
     <div className="bg-white rounded-lg border border-gray-200 min-h-80 flex flex-col items-center justify-center p-8">
       <GamepadIcon />
       <p className="text-gray-600 text-base font-medium">{title}</p>
@@ -32,7 +37,7 @@ const GamesPage = () => {
             </div>
             <h1 className="text-2xl font-semibold text-gray-900">Games</h1>
           </div>
-          
+
           {/* Tab Navigation */}
           <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-1">
             {tabs.map((tab) => (
@@ -66,7 +71,6 @@ const GamesPage = () => {
           <h2 className="text-lg font-semibold text-blue-600 mb-6">Popular Games</h2>
           <EmptyGamesSection title="No games to show" />
         </div>
-
       </div>
 
       {/* Floating Action Button */}
@@ -78,3 +82,4 @@ const GamesPage = () => {
 };
 
 export default GamesPage;
+

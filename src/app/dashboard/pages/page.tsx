@@ -135,9 +135,14 @@ const PagesInterface: React.FC = () => {
         pageCategory: 'Cars and Vehicles'
       });
       // Optionally, refresh the list of pages here
-    } catch (error) {
-      alert('Error: ' + error.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        alert('Error: ' + error.message);
+      } else {
+        alert('An unknown error occurred');
+      }
     }
+    
   };
 
   const handleGoBack = (): void => {
