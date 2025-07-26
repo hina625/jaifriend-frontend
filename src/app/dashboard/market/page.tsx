@@ -94,105 +94,146 @@ const MarketplacePage: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-900">Market</h1>
-            <div className="flex-1 max-w-2xl mx-8">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 flex-shrink-0">Market</h1>
+            
+            {/* Search Bar - Hidden on mobile, visible on tablet+ */}
+            <div className="hidden md:flex flex-1 max-w-2xl mx-4 lg:mx-8">
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 lg:w-5 lg:h-5" />
                 <input
                   type="text"
                   placeholder="Search for products"
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-9 lg:pl-10 pr-4 py-2 text-sm lg:text-base border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
             </div>
-            <div className="flex gap-3">
-              <button className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors">
+            
+            {/* Action Buttons */}
+            <div className="flex gap-2 sm:gap-3">
+              {/* Mobile Search Button */}
+              <button className="md:hidden w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors">
+                <Search className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+              </button>
+              
+              {/* Desktop Search and Users Buttons */}
+              <button className="hidden md:flex w-10 h-10 bg-gray-100 rounded-lg items-center justify-center hover:bg-gray-200 transition-colors">
                 <Search className="w-5 h-5 text-gray-600" />
               </button>
-              <button className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors">
-                <Users className="w-5 h-5 text-gray-600" />
+              <button className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
               </button>
+            </div>
+          </div>
+          
+          {/* Mobile Search Bar */}
+          <div className="md:hidden mt-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Search for products"
+                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
           </div>
         </div>
       </header>
+
       {/* Featured Products Carousel */}
-      <section className="bg-white py-6">
-        <div className="max-w-7xl mx-auto px-4">
+      <section className="bg-white py-4 sm:py-6">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8">
           <div className="relative">
             <div className="flex items-center overflow-hidden">
+              {/* Navigation Buttons - Hidden on mobile */}
               <button
                 onClick={prevSlide}
-                className="absolute left-4 z-10 w-10 h-10 bg-black bg-opacity-50 text-white rounded-full flex items-center justify-center hover:bg-opacity-70 transition-colors"
+                className="hidden sm:flex absolute left-2 lg:left-4 z-10 w-8 h-8 lg:w-10 lg:h-10 bg-black bg-opacity-50 text-white rounded-full items-center justify-center hover:bg-opacity-70 transition-colors"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-4 h-4 lg:w-5 lg:h-5" />
               </button>
+              
               <div className="flex transition-transform duration-300 ease-in-out w-full">
                 {featuredProducts.map((product: Product, index: number) => (
                   <div
                     key={product.id}
-                    className={`flex-shrink-0 w-full md:w-1/2 lg:w-1/3 px-2 ${index === currentSlide ? 'block' : 'hidden md:block'}`}
+                    className={`flex-shrink-0 w-full sm:w-1/2 lg:w-1/3 px-1 sm:px-2 ${index === currentSlide ? 'block' : 'hidden sm:block'}`}
                   >
-                    <div className="bg-gray-100 rounded-lg overflow-hidden h-64 flex flex-col">
-                      <div className="flex-1 p-4">
+                    <div className="bg-gray-100 rounded-lg overflow-hidden h-48 sm:h-56 lg:h-64 flex flex-col">
+                      <div className="flex-1 p-3 sm:p-4">
                         <img 
                           src={product.imageUrl || product.image} 
                           alt={product.name}
-                          className="w-full h-32 object-cover rounded-lg"
+                          className="w-full h-24 sm:h-28 lg:h-32 object-cover rounded-lg"
                           onError={handleImageError}
                         />
-                        <div className="w-full h-32 bg-gray-300 rounded-lg hidden items-center justify-center">
-                          <span className="text-gray-500 text-sm">Image</span>
+                        <div className="w-full h-24 sm:h-28 lg:h-32 bg-gray-300 rounded-lg hidden items-center justify-center">
+                          <span className="text-gray-500 text-xs sm:text-sm">Image</span>
                         </div>
                       </div>
-                      <div className="p-4 pt-0">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-2">{product.name}</h3>
-                        <p className="text-2xl font-bold text-gray-900">${product.price.toFixed(2)}</p>
+                      <div className="p-3 sm:p-4 pt-0">
+                        <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 mb-1 sm:mb-2 line-clamp-2">{product.name}</h3>
+                        <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">${product.price.toFixed(2)}</p>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
+              
               <button
                 onClick={nextSlide}
-                className="absolute right-4 z-10 w-10 h-10 bg-black bg-opacity-50 text-white rounded-full flex items-center justify-center hover:bg-opacity-70 transition-colors"
+                className="hidden sm:flex absolute right-2 lg:right-4 z-10 w-8 h-8 lg:w-10 lg:h-10 bg-black bg-opacity-50 text-white rounded-full items-center justify-center hover:bg-opacity-70 transition-colors"
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-4 h-4 lg:w-5 lg:h-5" />
               </button>
+            </div>
+            
+            {/* Mobile Carousel Indicators */}
+            <div className="sm:hidden flex justify-center mt-4 gap-2">
+              {featuredProducts.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    index === currentSlide ? 'bg-blue-500' : 'bg-gray-300'
+                  }`}
+                />
+              ))}
             </div>
           </div>
         </div>
       </section>
+
       {/* Nearby Shops Banner */}
-      <section className="max-w-7xl mx-auto px-4 py-6">
-        <div className="bg-gradient-to-r from-cyan-400 to-blue-400 rounded-lg p-6 flex items-center justify-between">
-          <div className="flex-1">
-            <h2 className="text-xl font-bold text-white mb-2">Nearby Shops</h2>
-            <p className="text-white opacity-90 mb-4">
+      <section className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 sm:py-6">
+        <div className="bg-gradient-to-r from-cyan-400 to-blue-400 rounded-lg p-4 sm:p-6 flex items-center justify-between">
+          <div className="flex-1 pr-4">
+            <h2 className="text-lg sm:text-xl font-bold text-white mb-2">Nearby Shops</h2>
+            <p className="text-white opacity-90 mb-3 sm:mb-4 text-sm sm:text-base">
               Find shops near to you based on your location and connect with them directly.
             </p>
-            <button className="bg-black text-white px-6 py-2 rounded-lg font-medium hover:bg-gray-800 transition-colors">
+            <button className="bg-black text-white px-4 sm:px-6 py-2 rounded-lg text-sm sm:text-base font-medium hover:bg-gray-800 transition-colors">
               Explore
             </button>
           </div>
-          <div className="hidden md:block">
-            <div className="w-32 h-32 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-              <Users className="w-16 h-16 text-white opacity-70" />
+          <div className="hidden sm:block">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 lg:w-32 lg:h-32 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+              <Users className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 text-white opacity-70" />
             </div>
           </div>
         </div>
       </section>
+
       {/* Category Tabs */}
       <section className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8">
           <div className="flex overflow-x-auto scrollbar-hide">
             {categories.map((category: string) => (
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
-                className={`flex-shrink-0 px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                className={`flex-shrink-0 px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                   selectedCategory === category
                     ? 'text-blue-600 border-blue-600'
                     : 'text-gray-500 border-transparent hover:text-blue-600'
@@ -204,51 +245,64 @@ const MarketplacePage: React.FC = () => {
           </div>
         </div>
       </section>
+
       {/* Products Section */}
-      <section className="max-w-7xl mx-auto px-4 py-8">
+      <section className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-6 sm:py-8">
         {/* Products Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">Products</h2>
-          <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 text-blue-600 font-medium">
-              <MapPin className="w-4 h-4" />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-4">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-900">Products</h2>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+            <button className="flex items-center gap-2 text-blue-600 font-medium text-sm sm:text-base">
+              <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
               Location
             </button>
-            <button className="flex items-center gap-2 text-gray-600 font-medium">
+            <button className="flex items-center gap-2 text-gray-600 font-medium text-sm sm:text-base">
               Sort by Latest
-              <ChevronDown className="w-4 h-4" />
+              <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
             </button>
           </div>
         </div>
+
         {/* Products Grid */}
         {loading ? (
-          <div className="text-center text-gray-500">Loading products...</div>
+          <div className="text-center text-gray-500 py-8 sm:py-12">Loading products...</div>
         ) : error ? (
-          <div className="text-center text-red-500">{error}</div>
+          <div className="text-center text-red-500 py-8 sm:py-12">{error}</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
             {products.map((product: Product) => (
-              <Link key={product.id} href={`/dashboard/market/checkout/${product.id}`} className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow block">
-                <div className="aspect-w-4 aspect-h-3 bg-gray-100 rounded-t-lg overflow-hidden">
+              <Link 
+                key={product.id} 
+                href={`/dashboard/market/checkout/${product.id}`} 
+                className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow block"
+              >
+                <div className="aspect-square bg-gray-100 rounded-t-lg overflow-hidden">
                   <img 
                     src={product.imageUrl || product.image} 
                     alt={product.name}
-                    className="w-full h-48 object-cover"
+                    className="w-full h-full object-cover"
                     onError={handleImageError}
                   />
-                  <div className="w-full h-48 bg-gray-300 hidden items-center justify-center">
-                    <span className="text-gray-500 text-sm">Image</span>
+                  <div className="w-full h-full bg-gray-300 hidden items-center justify-center">
+                    <span className="text-gray-500 text-xs">Image</span>
                   </div>
                 </div>
-                <div className="p-4">
-                  <h3 className="text-medium text-gray-900 mb-2 line-clamp-2">{product.name}</h3>
-                  <p className="text-lg font-bold text-gray-900 mb-3">${product.price.toFixed(2)}</p>
-                  <div className="flex gap-2">
-                    <button className="flex-1 bg-blue-500 text-white py-2 px-3 rounded-md text-sm font-medium hover:bg-blue-600 transition-colors flex items-center justify-center" onClick={e => handleAddToCart(product, e)}>
-                      <ShoppingCart className="w-4 h-4 mr-1" />
+                <div className="p-2 sm:p-3 lg:p-4">
+                  <h3 className="text-xs sm:text-sm lg:text-base text-gray-900 mb-1 sm:mb-2 line-clamp-2 leading-tight">{product.name}</h3>
+                  <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 mb-2 sm:mb-3">${product.price.toFixed(2)}</p>
+                  <div className="flex gap-1 sm:gap-2">
+                    <button 
+                      className="flex-1 bg-blue-500 text-white py-1.5 sm:py-2 px-2 sm:px-3 rounded text-xs sm:text-sm font-medium hover:bg-blue-600 transition-colors flex items-center justify-center" 
+                      onClick={e => handleAddToCart(product, e)}
+                    >
+                      <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4 sm:mr-1" />
+                      <span className="hidden sm:inline ml-1">Cart</span>
                     </button>
-                    <button className="bg-green-500 text-white py-2 px-3 rounded-md text-sm font-medium hover:bg-green-600 transition-colors flex items-center justify-center" onClick={e => e.preventDefault()}>
-                      <Heart className="w-4 h-4" />
+                    <button 
+                      className="bg-green-500 text-white py-1.5 sm:py-2 px-2 sm:px-3 rounded text-xs sm:text-sm font-medium hover:bg-green-600 transition-colors flex items-center justify-center" 
+                      onClick={e => e.preventDefault()}
+                    >
+                      <Heart className="w-3 h-3 sm:w-4 sm:h-4" />
                     </button>
                   </div>
                 </div>
@@ -256,28 +310,51 @@ const MarketplacePage: React.FC = () => {
             ))}
           </div>
         )}
+
         {/* Load More */}
         <div className="text-center">
-          <button className="inline-flex items-center gap-2 text-blue-600 font-medium hover:text-blue-700 transition-colors">
-            <ChevronDown className="w-4 h-4" />
+          <button className="inline-flex items-center gap-2 text-blue-600 font-medium hover:text-blue-700 transition-colors text-sm sm:text-base">
+            <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
             Load more products
           </button>
         </div>
       </section>
-      {/* Floating Action Button */}
-      <button className="fixed bottom-6 right-6 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 transition-colors flex items-center justify-center">
-        <Plus className="w-6 h-6" />
+
+      {/* Floating Action Buttons */}
+      {/* Add Product Button */}
+      <button className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 w-12 h-12 sm:w-14 sm:h-14 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 transition-colors flex items-center justify-center z-40">
+        <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
       </button>
-      {/* Floating Cart Button */}
+
+      {/* Cart Button */}
       <button
-        className="fixed bottom-24 right-6 w-14 h-14 bg-green-500 text-white rounded-full shadow-lg hover:bg-green-600 transition-colors flex items-center justify-center z-50"
+        className="fixed bottom-16 sm:bottom-20 lg:bottom-24 right-4 sm:right-6 w-12 h-12 sm:w-14 sm:h-14 bg-green-500 text-white rounded-full shadow-lg hover:bg-green-600 transition-colors flex items-center justify-center z-50"
         onClick={() => router.push('/dashboard/market/checkout')}
       >
-        <ShoppingCart className="w-6 h-6" />
+        <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
         {cart.length > 0 && (
-          <span className="absolute top-2 right-2 bg-red-500 text-white text-xs rounded-full px-2 py-0.5">{cart.length}</span>
+          <span className="absolute -top-1 -right-1 sm:top-0 sm:right-0 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 sm:px-2 min-w-[18px] sm:min-w-[20px] h-4 sm:h-5 flex items-center justify-center text-[10px] sm:text-xs font-bold">
+            {cart.length}
+          </span>
         )}
       </button>
+
+      {/* Custom Scrollbar Hide */}
+      <style jsx>{`
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .line-clamp-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+      `}</style>
     </div>
   );
 };

@@ -2,7 +2,6 @@
 import { useEffect, useState, useRef } from 'react';
 import AlbumDisplay from '@/components/AlbumDisplay';
 import Link from 'next/link';
-import ResponsiveContainer from '@/components/ResponsiveContainer';
 
 function getUserAvatar() {
   // Try to get avatar from localStorage (if you store it there after login), otherwise use default
@@ -425,7 +424,6 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <ResponsiveContainer>
     <div className="bg-[#f4f7fb] min-h-screen pt-4 pb-6 w-full">
         <h1 className="text-2xl md:text-3xl font-bold mb-4 px-2 md:px-0">
         {userEmail ? `Hello, ${userEmail}! 👋` : "Hello!"}
@@ -893,7 +891,6 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
-    </ResponsiveContainer>
   );
 }
 
