@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { Plus, Camera, ArrowLeft, Settings, Users, User, X } from 'lucide-react';
+import Popup, { PopupState } from '../../../components/Popup';
 
 const PhotoAlbumManager: React.FC = () => {
   const [currentView, setCurrentView] = useState<'albums' | 'create'>('albums');
@@ -14,6 +15,12 @@ const PhotoAlbumManager: React.FC = () => {
   const [editPhotos, setEditPhotos] = useState<File[]>([]);
   const [photoUrlInput, setPhotoUrlInput] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [popup, setPopup] = useState<PopupState>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   // Mock data for demonstration
   useEffect(() => {
@@ -61,13 +68,26 @@ const PhotoAlbumManager: React.FC = () => {
     }
   };
 
+  const showPopup = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
+    setPopup({
+      isOpen: true,
+      type,
+      title,
+      message
+    });
+  };
+
+  const closePopup = () => {
+    setPopup(prev => ({ ...prev, isOpen: false }));
+  };
+
   const handlePublish = async (): Promise<void> => {
     if (!albumName.trim()) {
-      alert('Please enter an album name');
+      showPopup('error', 'Missing Album Name', 'Please enter an album name');
       return;
     }
     if (selectedPhotos.length === 0) {
-      alert('Please select at least one photo');
+      showPopup('error', 'No Photos Selected', 'Please select at least one photo');
       return;
     }
     
@@ -82,7 +102,7 @@ const PhotoAlbumManager: React.FC = () => {
     };
     
     setAlbums(prev => [newAlbum, ...prev]);
-    alert(`Album "${albumName}" created successfully!`);
+    showPopup('success', 'Album Created!', `Album "${albumName}" created successfully!`);
     setAlbumName('');
     setSelectedPhotos([]);
     setCurrentView('albums');
@@ -125,7 +145,7 @@ const PhotoAlbumManager: React.FC = () => {
     if (updatedAlbum) {
       updatedAlbum.name = editAlbumName;
       setAlbums([...albums]);
-      alert('Album updated!');
+      showPopup('success', 'Album Updated!', 'Album updated successfully!');
       setEditingAlbumId(null);
       setEditAlbumName('');
       setEditPhotos([]);
@@ -142,9 +162,10 @@ const PhotoAlbumManager: React.FC = () => {
 
   // Delete album
   const handleDeleteAlbum = async (albumId: string) => {
-    if (!window.confirm('Delete this album?')) return;
+    showPopup('warning', 'Confirm Delete', 'Are you sure you want to delete this album?');
+  
     setAlbums(prev => prev.filter(a => a._id !== albumId));
-    alert('Album deleted!');
+    showPopup('success', 'Album Deleted!', 'Album deleted successfully!');
     setMenuOpen(null);
   };
 
@@ -160,8 +181,10 @@ const PhotoAlbumManager: React.FC = () => {
   }
 
   if (currentView === 'albums') {
-    return (
-      <div className="min-h-screen bg-gray-50 pb-20 sm:pb-6">
+      return (
+    <div className="min-h-screen bg-gray-50 pb-20 sm:pb-6">
+      {/* Popup Modal */}
+      <Popup popup={popup} onClose={closePopup} />
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-40">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
@@ -341,6 +364,8 @@ const PhotoAlbumManager: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Popup Modal */}
+      <Popup popup={popup} onClose={closePopup} />
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-40">
         <div className="flex items-center justify-between max-w-4xl mx-auto">

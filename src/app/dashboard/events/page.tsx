@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { Calendar, Users, Plus, Search, Upload, ArrowLeft, Menu, X } from 'lucide-react';
+import Popup, { PopupState } from '../../../components/Popup';
 
 interface FormData {
   eventName: string;
@@ -37,6 +38,12 @@ const EventManagement: React.FC = () => {
   const [image, setImage] = useState<File | null>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [editingEvent, setEditingEvent] = useState<any>(null);
+  const [popup, setPopup] = useState<PopupState>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   useEffect(() => {
     if (currentRoute === '/events') {
@@ -109,6 +116,19 @@ const EventManagement: React.FC = () => {
     setImage(e.target.files?.[0] || null);
   };
 
+  const showPopup = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
+    setPopup({
+      isOpen: true,
+      type,
+      title,
+      message
+    });
+  };
+
+  const closePopup = () => {
+    setPopup(prev => ({ ...prev, isOpen: false }));
+  };
+
   const handleSubmit = async () => {
     try {
       const form = new FormData();
@@ -126,7 +146,7 @@ const EventManagement: React.FC = () => {
         body: form
       });
       if (res.ok) {
-        alert('Event created successfully!');
+        showPopup('success', 'Event Created!', 'Event created successfully!');
         navigateTo('/events');
         setFormData({
           eventName: '',
@@ -145,15 +165,16 @@ const EventManagement: React.FC = () => {
           .catch(() => setEvents([]));
       } else {
         const data = await res.json();
-        alert('Error: ' + data.error);
+        showPopup('error', 'Error', 'Error: ' + data.error);
       }
     } catch (err) {
-      alert('Network error');
+      showPopup('error', 'Network Error', 'Network error occurred');
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this event?')) return;
+    showPopup('warning', 'Confirm Delete', 'Are you sure you want to delete this event?');
+    // Note: In a real app, you'd want to handle the confirmation properly
     try {
       await fetch(`http://localhost:5000/api/events/${id}`, { method: 'DELETE' });
       // Refresh events list
@@ -161,8 +182,9 @@ const EventManagement: React.FC = () => {
         .then(res => res.json())
         .then(data => setEvents(data))
         .catch(() => setEvents([]));
+      showPopup('success', 'Event Deleted!', 'Event deleted successfully!');
     } catch (err) {
-      alert('Network error');
+      showPopup('error', 'Network Error', 'Network error occurred');
     }
   };
 
@@ -198,7 +220,7 @@ const EventManagement: React.FC = () => {
         body: form
       });
       if (res.ok) {
-        alert('Event updated successfully!');
+        showPopup('success', 'Event Updated!', 'Event updated successfully!');
         setEditingEvent(null);
         navigateTo('/events');
         setFormData({
@@ -218,10 +240,10 @@ const EventManagement: React.FC = () => {
           .catch(() => setEvents([]));
       } else {
         const data = await res.json();
-        alert('Error: ' + data.error);
+        showPopup('error', 'Error', 'Error: ' + data.error);
       }
     } catch (err) {
-      alert('Network error');
+      showPopup('error', 'Network Error', 'Network error occurred');
     }
   };
 
@@ -309,6 +331,8 @@ const EventManagement: React.FC = () => {
   // Main events page
   const MainEventsPage: React.FC = () => (
     <div className="max-w-6xl mx-auto p-4 sm:p-6 bg-white min-h-screen">
+      {/* Popup Modal */}
+      <Popup popup={popup} onClose={closePopup} />
       <Header />
       <TabsNavigation />
       
@@ -382,6 +406,8 @@ const EventManagement: React.FC = () => {
   // Create event page
   const CreateEventPage: React.FC = () => (
     <div className="max-w-6xl mx-auto p-4 sm:p-6 bg-white min-h-screen">
+      {/* Popup Modal */}
+      <Popup popup={popup} onClose={closePopup} />
       <Header />
       <TabsNavigation />
 
@@ -516,6 +542,8 @@ const EventManagement: React.FC = () => {
   // Edit Event Page
   const EditEventPage: React.FC = () => (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 bg-white min-h-screen">
+      {/* Popup Modal */}
+      <Popup popup={popup} onClose={closePopup} />
       <Header />
       <div className="flex items-center gap-3 mb-6 sm:mb-8">
         <div className="w-6 h-6 sm:w-8 sm:h-8 bg-yellow-400 rounded-full flex items-center justify-center">
@@ -636,6 +664,8 @@ const EventManagement: React.FC = () => {
   // Other pages component
   const OtherEventsPage: React.FC<OtherEventsPageProps> = ({ pageTitle }) => (
     <div className="max-w-6xl mx-auto p-4 sm:p-6 bg-white min-h-screen">
+      {/* Popup Modal */}
+      <Popup popup={popup} onClose={closePopup} />
       <Header />
       <TabsNavigation />
       

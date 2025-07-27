@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { Search, ChevronDown, Users, FileText, Group, Gamepad2, Plus, Filter, X } from 'lucide-react';
+import Popup, { PopupState } from '../../../components/Popup';
 
 // Type definitions
 interface User {
@@ -47,14 +48,33 @@ const SocialExplorePage = () => {
     gender: 'Gender',
     avatar: 'Avatar'
   });
+  const [popup, setPopup] = useState<PopupState>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
+
+  const showPopup = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
+    setPopup({
+      isOpen: true,
+      type,
+      title,
+      message
+    });
+  };
+
+  const closePopup = () => {
+    setPopup(prev => ({ ...prev, isOpen: false }));
+  };
 
   // Handler functions with proper types
   const handleFollow = (userId: number) => {
-    console.log('Following user:', userId);
+    showPopup('success', 'Followed!', `You are now following user ${userId}`);
   };
 
   const handleSearch = () => {
-    console.log('Searching for:', searchKeyword);
+    showPopup('info', 'Searching...', `Searching for: ${searchKeyword}`);
   };
 
   const handleFilterChange = (filterType: string, value: string) => {
@@ -65,11 +85,11 @@ const SocialExplorePage = () => {
   };
 
   const handleLikePage = (pageId: number) => {
-    console.log('Liked page:', pageId);
+    showPopup('success', 'Liked!', `You liked page ${pageId}`);
   };
 
   const handleLoadMore = () => {
-    console.log('Loading more pages...');
+    showPopup('info', 'Loading...', 'Loading more pages...');
   };
 
   const users: User[] = [
@@ -358,6 +378,8 @@ const SocialExplorePage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 sm:pb-6">
+      {/* Popup Modal */}
+      <Popup popup={popup} onClose={closePopup} />
       <div className="max-w-6xl mx-auto px-3 sm:px-6 py-3 sm:py-6">
         
         {/* Search and Filters - Only show for Users tab */}

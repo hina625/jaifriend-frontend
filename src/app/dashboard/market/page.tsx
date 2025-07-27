@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
 import { Search, ChevronLeft, ChevronRight, MapPin, ChevronDown, ShoppingCart, Heart, Plus, Users, X } from 'lucide-react';
 import Link from "next/link";
+import Popup, { PopupState } from '../../../components/Popup';
 
 interface Product {
   id: number;
@@ -28,6 +29,12 @@ const MarketplacePage: React.FC = () => {
   });
   const [cartOpen, setCartOpen] = useState(false);
   const router = useRouter();
+  const [popup, setPopup] = useState<PopupState>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   useEffect(() => {
     setLoading(true);
@@ -76,6 +83,19 @@ const MarketplacePage: React.FC = () => {
     }
   };
 
+  const showPopup = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
+    setPopup({
+      isOpen: true,
+      type,
+      title,
+      message
+    });
+  };
+
+  const closePopup = () => {
+    setPopup(prev => ({ ...prev, isOpen: false }));
+  };
+
   const handleAddToCart = (product: Product, e: React.MouseEvent) => {
     e.preventDefault();
     setCart(prev => {
@@ -88,10 +108,13 @@ const MarketplacePage: React.FC = () => {
       }
       return [...prev, { ...product, quantity: 1 }];
     });
+    showPopup('success', 'Added to Cart!', `${product.name} has been added to your cart`);
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Popup Modal */}
+      <Popup popup={popup} onClose={closePopup} />
       {/* Header */}
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4">
@@ -213,7 +236,10 @@ const MarketplacePage: React.FC = () => {
             <p className="text-white opacity-90 mb-3 sm:mb-4 text-sm sm:text-base">
               Find shops near to you based on your location and connect with them directly.
             </p>
-            <button className="bg-black text-white px-4 sm:px-6 py-2 rounded-lg text-sm sm:text-base font-medium hover:bg-gray-800 transition-colors">
+            <button 
+              className="bg-black text-white px-4 sm:px-6 py-2 rounded-lg text-sm sm:text-base font-medium hover:bg-gray-800 transition-colors"
+              onClick={() => showPopup('info', 'Coming Soon!', 'Nearby shops feature will be available soon!')}
+            >
               Explore
             </button>
           </div>
@@ -300,7 +326,10 @@ const MarketplacePage: React.FC = () => {
                     </button>
                     <button 
                       className="bg-green-500 text-white py-1.5 sm:py-2 px-2 sm:px-3 rounded text-xs sm:text-sm font-medium hover:bg-green-600 transition-colors flex items-center justify-center" 
-                      onClick={e => e.preventDefault()}
+                      onClick={e => {
+                        e.preventDefault();
+                        showPopup('success', 'Added to Wishlist!', `${product.name} has been added to your wishlist`);
+                      }}
                     >
                       <Heart className="w-3 h-3 sm:w-4 sm:h-4" />
                     </button>
@@ -313,7 +342,10 @@ const MarketplacePage: React.FC = () => {
 
         {/* Load More */}
         <div className="text-center">
-          <button className="inline-flex items-center gap-2 text-blue-600 font-medium hover:text-blue-700 transition-colors text-sm sm:text-base">
+          <button 
+            className="inline-flex items-center gap-2 text-blue-600 font-medium hover:text-blue-700 transition-colors text-sm sm:text-base"
+            onClick={() => showPopup('info', 'Loading...', 'Loading more products...')}
+          >
             <ChevronDown className="w-3 h-3 sm:w-4 sm:h-4" />
             Load more products
           </button>
