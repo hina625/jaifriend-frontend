@@ -1,6 +1,7 @@
 "use client";
 import React from 'react';
-import DasboardLayout from '@/components/DasboardLayout';
+import AuthGuard from '../../components/AuthGuard';
+import DasboardLayout from '../../components/DasboardLayout';
 
 export default function DashboardLayout({
   children,
@@ -8,8 +9,10 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <DasboardLayout>
-      {children}
-    </DasboardLayout>
+    <AuthGuard requireAuth={true} redirectTo="/">
+      <DasboardLayout>
+        {children}
+      </DasboardLayout>
+    </AuthGuard>
   );
 }
