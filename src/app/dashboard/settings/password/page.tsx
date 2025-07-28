@@ -114,7 +114,7 @@ const ChangePasswordPage = () => {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/settings/password', {
+      const response = await fetch('http://localhost:5000/api/settings/password/change', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

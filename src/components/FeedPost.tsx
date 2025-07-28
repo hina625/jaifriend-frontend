@@ -261,7 +261,8 @@ const FeedPost: React.FC<FeedPostProps> = ({
           isOpen={showSharePopup}
           onClose={() => setShowSharePopup(false)}
           onShare={handleShareConfirm}
-          post={post}
+          postContent={post.content}
+          postMedia={post.media}
         />
       )}
     </div>

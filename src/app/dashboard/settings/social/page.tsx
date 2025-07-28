@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import Popup from '@/components/Popup';
 
 interface SocialLinks {
   facebook: string;
@@ -10,8 +11,21 @@ interface SocialLinks {
   youtube: string;
 }
 
+interface PopupState {
+  isOpen: boolean;
+  type: 'success' | 'error' | 'info';
+  title: string;
+  message: string;
+}
+
 const SocialLinksPage = () => {
   const [loading, setLoading] = useState(false);
+  const [popup, setPopup] = useState<PopupState>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: ''
+  });
   const [socialLinks, setSocialLinks] = useState<SocialLinks>({
     facebook: '',
     twitter: '',
@@ -33,6 +47,19 @@ const SocialLinksPage = () => {
     loadSocialLinks();
   }, []);
 
+  const showPopup = (type: 'success' | 'error' | 'info', title: string, message: string) => {
+    setPopup({
+      isOpen: true,
+      type,
+      title,
+      message
+    });
+  };
+
+  const closePopup = () => {
+    setPopup(prev => ({ ...prev, isOpen: false }));
+  };
+
   const handleInputChange = (platform: keyof SocialLinks, value: string) => {
     setSocialLinks(prev => ({
       ...prev,
@@ -50,10 +77,10 @@ const SocialLinksPage = () => {
       localStorage.setItem('socialLinks', JSON.stringify(socialLinks));
       
       console.log('Social links saved:', socialLinks);
-      alert('Social links saved successfully!');
+      showPopup('success', 'Success', 'Social links saved successfully!');
     } catch (error) {
       console.error('Error saving social links:', error);
-      alert('Failed to save social links. Please try again.');
+      showPopup('error', 'Error', 'Failed to save social links. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -99,6 +126,9 @@ const SocialLinksPage = () => {
           </button>
         </div>
       </div>
+
+      {/* Popup Component */}
+      <Popup popup={popup} onClose={closePopup} />
     </div>
   );
 };

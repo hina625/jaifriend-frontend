@@ -22,45 +22,46 @@ export default function SavedPosts() {
     { id: 'recent', label: 'Recent', count: 0 },
   ];
 
-  useEffect(() => {
-    const checkAuthAndFetchSaved = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
+  const checkAuthAndFetchSaved = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+    try {
+      // Fetch saved albums
+      const savedAlbumsRes = await fetch('http://localhost:5000/api/albums/saved', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (savedAlbumsRes.ok) {
+        const savedAlbumsData = await savedAlbumsRes.json();
+        setSavedAlbums(savedAlbumsData);
+      } else if (savedAlbumsRes.status === 401) {
+        localStorage.removeItem('token');
         router.push('/login');
         return;
       }
-      try {
-        // Fetch saved albums
-        const savedAlbumsRes = await fetch('http://localhost:5000/api/albums/saved', {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        if (savedAlbumsRes.ok) {
-          const savedAlbumsData = await savedAlbumsRes.json();
-          setSavedAlbums(savedAlbumsData);
-        } else if (savedAlbumsRes.status === 401) {
-          localStorage.removeItem('token');
-          router.push('/login');
-          return;
+      
+      // Fetch saved posts
+      const savedPostsRes = await fetch('http://localhost:5000/api/posts/saved', {
+        headers: {
+          Authorization: `Bearer ${token}`
         }
-        
-        // Fetch saved posts
-        const savedPostsRes = await fetch('http://localhost:5000/api/posts/saved', {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        if (savedPostsRes.ok) {
-          const savedPostsData = await savedPostsRes.json();
-          setSavedPosts(savedPostsData);
-        }
-      } catch (error) {
-        console.error('Error fetching saved albums:', error);
-      } finally {
-        setLoading(false);
+      });
+      if (savedPostsRes.ok) {
+        const savedPostsData = await savedPostsRes.json();
+        setSavedPosts(savedPostsData);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching saved albums:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     checkAuthAndFetchSaved();
   }, [router]);
 
@@ -116,11 +117,11 @@ export default function SavedPosts() {
 
     // Apply search filter
     if (searchQuery) {
-      albums = albums.filter(album => 
+      albums = albums.filter((album: any) => 
         album.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         album.description?.toLowerCase().includes(searchQuery.toLowerCase())
       );
-      posts = posts.filter(post => 
+      posts = posts.filter((post: any) => 
         post.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         post.content?.toLowerCase().includes(searchQuery.toLowerCase())
       );
@@ -134,8 +135,8 @@ export default function SavedPosts() {
         return { albums: [], posts };
       case 'recent':
         // Sort by most recent
-        const recentAlbums = albums.slice().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
-        const recentPosts = posts.slice().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
+        const recentAlbums = albums.slice().sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
+        const recentPosts = posts.slice().sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
         return { albums: recentAlbums, posts: recentPosts };
       default:
         return { albums, posts };
@@ -156,7 +157,7 @@ export default function SavedPosts() {
       });
       if (res.ok) {
         const data = await res.json();
-        setSavedAlbums(prev => prev.map(album => 
+        setSavedAlbums((prev: any[]) => prev.map((album: any) => 
           album._id === albumId ? { ...album, likes: data.likes, liked: data.liked } : album
         ));
       }
@@ -179,7 +180,7 @@ export default function SavedPosts() {
       });
       if (res.ok) {
         const data = await res.json();
-        setSavedAlbums(prev => prev.map(album => 
+        setSavedAlbums((prev: any[]) => prev.map((album: any) => 
           album._id === albumId ? { ...album, comments: [...(album.comments || []), data.comment] } : album
         ));
       }
@@ -202,9 +203,9 @@ export default function SavedPosts() {
         const data = await res.json();
         // Remove from saved list if unsaved
         if (!data.saved) {
-          setSavedAlbums(prev => prev.filter(album => album._id !== albumId));
+          setSavedAlbums((prev: any[]) => prev.filter((album: any) => album._id !== albumId));
         } else {
-          setSavedAlbums(prev => prev.map(album => 
+          setSavedAlbums((prev: any[]) => prev.map((album: any) => 
             album._id === albumId ? { ...album, savedBy: data.savedBy, saved: data.saved } : album
           ));
         }
@@ -228,7 +229,7 @@ export default function SavedPosts() {
       });
       if (res.ok) {
         const data = await res.json();
-        setSavedAlbums(prev => prev.map(album => 
+        setSavedAlbums((prev: any[]) => prev.map((album: any) => 
           album._id === albumId ? { ...album, shares: data.shares, shared: data.shared } : album
         ));
         console.log('Album shared successfully!');
@@ -250,7 +251,7 @@ export default function SavedPosts() {
       });
       if (res.ok) {
         const data = await res.json();
-        setSavedPosts(prev => prev.map(post => 
+        setSavedPosts((prev: any[]) => prev.map((post: any) => 
           post._id === postId ? { ...post, likes: data.likes, liked: data.liked } : post
         ));
       }
@@ -273,9 +274,9 @@ export default function SavedPosts() {
         const data = await res.json();
         // Remove from saved list if unsaved
         if (!data.saved) {
-          setSavedPosts(prev => prev.filter(post => post._id !== postId));
+          setSavedPosts((prev: any[]) => prev.filter((post: any) => post._id !== postId));
         } else {
-          setSavedPosts(prev => prev.map(post => 
+          setSavedPosts((prev: any[]) => prev.map((post: any) => 
             post._id === postId ? { ...post, savedBy: data.savedBy, saved: data.saved } : post
           ));
         }
@@ -299,7 +300,7 @@ export default function SavedPosts() {
       });
       if (res.ok) {
         const data = await res.json();
-        setSavedPosts(prev => prev.map(post => 
+        setSavedPosts((prev: any[]) => prev.map((post: any) => 
           post._id === postId ? { ...post, comments: data.comments } : post
         ));
       }
@@ -321,7 +322,7 @@ export default function SavedPosts() {
       });
       if (res.ok) {
         const data = await res.json();
-        setSavedPosts(prev => prev.map(post => 
+        setSavedPosts((prev: any[]) => prev.map((post: any) => 
           post._id === postId ? { ...post, shares: data.shares, shared: data.shared } : post
         ));
         console.log('Post shared successfully!');
@@ -342,7 +343,7 @@ export default function SavedPosts() {
       });
       if (res.ok) {
         const data = await res.json();
-        setSavedPosts(prev => prev.map(post => 
+        setSavedPosts((prev: any[]) => prev.map((post: any) => 
           post._id === postId ? { ...post, views: data.views } : post
         ));
       }
@@ -363,7 +364,7 @@ export default function SavedPosts() {
     });
     if (res.ok) {
       const data = await res.json();
-      setSavedPosts(prev => prev.map(p => (p._id === postId || p.id === postId) ? data.post : p));
+      setSavedPosts((prev: any[]) => prev.map((p: any) => (p._id === postId || p.id === postId) ? data.post : p));
     } else {
       console.error('Failed to add reaction');
     }

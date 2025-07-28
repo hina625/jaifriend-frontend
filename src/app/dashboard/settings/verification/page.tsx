@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useRef } from 'react';
+import Popup from '@/components/Popup';
 
 interface VerificationData {
   username: string;
@@ -8,8 +9,21 @@ interface VerificationData {
   personalPicture: File | null;
 }
 
+interface PopupState {
+  isOpen: boolean;
+  type: 'success' | 'error' | 'info';
+  title: string;
+  message: string;
+}
+
 const ProfileVerificationPage = () => {
   const [loading, setLoading] = useState(false);
+  const [popup, setPopup] = useState<PopupState>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: ''
+  });
   const [verificationData, setVerificationData] = useState<VerificationData>({
     username: '',
     message: '',
@@ -19,6 +33,19 @@ const ProfileVerificationPage = () => {
 
   const passportInputRef = useRef<HTMLInputElement>(null);
   const pictureInputRef = useRef<HTMLInputElement>(null);
+
+  const showPopup = (type: 'success' | 'error' | 'info', title: string, message: string) => {
+    setPopup({
+      isOpen: true,
+      type,
+      title,
+      message
+    });
+  };
+
+  const closePopup = () => {
+    setPopup(prev => ({ ...prev, isOpen: false }));
+  };
 
   const handleInputChange = (field: 'username' | 'message', value: string) => {
     setVerificationData(prev => ({
@@ -39,7 +66,7 @@ const ProfileVerificationPage = () => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) { // 10MB limit
-        alert('Document file must be less than 10MB');
+        showPopup('error', 'File Too Large', 'Document file must be less than 10MB');
         return;
       }
       setVerificationData(prev => ({
@@ -53,7 +80,7 @@ const ProfileVerificationPage = () => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        alert('Picture file must be less than 5MB');
+        showPopup('error', 'File Too Large', 'Picture file must be less than 5MB');
         return;
       }
       setVerificationData(prev => ({
@@ -66,17 +93,17 @@ const ProfileVerificationPage = () => {
   const handleSend = async () => {
     // Basic validation
     if (!verificationData.username.trim()) {
-      alert('Please enter your username');
+      showPopup('error', 'Validation Error', 'Please enter your username');
       return;
     }
 
     if (!verificationData.passportDocument) {
-      alert('Please upload a copy of your passport or ID card');
+      showPopup('error', 'Validation Error', 'Please upload a copy of your passport or ID card');
       return;
     }
 
     if (!verificationData.personalPicture) {
-      alert('Please upload your personal picture');
+      showPopup('error', 'Validation Error', 'Please upload your personal picture');
       return;
     }
 
@@ -92,7 +119,7 @@ const ProfileVerificationPage = () => {
         hasPicture: !!verificationData.personalPicture
       });
       
-      alert('Verification request sent successfully! We will review your submission and get back to you within 2-3 business days.');
+      showPopup('success', 'Success', 'Verification request sent successfully! We will review your submission and get back to you within 2-3 business days.');
       
       // Reset form
       setVerificationData({
@@ -103,7 +130,7 @@ const ProfileVerificationPage = () => {
       });
     } catch (error) {
       console.error('Error sending verification request:', error);
-      alert('Failed to send verification request. Please try again.');
+      showPopup('error', 'Error', 'Failed to send verification request. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -251,6 +278,9 @@ const ProfileVerificationPage = () => {
           </button>
         </div>
       </div>
+
+      {/* Popup Component */}
+      <Popup popup={popup} onClose={closePopup} />
     </div>
   );
 };

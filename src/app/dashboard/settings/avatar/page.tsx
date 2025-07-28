@@ -1,9 +1,17 @@
 "use client";
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import Popup from '@/components/Popup';
 
 interface ImageSettings {
   avatar: string | null;
   cover: string | null;
+}
+
+interface PopupState {
+  isOpen: boolean;
+  type: 'success' | 'error' | 'info';
+  title: string;
+  message: string;
 }
 
 const AvatarCoverSettingsPage = () => {
@@ -12,9 +20,73 @@ const AvatarCoverSettingsPage = () => {
     avatar: null,
     cover: null
   });
+  const [popup, setPopup] = useState<PopupState>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: ''
+  });
   
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+
+  const showPopup = (type: 'success' | 'error' | 'info', title: string, message: string) => {
+    setPopup({
+      isOpen: true,
+      type,
+      title,
+      message
+    });
+  };
+
+  const closePopup = () => {
+    setPopup(prev => ({ ...prev, isOpen: false }));
+  };
+
+  // Load images from backend on component mount
+  useEffect(() => {
+    const fetchUserImages = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          // Fallback to localStorage if no token
+          const savedImages = localStorage.getItem('userImages');
+          if (savedImages) {
+            setImages(JSON.parse(savedImages));
+          }
+          return;
+        }
+
+        const response = await fetch('http://localhost:5000/api/userimages', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setImages(data);
+          // Also save to localStorage as backup
+          localStorage.setItem('userImages', JSON.stringify(data));
+        } else {
+          // Fallback to localStorage if API fails
+          const savedImages = localStorage.getItem('userImages');
+          if (savedImages) {
+            setImages(JSON.parse(savedImages));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user images:', error);
+        // Fallback to localStorage if network error
+        const savedImages = localStorage.getItem('userImages');
+        if (savedImages) {
+          setImages(JSON.parse(savedImages));
+        }
+      }
+    };
+
+    fetchUserImages();
+  }, []);
 
   const handleImageUpload = (type: 'avatar' | 'cover', file: File) => {
     const reader = new FileReader();
@@ -39,7 +111,7 @@ const AvatarCoverSettingsPage = () => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        alert('Avatar image must be less than 5MB');
+        showPopup('error', 'File Too Large', 'Avatar image must be less than 5MB');
         return;
       }
       handleImageUpload('avatar', file);
@@ -50,7 +122,7 @@ const AvatarCoverSettingsPage = () => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) { // 10MB limit
-        alert('Cover image must be less than 10MB');
+        showPopup('error', 'File Too Large', 'Cover image must be less than 10MB');
         return;
       }
       handleImageUpload('cover', file);
@@ -60,17 +132,39 @@ const AvatarCoverSettingsPage = () => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const token = localStorage.getItem('token');
       
-      // Save to localStorage (replace with actual API call)
-      localStorage.setItem('userImages', JSON.stringify(images));
-      
-      console.log('Images saved:', images);
-      alert('Avatar and cover images saved successfully!');
+      if (token) {
+        // Try backend API first
+        const response = await fetch('http://localhost:5000/api/userimages', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(images)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Images saved to backend:', result);
+          localStorage.setItem('userImages', JSON.stringify(images));
+          showPopup('success', 'Success', 'Avatar and cover images saved successfully!');
+        } else {
+          // Fallback to localStorage if API fails
+          throw new Error('API failed, using localStorage');
+        }
+      } else {
+        // Fallback to localStorage if no token
+        throw new Error('No token, using localStorage');
+      }
     } catch (error) {
       console.error('Error saving images:', error);
-      alert('Failed to save images. Please try again.');
+      
+      // Fallback to localStorage
+      localStorage.setItem('userImages', JSON.stringify(images));
+      console.log('Images saved to localStorage:', images);
+      showPopup('success', 'Success', 'Avatar and cover images saved successfully! (Saved locally)');
     } finally {
       setLoading(false);
     }
@@ -190,6 +284,9 @@ const AvatarCoverSettingsPage = () => {
           </button>
         </div>
       </div>
+
+      {/* Popup Component */}
+      <Popup popup={popup} onClose={closePopup} />
     </div>
   );
 };

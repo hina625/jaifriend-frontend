@@ -1,10 +1,18 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import Popup from '@/components/Popup';
 
 interface InvitationStats {
   availableLinks: number;
   generatedLinks: number;
   usedLinks: number;
+}
+
+interface PopupState {
+  isOpen: boolean;
+  type: 'success' | 'error' | 'info';
+  title: string;
+  message: string;
 }
 
 const InvitationLinksPage = () => {
@@ -14,40 +22,127 @@ const InvitationLinksPage = () => {
     usedLinks: 0
   });
   const [loading, setLoading] = useState(false);
+  const [popup, setPopup] = useState<PopupState>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: ''
+  });
 
   useEffect(() => {
-    // Load invitation statistics from API or localStorage
-    const loadStats = () => {
-      const savedStats = localStorage.getItem('invitationStats');
-      if (savedStats) {
-        setStats(JSON.parse(savedStats));
+    // Load invitation statistics from backend API
+    const loadStats = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          // Fallback to localStorage if no token
+          const savedStats = localStorage.getItem('invitationStats');
+          if (savedStats) {
+            setStats(JSON.parse(savedStats));
+          }
+          return;
+        }
+
+        const response = await fetch('http://localhost:5000/api/invitations/stats', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          setStats(result.data);
+          // Also save to localStorage as backup
+          localStorage.setItem('invitationStats', JSON.stringify(result.data));
+        } else {
+          // Fallback to localStorage if API fails
+          const savedStats = localStorage.getItem('invitationStats');
+          if (savedStats) {
+            setStats(JSON.parse(savedStats));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching invitation stats:', error);
+        // Fallback to localStorage if network error
+        const savedStats = localStorage.getItem('invitationStats');
+        if (savedStats) {
+          setStats(JSON.parse(savedStats));
+        }
       }
     };
     
     loadStats();
   }, []);
 
+  const showPopup = (type: 'success' | 'error' | 'info', title: string, message: string) => {
+    setPopup({
+      isOpen: true,
+      type,
+      title,
+      message
+    });
+  };
+
+  const closePopup = () => {
+    setPopup(prev => ({ ...prev, isOpen: false }));
+  };
+
   const handleGenerateLinks = async () => {
     setLoading(true);
     try {
-      // Simulate API call to generate links
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const token = localStorage.getItem('token');
       
-      // Update stats - move from available to generated
-      const newStats = {
-        ...stats,
-        availableLinks: Math.max(0, stats.availableLinks - 1),
-        generatedLinks: stats.generatedLinks + 1
-      };
-      
-      setStats(newStats);
-      localStorage.setItem('invitationStats', JSON.stringify(newStats));
-      
-      console.log('Invitation link generated successfully');
-      alert('Invitation link generated successfully!');
+      if (token) {
+        // Try backend API first
+        const response = await fetch('http://localhost:5000/api/invitations/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Invitation generated:', result);
+          
+          // Update stats with backend data
+          setStats(result.data.stats);
+          localStorage.setItem('invitationStats', JSON.stringify(result.data.stats));
+          
+          showPopup('success', 'Success', `Invitation link generated successfully! Code: ${result.data.invitationCode}`);
+        } else {
+          // Fallback to local generation if API fails
+          throw new Error('API failed, using local generation');
+        }
+      } else {
+        // Fallback to local generation if no token
+        throw new Error('No token, using local generation');
+      }
     } catch (error) {
       console.error('Error generating invitation link:', error);
-      alert('Failed to generate invitation link. Please try again.');
+      
+      // Fallback to local generation
+      try {
+        // Simulate API call to generate links
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Update stats - move from available to generated
+        const newStats = {
+          ...stats,
+          availableLinks: Math.max(0, stats.availableLinks - 1),
+          generatedLinks: stats.generatedLinks + 1
+        };
+        
+        setStats(newStats);
+        localStorage.setItem('invitationStats', JSON.stringify(newStats));
+        
+        console.log('Invitation link generated successfully (local)');
+        showPopup('success', 'Success', 'Invitation link generated successfully! (Generated locally)');
+      } catch (localError) {
+        console.error('Error in local generation:', localError);
+        showPopup('error', 'Error', 'Failed to generate invitation link. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -123,6 +218,9 @@ const InvitationLinksPage = () => {
           </p>
         )}
       </div>
+
+      {/* Popup Component */}
+      <Popup popup={popup} onClose={closePopup} />
     </div>
   );
 };

@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import Popup from '@/components/Popup';
 
 interface ProfileSettings {
   firstName: string;
@@ -14,8 +15,21 @@ interface ProfileSettings {
   companyWebsite: string;
 }
 
+interface PopupState {
+  isOpen: boolean;
+  type: 'success' | 'error' | 'info';
+  title: string;
+  message: string;
+}
+
 const ProfileSettingsPage = () => {
   const [loading, setLoading] = useState(false);
+  const [popup, setPopup] = useState<PopupState>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: ''
+  });
   const [profileSettings, setProfileSettings] = useState<ProfileSettings>({
     firstName: 'Hina Sadaf -BSCS-2nd-029',
     lastName: '',
@@ -30,16 +44,62 @@ const ProfileSettingsPage = () => {
   });
 
   useEffect(() => {
-    // Load profile settings from API or localStorage
-    const loadProfileSettings = () => {
-      const savedSettings = localStorage.getItem('profileSettings');
-      if (savedSettings) {
-        setProfileSettings(JSON.parse(savedSettings));
+    // Load profile settings from backend API
+    const loadProfileSettings = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          // Fallback to localStorage if no token
+          const savedSettings = localStorage.getItem('profileSettings');
+          if (savedSettings) {
+            setProfileSettings(JSON.parse(savedSettings));
+          }
+          return;
+        }
+
+        const response = await fetch('http://localhost:5000/api/settings/profile/settings', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          setProfileSettings(result.data);
+          // Also save to localStorage as backup
+          localStorage.setItem('profileSettings', JSON.stringify(result.data));
+        } else {
+          // Fallback to localStorage if API fails
+          const savedSettings = localStorage.getItem('profileSettings');
+          if (savedSettings) {
+            setProfileSettings(JSON.parse(savedSettings));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching profile settings:', error);
+        // Fallback to localStorage if network error
+        const savedSettings = localStorage.getItem('profileSettings');
+        if (savedSettings) {
+          setProfileSettings(JSON.parse(savedSettings));
+        }
       }
     };
     
     loadProfileSettings();
   }, []);
+
+  const showPopup = (type: 'success' | 'error' | 'info', title: string, message: string) => {
+    setPopup({
+      isOpen: true,
+      type,
+      title,
+      message
+    });
+  };
+
+  const closePopup = () => {
+    setPopup(prev => ({ ...prev, isOpen: false }));
+  };
 
   const handleInputChange = (field: keyof ProfileSettings, value: string | boolean) => {
     setProfileSettings(prev => ({
@@ -51,17 +111,53 @@ const ProfileSettingsPage = () => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const token = localStorage.getItem('token');
       
-      // Save to localStorage (replace with actual API call)
-      localStorage.setItem('profileSettings', JSON.stringify(profileSettings));
-      
-      console.log('Profile settings saved:', profileSettings);
-      alert('Profile settings saved successfully!');
+      if (token) {
+        // Try backend API first
+        const response = await fetch('http://localhost:5000/api/settings/profile/settings', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(profileSettings)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Profile settings saved:', result);
+          
+          // Update settings with backend data
+          setProfileSettings(result.data);
+          localStorage.setItem('profileSettings', JSON.stringify(result.data));
+          
+          showPopup('success', 'Success', 'Profile settings saved successfully!');
+        } else {
+          // Fallback to localStorage if API fails
+          throw new Error('API failed, using localStorage');
+        }
+      } else {
+        // Fallback to localStorage if no token
+        throw new Error('No token, using localStorage');
+      }
     } catch (error) {
       console.error('Error saving profile settings:', error);
-      alert('Failed to save profile settings. Please try again.');
+      
+      // Fallback to localStorage
+      try {
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Save to localStorage (replace with actual API call)
+        localStorage.setItem('profileSettings', JSON.stringify(profileSettings));
+        
+        console.log('Profile settings saved (local):', profileSettings);
+        showPopup('success', 'Success', 'Profile settings saved successfully! (Saved locally)');
+      } catch (localError) {
+        console.error('Error in local save:', localError);
+        showPopup('error', 'Error', 'Failed to save profile settings. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -234,6 +330,9 @@ const ProfileSettingsPage = () => {
           </button>
         </div>
       </div>
+
+      {/* Popup Component */}
+      <Popup popup={popup} onClose={closePopup} />
     </div>
   );
 };

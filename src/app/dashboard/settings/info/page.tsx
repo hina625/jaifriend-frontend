@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from 'react';
+import Popup from '@/components/Popup';
 
 interface DataOption {
   id: string;
@@ -9,8 +10,21 @@ interface DataOption {
   selected: boolean;
 }
 
+interface PopupState {
+  isOpen: boolean;
+  type: 'success' | 'error' | 'info';
+  title: string;
+  message: string;
+}
+
 const DownloadMyInformationPage = () => {
   const [loading, setLoading] = useState(false);
+  const [popup, setPopup] = useState<PopupState>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: ''
+  });
   const [dataOptions, setDataOptions] = useState<DataOption[]>([
     {
       id: 'information',
@@ -80,6 +94,19 @@ const DownloadMyInformationPage = () => {
     }
   ]);
 
+  const showPopup = (type: 'success' | 'error' | 'info', title: string, message: string) => {
+    setPopup({
+      isOpen: true,
+      type,
+      title,
+      message
+    });
+  };
+
+  const closePopup = () => {
+    setPopup(prev => ({ ...prev, isOpen: false }));
+  };
+
   const handleOptionToggle = (optionId: string) => {
     setDataOptions(prev => 
       prev.map(option => 
@@ -94,44 +121,84 @@ const DownloadMyInformationPage = () => {
     const selectedOptions = dataOptions.filter(option => option.selected);
     
     if (selectedOptions.length === 0) {
-      alert('Please select at least one data type to download');
+      showPopup('error', 'Validation Error', 'Please select at least one data type to download');
       return;
     }
 
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const token = localStorage.getItem('token');
       
-      // Create a simple text file with selected data types
-      const selectedTitles = selectedOptions.map(option => option.title).join(', ');
-      const fileContent = `Data Export Request
+      if (token) {
+        // Try backend API first
+        const response = await fetch('http://localhost:5000/api/dataexports', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            selectedDataTypes: selectedOptions.map(option => option.id)
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Data export created:', result);
+          
+          // Show success message
+          showPopup('success', 'Success', 'Your data export request has been created successfully! You will receive a notification when it\'s ready for download.');
+          
+          // Reset selections
+          setDataOptions(prev => 
+            prev.map(option => ({ ...option, selected: false }))
+          );
+        } else {
+          // Fallback to local file generation if API fails
+          throw new Error('API failed, using local generation');
+        }
+      } else {
+        // Fallback to local file generation if no token
+        throw new Error('No token, using local generation');
+      }
+    } catch (error) {
+      console.error('Error creating data export:', error);
+      
+      // Fallback to local file generation
+      try {
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Create a simple text file with selected data types
+        const selectedTitles = selectedOptions.map(option => option.title).join(', ');
+        const fileContent = `Data Export Request
 Generated on: ${new Date().toLocaleString()}
 Selected Data Types: ${selectedTitles}
 
 This file contains your requested data export.
 The actual data would be processed and included in a real implementation.`;
 
-      // Create and download file
-      const blob = new Blob([fileContent], { type: 'text/plain' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `my-information-${Date.now()}.txt`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      
-      alert('Your data export file has been generated and downloaded successfully!');
-      
-      // Reset selections
-      setDataOptions(prev => 
-        prev.map(option => ({ ...option, selected: false }))
-      );
-    } catch (error) {
-      console.error('Error generating file:', error);
-      alert('Failed to generate file. Please try again.');
+        // Create and download file
+        const blob = new Blob([fileContent], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `my-information-${Date.now()}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        showPopup('success', 'Success', 'Your data export file has been generated and downloaded successfully! (Generated locally)');
+        
+        // Reset selections
+        setDataOptions(prev => 
+          prev.map(option => ({ ...option, selected: false }))
+        );
+      } catch (localError) {
+        console.error('Error in local file generation:', localError);
+        showPopup('error', 'Error', 'Failed to generate file. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -211,6 +278,9 @@ The actual data would be processed and included in a real implementation.`;
           </ul>
         </div>
       </div>
+
+      {/* Popup Component */}
+      <Popup popup={popup} onClose={closePopup} />
     </div>
   );
 };

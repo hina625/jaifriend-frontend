@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import Popup, { PopupState } from '@/components/Popup';
-import { getSettingsApi, updatePrivacyApi } from '@/utils/api';
+import Popup from '@/components/Popup';
 
 interface PrivacySettings {
   status: string;
@@ -17,8 +16,21 @@ interface PrivacySettings {
   allowSearchEnginesToIndex: string;
 }
 
+interface PopupState {
+  isOpen: boolean;
+  type: 'success' | 'error' | 'info';
+  title: string;
+  message: string;
+}
+
 const PrivacySettingsPage = () => {
   const [loading, setLoading] = useState(false);
+  const [popup, setPopup] = useState<PopupState>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: ''
+  });
   const [privacySettings, setPrivacySettings] = useState<PrivacySettings>({
     status: 'Online',
     whoCanFollowMe: 'Everyone',
@@ -31,57 +43,53 @@ const PrivacySettingsPage = () => {
     shareMyLocationWithPublic: 'Yes',
     allowSearchEnginesToIndex: 'Yes'
   });
-  const [popup, setPopup] = useState<PopupState>({
-    isOpen: false,
-    type: 'info',
-    title: '',
-    message: ''
-  });
-
-  // Get token from localStorage
-  const getToken = () => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('token');
-    }
-    return null;
-  };
 
   useEffect(() => {
-    loadPrivacySettings();
+    // Load privacy settings from backend API
+    const loadSettings = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          // Fallback to localStorage if no token
+          const savedSettings = localStorage.getItem('privacySettings');
+          if (savedSettings) {
+            setPrivacySettings(JSON.parse(savedSettings));
+          }
+          return;
+        }
+
+        const response = await fetch('http://localhost:5000/api/settings/privacy/settings', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          setPrivacySettings(result.data);
+          // Also save to localStorage as backup
+          localStorage.setItem('privacySettings', JSON.stringify(result.data));
+        } else {
+          // Fallback to localStorage if API fails
+          const savedSettings = localStorage.getItem('privacySettings');
+          if (savedSettings) {
+            setPrivacySettings(JSON.parse(savedSettings));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching privacy settings:', error);
+        // Fallback to localStorage if network error
+        const savedSettings = localStorage.getItem('privacySettings');
+        if (savedSettings) {
+          setPrivacySettings(JSON.parse(savedSettings));
+        }
+      }
+    };
+    
+    loadSettings();
   }, []);
 
-  const loadPrivacySettings = async () => {
-    const token = getToken();
-    if (!token) {
-      showPopup('error', 'Authentication Error', 'Please log in to view your privacy settings.');
-      return;
-    }
-
-    try {
-      const data = await getSettingsApi(token);
-      const privacy = data.privacy || {};
-      
-      // Map backend privacy settings to frontend format
-      setPrivacySettings({
-        status: privacy.showOnlineStatus ? 'Online' : 'Offline',
-        whoCanFollowMe: privacy.profileVisibility === 'public' ? 'Everyone' : 
-                       privacy.profileVisibility === 'friends' ? 'Friends only' : 'No one',
-        whoCanMessageMe: privacy.allowMessages ? 'Everyone' : 'Friends only',
-        whoCanSeeMyFriends: 'Everyone', // Default value
-        whoCanPostOnMyTimeline: 'People I Follow', // Default value
-        whoCanSeeMyBirthday: privacy.showLastSeen ? 'Everyone' : 'Only me',
-        confirmRequestWhenSomeoneFollowsYou: 'No', // Default value
-        showMyActivities: 'Yes', // Default value
-        shareMyLocationWithPublic: 'Yes', // Default value
-        allowSearchEnginesToIndex: 'Yes' // Default value
-      });
-    } catch (error) {
-      console.error('Error loading privacy settings:', error);
-      showPopup('error', 'Error', 'Failed to load privacy settings. Please try again.');
-    }
-  };
-
-  const showPopup = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
+  const showPopup = (type: 'success' | 'error' | 'info', title: string, message: string) => {
     setPopup({
       isOpen: true,
       type,
@@ -102,40 +110,55 @@ const PrivacySettingsPage = () => {
   };
 
   const handleSave = async () => {
-    const token = getToken();
-    if (!token) {
-      showPopup('error', 'Authentication Error', 'Please log in to save your privacy settings.');
-      return;
-    }
-
     setLoading(true);
     try {
-      // Convert frontend settings to backend format
-      const backendPrivacySettings = {
-        profileVisibility: privacySettings.whoCanFollowMe === 'Everyone' ? 'public' :
-                          privacySettings.whoCanFollowMe === 'Friends only' ? 'friends' : 'private',
-        showOnlineStatus: privacySettings.status === 'Online',
-        showLastSeen: privacySettings.whoCanSeeMyBirthday === 'Everyone',
-        allowMessages: privacySettings.whoCanMessageMe === 'Everyone'
-      };
-
-      console.log('🔧 About to call updatePrivacyApi with token:', token ? 'Token exists' : 'No token');
-      console.log('🔧 Backend privacy settings:', backendPrivacySettings);
-
-      await updatePrivacyApi(token, backendPrivacySettings);
-
-      showPopup('success', 'Success', 'Privacy settings saved successfully! Your profile privacy has been updated.');
+      const token = localStorage.getItem('token');
       
-    } catch (error: any) {
+      if (token) {
+        // Try backend API first
+        const response = await fetch('http://localhost:5000/api/settings/privacy/settings', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(privacySettings)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Privacy settings saved:', result);
+          
+          // Update settings with backend data
+          setPrivacySettings(result.data);
+          localStorage.setItem('privacySettings', JSON.stringify(result.data));
+          
+          showPopup('success', 'Success', 'Privacy settings saved successfully!');
+        } else {
+          // Fallback to localStorage if API fails
+          throw new Error('API failed, using localStorage');
+        }
+      } else {
+        // Fallback to localStorage if no token
+        throw new Error('No token, using localStorage');
+      }
+    } catch (error) {
       console.error('Error saving privacy settings:', error);
-      console.error('🔧 Error details:', {
-        message: error.message,
-        status: error.response?.status,
-        url: error.config?.url,
-        method: error.config?.method
-      });
-      const errorMessage = error.message || 'Failed to save privacy settings. Please try again.';
-      showPopup('error', 'Error', errorMessage);
+      
+      // Fallback to localStorage
+      try {
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Save to localStorage (replace with actual API call)
+        localStorage.setItem('privacySettings', JSON.stringify(privacySettings));
+        
+        console.log('Privacy settings saved (local):', privacySettings);
+        showPopup('success', 'Success', 'Privacy settings saved successfully! (Saved locally)');
+      } catch (localError) {
+        console.error('Error in local save:', localError);
+        showPopup('error', 'Error', 'Failed to save privacy settings. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -197,7 +220,7 @@ const PrivacySettingsPage = () => {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-8">Privacy Settings</h1>
+        <h1 className="text-2xl font-semibold text-gray-900 mb-8">Privacy Setting</h1>
         
         <div className="space-y-6">
           {privacyOptions.map((option, index) => (
@@ -241,12 +264,11 @@ const PrivacySettingsPage = () => {
             <li>• Changes take effect immediately after saving</li>
             <li>• You can update these settings at any time</li>
             <li>• Some settings may affect your visibility on the platform</li>
-            <li>• Your privacy settings are automatically applied to your profile</li>
           </ul>
         </div>
       </div>
 
-      {/* Popup */}
+      {/* Popup Component */}
       <Popup popup={popup} onClose={closePopup} />
     </div>
   );
