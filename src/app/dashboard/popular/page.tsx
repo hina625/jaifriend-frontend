@@ -20,18 +20,47 @@ export default function PopularPostsPage() {
     { id: 'trending', label: 'Trending', icon: TrendingUp },
   ];
 
+  const fetchPopularContent = async () => {
+    try {
+      const [postsResponse, albumsResponse] = await Promise.all([
+        fetch('http://localhost:5000/api/posts'),
+        fetch('http://localhost:5000/api/albums')
+      ]);
+      
+      const [postsData, albumsData] = await Promise.all([
+        postsResponse.json(),
+        albumsResponse.json()
+      ]);
+      
+      setPosts(postsData);
+      setAlbums(albumsData);
+    } catch (error) {
+      console.error('Error fetching popular content:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    Promise.all([
-      fetch('http://localhost:5000/api/posts'),
-      fetch('http://localhost:5000/api/albums')
-    ])
-      .then(responses => Promise.all(responses.map(res => res.json())))
-      .then(([postsData, albumsData]) => {
-        setPosts(postsData);
-        setAlbums(albumsData);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    fetchPopularContent();
+  }, []);
+
+  // Listen for album creation events to refresh content
+  useEffect(() => {
+    const handleAlbumCreated = () => {
+      fetchPopularContent();
+    };
+
+    const handleAlbumDeleted = () => {
+      fetchPopularContent();
+    };
+
+    window.addEventListener('albumCreated', handleAlbumCreated);
+    window.addEventListener('albumDeleted', handleAlbumDeleted);
+    return () => {
+      window.removeEventListener('albumCreated', handleAlbumCreated);
+      window.removeEventListener('albumDeleted', handleAlbumDeleted);
+    };
   }, []);
 
   const filteredContent = () => {
@@ -66,6 +95,83 @@ export default function PopularPostsPage() {
   };
 
   const { posts: displayPosts, albums: displayAlbums } = filteredContent();
+
+  const handlePostShare = async (postId: string, shareOptions?: any) => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`http://localhost:5000/api/posts/${postId}/share`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(shareOptions || {})
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPosts(prev => prev.map(post => 
+          post._id === postId ? { ...post, shares: data.shares, shared: data.shared } : post
+        ));
+        console.log('Post shared successfully!');
+      }
+    } catch (error) {
+      console.error('Error sharing post:', error);
+    }
+  };
+
+  const handlePostView = async (postId: string) => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`http://localhost:5000/api/posts/${postId}/view`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPosts(prev => prev.map(post => 
+          post._id === postId ? { ...post, views: data.views } : post
+        ));
+      }
+    } catch (error) {
+      console.error('Error tracking view:', error);
+    }
+  };
+
+  const handleLike = async (postId: string) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`http://localhost:5000/api/posts/${postId}/like`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? data.post : p));
+    } else {
+      console.error('Failed to like post');
+    }
+  };
+
+  const handleReaction = async (postId: string, reactionType: string) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`http://localhost:5000/api/posts/${postId}/reaction`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({ reactionType })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? data.post : p));
+    } else {
+      console.error('Failed to add reaction');
+    }
+  };
 
   if (loading) {
     return (
@@ -268,7 +374,13 @@ export default function PopularPostsPage() {
                   <div className={`${viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6' : 'space-y-4 sm:space-y-6'}`}>
                     {displayPosts.map((post) => (
                       <div key={post._id} className={viewMode === 'grid' ? 'bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow' : ''}>
-                        <PostDisplay post={post} isOwner={false} />
+                        <PostDisplay 
+                          post={post} 
+                          isOwner={false}
+                          onLike={handleLike}
+                          onReaction={handleReaction}
+                          onShare={handlePostShare}
+                        />
                       </div>
                     ))}
                   </div>

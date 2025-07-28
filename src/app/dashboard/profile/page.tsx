@@ -1,282 +1,245 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Camera, Edit, BarChart3, List, Plus, Heart, MessageCircle, Share, MoreHorizontal } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Edit, Trash2, MoreVertical, Search, Filter, Camera, Video, Music, FileText, Plus, Heart, MessageCircle, Share2, Bookmark, Settings, Camera as CameraIcon } from 'lucide-react';
+import PostDisplay from '@/components/PostDisplay';
+import Popup, { PopupState } from '@/components/Popup';
 
-interface ProfileData {
+interface User {
   id: string;
   name: string;
   username: string;
   avatar: string;
-  coverPhoto: string;
-  workplace?: string;
-  country?: string;
-  address?: string;
-  gender?: string;
+  email: string;
+  followers: string[];
+  following: string[];
   bio?: string;
   location?: string;
-  following: number;
-  followers: number;
-  posts: number;
-  isOnline: boolean;
-  userPosts: any[];
-  followingList: any[];
-  followersList: any[];
-  completionItems: any[];
+  website?: string;
 }
 
-interface ProfileCompletionItem {
-  id: string;
-  title: string;
-  completed: boolean;
-  icon: string;
+interface Post {
+  _id: string;
+  content: string;
+  media: any[];
+  likes: string[];
+  comments: any[];
+  shares: string[];
+  views: string[];
+  createdAt: string;
+  user: {
+    name: string;
+    avatar: string;
+    userId: string;
+  };
 }
 
 const ProfilePage: React.FC = () => {
-  const [profile, setProfile] = useState<ProfileData>({
-    id: '',
-    name: 'Loading...',
-    username: '@loading',
-    avatar: '/avatars/1.png.png',
-    coverPhoto: '/covers/default-cover.jpg',
-    workplace: undefined,
-    country: 'Pakistan',
-    address: undefined,
-    gender: 'Male',
-    bio: '',
-    location: '',
-    following: 0,
-    followers: 0,
-    posts: 0,
-    isOnline: true,
-    userPosts: [],
-    followingList: [],
-    followersList: [],
-    completionItems: []
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('timeline');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
+  const [editContent, setEditContent] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [popup, setPopup] = useState<PopupState>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
   });
 
-  const [activeTab, setActiveTab] = useState('Timeline');
-  const [loading, setLoading] = useState(true);
-  const [uploadingCover, setUploadingCover] = useState(false);
-  const [feedPosts, setFeedPosts] = useState<any[]>([]);
-  const [newPostContent, setNewPostContent] = useState('');
-  const [creatingPost, setCreatingPost] = useState(false);
-  const [likedPosts, setLikedPosts] = useState<any[]>([]);
-  const [groups, setGroups] = useState<any[]>([]);
-
   const tabs = [
-    { id: 'Timeline', label: 'Timeline', icon: '📄' },
-    { id: 'Feed', label: 'Feed', icon: '📰' },
-    { id: 'Groups', label: 'Groups', icon: '👥' },
-    { id: 'Likes', label: 'Likes', icon: '❤️' },
-    { id: 'Following', label: `Following ${profile.following}`, icon: '👤' },
-    { id: 'Followers', label: `Followers ${profile.followers}`, icon: '👥' },
-    { id: 'Photos', label: 'Photos', icon: '📷' },
-    { id: 'Videos', label: 'Videos', icon: '🎥' },
-    { id: 'Reels', label: 'Reels', icon: '🎬' },
-    { id: 'Products', label: 'Products', icon: '🛍️' }
+    { id: 'timeline', label: 'Timeline', icon: '📝' },
+    { id: 'about', label: 'About', icon: 'ℹ️' },
+    { id: 'friends', label: 'Friends', icon: '👥' },
+    { id: 'photos', label: 'Photos', icon: '📷' },
+    { id: 'videos', label: 'Videos', icon: '🎥' },
+    { id: 'saved', label: 'Saved', icon: '🔖' }
+  ];
+
+  const filters = [
+    { id: 'all', label: 'All', icon: <Filter className="w-4 h-4" /> },
+    { id: 'text', label: 'Text', icon: <FileText className="w-4 h-4" /> },
+    { id: 'photos', label: 'Photos', icon: <CameraIcon className="w-4 h-4" /> },
+    { id: 'videos', label: 'Videos', icon: <Video className="w-4 h-4" /> }
   ];
 
   useEffect(() => {
-    loadProfile();
+    fetchUserProfile();
+    fetchUserPosts();
+    
+    // Listen for post creation events to refresh posts
+    const handlePostCreated = () => {
+      fetchUserPosts();
+    };
+    
+    window.addEventListener('postCreated', handlePostCreated);
+    
+    return () => {
+      window.removeEventListener('postCreated', handlePostCreated);
+    };
   }, []);
 
-  useEffect(() => {
-    if (activeTab === 'Feed') {
-      loadFeed();
-    }
-    if (activeTab === 'Likes') {
-      loadLikedPosts();
-    }
-    if (activeTab === 'Groups') {
-      loadGroups();
-    }
-  }, [activeTab]);
-
-  const loadProfile = async () => {
+  const fetchUserProfile = async () => {
     try {
-      setLoading(true);
       const token = localStorage.getItem('token');
       if (!token) {
-        window.location.href = '/login';
+        router.push('/register');
         return;
       }
 
       const response = await fetch('http://localhost:5000/api/profile/me', {
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setProfile(data);
+        const userData = await response.json();
+        setUser(userData);
       } else {
-        console.error('Failed to load profile');
+        console.error('Failed to fetch user profile');
       }
     } catch (error) {
-      console.error('Error loading profile:', error);
+      console.error('Error fetching user profile:', error);
+    }
+  };
+
+  const fetchUserPosts = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/profile/posts', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const postsData = await response.json();
+        setPosts(postsData);
+      } else {
+        console.error('Failed to fetch user posts');
+      }
+    } catch (error) {
+      console.error('Error fetching user posts:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const loadFeed = async () => {
+  const handleEditPost = (post: Post) => {
+    setEditingPost(post);
+    setEditContent(post.content);
+    setShowEditModal(true);
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    if (!confirm('Are you sure you want to delete this post?')) return;
+
     try {
       const token = localStorage.getItem('token');
-      if (!token) return;
-      const response = await fetch('http://localhost:5000/api/profile/feed', {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const response = await fetch(`http://localhost:5000/api/posts/${postId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
+
       if (response.ok) {
-        const data = await response.json();
-        setFeedPosts(data);
+        setPosts(prev => prev.filter(post => post._id !== postId));
+        showPopup('success', 'Post Deleted', 'Post has been deleted successfully!');
+      } else {
+        showPopup('error', 'Error', 'Failed to delete post');
       }
     } catch (error) {
-      console.error('Error loading feed:', error);
+      console.error('Error deleting post:', error);
+      showPopup('error', 'Error', 'Failed to delete post');
     }
   };
 
-  const loadLikedPosts = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-    const res = await fetch('http://localhost:5000/api/profile/liked-posts', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (res.ok) setLikedPosts(await res.json());
-  };
-  const loadGroups = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-    const res = await fetch('http://localhost:5000/api/profile/groups', {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (res.ok) setGroups(await res.json());
-  };
-
-  const handleBackClick = () => {
-    window.history.back();
-  };
-
-  const handleEditProfile = () => {
-    window.location.href = '/dashboard/profile/edit';
-  };
-
-  const handleCoverPhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleSaveEdit = async () => {
+    if (!editingPost || !editContent.trim()) return;
 
     try {
-      setUploadingCover(true);
       const token = localStorage.getItem('token');
-      
-      // For now, we'll simulate upload by using a placeholder
-      // In a real app, you'd upload to a file server first
-      const coverPhotoUrl = URL.createObjectURL(file);
-      
-      const response = await fetch('http://localhost:5000/api/profile/cover', {
+      const response = await fetch(`http://localhost:5000/api/posts/${editingPost._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ coverPhoto: coverPhotoUrl })
+        body: JSON.stringify({ content: editContent })
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setProfile(prev => ({ ...prev, coverPhoto: data.coverPhoto }));
-        alert('Cover photo updated successfully!');
+        const updatedPost = await response.json();
+        setPosts(prev => prev.map(post => 
+          post._id === editingPost._id ? updatedPost : post
+        ));
+        setShowEditModal(false);
+        setEditingPost(null);
+        setEditContent('');
+        showPopup('success', 'Post Updated', 'Post has been updated successfully!');
       } else {
-        alert('Failed to update cover photo');
+        showPopup('error', 'Error', 'Failed to update post');
       }
     } catch (error) {
-      console.error('Error updating cover photo:', error);
-      alert('Error updating cover photo');
-    } finally {
-      setUploadingCover(false);
+      console.error('Error updating post:', error);
+      showPopup('error', 'Error', 'Failed to update post');
     }
   };
 
-  const handleProfilePictureChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      
-      // For now, we'll simulate upload
-      const avatarUrl = URL.createObjectURL(file);
-      
-      const response = await fetch('http://localhost:5000/api/profile/avatar', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ avatar: avatarUrl })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setProfile(prev => ({ ...prev, avatar: data.avatar }));
-        alert('Profile picture updated successfully!');
-      } else {
-        alert('Failed to update profile picture');
-      }
-    } catch (error) {
-      console.error('Error updating profile picture:', error);
-      alert('Error updating profile picture');
-    }
+  const showPopup = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
+    setPopup({
+      isOpen: true,
+      type,
+      title,
+      message
+    });
   };
 
-  const handleCompletionItemClick = (item: ProfileCompletionItem) => {
-    if (!item.completed) {
-      // Navigate to appropriate edit section
-      console.log('Complete:', item.title);
-      if (item.id === 'workplace' || item.id === 'address') {
-        window.location.href = '/dashboard/profile/edit';
-      }
-    }
+  const closePopup = () => {
+    setPopup(prev => ({ ...prev, isOpen: false }));
   };
 
-  const handleCreatePost = async () => {
-    if (!newPostContent.trim()) return;
-    setCreatingPost(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/posts', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ content: newPostContent })
-      });
-      if (response.ok) {
-        setNewPostContent('');
-        await loadProfile();
-        await loadFeed();
-      } else {
-        alert('Failed to create post');
-      }
-    } catch (error) {
-      alert('Error creating post');
-    } finally {
-      setCreatingPost(false);
+  const getFilteredPosts = () => {
+    let filtered = posts;
+
+    // Apply search filter
+    if (searchQuery) {
+      filtered = filtered.filter(post => 
+        post.content.toLowerCase().includes(searchQuery.toLowerCase())
+      );
     }
+
+    // Apply content type filter
+    switch (activeFilter) {
+      case 'text':
+        filtered = filtered.filter(post => !post.media || post.media.length === 0);
+        break;
+      case 'photos':
+        filtered = filtered.filter(post => 
+          post.media && post.media.some(media => media.type === 'image')
+        );
+        break;
+      case 'videos':
+        filtered = filtered.filter(post => 
+          post.media && post.media.some(media => media.type === 'video')
+        );
+        break;
+    }
+
+    return filtered;
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 1) return '1 d';
-    if (diffDays < 7) return `${diffDays} d`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} w`;
-    return `${Math.floor(diffDays / 30)} m`;
+  const getMediaUrl = (url: string) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    return `http://localhost:5000${url}`;
   };
 
   if (loading) {
@@ -290,470 +253,324 @@ const ProfilePage: React.FC = () => {
     );
   }
 
-  let mainContent;
-  if (activeTab === 'Feed') {
-    mainContent = (
-      <div className="space-y-4">
-        {feedPosts.length > 0 ? feedPosts.map((post: any) => (
-          <div key={post._id} className="bg-white rounded-lg shadow-sm border p-4">
-            <div className="flex items-start gap-3 mb-3">
-              <img
-                src={post.author?.avatar || profile.avatar}
-                alt="Profile"
-                className="w-10 h-10 rounded-full"
-              />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-gray-900">
-                    {post.author?.name || profile.name}
-                  </span>
-                  <span className="text-gray-500 text-sm">• {formatDate(post.createdAt)}</span>
-                </div>
-                <p className="text-gray-700 mb-3">{post.content}</p>
-                {/* Post Media */}
-                {post.media && post.media.length > 0 && (
-                  <div className="mb-3">
-                    {post.media.map((media: any, index: number) => (
-                      <img
-                        key={index}
-                        src={media.url}
-                        alt="Post media"
-                        className="w-full rounded-lg"
-                      />
-                    ))}
-                  </div>
-                )}
-                {/* Post Actions */}
-                <div className="flex items-center gap-4 text-gray-500">
-                  <button className="flex items-center gap-1 hover:text-red-500 transition-colors">
-                    <Heart className="w-4 h-4" />
-                    <span className="text-sm">{post.likes?.length || 0}</span>
-                  </button>
-                  <button className="flex items-center gap-1 hover:text-blue-500 transition-colors">
-                    <MessageCircle className="w-4 h-4" />
-                    <span className="text-sm">{post.comments?.length || 0}</span>
-                  </button>
-                  <button className="flex items-center gap-1 hover:text-green-500 transition-colors">
-                    <Share className="w-4 h-4" />
-                    <span className="text-sm">{post.shares?.length || 0}</span>
-                  </button>
-                </div>
-              </div>
-              <button className="text-gray-400 hover:text-gray-600">
-                <MoreHorizontal className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )) : (
-          <div className="bg-white rounded-lg shadow-sm border p-8 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 mx-auto">
-              <span className="text-gray-400 text-2xl">📄</span>
-            </div>
-            <p className="text-gray-600 font-medium">No posts in feed yet</p>
-            <p className="text-gray-500 text-sm mt-1">Follow people to see their posts here!</p>
-          </div>
-        )}
-      </div>
-    );
-  } else if (activeTab === 'Likes') {
-    mainContent = (
-      <div className="space-y-4">
-        {likedPosts.length > 0 ? likedPosts.map((post: any) => (
-          <div key={post._id} className="bg-white rounded-lg shadow-sm border p-4">
-            <div className="flex items-start gap-3 mb-3">
-              <img
-                src={post.author?.avatar || profile.avatar}
-                alt="Profile"
-                className="w-10 h-10 rounded-full"
-              />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-gray-900">
-                    {post.author?.name || profile.name}
-                  </span>
-                  <span className="text-gray-500 text-sm">• {formatDate(post.createdAt)}</span>
-                </div>
-                <p className="text-gray-700 mb-3">{post.content}</p>
-                {/* Post Media */}
-                {post.media && post.media.length > 0 && (
-                  <div className="mb-3">
-                    {post.media.map((media: any, index: number) => (
-                      <img
-                        key={index}
-                        src={media.url}
-                        alt="Post media"
-                        className="w-full rounded-lg"
-                      />
-                    ))}
-                  </div>
-                )}
-                {/* Post Actions */}
-                <div className="flex items-center gap-4 text-gray-500">
-                  <button className="flex items-center gap-1 hover:text-red-500 transition-colors">
-                    <Heart className="w-4 h-4" />
-                    <span className="text-sm">{post.likes?.length || 0}</span>
-                  </button>
-                  <button className="flex items-center gap-1 hover:text-blue-500 transition-colors">
-                    <MessageCircle className="w-4 h-4" />
-                    <span className="text-sm">{post.comments?.length || 0}</span>
-                  </button>
-                  <button className="flex items-center gap-1 hover:text-green-500 transition-colors">
-                    <Share className="w-4 h-4" />
-                    <span className="text-sm">{post.shares?.length || 0}</span>
-                  </button>
-                </div>
-              </div>
-              <button className="text-gray-400 hover:text-gray-600">
-                <MoreHorizontal className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )) : (
-          <div className="bg-white rounded-lg shadow-sm border p-8 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 mx-auto">
-              <span className="text-gray-400 text-2xl">❤️</span>
-            </div>
-            <p className="text-gray-600 font-medium">No liked posts yet</p>
-            <p className="text-gray-500 text-sm mt-1">Like posts to see them here!</p>
-          </div>
-        )}
-      </div>
-    );
-  } else if (activeTab === 'Groups') {
-    mainContent = (
-      <div className="space-y-4">
-        {groups.length > 0 ? groups.map((group: any) => (
-          <div key={group._id} className="bg-white rounded-lg shadow-sm border p-4">
-            <h3 className="font-bold text-lg">{group.name}</h3>
-            <p className="text-gray-600">{group.description}</p>
-          </div>
-        )) : (
-          <div className="bg-white rounded-lg shadow-sm border p-8 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 mx-auto">
-              <span className="text-gray-400 text-2xl">👥</span>
-            </div>
-            <p className="text-gray-600 font-medium">No groups joined yet</p>
-            <p className="text-gray-500 text-sm mt-1">Join groups to see them here!</p>
-          </div>
-        )}
-      </div>
-    );
-  } else {
-    mainContent = (
-      <div className="space-y-4">
-        {profile.userPosts.length > 0 ? profile.userPosts.map((post: any) => (
-          <div key={post._id} className="bg-white rounded-lg shadow-sm border p-4">
-            <div className="flex items-start gap-3 mb-3">
-              <img
-                src={post.author?.avatar || profile.avatar}
-                alt="Profile"
-                className="w-10 h-10 rounded-full"
-              />
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-gray-900">
-                    {post.author?.name || profile.name}
-                  </span>
-                  <span className="text-gray-500 text-sm">• {formatDate(post.createdAt)}</span>
-                </div>
-                <p className="text-gray-700 mb-3">{post.content}</p>
-                
-                {/* Post Media */}
-                {post.media && post.media.length > 0 && (
-                  <div className="mb-3">
-                    {post.media.map((media: any, index: number) => (
-                      <img
-                        key={index}
-                        src={media.url}
-                        alt="Post media"
-                        className="w-full rounded-lg"
-                      />
-                    ))}
-                  </div>
-                )}
-                
-                {/* Post Actions */}
-                <div className="flex items-center gap-4 text-gray-500">
-                  <button className="flex items-center gap-1 hover:text-red-500 transition-colors">
-                    <Heart className="w-4 h-4" />
-                    <span className="text-sm">{post.likes?.length || 0}</span>
-                  </button>
-                  <button className="flex items-center gap-1 hover:text-blue-500 transition-colors">
-                    <MessageCircle className="w-4 h-4" />
-                    <span className="text-sm">{post.comments?.length || 0}</span>
-                  </button>
-                  <button className="flex items-center gap-1 hover:text-green-500 transition-colors">
-                    <Share className="w-4 h-4" />
-                    <span className="text-sm">{post.shares?.length || 0}</span>
-                  </button>
-                </div>
-              </div>
-              <button className="text-gray-400 hover:text-gray-600">
-                <MoreHorizontal className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )) : (
-          <div className="bg-white rounded-lg shadow-sm border p-8 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 mx-auto">
-              <span className="text-gray-400 text-2xl">📄</span>
-            </div>
-            <p className="text-gray-600 font-medium">No posts yet</p>
-            <p className="text-gray-500 text-sm mt-1">Start sharing your thoughts!</p>
-          </div>
-        )}
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">User not found</p>
+        </div>
       </div>
     );
   }
 
+  const filteredPosts = getFilteredPosts();
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Cover Photo Section */}
-      <div className="relative h-64 bg-gradient-to-r from-purple-400 via-pink-500 to-red-500">
-        {profile.coverPhoto && (
-          <img
-            src={profile.coverPhoto}
-            alt="Cover"
-            className="w-full h-full object-cover"
-          />
-        )}
-        
-        {/* Back Button */}
-        <button
-          onClick={handleBackClick}
-          className="absolute top-4 left-4 w-10 h-10 bg-black bg-opacity-50 rounded-full flex items-center justify-center text-white hover:bg-opacity-70 transition-all"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-
-        {/* Cover Photo Controls */}
-        <div className="absolute bottom-4 right-4 flex gap-2">
-          <label className="px-3 py-1 bg-black bg-opacity-50 text-white text-sm rounded hover:bg-opacity-70 transition-all flex items-center gap-1 cursor-pointer">
-            <Camera className="w-4 h-4" />
-            Cover
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleCoverPhotoChange}
-              className="hidden"
-              disabled={uploadingCover}
-            />
-          </label>
-          <button className="px-3 py-1 bg-black bg-opacity-50 text-white text-sm rounded hover:bg-opacity-70 transition-all">
-            ⬌
-          </button>
+      {/* Profile Header */}
+      <div className="relative">
+        {/* Cover Photo */}
+        <div className="h-64 md:h-80 bg-gradient-to-br from-pink-400 via-purple-500 to-indigo-600 relative overflow-hidden">
+          <div className="absolute inset-0 bg-black bg-opacity-10"></div>
+          
+          {/* Cover Photo Overlay */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center text-white">
+              <CameraIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p className="text-sm opacity-75">Add cover photo</p>
+            </div>
+          </div>
         </div>
 
-        {/* Profile Picture */}
-        <div className="absolute -bottom-16 left-8">
-          <div className="relative">
-            <img
-              src={profile.avatar}
-              alt="Profile"
-              className="w-32 h-32 rounded-full border-4 border-white shadow-lg object-cover"
-            />
-            <label className="absolute bottom-2 right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-all cursor-pointer">
-              <Camera className="w-4 h-4" />
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleProfilePictureChange}
-                className="hidden"
-              />
-            </label>
+        {/* Profile Info Section */}
+        <div className="relative px-4 md:px-8 pb-6">
+          <div className="max-w-4xl mx-auto">
+            {/* Profile Picture */}
+            <div className="relative -mt-20 mb-4">
+              <div className="relative inline-block">
+                <img
+                  src={getMediaUrl(user.avatar)}
+                  alt={user.name}
+                  className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white shadow-xl object-cover bg-gray-200"
+                />
+                <button className="absolute bottom-2 right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-blue-600 transition-colors">
+                  <CameraIcon className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* User Info */}
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+              <div className="flex-1">
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{user.name}</h1>
+                <p className="text-gray-600 text-lg mb-2">@{user.username}</p>
+                
+                {/* Bio */}
+                {user.bio && (
+                  <p className="text-gray-700 mb-4 max-w-2xl">{user.bio}</p>
+                )}
+
+                {/* Location & Website */}
+                <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4">
+                  {user.location && (
+                    <div className="flex items-center gap-1">
+                      <span>📍</span>
+                      <span>{user.location}</span>
+                    </div>
+                  )}
+                  {user.website && (
+                    <div className="flex items-center gap-1">
+                      <span>🌐</span>
+                      <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                        {user.website}
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                {/* Stats */}
+                <div className="flex gap-6 text-sm">
+                  <div className="text-center">
+                    <div className="font-bold text-gray-900">{posts.length}</div>
+                    <div className="text-gray-600">Posts</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-bold text-gray-900">{user.followers?.length || 0}</div>
+                    <div className="text-gray-600">Followers</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="font-bold text-gray-900">{user.following?.length || 0}</div>
+                    <div className="text-gray-600">Following</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button className="flex items-center justify-center gap-2 px-6 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors font-medium">
+                  <MessageCircle className="w-4 h-4" />
+                  <span>Message</span>
+                </button>
+                <button className="flex items-center justify-center gap-2 px-6 py-2 border border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 transition-colors font-medium">
+                  <Heart className="w-4 h-4" />
+                  <span>Follow</span>
+                </button>
+                <button className="flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 transition-colors">
+                  <Settings className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Profile Info Section */}
-      <div className="pt-20 px-6">
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">{profile.name}</h1>
-            <p className="text-gray-600">{profile.username}</p>
-            {profile.bio && (
-              <p className="text-gray-700 mt-2">{profile.bio}</p>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <button className="px-3 py-1 bg-gray-100 rounded text-gray-700 hover:bg-gray-200 transition-all">
-              <BarChart3 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={handleEditProfile}
-              className="px-3 py-1 bg-gray-100 rounded text-gray-700 hover:bg-gray-200 transition-all flex items-center gap-1"
-            >
-              <Edit className="w-4 h-4" />
-              Edit
-            </button>
-            <button className="px-3 py-1 bg-gray-100 rounded text-gray-700 hover:bg-gray-200 transition-all flex items-center gap-1">
-              <List className="w-4 h-4" />
-              Activities
-            </button>
-          </div>
-        </div>
-
-        {/* Navigation Tabs */}
-        <div className="border-b border-gray-200 mb-6">
-          <div className="flex overflow-x-auto">
+      {/* Navigation Tabs */}
+      <div className="bg-white border-b sticky top-0 z-40">
+        <div className="max-w-4xl mx-auto px-4 md:px-8">
+          <div className="flex overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-shrink-0 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                className={`flex items-center gap-2 py-4 px-6 border-b-2 transition-colors whitespace-nowrap min-w-fit ${
                   activeTab === tab.id
-                    ? 'text-blue-600 border-blue-600'
-                    : 'text-gray-500 border-transparent hover:text-gray-700'
+                    ? 'border-blue-500 text-blue-600 font-medium'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
                 }`}
               >
-                <span className="mr-1">{tab.icon}</span>
-                {tab.label}
+                <span className="text-lg">{tab.icon}</span>
+                <span className="text-sm font-medium">{tab.label}</span>
               </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Main Content Area */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Left Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border p-4 mb-4">
-              <div className="mb-4">
-                <input
-                  type="text"
-                  placeholder="Search for posts"
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">👁️</span>
-                  <span className={profile.isOnline ? 'text-green-600' : 'text-gray-500'}>
-                    {profile.isOnline ? 'Online' : 'Offline'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center">👤</span>
-                  <span>{profile.following} Following</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center">👥</span>
-                  <span>{profile.followers} Followers</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="w-5 h-5 bg-orange-100 rounded-full flex items-center justify-center">📄</span>
-                  <span>{profile.posts} posts</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="w-5 h-5 bg-pink-100 rounded-full flex items-center justify-center">😊</span>
-                  <span>{profile.gender}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="w-5 h-5 bg-green-100 rounded-full flex items-center justify-center">🌍</span>
-                  <span>Living in {profile.country}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            {/* Post Creation */}
-            <div className="bg-white rounded-lg shadow-sm border p-4 mb-4">
-              <div className="flex items-start gap-3">
-                <img
-                  src={profile.avatar}
-                  alt="Profile"
-                  className="w-10 h-10 rounded-full"
-                />
-                <div className="flex-1">
-                  <input
-                    type="text"
-                    placeholder="What's going on? #Hashtag.. @Mention.. Link.."
-                    className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={newPostContent}
-                    onChange={e => setNewPostContent(e.target.value)}
-                    disabled={creatingPost}
-                  />
-                  <div className="flex justify-end gap-2 mt-3">
-                    <button
-                      className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                      onClick={handleCreatePost}
-                      disabled={creatingPost}
-                    >
-                      {creatingPost ? 'Posting...' : 'Post'}
-                    </button>
-                    <button className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
-                      🎥
-                    </button>
-                    <button className="p-2 text-green-500 hover:bg-green-50 rounded-lg transition-colors">
-                      📷
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Content Type Tabs */}
-            <div className="bg-white rounded-lg shadow-sm border p-4 mb-4">
-              <div className="flex gap-4">
-                <button className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium">
-                  All
-                </button>
-                <button className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm">
-                  📄 Text
-                </button>
-                <button className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm">
-                  📷 Photos
-                </button>
-                <button className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm">
-                  🎥 Videos
-                </button>
-                <button className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-sm">
-                  🔊 Sounds
-                </button>
-              </div>
-            </div>
-
-            {/* User Posts or Feed or Likes or Groups */}
-            {mainContent}
-          </div>
-        </div>
-
-        {/* Profile Completion Section */}
-        <div className="mt-8 bg-white rounded-lg shadow-sm border p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Profile Completion</h2>
-          <div className="space-y-3">
-            {profile.completionItems?.map((item: ProfileCompletionItem) => (
-              <div
-                key={item.id}
-                onClick={() => handleCompletionItemClick(item)}
-                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                  item.completed 
-                    ? 'bg-green-50 border border-green-200' 
-                    : 'bg-gray-50 border border-gray-200 hover:bg-gray-100'
-                }`}
-              >
-                <span className="text-lg">{item.icon}</span>
-                <span className={`flex-1 ${item.completed ? 'text-green-700' : 'text-gray-700'}`}>
-                  {item.title}
-                </span>
-                {item.completed ? (
-                  <span className="text-green-500">✓</span>
-                ) : (
-                  <span className="text-gray-400">+</span>
-                )}
-              </div>
             ))}
           </div>
         </div>
       </div>
 
+      {/* Main Content */}
+      <div className="max-w-4xl mx-auto px-4 md:px-8 py-6">
+        {activeTab === 'timeline' && (
+          <div className="space-y-6">
+            {/* Search and Filters */}
+            <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
+              <div className="flex flex-col md:flex-row gap-4">
+                {/* Search */}
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type="text"
+                      placeholder="Search your posts..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Filters */}
+                <div className="flex gap-2">
+                  {filters.map((filter) => (
+                    <button
+                      key={filter.id}
+                      onClick={() => setActiveFilter(filter.id)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                        activeFilter === filter.id
+                          ? 'bg-blue-100 text-blue-600'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {filter.icon}
+                      <span>{filter.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Posts */}
+            {filteredPosts.length === 0 ? (
+              <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+                <div className="text-gray-400 mb-4">
+                  <FileText className="w-16 h-16 mx-auto" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No posts found</h3>
+                <p className="text-gray-600 mb-4">
+                  {searchQuery ? 'Try adjusting your search terms' : 'Start sharing your thoughts!'}
+                </p>
+                <button
+                  onClick={() => router.push('/dashboard')}
+                  className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  Create Post
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {filteredPosts.map((post) => (
+                  <div key={post._id} className="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <PostDisplay
+                      post={post}
+                      onLike={async (postId) => {
+                        // Handle like
+                      }}
+                      onComment={async (postId, comment) => {
+                        // Handle comment
+                      }}
+                      onSave={async (postId) => {
+                        // Handle save
+                      }}
+                      onShare={async (postId, shareOptions) => {
+                        // Handle share
+                      }}
+                      onDelete={handleDeletePost}
+                      onEdit={handleEditPost}
+                      showEditDelete={true}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'about' && (
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h3 className="text-xl font-semibold mb-4">About {user.name}</h3>
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-medium text-gray-900 mb-2">Bio</h4>
+                <p className="text-gray-600">{user.bio || 'No bio added yet.'}</p>
+              </div>
+              {user.location && (
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">Location</h4>
+                  <p className="text-gray-600">{user.location}</p>
+                </div>
+              )}
+              {user.website && (
+                <div>
+                  <h4 className="font-medium text-gray-900 mb-2">Website</h4>
+                  <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    {user.website}
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'friends' && (
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h3 className="text-xl font-semibold mb-4">Friends</h3>
+            <p className="text-gray-600">Friends feature coming soon!</p>
+          </div>
+        )}
+
+        {activeTab === 'photos' && (
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h3 className="text-xl font-semibold mb-4">Photos</h3>
+            <p className="text-gray-600">Photo gallery coming soon!</p>
+          </div>
+        )}
+
+        {activeTab === 'videos' && (
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h3 className="text-xl font-semibold mb-4">Videos</h3>
+            <p className="text-gray-600">Video gallery coming soon!</p>
+          </div>
+        )}
+
+        {activeTab === 'saved' && (
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h3 className="text-xl font-semibold mb-4">Saved Posts</h3>
+            <p className="text-gray-600">Saved posts coming soon!</p>
+          </div>
+        )}
+      </div>
+
       {/* Floating Action Button */}
-      <button className="fixed bottom-6 right-6 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 transition-colors flex items-center justify-center">
+      <button
+        onClick={() => router.push('/dashboard')}
+        className="fixed bottom-6 right-6 w-14 h-14 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center transition-colors z-50"
+      >
         <Plus className="w-6 h-6" />
       </button>
+
+      {/* Edit Post Modal */}
+      {showEditModal && editingPost && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold mb-4">Edit Post</h3>
+            <textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              className="w-full h-32 p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              placeholder="What's on your mind?"
+            />
+            <div className="flex space-x-3 mt-4">
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingPost(null);
+                  setEditContent('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup */}
+      <Popup popup={popup} onClose={closePopup} />
     </div>
   );
 };

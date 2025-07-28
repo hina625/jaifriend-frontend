@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, Plus, X, Menu, Search, Settings, MessageCircle, Star } from 'lucide-react';
 
 interface FormData {
@@ -34,53 +34,30 @@ const GroupsPage: React.FC = () => {
 
   const tabs: string[] = ['My Groups', 'Suggested groups', 'Joined Groups'];
 
-  // Mock groups data
-  const mockGroups: Group[] = [
-    {
-      id: 1,
-      name: 'Tech Innovators',
-      description: 'A community for technology enthusiasts and innovators to share ideas and collaborate.',
-      members: 1250,
-      category: 'Technology',
-      type: 'Public',
-      image: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=400&h=300&fit=crop',
-      isJoined: true,
-      lastActivity: '2 hours ago'
-    },
-    {
-      id: 2,
-      name: 'Car Enthusiasts Club',
-      description: 'For people who love cars, racing, and automotive technology.',
-      members: 892,
-      category: 'Cars and Vehicles',
-      type: 'Public',
-      image: 'https://images.unsplash.com/photo-1542282088-fe8426682b8f?w=400&h=300&fit=crop',
-      isJoined: false,
-      lastActivity: '5 hours ago'
-    },
-    {
-      id: 3,
-      name: 'Photography Masters',
-      description: 'Share your photography skills and learn from professionals.',
-      members: 2341,
-      category: 'Entertainment',
-      type: 'Public',
-      image: 'https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=400&h=300&fit=crop',
-      isJoined: true,
-      lastActivity: '1 day ago'
-    },
-    {
-      id: 4,
-      name: 'Fitness Warriors',
-      description: 'Motivation and tips for maintaining a healthy lifestyle.',
-      members: 567,
-      category: 'Sports',
-      type: 'Private',
-      image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop',
-      isJoined: false,
-      lastActivity: '3 days ago'
-    }
-  ];
+  // Empty groups data - will be populated from API
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch groups from API
+  useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        // TODO: Replace with actual API call when groups endpoint is ready
+        // const response = await fetch('http://localhost:5000/api/groups');
+        // const groupsData = await response.json();
+        // setGroups(groupsData);
+        
+        // For now, show empty state
+        setGroups([]);
+      } catch (error) {
+        console.error('Error fetching groups:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGroups();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
     const { name, value } = e.target;
@@ -118,11 +95,11 @@ const GroupsPage: React.FC = () => {
   const getGroupsForTab = (): Group[] => {
     switch (activeTab) {
       case 'My Groups':
-        return mockGroups.filter(group => group.isJoined);
+        return groups.filter(group => group.isJoined);
       case 'Suggested groups':
-        return mockGroups.filter(group => !group.isJoined);
+        return groups.filter(group => !group.isJoined);
       case 'Joined Groups':
-        return mockGroups.filter(group => group.isJoined);
+        return groups.filter(group => group.isJoined);
       default:
         return [];
     }

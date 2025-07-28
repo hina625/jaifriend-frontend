@@ -28,10 +28,22 @@ interface MenuItem {
   href: string;
 }
 
+interface SettingsMenuItem {
+  name: string;
+  icon: string;
+  href: string;
+}
+
 interface MenuSections {
   me: MenuItem[];
   community: MenuItem[];
   explore: MenuItem[];
+}
+
+interface SettingsSections {
+  settings: SettingsMenuItem[];
+  profile: SettingsMenuItem[];
+  security: SettingsMenuItem[];
 }
 
 interface DashboardLayoutProps {
@@ -72,6 +84,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [communityOpen, setCommunityOpen] = useState<boolean>(false);
   const [exploreOpen, setExploreOpen] = useState<boolean>(false);
   const [meOpen, setMeOpen] = useState<boolean>(false);
+  
+  // Settings Sidebar States
+  const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
+  const [profileSettingsOpen, setProfileSettingsOpen] = useState<boolean>(false);
+  const [securitySettingsOpen, setSecuritySettingsOpen] = useState<boolean>(false);
+
+  // Check if current route is settings
+  const isSettingsPage = pathname.startsWith('/dashboard/settings');
 
   // Handle screen size changes
   useEffect(() => {
@@ -117,11 +137,20 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     }
   }, [pathname, isMobile]);
 
+  // Auto-open settings sections when on settings page
+  useEffect(() => {
+    if (isSettingsPage) {
+      setSettingsOpen(true);
+      setProfileSettingsOpen(true);
+      setSecuritySettingsOpen(true);
+    }
+  }, [isSettingsPage]);
+
   // Load user profile from API
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      fetch('http://localhost:5000/api/user/profile', {
+      fetch('http://localhost:5000/api/profile/me', {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
@@ -156,6 +185,27 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     ]
   };
 
+  // Settings sections for settings sidebar
+  const settingsSections: SettingsSections = {
+    settings: [
+      { name: "General", icon: "⚙️", href: "/dashboard/settings" },
+      { name: "Notification Settings", icon: "🔔", href: "/dashboard/settings/notifications" },
+      { name: "Invitation Links", icon: "🔗", href: "/dashboard/settings/invitations" },
+      { name: "Social Links", icon: "📋", href: "/dashboard/settings/social" },
+    ],
+    profile: [
+      { name: "Profile Settings", icon: "👤", href: "/dashboard/settings/profile" },
+      { name: "My Addresses", icon: "📍", href: "/dashboard/settings/addresses" },
+      { name: "Avatar & Cover", icon: "📸", href: "/dashboard/settings/avatar" },
+      { name: "Verification", icon: "✅", href: "/dashboard/settings/verification" },
+      { name: "My Information", icon: "📄", href: "/dashboard/settings/info" },
+    ],
+    security: [
+      { name: "Privacy", icon: "🛡️", href: "/dashboard/settings/privacy" },
+      { name: "Password", icon: "🔒", href: "/dashboard/settings/password" },
+    ]
+  };
+
   // Popup Functions
   const showPopup = (type: 'success' | 'error' | 'info', title: string, message: string): void => {
     setPopup({ isOpen: true, type, title, message });
@@ -170,9 +220,32 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     setOpenDropdown(openDropdown === dropdownType ? null : dropdownType);
   };
 
-  const handleMyProfile = (): void => {
+  const handleMyProfile = async (): Promise<void> => {
     setOpenDropdown(null);
-    router.push('/dashboard/profile');
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        // Get current user's profile to get their ID
+        const response = await fetch('http://localhost:5000/api/profile/me', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+          // Open profile in new tab instead of redirecting
+          window.open(`/dashboard/profile/${userData.id}`, '_blank');
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+    
+    // Fallback to general profile page in new tab
+    window.open('/dashboard/profile', '_blank');
   };
 
   const handleSwitchAccount = (): void => {
@@ -270,6 +343,26 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       </div>
     );
   };
+
+  const renderSettingsMenuItems = (items: SettingsMenuItem[]): React.ReactElement => (
+    <div className="space-y-1">
+      {items.map((item) => (
+        <Link
+          key={item.name}
+          href={item.href}
+          onClick={isMobile ? () => setSidebarOpen(false) : undefined}
+          className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+            pathname === item.href
+              ? 'bg-blue-100 text-blue-700'
+              : 'text-gray-700 hover:bg-gray-100'
+          }`}
+        >
+          <span className="text-sm mr-3">{item.icon}</span>
+          {item.name}
+        </Link>
+      ))}
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -542,95 +635,135 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               </button>
               
               {openDropdown === 'profile' && (
-                <div className="absolute top-10 right-0 w-64 rounded-xl shadow-xl z-50 overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                  {/* Profile Header */}
-                  <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-                    <div 
-                      className="flex items-center gap-2 cursor-pointer rounded-lg p-2 -m-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-                      onClick={handleMyProfile}
-                    >
+                <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-2xl z-50 border border-gray-100 dark:bg-gray-800 dark:border-gray-700 max-h-[80vh] overflow-y-auto scrollbar-hide">
+                  <div className="p-4 flex flex-col gap-2">
+                    {/* Profile Section */}
+                    <div className="flex items-center gap-3 mb-2">
                       <img
                         src={profile.avatar}
-                        alt="Profile"
-                        className="w-10 h-10 rounded-full"
+                        alt="avatar"
+                        className="w-12 h-12 rounded-full border border-gray-200 object-cover"
                       />
-                      <div>
-                        <h3 className="font-semibold text-sm text-gray-900 dark:text-white">
+                      <div className="flex flex-col">
+                        <span 
+                          className="font-semibold text-base text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
+                          onClick={handleMyProfile}
+                        >
                           My Profile
-                        </h3>
-                        <p className="text-xs text-gray-600 dark:text-gray-300">
-                          {profile.name}
-                        </p>
+                        </span>
+                        <div className="flex gap-2 mt-1">
+                          <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-xs font-medium text-gray-700 dark:text-gray-300">
+                            💳 {profile.balance}
+                          </span>
+                          <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-xs font-medium text-gray-700 dark:text-gray-300">
+                            👍 {profile.pokes} Pokes
+                          </span>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-3 mt-2">
+                    {/* Menu Items */}
+                    <div className="flex flex-col gap-1 divide-y divide-gray-100 dark:divide-gray-700">
                       <button 
-                        className="flex items-center gap-1 rounded-lg px-2 py-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-                        onClick={() => router.push('/wallet')}
+                        className="flex items-center gap-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 text-left"
+                        onClick={handleSwitchAccount}
                       >
-                        <span className="text-sm">💰</span>
-                        <span className="text-xs font-medium text-gray-900 dark:text-white">
-                          {profile.balance}
-                        </span>
+                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🔄</span>
+                        <span className="font-medium text-gray-900 dark:text-white">Switch Account</span>
                       </button>
+                      
+                      <div className="py-1" />
+                      
                       <button 
-                        className="flex items-center gap-1 rounded-lg px-2 py-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-                        onClick={() => router.push('/pokes')}
+                        className="flex items-center gap-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 text-left"
+                        onClick={() => router.push('/dashboard/upgrade')}
                       >
-                        <span className="text-sm">👍</span>
-                        <span className="text-xs font-medium text-gray-900 dark:text-white">
-                          {profile.pokes} Pokes
-                        </span>
+                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🛠️</span>
+                        <span className="font-medium text-gray-900 dark:text-white">Upgrade To Pro</span>
+                      </button>
+                      
+                      <button 
+                        className="flex items-center gap-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 text-left"
+                        onClick={() => router.push('/dashboard/advertising')}
+                      >
+                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">📢</span>
+                        <span className="font-medium text-gray-900 dark:text-white">Advertising</span>
+                      </button>
+                      
+                      <button 
+                        className="flex items-center gap-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 text-left"
+                        onClick={() => router.push('/dashboard/subscriptions')}
+                      >
+                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">💳</span>
+                        <span className="font-medium text-gray-900 dark:text-white">Subscriptions</span>
+                      </button>
+                      
+                      <div className="py-1" />
+                      
+                      <button 
+                        className="flex items-center gap-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 text-left"
+                        onClick={() => router.push('/dashboard/settings/privacy')}
+                      >
+                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">✔️</span>
+                        <span className="font-medium text-gray-900 dark:text-white">Privacy Setting</span>
+                      </button>
+                      
+                      <button 
+                        className="flex items-center gap-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 text-left"
+                        onClick={() => router.push('/dashboard/settings')}
+                      >
+                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">⚙️</span>
+                        <span className="font-medium text-gray-900 dark:text-white">General Setting</span>
+                      </button>
+                      
+                      <button 
+                        className="flex items-center gap-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 text-left"
+                        onClick={() => router.push('/dashboard/invite')}
+                      >
+                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">✉️</span>
+                        <span className="font-medium text-gray-900 dark:text-white">Invite Your Friends</span>
+                      </button>
+                      
+                      <div className="py-1" />
+                      
+                      <div className="flex items-center gap-3 py-2 px-2">
+                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🌙</span>
+                        <span className="font-medium flex-1 text-gray-900 dark:text-white">Night mode</span>
+                        <input 
+                          type="checkbox" 
+                          className="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                          onChange={(e) => {
+                            // Toggle dark mode logic here
+                            console.log('Night mode toggled:', e.target.checked);
+                          }}
+                        />
+                      </div>
+                      
+                      <button 
+                        className="flex items-center gap-3 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg px-2 text-left"
+                        onClick={handleLogout}
+                      >
+                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🚪</span>
+                        <span className="font-medium text-red-600 dark:text-red-400">Log Out</span>
                       </button>
                     </div>
-                  </div>
 
-                  {/* Menu Items */}
-                  <div className="py-1">
-                    <button 
-                      className="w-full px-3 py-2 text-left flex items-center gap-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-                      onClick={handleSwitchAccount}
-                    >
-                      <span className="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-sm">🔄</span>
-                      <span className="text-sm text-gray-900 dark:text-white">Switch Account</span>
-                    </button>
-                    
-                    <button 
-                      className="w-full px-3 py-2 text-left flex items-center gap-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-                      onClick={() => router.push('/dashboard/upgrade')}
-                    >
-                      <span className="w-6 h-6 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center text-sm">⭐</span>
-                      <span className="text-sm text-gray-900 dark:text-white">Upgrade To Pro</span>
-                      <span className="ml-auto bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">PRO</span>
-                    </button>
-                    
-                    <button 
-                      className="w-full px-3 py-2 text-left flex items-center gap-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-                      onClick={() => router.push('/dashboard/settings/privacy')}
-                    >
-                      <span className="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-sm">🛡️</span>
-                      <span className="text-sm text-gray-900 dark:text-white">Privacy Settings</span>
-                    </button>
-                  </div>
-
-                  {/* Logout */}
-                  <div className="border-t border-gray-200 dark:border-gray-700 py-1">
-                    <button 
-                      className="w-full px-3 py-2 text-left flex items-center gap-2 transition-colors text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      onClick={handleLogout}
-                    >
-                      <span className="w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-sm">🚪</span>
-                      <span className="font-medium text-sm">Log Out</span>
-                    </button>
-                  </div>
-
-                  {/* Footer */}
-                  <div className="px-3 py-2 text-xs bg-gray-50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400">
-                    <div className="mb-1">© 2025 Jaifriend</div>
-                    <div className="flex items-center gap-1 mb-1">
-                      <span>🌐</span>
-                      <span>Language</span>
+                    {/* Footer */}
+                    <div className="text-xs text-gray-400 mt-3 flex flex-col items-center gap-1">
+                      <div className="flex items-center gap-2">
+                        <span>© 2025 Jaifriend</span>
+                        <span>•</span>
+                        <button className="underline cursor-pointer hover:text-gray-600">Language</button>
+                      </div>
+                      <div className="flex flex-wrap gap-2 justify-center">
+                        <button className="underline cursor-pointer hover:text-gray-600">About</button>
+                        <button className="underline cursor-pointer hover:text-gray-600">Directory</button>
+                        <button className="underline cursor-pointer hover:text-gray-600">Contact Us</button>
+                        <button className="underline cursor-pointer hover:text-gray-600">Developers</button>
+                        <button className="underline cursor-pointer hover:text-gray-600">Privacy Policy</button>
+                        <button className="underline cursor-pointer hover:text-gray-600">Terms of Use</button>
+                        <button className="underline cursor-pointer hover:text-gray-600">Refund</button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -654,7 +787,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}>
             <div className="p-4 border-b border-[#eaf0fb] flex items-center justify-between">
-              <h2 className="text-[#022e8a] font-bold text-lg">Menu</h2>
+              <h2 className="text-[#022e8a] font-bold text-lg">
+                {isSettingsPage ? 'Settings' : 'Menu'}
+              </h2>
               <button
                 onClick={() => setSidebarOpen(false)}
                 className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors"
@@ -664,53 +799,118 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </div>
 
             <div className="flex-1 p-3 overflow-y-auto scrollbar-hide">
-              {/* ME Section */}
-              <div className="mb-4">
-                <button 
-                  onClick={() => setMeOpen(!meOpen)} 
-                  className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
-                >
-                  <h3 className="text-[#022e8a] font-bold text-sm">ME</h3>
-                  <span className={`text-[#022e8a] transition-transform duration-200 ${meOpen ? 'rotate-180' : ''}`}>▼</span>
-                </button>
-                {meOpen && (
-                  <div className="pl-2">
-                    {renderMenuItems(menuSections.me)}
+              {isSettingsPage ? (
+                <>
+                  {/* Back to Dashboard */}
+                  <div className="mb-4">
+                    <Link
+                      href="/dashboard"
+                      className="flex items-center gap-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors text-[#022e8a] font-medium"
+                    >
+                      <span>←</span>
+                      <span>Back to Dashboard</span>
+                    </Link>
                   </div>
-                )}
-              </div>
 
-              {/* COMMUNITY Section */}
-              <div className="mb-4">
-                <button 
-                  onClick={() => setCommunityOpen(!communityOpen)} 
-                  className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
-                >
-                  <h3 className="text-[#022e8a] font-bold text-sm">COMMUNITY</h3>
-                  <span className={`text-[#022e8a] transition-transform duration-200 ${communityOpen ? 'rotate-180' : ''}`}>▼</span>
-                </button>
-                {communityOpen && (
-                  <div className="pl-2">
-                    {renderMenuItems(menuSections.community)}
+                  {/* SETTINGS Section */}
+                  <div className="mb-4">
+                    <button 
+                      onClick={() => setSettingsOpen(!settingsOpen)} 
+                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                    >
+                      <h3 className="text-[#022e8a] font-bold text-sm">SETTINGS</h3>
+                      <span className={`text-[#022e8a] transition-transform duration-200 ${settingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                    </button>
+                    {settingsOpen && (
+                      <div className="pl-2">
+                        {renderSettingsMenuItems(settingsSections.settings)}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              {/* EXPLORE Section */}
-              <div className="mb-4">
-                <button 
-                  onClick={() => setExploreOpen(!exploreOpen)} 
-                  className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
-                >
-                  <h3 className="text-[#022e8a] font-bold text-sm">EXPLORE</h3>
-                  <span className={`text-[#022e8a] transition-transform duration-200 ${exploreOpen ? 'rotate-180' : ''}`}>▼</span>
-                </button>
-                {exploreOpen && (
-                  <div className="pl-2">
-                    {renderMenuItems(menuSections.explore)}
+                  {/* PROFILE Section */}
+                  <div className="mb-4">
+                    <button 
+                      onClick={() => setProfileSettingsOpen(!profileSettingsOpen)} 
+                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                    >
+                      <h3 className="text-[#022e8a] font-bold text-sm">PROFILE</h3>
+                      <span className={`text-[#022e8a] transition-transform duration-200 ${profileSettingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                    </button>
+                    {profileSettingsOpen && (
+                      <div className="pl-2">
+                        {renderSettingsMenuItems(settingsSections.profile)}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+
+                  {/* SECURITY Section */}
+                  <div className="mb-4">
+                    <button 
+                      onClick={() => setSecuritySettingsOpen(!securitySettingsOpen)} 
+                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                    >
+                      <h3 className="text-[#022e8a] font-bold text-sm">SECURITY</h3>
+                      <span className={`text-[#022e8a] transition-transform duration-200 ${securitySettingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                    </button>
+                    {securitySettingsOpen && (
+                      <div className="pl-2">
+                        {renderSettingsMenuItems(settingsSections.security)}
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* ME Section */}
+                  <div className="mb-4">
+                    <button 
+                      onClick={() => setMeOpen(!meOpen)} 
+                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                    >
+                      <h3 className="text-[#022e8a] font-bold text-sm">ME</h3>
+                      <span className={`text-[#022e8a] transition-transform duration-200 ${meOpen ? 'rotate-180' : ''}`}>▼</span>
+                    </button>
+                    {meOpen && (
+                      <div className="pl-2">
+                        {renderMenuItems(menuSections.me)}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* COMMUNITY Section */}
+                  <div className="mb-4">
+                    <button 
+                      onClick={() => setCommunityOpen(!communityOpen)} 
+                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                    >
+                      <h3 className="text-[#022e8a] font-bold text-sm">COMMUNITY</h3>
+                      <span className={`text-[#022e8a] transition-transform duration-200 ${communityOpen ? 'rotate-180' : ''}`}>▼</span>
+                    </button>
+                    {communityOpen && (
+                      <div className="pl-2">
+                        {renderMenuItems(menuSections.community)}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* EXPLORE Section */}
+                  <div className="mb-4">
+                    <button 
+                      onClick={() => setExploreOpen(!exploreOpen)} 
+                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                    >
+                      <h3 className="text-[#022e8a] font-bold text-sm">EXPLORE</h3>
+                      <span className={`text-[#022e8a] transition-transform duration-200 ${exploreOpen ? 'rotate-180' : ''}`}>▼</span>
+                    </button>
+                    {exploreOpen && (
+                      <div className="pl-2">
+                        {renderMenuItems(menuSections.explore)}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Footer */}
@@ -734,63 +934,211 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             }`}>
               
               <div className="flex-1 p-3 overflow-y-auto scrollbar-hide">
-                {/* ME Section */}
-                <div className="mb-4">
-                  {!sidebarCollapsed && (
-                    <button 
-                      onClick={() => setMeOpen(!meOpen)} 
-                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
-                    >
-                      <h3 className="text-[#022e8a] font-bold text-sm">ME</h3>
-                      <span className={`text-[#022e8a] transition-transform duration-200 ${meOpen ? 'rotate-180' : ''}`}>▼</span>
-                    </button>
-                  )}
-                  {(meOpen || sidebarCollapsed) && (
-                    <div className={sidebarCollapsed ? '' : 'pl-2'}>
-                      {renderMenuItems(menuSections.me, sidebarCollapsed)}
+                {isSettingsPage ? (
+                  <>
+                    {!sidebarCollapsed && (
+                      <div className="mb-4">
+                        <Link
+                          href="/dashboard"
+                          className="flex items-center gap-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors text-[#022e8a] font-medium"
+                        >
+                          <span>←</span>
+                          <span>Back to Dashboard</span>
+                        </Link>
+                      </div>
+                    )}
+
+                    {/* SETTINGS Section */}
+                    <div className="mb-4">
+                      {!sidebarCollapsed && (
+                        <button 
+                          onClick={() => setSettingsOpen(!settingsOpen)} 
+                          className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                        >
+                          <h3 className="text-[#022e8a] font-bold text-sm">SETTINGS</h3>
+                          <span className={`text-[#022e8a] transition-transform duration-200 ${settingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                        </button>
+                      )}
+                      {(settingsOpen || sidebarCollapsed) && (
+                        <div className={sidebarCollapsed ? '' : 'pl-2'}>
+                          {sidebarCollapsed ? (
+                            <div className="flex flex-col gap-1">
+                              {settingsSections.settings.map((item) => (
+                                <Link
+                                  key={item.name}
+                                  href={item.href}
+                                  className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 border-2 group relative ${
+                                    pathname === item.href 
+                                      ? 'bg-[#eaf0fb] border-[#022e8a] shadow scale-105' 
+                                      : 'hover:bg-[#eaf0fb] border-transparent'
+                                  }`}
+                                  title={item.name}
+                                >
+                                  <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-sm shadow group-hover:scale-110 transition-transform">
+                                    {item.icon}
+                                  </div>
+                                  <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                                    {item.name}
+                                  </div>
+                                </Link>
+                              ))}
+                            </div>
+                          ) : (
+                            renderSettingsMenuItems(settingsSections.settings)
+                          )}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
 
-                {sidebarCollapsed && <div className="border-t border-[#eaf0fb] my-2"></div>}
+                    {sidebarCollapsed && <div className="border-t border-[#eaf0fb] my-2"></div>}
 
-                {/* COMMUNITY Section */}
-                <div className="mb-4">
-                  {!sidebarCollapsed && (
-                    <button 
-                      onClick={() => setCommunityOpen(!communityOpen)} 
-                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
-                    >
-                      <h3 className="text-[#022e8a] font-bold text-sm">COMMUNITY</h3>
-                      <span className={`text-[#022e8a] transition-transform duration-200 ${communityOpen ? 'rotate-180' : ''}`}>▼</span>
-                    </button>
-                  )}
-                  {(communityOpen || sidebarCollapsed) && (
-                    <div className={sidebarCollapsed ? '' : 'pl-2'}>
-                      {renderMenuItems(menuSections.community, sidebarCollapsed)}
+                    {/* PROFILE Section */}
+                    <div className="mb-4">
+                      {!sidebarCollapsed && (
+                        <button 
+                          onClick={() => setProfileSettingsOpen(!profileSettingsOpen)} 
+                          className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                        >
+                          <h3 className="text-[#022e8a] font-bold text-sm">PROFILE</h3>
+                          <span className={`text-[#022e8a] transition-transform duration-200 ${profileSettingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                        </button>
+                      )}
+                      {(profileSettingsOpen || sidebarCollapsed) && (
+                        <div className={sidebarCollapsed ? '' : 'pl-2'}>
+                          {sidebarCollapsed ? (
+                            <div className="flex flex-col gap-1">
+                              {settingsSections.profile.map((item) => (
+                                <Link
+                                  key={item.name}
+                                  href={item.href}
+                                  className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 border-2 group relative ${
+                                    pathname === item.href 
+                                      ? 'bg-[#eaf0fb] border-[#022e8a] shadow scale-105' 
+                                      : 'hover:bg-[#eaf0fb] border-transparent'
+                                  }`}
+                                  title={item.name}
+                                >
+                                  <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-sm shadow group-hover:scale-110 transition-transform">
+                                    {item.icon}
+                                  </div>
+                                  <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                                    {item.name}
+                                  </div>
+                                </Link>
+                              ))}
+                            </div>
+                          ) : (
+                            renderSettingsMenuItems(settingsSections.profile)
+                          )}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
 
-                {sidebarCollapsed && <div className="border-t border-[#eaf0fb] my-2"></div>}
+                    {sidebarCollapsed && <div className="border-t border-[#eaf0fb] my-2"></div>}
 
-                {/* EXPLORE Section */}
-                <div className="mb-4">
-                  {!sidebarCollapsed && (
-                    <button 
-                      onClick={() => setExploreOpen(!exploreOpen)} 
-                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
-                    >
-                      <h3 className="text-[#022e8a] font-bold text-sm">EXPLORE</h3>
-                      <span className={`text-[#022e8a] transition-transform duration-200 ${exploreOpen ? 'rotate-180' : ''}`}>▼</span>
-                    </button>
-                  )}
-                  {(exploreOpen || sidebarCollapsed) && (
-                    <div className={sidebarCollapsed ? '' : 'pl-2'}>
-                      {renderMenuItems(menuSections.explore, sidebarCollapsed)}
+                    {/* SECURITY Section */}
+                    <div className="mb-4">
+                      {!sidebarCollapsed && (
+                        <button 
+                          onClick={() => setSecuritySettingsOpen(!securitySettingsOpen)} 
+                          className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                        >
+                          <h3 className="text-[#022e8a] font-bold text-sm">SECURITY</h3>
+                          <span className={`text-[#022e8a] transition-transform duration-200 ${securitySettingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                        </button>
+                      )}
+                      {(securitySettingsOpen || sidebarCollapsed) && (
+                        <div className={sidebarCollapsed ? '' : 'pl-2'}>
+                          {sidebarCollapsed ? (
+                            <div className="flex flex-col gap-1">
+                              {settingsSections.security.map((item) => (
+                                <Link
+                                  key={item.name}
+                                  href={item.href}
+                                  className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 border-2 group relative ${
+                                    pathname === item.href 
+                                      ? 'bg-[#eaf0fb] border-[#022e8a] shadow scale-105' 
+                                      : 'hover:bg-[#eaf0fb] border-transparent'
+                                  }`}
+                                  title={item.name}
+                                >
+                                  <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center text-sm shadow group-hover:scale-110 transition-transform">
+                                    {item.icon}
+                                  </div>
+                                  <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                                    {item.name}
+                                  </div>
+                                </Link>
+                              ))}
+                            </div>
+                          ) : (
+                            renderSettingsMenuItems(settingsSections.security)
+                          )}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </>
+                ) : (
+                  <>
+                    {/* ME Section */}
+                    <div className="mb-4">
+                      {!sidebarCollapsed && (
+                        <button 
+                          onClick={() => setMeOpen(!meOpen)} 
+                          className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                        >
+                          <h3 className="text-[#022e8a] font-bold text-sm">ME</h3>
+                          <span className={`text-[#022e8a] transition-transform duration-200 ${meOpen ? 'rotate-180' : ''}`}>▼</span>
+                        </button>
+                      )}
+                      {(meOpen || sidebarCollapsed) && (
+                        <div className={sidebarCollapsed ? '' : 'pl-2'}>
+                          {renderMenuItems(menuSections.me, sidebarCollapsed)}
+                        </div>
+                      )}
+                    </div>
+
+                    {sidebarCollapsed && <div className="border-t border-[#eaf0fb] my-2"></div>}
+
+                    {/* COMMUNITY Section */}
+                    <div className="mb-4">
+                      {!sidebarCollapsed && (
+                        <button 
+                          onClick={() => setCommunityOpen(!communityOpen)} 
+                          className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                        >
+                          <h3 className="text-[#022e8a] font-bold text-sm">COMMUNITY</h3>
+                          <span className={`text-[#022e8a] transition-transform duration-200 ${communityOpen ? 'rotate-180' : ''}`}>▼</span>
+                        </button>
+                      )}
+                      {(communityOpen || sidebarCollapsed) && (
+                        <div className={sidebarCollapsed ? '' : 'pl-2'}>
+                          {renderMenuItems(menuSections.community, sidebarCollapsed)}
+                        </div>
+                      )}
+                    </div>
+
+                    {sidebarCollapsed && <div className="border-t border-[#eaf0fb] my-2"></div>}
+
+                    {/* EXPLORE Section */}
+                    <div className="mb-4">
+                      {!sidebarCollapsed && (
+                        <button 
+                          onClick={() => setExploreOpen(!exploreOpen)} 
+                          className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                        >
+                          <h3 className="text-[#022e8a] font-bold text-sm">EXPLORE</h3>
+                          <span className={`text-[#022e8a] transition-transform duration-200 ${exploreOpen ? 'rotate-180' : ''}`}>▼</span>
+                        </button>
+                      )}
+                      {(exploreOpen || sidebarCollapsed) && (
+                        <div className={sidebarCollapsed ? '' : 'pl-2'}>
+                          {renderMenuItems(menuSections.explore, sidebarCollapsed)}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Footer */}

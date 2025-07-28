@@ -65,7 +65,22 @@ export default function Register(): React.ReactElement {
   const closePopup = () => {
     setPopup(prev => ({ ...prev, isOpen: false }));
     if (popup.type === 'success') {
-      router.push('/start-up');
+      // Open profile in new tab instead of redirecting
+      const token = localStorage.getItem('token');
+      if (token) {
+        // Try to get user ID from token payload
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          if (payload.userId) {
+            window.open(`/dashboard/profile/${payload.userId}`, '_blank');
+            return;
+          }
+        } catch (error) {
+          console.error('Error decoding token:', error);
+        }
+      }
+      // Fallback to dashboard in new tab if token decoding fails
+      window.open('/dashboard', '_blank');
     }
   };
 

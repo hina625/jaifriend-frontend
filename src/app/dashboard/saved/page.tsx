@@ -64,6 +64,43 @@ export default function SavedPosts() {
     checkAuthAndFetchSaved();
   }, [router]);
 
+  // Listen for album creation events to refresh saved content
+  useEffect(() => {
+    const handleAlbumCreated = () => {
+      checkAuthAndFetchSaved();
+    };
+
+    const handleAlbumDeleted = () => {
+      checkAuthAndFetchSaved();
+    };
+
+    const handlePostCreated = () => {
+      checkAuthAndFetchSaved();
+    };
+
+    const handlePostSaved = () => {
+      checkAuthAndFetchSaved();
+    };
+
+    const handleAlbumSaved = () => {
+      checkAuthAndFetchSaved();
+    };
+
+    window.addEventListener('albumCreated', handleAlbumCreated);
+    window.addEventListener('albumDeleted', handleAlbumDeleted);
+    window.addEventListener('postCreated', handlePostCreated);
+    window.addEventListener('postSaved', handlePostSaved);
+    window.addEventListener('albumSaved', handleAlbumSaved);
+    
+    return () => {
+      window.removeEventListener('albumCreated', handleAlbumCreated);
+      window.removeEventListener('albumDeleted', handleAlbumDeleted);
+      window.removeEventListener('postCreated', handlePostCreated);
+      window.removeEventListener('postSaved', handlePostSaved);
+      window.removeEventListener('albumSaved', handleAlbumSaved);
+    };
+  }, []);
+
   // Update filter counts
   useEffect(() => {
     filters[0].count = savedAlbums.length + savedPosts.length;
@@ -178,21 +215,23 @@ export default function SavedPosts() {
   };
 
   // Handle album share
-  const handleAlbumShare = async (albumId: string) => {
+  const handleAlbumShare = async (albumId: string, shareOptions?: any) => {
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/albums/${albumId}/share`, {
         method: 'POST',
         headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        }
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(shareOptions || {})
       });
       if (res.ok) {
         const data = await res.json();
         setSavedAlbums(prev => prev.map(album => 
           album._id === albumId ? { ...album, shares: data.shares, shared: data.shared } : album
         ));
-        alert('Album shared successfully!');
+        console.log('Album shared successfully!');
       }
     } catch (error) {
       console.error('Error sharing album:', error);
@@ -266,6 +305,67 @@ export default function SavedPosts() {
       }
     } catch (error) {
       console.error('Error commenting on post:', error);
+    }
+  };
+
+  const handlePostShare = async (postId: string, shareOptions?: any) => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`http://localhost:5000/api/posts/${postId}/share`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(shareOptions || {})
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSavedPosts(prev => prev.map(post => 
+          post._id === postId ? { ...post, shares: data.shares, shared: data.shared } : post
+        ));
+        console.log('Post shared successfully!');
+      }
+    } catch (error) {
+      console.error('Error sharing post:', error);
+    }
+  };
+
+  const handlePostView = async (postId: string) => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`http://localhost:5000/api/posts/${postId}/view`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSavedPosts(prev => prev.map(post => 
+          post._id === postId ? { ...post, views: data.views } : post
+        ));
+      }
+    } catch (error) {
+      console.error('Error tracking view:', error);
+    }
+  };
+
+  const handleReaction = async (postId: string, reactionType: string) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`http://localhost:5000/api/posts/${postId}/reaction`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({ reactionType })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setSavedPosts(prev => prev.map(p => (p._id === postId || p.id === postId) ? data.post : p));
+    } else {
+      console.error('Failed to add reaction');
     }
   };
 
@@ -501,6 +601,8 @@ export default function SavedPosts() {
                           onLike={handlePostLike}
                           onComment={handlePostComment}
                           onSave={handlePostSave}
+                          onShare={handlePostShare}
+                          onReaction={handleReaction}
                         />
                       </div>
                     ))}

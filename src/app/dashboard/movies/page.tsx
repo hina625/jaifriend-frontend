@@ -418,7 +418,7 @@ export default function MoviesPage() {
             {/* Genre filters */}
             <div className="flex items-center space-x-3">
               <span className="text-sm font-semibold text-gray-700">Genres:</span>
-              {genres.map((genre) => (
+                  {genres.map((genre) => (
                     <button
                       key={genre}
                   onClick={() => {
@@ -442,7 +442,7 @@ export default function MoviesPage() {
             {/* Country filters */}
             <div className="flex items-center space-x-3">
               <span className="text-sm font-semibold text-gray-700">Countries:</span>
-              {countries.map((country) => (
+                  {countries.map((country) => (
                     <button
                       key={country}
                   onClick={() => {

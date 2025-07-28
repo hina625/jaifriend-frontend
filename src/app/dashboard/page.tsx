@@ -1,7 +1,9 @@
 'use client';
-import { useEffect, useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import AlbumDisplay from '@/components/AlbumDisplay';
-import Link from 'next/link';
+import SharePopup, { ShareOptions } from '@/components/SharePopup';
+import LatestProducts from '@/components/LatestProducts';
 
 function getUserAvatar() {
   // Try to get avatar from localStorage (if you store it there after login), otherwise use default
@@ -28,6 +30,10 @@ export default function Dashboard() {
   const [editContent, setEditContent] = useState('');
   const [editMediaFiles, setEditMediaFiles] = useState<File[]>([]);
   const editFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Share popup state
+  const [showSharePopup, setShowSharePopup] = useState(false);
+  const [selectedPostForShare, setSelectedPostForShare] = useState<any>(null);
 
   const startEditPost = (post: any) => {
     setEditingPostId(post._id || post.id);
@@ -79,28 +85,111 @@ export default function Dashboard() {
     }
   };
 
+  const fetchFeedData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      const [postsResponse, albumsResponse] = await Promise.all([
+        fetch('http://localhost:5000/api/posts', token ? { headers: { 'Authorization': `Bearer ${token}` } } : {}),
+        fetch('http://localhost:5000/api/albums', token ? { headers: { 'Authorization': `Bearer ${token}` } } : {})
+      ]);
+      
+      const [postsData, albumsData] = await Promise.all([
+        postsResponse.json(),
+        albumsResponse.json()
+      ]);
+      
+      // Combine posts and albums into a single feed
+      const combinedFeed = [
+        ...postsData.map((post: any) => ({ ...post, type: 'post' })),
+        ...albumsData.map((album: any) => ({ ...album, type: 'album' }))
+      ].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
+      setPosts(postsData);
+      setAlbums(albumsData);
+    } catch (error) {
+      console.error('Error fetching feed data:', error);
+    } finally {
+      setLoadingPosts(false);
+      setLoadingAlbums(false);
+    }
+  };
+
   useEffect(() => {
-    Promise.all([
-      fetch('http://localhost:5000/api/posts'),
-      fetch('http://localhost:5000/api/albums')
-    ])
-      .then(responses => Promise.all(responses.map(res => res.json())))
-      .then(([postsData, albumsData]) => {
-        // Combine posts and albums into a single feed
-        const combinedFeed = [
-          ...postsData.map((post: any) => ({ ...post, type: 'post' })),
-          ...albumsData.map((album: any) => ({ ...album, type: 'album' }))
-        ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setPosts(combinedFeed.filter(item => item.type === 'post'));
-        setAlbums(combinedFeed.filter(item => item.type === 'album'));
-        setLoadingPosts(false);
-        setLoadingAlbums(false);
-      })
-      .catch(() => {
-        setLoadingPosts(false);
-        setLoadingAlbums(false);
-      });
+    fetchFeedData();
   }, []);
+
+  // Listen for album creation and deletion events
+  useEffect(() => {
+    const handleAlbumCreated = () => {
+      fetchFeedData();
+    };
+
+    const handleAlbumDeleted = () => {
+      fetchFeedData();
+    };
+
+    window.addEventListener('albumCreated', handleAlbumCreated);
+    window.addEventListener('albumDeleted', handleAlbumDeleted);
+    return () => {
+      window.removeEventListener('albumCreated', handleAlbumCreated);
+      window.removeEventListener('albumDeleted', handleAlbumDeleted);
+    };
+  }, []);
+
+  // Track views for posts when they are displayed
+  useEffect(() => {
+    const trackViews = async () => {
+      const token = localStorage.getItem('token');
+      if (token && posts.length > 0) {
+        // Track views for the first few posts (to avoid too many requests)
+        const postsToTrack = posts.slice(0, 5);
+        for (const post of postsToTrack) {
+          try {
+            await fetch(`http://localhost:5000/api/posts/${post._id}/view`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+          } catch (error) {
+            console.error('Error tracking view for post:', post._id, error);
+          }
+        }
+      }
+    };
+    
+    if (posts.length > 0) {
+      trackViews();
+    }
+  }, [posts]);
+
+  // Track views for albums when they are displayed
+  useEffect(() => {
+    const trackAlbumViews = async () => {
+      const token = localStorage.getItem('token');
+      if (token && albums.length > 0) {
+        // Track views for the first few albums (to avoid too many requests)
+        const albumsToTrack = albums.slice(0, 3);
+        for (const album of albumsToTrack) {
+          try {
+            await fetch(`http://localhost:5000/api/albums/${album._id}/view`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+          } catch (error) {
+            console.error('Error tracking view for album:', album._id, error);
+          }
+        }
+      }
+    };
+    
+    if (albums.length > 0) {
+      trackAlbumViews();
+    }
+  }, [albums]);
 
   const handlePost = async () => {
     if (!newPost.trim() && !mediaFiles.length) return;
@@ -123,6 +212,9 @@ export default function Dashboard() {
         setNewPost('');
         setMediaFiles([]);
         if (fileInputRef.current) fileInputRef.current.value = '';
+        
+        // Dispatch event to refresh profile pages
+        window.dispatchEvent(new CustomEvent('postCreated'));
       } else {
         console.error('Failed to post');
       }
@@ -154,27 +246,35 @@ export default function Dashboard() {
   // Like a post
   const handleLike = async (postId: string) => {
     const token = localStorage.getItem('token');
-    console.log('Liking post:', postId);
-    try {
-      const res = await fetch(`http://localhost:5000/api/posts/${postId}/like`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        console.log('Like response:', data);
-        setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? { 
-          ...p, 
-          likes: data.likes || p.likes,
-          liked: data.liked 
-        } : p));
-      } else {
-        console.error('Failed to like post:', res.status, res.statusText);
+    const res = await fetch(`http://localhost:5000/api/posts/${postId}/like`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
       }
-    } catch (error) {
-      console.error('Error liking post:', error);
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? data.post : p));
+    } else {
+      console.error('Failed to like post');
+    }
+  };
+
+  const handleReaction = async (postId: string, reactionType: string) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`http://localhost:5000/api/posts/${postId}/reaction`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({ reactionType })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? data.post : p));
+    } else {
+      console.error('Failed to add reaction');
     }
   };
 
@@ -197,6 +297,9 @@ export default function Dashboard() {
           savedBy: data.savedBy || p.savedBy,
           saved: data.saved 
         } : p));
+        
+        // Dispatch event to refresh saved page
+        window.dispatchEvent(new CustomEvent('postSaved'));
         
         // Show feedback
         const post = posts.find(p => (p._id === postId || p.id === postId));
@@ -247,14 +350,16 @@ export default function Dashboard() {
   };
 
   // Share a post
-  const handleShare = async (postId: string) => {
+  const handleShare = async (postId: string, shareOptions?: ShareOptions) => {
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/posts/${postId}/share`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(shareOptions || {})
       });
       if (res.ok) {
         const data = await res.json();
@@ -270,6 +375,32 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error('Error sharing post:', error);
+    }
+  };
+
+  const openSharePopup = (post: any) => {
+    setSelectedPostForShare(post);
+    setShowSharePopup(true);
+  };
+
+  // Handle view tracking
+  const handleView = async (postId: string) => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`http://localhost:5000/api/posts/${postId}/view`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPosts(posts => posts.map(p => 
+          (p._id === postId || p.id === postId) ? { ...p, views: data.views } : p
+        ));
+      }
+    } catch (error) {
+      console.error('Error tracking view:', error);
     }
   };
 
@@ -293,21 +424,35 @@ export default function Dashboard() {
   // Handle album like
   const handleAlbumLike = async (albumId: string) => {
     const token = localStorage.getItem('token');
-    try {
-      const res = await fetch(`http://localhost:5000/api/albums/${albumId}/like`, {
-        method: 'POST',
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setAlbums(prev => prev.map(album => 
-          album._id === albumId ? { ...album, likes: data.likes, liked: data.liked } : album
-        ));
+    const res = await fetch(`http://localhost:5000/api/albums/${albumId}/like`, {
+      method: 'POST',
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
       }
-    } catch (error) {
-      console.error('Error liking album:', error);
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setAlbums(albums => albums.map(a => a._id === albumId ? data.album : a));
+    } else {
+      console.error('Failed to like album');
+    }
+  };
+
+  const handleAlbumReaction = async (albumId: string, reactionType: string) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`http://localhost:5000/api/albums/${albumId}/reaction`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({ reactionType })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setAlbums(albums => albums.map(a => a._id === albumId ? data.album : a));
+    } else {
+      console.error('Failed to add reaction to album');
     }
   };
 
@@ -349,6 +494,9 @@ export default function Dashboard() {
         setAlbums(prev => prev.map(album => 
           album._id === albumId ? { ...album, savedBy: data.savedBy, saved: data.saved } : album
         ));
+        
+        // Dispatch event to refresh saved page
+        window.dispatchEvent(new CustomEvent('albumSaved'));
       }
     } catch (error) {
       console.error('Error saving album:', error);
@@ -356,14 +504,16 @@ export default function Dashboard() {
   };
 
   // Handle album share
-  const handleAlbumShare = async (albumId: string) => {
+  const handleAlbumShare = async (albumId: string, shareOptions?: ShareOptions) => {
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/albums/${albumId}/share`, {
         method: 'POST',
         headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        }
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(shareOptions || {})
       });
       if (res.ok) {
         const data = await res.json();
@@ -422,6 +572,14 @@ export default function Dashboard() {
     const u = localStorage.getItem('user');
     if (u) setUser(JSON.parse(u));
   }, []);
+
+  const router = useRouter();
+
+  // Navigate to user profile
+  const navigateToProfile = (userId: string) => {
+    // Use window.location for more reliable navigation
+    window.location.href = `/dashboard/profile/${userId}`;
+  };
 
   return (
     <div className="bg-[#f4f7fb] min-h-screen pt-2 sm:pt-4 pb-6 w-full">
@@ -594,6 +752,7 @@ export default function Dashboard() {
                           onDelete={handleAlbumDelete}
                           isOwner={false}
                           onLike={handleAlbumLike}
+                          onReaction={handleAlbumReaction}
                           onComment={handleAlbumComment}
                           onSave={handleAlbumSave}
                           onShare={handleAlbumShare}
@@ -605,13 +764,17 @@ export default function Dashboard() {
                           <div className="flex items-center gap-2 mb-2 sm:mb-3">
                             <div className="flex items-center flex-1">
                               {item.user ? (
-                                <Link href={`/dashboard/profile/${item.user._id || item.user.id || item.user.userId}`}>
+                                <a 
+                                  href={`/dashboard/profile/${String(item.user._id || item.user.id || item.user.userId || '')}`}
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                >
                                   <img
                                     src={item.user.avatar || '/avatars/1.png.png'}
                                     className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-blue-400 mr-2 cursor-pointer"
                                     alt={item.user.name || 'User'}
                                   />
-                                </Link>
+                                </a>
                               ) : (
                                 <img
                                   src="/avatars/1.png.png"
@@ -620,9 +783,14 @@ export default function Dashboard() {
                                 />
                               )}
                               {item.user ? (
-                                <Link href={`/dashboard/profile/${item.user._id || item.user.id || item.user.userId}`} className="font-semibold text-sm sm:text-base hover:underline cursor-pointer">
+                                <a 
+                                  href={`/dashboard/profile/${String(item.user._id || item.user.id || item.user.userId || '')}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="font-semibold text-sm sm:text-base hover:underline cursor-pointer"
+                                >
                                   {item.user.name || 'Anonymous'}
-                                </Link>
+                                </a>
                               ) : (
                                 <div className="font-semibold text-sm sm:text-base">Anonymous</div>
                               )}
@@ -769,19 +937,97 @@ export default function Dashboard() {
 
                           {/* Action buttons */}
                           <div className="flex flex-wrap gap-2 mt-3">
-                            <button 
-                              className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-all duration-200 text-xs sm:text-sm ${
-                                Array.isArray(item.likes) && item.likes.length > 0 
-                                  ? 'text-red-500 bg-red-50 border border-red-200' 
-                                  : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
-                              }`} 
-                              onClick={() => handleLike(item._id || item.id)}
-                            >
-                              <span>❤️</span>
-                              <span className="font-medium">
-                                {Array.isArray(item.likes) ? item.likes.length : 0}
-                              </span>
-                            </button>
+                            <div className="relative">
+                              <button 
+                                className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-all duration-200 text-xs sm:text-sm ${
+                                  Array.isArray(item.reactions) && item.reactions.length > 0 
+                                    ? 'text-red-500 bg-red-50 border border-red-200' 
+                                    : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
+                                }`} 
+                                onClick={() => handleLike(item._id || item.id)}
+                                onMouseEnter={() => {
+                                  // Show reaction popup on hover
+                                  const reactionButton = document.getElementById(`reaction-${item._id || item.id}`);
+                                  if (reactionButton) {
+                                    reactionButton.classList.remove('hidden');
+                                  }
+                                }}
+                                onMouseLeave={() => {
+                                  // Hide reaction popup after delay
+                                  setTimeout(() => {
+                                    const reactionButton = document.getElementById(`reaction-${item._id || item.id}`);
+                                    if (reactionButton) {
+                                      reactionButton.classList.add('hidden');
+                                    }
+                                  }, 300);
+                                }}
+                              >
+                                <span>
+                                  {(() => {
+                                    if (item.reactions && Array.isArray(item.reactions) && item.reactions.length > 0) {
+                                      const reactionCounts: { [key: string]: number } = {};
+                                      item.reactions.forEach((reaction: any) => {
+                                        reactionCounts[reaction.type] = (reactionCounts[reaction.type] || 0) + 1;
+                                      });
+                                      const mostCommon = Object.keys(reactionCounts).reduce((a, b) => 
+                                        reactionCounts[a] > reactionCounts[b] ? a : b
+                                      );
+                                      const reactionEmojis: { [key: string]: string } = {
+                                        like: '👍',
+                                        love: '❤️',
+                                        haha: '😂',
+                                        wow: '😮',
+                                        sad: '😢',
+                                        angry: '😠'
+                                      };
+                                      return reactionEmojis[mostCommon] || '👍';
+                                    }
+                                    return '👍';
+                                  })()}
+                                </span>
+                                <span className="font-medium">
+                                  {Array.isArray(item.reactions) ? item.reactions.length : (Array.isArray(item.likes) ? item.likes.length : 0)}
+                                </span>
+                              </button>
+                              
+                              {/* Reaction Popup */}
+                              <div 
+                                id={`reaction-${item._id || item.id}`}
+                                className="absolute bottom-full left-0 mb-2 hidden z-50 bg-white rounded-full shadow-lg border border-gray-200 p-2"
+                                onMouseEnter={() => {
+                                  const reactionButton = document.getElementById(`reaction-${item._id || item.id}`);
+                                  if (reactionButton) {
+                                    reactionButton.classList.remove('hidden');
+                                  }
+                                }}
+                                onMouseLeave={() => {
+                                  const reactionButton = document.getElementById(`reaction-${item._id || item.id}`);
+                                  if (reactionButton) {
+                                    reactionButton.classList.add('hidden');
+                                  }
+                                }}
+                              >
+                                <div className="flex items-center gap-1">
+                                  {[
+                                    { type: 'like', emoji: '👍', color: 'bg-blue-500' },
+                                    { type: 'love', emoji: '❤️', color: 'bg-red-500' },
+                                    { type: 'haha', emoji: '😂', color: 'bg-yellow-500' },
+                                    { type: 'wow', emoji: '😮', color: 'bg-yellow-500' },
+                                    { type: 'sad', emoji: '😢', color: 'bg-yellow-500' },
+                                    { type: 'angry', emoji: '😠', color: 'bg-orange-500' }
+                                  ].map((reaction) => (
+                                    <button
+                                      key={reaction.type}
+                                      onClick={() => handleReaction(item._id || item.id, reaction.type)}
+                                      className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm hover:scale-110 transition-all duration-200 ${reaction.color}`}
+                                      title={reaction.type.charAt(0).toUpperCase() + reaction.type.slice(1)}
+                                    >
+                                      {reaction.emoji}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
                             <button 
                               className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-all duration-200 text-xs sm:text-sm ${
                                 Array.isArray(item.savedBy) && item.savedBy.length > 0 
@@ -801,7 +1047,7 @@ export default function Dashboard() {
                                   ? 'text-purple-500 bg-purple-50 border border-purple-200' 
                                   : 'text-gray-500 hover:text-purple-500 hover:bg-purple-50'
                               }`} 
-                              onClick={() => handleShare(item._id || item.id)}
+                              onClick={() => openSharePopup(item)}
                             >
                               <span>🔗</span>
                               <span className="font-medium">
@@ -814,6 +1060,13 @@ export default function Dashboard() {
                               <span className="font-medium">
                                 {Array.isArray(item.comments) ? item.comments.length : 0}
                                 <span className="hidden sm:inline"> comments</span>
+                              </span>
+                            </span>
+                            <span className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 text-gray-400 text-xs sm:text-sm">
+                              <span>👁️</span>
+                              <span className="font-medium">
+                                {Array.isArray(item.views) ? item.views.length : 0}
+                                <span className="hidden sm:inline"> views</span>
                               </span>
                             </span>
                           </div>
@@ -833,7 +1086,18 @@ export default function Dashboard() {
                                     <img src={comment.user?.avatar || '/avatars/1.png.png'} alt="avatar" className="w-6 h-6 rounded-full flex-shrink-0" />
                                     <div className="flex-1 min-w-0">
                                       <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
-                                        <span className="font-medium text-xs sm:text-sm">{comment.user?.name || 'Anonymous'}</span>
+                                        {comment.user?.userId ? (
+                                          <a 
+                                            href={`/dashboard/profile/${String(comment.user.userId)}`} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="font-medium text-xs sm:text-sm hover:underline cursor-pointer"
+                                          >
+                                            {comment.user?.name || 'Anonymous'}
+                                          </a>
+                                        ) : (
+                                          <span className="font-medium text-xs sm:text-sm">{comment.user?.name || 'Anonymous'}</span>
+                                        )}
                                         <span className="text-xs text-gray-400">{comment.createdAt ? new Date(comment.createdAt).toLocaleString() : ''}</span>
                                       </div>
                                       <div className="text-sm break-words">{comment.text}</div>
@@ -870,14 +1134,27 @@ export default function Dashboard() {
             </div>
             <div className="bg-white rounded-lg sm:rounded-xl shadow p-3 sm:p-4">
               <div className="font-semibold mb-2 text-sm">Latest Products</div>
-              <div className="grid grid-cols-2 gap-2">
-                <img src="https://images.unsplash.com/photo-1519125323398-675f0ddb6308" className="rounded-lg aspect-square object-cover" />
-                <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb" className="rounded-lg aspect-square object-cover" />
-              </div>
+              <LatestProducts />
             </div>
           </div>
         </div>
       </div>
+
+      {/* Share Popup */}
+      {selectedPostForShare && (
+        <SharePopup
+          isOpen={showSharePopup}
+          onClose={() => {
+            setShowSharePopup(false);
+            setSelectedPostForShare(null);
+          }}
+          onShare={(shareOptions) => {
+            handleShare(selectedPostForShare._id || selectedPostForShare.id, shareOptions);
+          }}
+          postContent={selectedPostForShare.content}
+          postMedia={selectedPostForShare.media}
+        />
+      )}
     </div>
   );
 }

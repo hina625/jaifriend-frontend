@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Edit, Trash2, MoreVertical, Search, Filter, Camera, Video, Music, FileText, Plus, Heart, MessageCircle, Share2, Bookmark, Settings, Camera as CameraIcon, UserPlus, UserCheck, MapPin, Globe, Calendar, Phone } from 'lucide-react';
 import PostDisplay from '@/components/PostDisplay';
 import AlbumDisplay from '@/components/AlbumDisplay';
@@ -65,14 +65,12 @@ interface Album {
   };
 }
 
-export default function UserProfile() {
-  const { userId } = useParams();
+const User1Profile = () => {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [posts, setPosts] = useState<Post[]>([]);
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('timeline');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
@@ -88,9 +86,6 @@ export default function UserProfile() {
     title: '',
     message: ''
   });
-
-  // Get the actual userId string
-  const actualUserId = Array.isArray(userId) ? userId[0] : userId;
 
   const tabs = [
     { id: 'timeline', label: 'Timeline', icon: '📝' },
@@ -110,93 +105,85 @@ export default function UserProfile() {
   ];
 
   useEffect(() => {
-    if (actualUserId) {
     fetchUserProfile();
-    fetchUserContent();
-    }
-  }, [actualUserId]);
+    fetchUserPosts();
+  }, []);
 
   const fetchUserProfile = async () => {
     try {
       setLoading(true);
-      setError(null);
       const token = localStorage.getItem('token');
       if (!token) {
         router.push('/register');
         return;
       }
 
-      console.log('Fetching profile for userId:', actualUserId);
-
-      const response = await fetch(`http://localhost:5000/api/users/${actualUserId}`, {
+      // Find user by username
+      const response = await fetch('http://localhost:5000/api/users/search?q=ahmed_khan', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
       if (response.ok) {
-        const userData = await response.json();
-        console.log('User data received:', userData);
-        setUser(userData);
-        setIsFollowing(userData.isFollowing);
-        setIsBlocked(userData.isBlocked);
+        const users = await response.json();
+        const userData = users.find((u: any) => u.username === 'ahmed_khan');
         
-        // Check if this is the current user's profile
-        const currentUserResponse = await fetch('http://localhost:5000/api/profile/me', {
-          headers: {
-            'Authorization': `Bearer ${token}`
+        if (userData) {
+          // Get detailed user info
+          const userResponse = await fetch(`http://localhost:5000/api/users/${userData.id}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          
+          if (userResponse.ok) {
+            const detailedUser = await userResponse.json();
+            setUser(detailedUser);
+            setIsFollowing(detailedUser.isFollowing);
+            setIsBlocked(detailedUser.isBlocked);
           }
-        });
-        
-        if (currentUserResponse.ok) {
-          const currentUser = await currentUserResponse.json();
-          setIsCurrentUser(currentUser.id === actualUserId);
         }
-      } else {
-        const errorData = await response.json();
-        console.error('Profile fetch error:', errorData);
-        setError(errorData.error || 'User not found');
-        showPopup('error', 'Error', errorData.error || 'User not found');
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
-      setError('Failed to load user profile');
       showPopup('error', 'Error', 'Failed to load user profile');
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchUserContent = async () => {
+  const fetchUserPosts = async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-      
-      // Fetch posts
-      const postsResponse = await fetch(`http://localhost:5000/api/users/${actualUserId}/posts`, {
+
+      // Find user by username first
+      const searchResponse = await fetch('http://localhost:5000/api/users/search?q=ahmed_khan', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      if (postsResponse.ok) {
-        const postsData = await postsResponse.json();
-        setPosts(postsData);
-      }
+      if (searchResponse.ok) {
+        const users = await searchResponse.json();
+        const userData = users.find((u: any) => u.username === 'ahmed_khan');
+        
+        if (userData) {
+          const postsResponse = await fetch(`http://localhost:5000/api/users/${userData.id}/posts`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
 
-      // Fetch albums
-      const albumsResponse = await fetch(`http://localhost:5000/api/users/${actualUserId}/albums`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+          if (postsResponse.ok) {
+            const postsData = await postsResponse.json();
+            setPosts(postsData);
+          }
         }
-      });
-
-      if (albumsResponse.ok) {
-        const albumsData = await albumsResponse.json();
-        setAlbums(albumsData);
       }
     } catch (error) {
-      console.error('Error fetching user content:', error);
+      console.error('Error fetching user posts:', error);
     }
   };
 
@@ -251,67 +238,6 @@ export default function UserProfile() {
     showPopup('info', 'Message', 'Message feature coming soon!');
   };
 
-  const handleEditPost = (post: Post) => {
-    setEditingPost(post);
-    setEditContent(post.content);
-    setShowEditModal(true);
-  };
-
-  const handleDeletePost = async (postId: string) => {
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      const response = await fetch(`http://localhost:5000/api/posts/${postId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        setPosts(posts.filter(post => post._id !== postId));
-        showPopup('success', 'Success', 'Post deleted successfully');
-      }
-    } catch (error) {
-      console.error('Error deleting post:', error);
-      showPopup('error', 'Error', 'Failed to delete post');
-    }
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editingPost || !editContent.trim()) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      const response = await fetch(`http://localhost:5000/api/posts/${editingPost._id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ content: editContent })
-      });
-
-      if (response.ok) {
-        setPosts(posts.map(post => 
-          post._id === editingPost._id 
-            ? { ...post, content: editContent }
-            : post
-        ));
-        setShowEditModal(false);
-        setEditingPost(null);
-        setEditContent('');
-        showPopup('success', 'Success', 'Post updated successfully');
-      }
-    } catch (error) {
-      console.error('Error updating post:', error);
-      showPopup('error', 'Error', 'Failed to update post');
-    }
-  };
-
   const showPopup = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
     setPopup({
       isOpen: true,
@@ -329,7 +255,7 @@ export default function UserProfile() {
     let filtered = posts;
 
     if (searchQuery) {
-      filtered = filtered.filter(post => 
+      filtered = filtered.filter(post =>
         post.content.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
@@ -372,45 +298,17 @@ export default function UserProfile() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Profile...</h2>
-          <p className="text-gray-600">Fetching user data and posts</p>
-        </div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
       </div>
     );
   }
 
-  if (error || !user) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-32 h-32 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-16 h-16 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            {error ? 'Error Loading Profile' : 'User Not Found'}
-          </h2>
-          <p className="text-gray-600 mb-6">
-            {error || "The user profile you're looking for doesn't exist."}
-          </p>
-          <div className="space-y-2">
-            <button 
-              onClick={() => window.location.href = '/dashboard/profile/users'}
-              className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              Browse All Users
-            </button>
-            <br />
-            <button 
-              onClick={() => window.history.back()}
-              className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600 transition-colors"
-            >
-              Go Back
-            </button>
-          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">User Not Found</h2>
+          <p className="text-gray-600">The user profile you're looking for doesn't exist.</p>
         </div>
       </div>
     );
@@ -438,19 +336,19 @@ export default function UserProfile() {
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
             {/* Avatar */}
-      <div className="relative">
+            <div className="relative">
               <img
                 src={user?.avatar}
                 alt={user?.name}
                 className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
-                />
+              />
               {user?.isOnline && (
                 <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-500 rounded-full border-4 border-white"></div>
-                )}
+              )}
             </div>
 
             {/* User Info */}
-              <div className="flex-1">
+            <div className="flex-1">
               <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900">{user?.name}</h1>
@@ -458,16 +356,16 @@ export default function UserProfile() {
                 </div>
                 
                 <div className="flex gap-2">
-                {!isCurrentUser && (
-                  <>
-                    <button 
-                      onClick={handleFollow}
+                  {!isCurrentUser && (
+                    <>
+                      <button
+                        onClick={handleFollow}
                         className={`px-6 py-2 rounded-full font-semibold transition-colors ${
-                        isFollowing 
-                          ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                          isFollowing
+                            ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                             : 'bg-blue-500 text-white hover:bg-blue-600'
-                      }`}
-                    >
+                        }`}
+                      >
                         {isFollowing ? (
                           <>
                             <UserCheck className="w-4 h-4 inline mr-2" />
@@ -479,16 +377,16 @@ export default function UserProfile() {
                             Follow
                           </>
                         )}
-                    </button>
-                    <button 
+                      </button>
+                      <button
                         onClick={handleMessage}
                         className="px-6 py-2 bg-gray-100 text-gray-700 rounded-full font-semibold hover:bg-gray-200 transition-colors"
-                    >
+                      >
                         <MessageCircle className="w-4 h-4 inline mr-2" />
                         Message
-                    </button>
-                  </>
-                )}
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -532,47 +430,47 @@ export default function UserProfile() {
         {activeTab === 'timeline' && (
           <div className="space-y-6">
             {/* Search and Filter */}
-              <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex flex-col md:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="text"
-                      placeholder="Search posts..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                <input
+                  type="text"
+                  placeholder="Search posts..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                  </div>
-                <div className="flex gap-2">
-                  {filters.map((filter) => (
-                    <button
-                      key={filter.id}
-                      onClick={() => setActiveFilter(filter.id)}
+                />
+              </div>
+              <div className="flex gap-2">
+                {filters.map((filter) => (
+                  <button
+                    key={filter.id}
+                    onClick={() => setActiveFilter(filter.id)}
                     className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-2 ${
-                        activeFilter === filter.id
+                      activeFilter === filter.id
                         ? 'bg-blue-500 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {filter.icon}
+                    }`}
+                  >
+                    {filter.icon}
                     {filter.label}
-                    </button>
-                  ))}
+                  </button>
+                ))}
               </div>
             </div>
 
             {/* Posts */}
-              <div className="space-y-6">
+            <div className="space-y-6">
               {getFilteredPosts().map((post) => (
-                    <PostDisplay
+                <PostDisplay
                   key={post._id}
-                      post={post}
-                  onEdit={handleEditPost}
-                  onDelete={handleDeletePost}
+                  post={post}
+                  onEdit={setEditingPost}
+                  onDelete={() => {}}
                   isOwner={isCurrentUser}
-                    />
-                ))}
-              </div>
+                />
+              ))}
+            </div>
           </div>
         )}
 
@@ -595,10 +493,10 @@ export default function UserProfile() {
               <div className="flex items-center gap-3">
                 <Phone className="w-5 h-5 text-gray-400" />
                 <span className="text-gray-700">{user?.phone}</span>
-                </div>
-                </div>
-                </div>
-              )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {activeTab === 'friends' && (
           <div className="bg-white rounded-lg shadow-sm p-6">
@@ -612,11 +510,11 @@ export default function UserProfile() {
                       alt="Friend"
                       className="w-12 h-12 rounded-full object-cover"
                     />
-                <div>
+                    <div>
                       <p className="font-medium text-gray-900">Friend {index + 1}</p>
                       <p className="text-sm text-gray-600">@friend{index + 1}</p>
-                </div>
-                </div>
+                    </div>
+                  </div>
                 ))
               ) : (
                 <div className="col-span-full text-center py-8">
@@ -654,15 +552,7 @@ export default function UserProfile() {
         {activeTab === 'albums' && (
           <div className="bg-white rounded-lg shadow-sm p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Albums</h2>
-            {albums.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {albums.map((album) => (
-                  <AlbumDisplay key={album._id} album={album} />
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-600">No albums yet.</p>
-            )}
+            <p className="text-gray-600">No albums yet.</p>
           </div>
         )}
 
@@ -674,43 +564,12 @@ export default function UserProfile() {
         )}
       </div>
 
-      {/* Edit Modal */}
-      {showEditModal && editingPost && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold mb-4">Edit Post</h3>
-            <textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
-              rows={4}
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={handleSaveEdit}
-                className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                Save
-              </button>
-              <button
-                onClick={() => {
-                  setShowEditModal(false);
-                  setEditingPost(null);
-                  setEditContent('');
-                }}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <Popup
         popup={popup}
         onClose={closePopup}
       />
     </div>
   );
-} 
+};
+
+export default User1Profile; 

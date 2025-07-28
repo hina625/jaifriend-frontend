@@ -22,33 +22,32 @@ const PhotoAlbumManager: React.FC = () => {
     message: ''
   });
 
-  // Mock data for demonstration
+  // Fetch real albums from API
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      setAlbums([
-        {
-          _id: '1',
-          name: 'Summer Vacation 2024',
-          photos: [
-            { url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=300&fit=crop' },
-            { url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=300&h=300&fit=crop' },
-            { url: 'https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=300&h=300&fit=crop' }
-          ],
-          createdAt: '2024-07-15T10:00:00Z'
-        },
-        {
-          _id: '2',
-          name: 'Family Gathering',
-          photos: [
-            { url: 'https://images.unsplash.com/photo-1511895426328-dc8714191300?w=300&h=300&fit=crop' },
-            { url: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=300&h=300&fit=crop' }
-          ],
-          createdAt: '2024-07-10T15:30:00Z'
+    const fetchAlbums = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:5000/api/albums/user', {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          }
+        });
+        
+        if (response.ok) {
+          const albumsData = await response.json();
+          setAlbums(albumsData);
+        } else {
+          console.error('Failed to fetch albums');
         }
-      ]);
-      setLoading(false);
-    }, 1000);
+      } catch (error) {
+        console.error('Error fetching albums:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAlbums();
   }, []);
 
   const handleCreateAlbum = (): void => {
@@ -91,21 +90,62 @@ const PhotoAlbumManager: React.FC = () => {
       return;
     }
     
-    // Mock album creation
-    const newAlbum = {
-      _id: Date.now().toString(),
-      name: albumName,
-      photos: selectedPhotos.map((photo, index) => ({
-        url: typeof photo === 'string' ? photo : `https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=300&fit=crop&sig=${index}`
-      })),
-      createdAt: new Date().toISOString()
-    };
-    
-    setAlbums(prev => [newAlbum, ...prev]);
-    showPopup('success', 'Album Created!', `Album "${albumName}" created successfully!`);
-    setAlbumName('');
-    setSelectedPhotos([]);
-    setCurrentView('albums');
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('name', albumName);
+      
+      // Add photos to form data
+      selectedPhotos.forEach((photo, index) => {
+        if (typeof photo === 'string') {
+          // If it's a URL, add it as mediaUrls
+          formData.append('mediaUrls', photo);
+        } else {
+          // If it's a file, add it as photos
+          formData.append('photos', photo);
+        }
+      });
+
+      const response = await fetch('http://localhost:5000/api/albums', {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const newAlbum = await response.json();
+        setAlbums(prev => [newAlbum, ...prev]);
+        showPopup('success', 'Album Created!', `Album "${albumName}" created successfully!`);
+        setAlbumName('');
+        setSelectedPhotos([]);
+        setCurrentView('albums');
+        
+        // Dispatch event to refresh feed
+        window.dispatchEvent(new CustomEvent('albumCreated'));
+      } else {
+        console.error('Server response error:', response.status, response.statusText);
+        try {
+          const error = await response.json();
+          console.error('Server error details:', error);
+          showPopup('error', 'Failed to Create Album', error.message || error.error || 'Something went wrong');
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
+          showPopup('error', 'Failed to Create Album', `Server error: ${response.status} ${response.statusText}`);
+        }
+      }
+    } catch (error: unknown) {
+      console.error('Error creating album:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : 'No stack trace',
+        albumName,
+        selectedPhotosCount: selectedPhotos.length,
+        token: localStorage.getItem('token') ? 'Present' : 'Missing'
+      });
+      showPopup('error', 'Network Error', 'Failed to create album. Please try again.');
+    }
   };
 
   const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>): void => {
@@ -162,10 +202,30 @@ const PhotoAlbumManager: React.FC = () => {
 
   // Delete album
   const handleDeleteAlbum = async (albumId: string) => {
-    showPopup('warning', 'Confirm Delete', 'Are you sure you want to delete this album?');
-  
-    setAlbums(prev => prev.filter(a => a._id !== albumId));
-    showPopup('success', 'Album Deleted!', 'Album deleted successfully!');
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/albums/${albumId}`, {
+        method: 'DELETE',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setAlbums(prev => prev.filter(a => a._id !== albumId));
+        showPopup('success', 'Album Deleted!', 'Album deleted successfully!');
+        
+        // Dispatch event to refresh feed
+        window.dispatchEvent(new CustomEvent('albumDeleted'));
+      } else {
+        const error = await response.json();
+        showPopup('error', 'Failed to Delete Album', error.message || 'Something went wrong');
+      }
+    } catch (error: unknown) {
+      console.error('Error deleting album:', error);
+      showPopup('error', 'Network Error', 'Failed to delete album. Please try again.');
+    }
     setMenuOpen(null);
   };
 
@@ -294,21 +354,21 @@ const PhotoAlbumManager: React.FC = () => {
                   
                   <div className="font-semibold text-base sm:text-lg mb-2 pr-8">{album.name}</div>
                   <div className="grid grid-cols-3 gap-1 sm:gap-2 mb-2">
-                    {album.photos && album.photos.length > 0 ? (
-                      album.photos.slice(0, 6).map((photo: any, pidx: number) => (
+                    {album.media && album.media.length > 0 ? (
+                      album.media.slice(0, 6).map((media: any, pidx: number) => (
                         <img
                           key={pidx}
-                          src={getMediaUrl(photo.url)}
-                          alt="album photo"
+                          src={getMediaUrl(media.url)}
+                          alt="album media"
                           className="w-full aspect-square object-cover rounded"
                         />
                       ))
                     ) : (
-                      <div className="col-span-3 text-xs text-gray-400 py-4 text-center">No photos</div>
+                      <div className="col-span-3 text-xs text-gray-400 py-4 text-center">No media</div>
                     )}
-                    {album.photos && album.photos.length > 6 && (
+                    {album.media && album.media.length > 6 && (
                       <div className="aspect-square bg-gray-100 rounded flex items-center justify-center text-xs text-gray-500">
-                        +{album.photos.length - 6}
+                        +{album.media.length - 6}
                       </div>
                     )}
                   </div>

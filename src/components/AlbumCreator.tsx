@@ -49,6 +49,9 @@ export default function AlbumCreator({ onAlbumCreated }: AlbumCreatorProps) {
         setAlbumName('');
         setPhotos([]);
         if (fileInputRef.current) fileInputRef.current.value = '';
+        
+        // Dispatch event to refresh feed
+        window.dispatchEvent(new CustomEvent('albumCreated'));
       } else {
         const error = await response.json();
         alert(`Failed to create album: ${error.message}`);

@@ -125,141 +125,10 @@ const WatchPage: React.FC = () => {
           console.error('Error fetching albums videos:', err);
         }
 
-        // If no videos found from backend, use mock videos
-        if (allVideos.length === 0) {
-          console.log('No videos found from backend, using mock videos...');
-          const mockVideos: Video[] = [
-            {
-              _id: 'mock1',
-              user: {
-                name: 'John Doe',
-                username: 'johndoe',
-                avatar: '/avatars/1.png.png',
-                verified: true,
-                isPro: false,
-                userId: 'user1'
-              },
-              title: 'Amazing Sunset View',
-              description: 'Beautiful sunset captured during my evening walk. Nature is truly amazing! 🌅',
-              hashtag: '#sunset #nature #beautiful #evening',
-              videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-              videoThumbnail: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=450&fit=crop',
-              isYoutube: false,
-              isSponsored: false,
-              category: 'video',
-              likes: ['user1', 'user2'],
-              views: ['user1', 'user2', 'user3', 'user4'],
-              comments: [
-                {
-                  _id: 'comment1',
-                  user: {
-                    name: 'Jane Smith',
-                    avatar: '/avatars/2.png.png',
-                    userId: 'user2'
-                  },
-                  text: 'This is absolutely stunning! 😍',
-                  createdAt: new Date(Date.now() - 3600000).toISOString()
-                }
-              ],
-              shares: ['user3'],
-              savedBy: ['user1'],
-              createdAt: new Date(Date.now() - 86400000).toISOString()
-            },
-            {
-              _id: 'mock2',
-              user: {
-                name: 'Sarah Wilson',
-                username: 'sarahw',
-                avatar: '/avatars/3.png.png',
-                verified: false,
-                isPro: true,
-                userId: 'user3'
-              },
-              title: 'Cooking Tutorial: Pasta Carbonara',
-              description: 'Learn how to make authentic Italian pasta carbonara in just 15 minutes! 🍝',
-              hashtag: '#cooking #pasta #tutorial #food',
-              videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-              videoThumbnail: 'https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?w=800&h=450&fit=crop',
-              isYoutube: false,
-              isSponsored: true,
-              category: 'video',
-              likes: ['user1', 'user2', 'user3', 'user4', 'user5'],
-              views: ['user1', 'user2', 'user3', 'user4', 'user5', 'user6'],
-              comments: [
-                {
-                  _id: 'comment2',
-                  user: {
-                    name: 'Mike Johnson',
-                    avatar: '/avatars/4.png.png',
-                    userId: 'user4'
-                  },
-                  text: 'Tried this recipe and it was delicious!',
-                  createdAt: new Date(Date.now() - 7200000).toISOString()
-                },
-                {
-                  _id: 'comment3',
-                  user: {
-                    name: 'Lisa Brown',
-                    avatar: '/avatars/5.png.png',
-                    userId: 'user5'
-                  },
-                  text: 'Can\'t wait to try this! Looks amazing',
-                  createdAt: new Date(Date.now() - 10800000).toISOString()
-                }
-              ],
-              shares: ['user1', 'user2'],
-              savedBy: ['user1', 'user3', 'user4'],
-              createdAt: new Date(Date.now() - 172800000).toISOString()
-            },
-            {
-              _id: 'mock3',
-              user: {
-                name: 'Alex Chen',
-                username: 'alexchen',
-                avatar: '/avatars/6.png.png',
-                verified: true,
-                isPro: true,
-                userId: 'user6'
-              },
-              title: 'Travel Vlog: Tokyo Adventures',
-              description: 'Exploring the amazing city of Tokyo! From street food to temples, this city has it all! 🇯🇵',
-              hashtag: '#travel #tokyo #japan #vlog #adventure',
-              videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-              videoThumbnail: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=800&h=450&fit=crop',
-              isYoutube: false,
-              isSponsored: false,
-              category: 'video',
-              likes: ['user1', 'user2', 'user3', 'user4', 'user5', 'user6', 'user7'],
-              views: ['user1', 'user2', 'user3', 'user4', 'user5', 'user6', 'user7', 'user8', 'user9'],
-              comments: [
-                {
-                  _id: 'comment4',
-                  user: {
-                    name: 'Emma Davis',
-                    avatar: '/avatars/7.png.png',
-                    userId: 'user7'
-                  },
-                  text: 'Tokyo is on my bucket list! This makes me want to go even more!',
-                  createdAt: new Date(Date.now() - 1800000).toISOString()
-                },
-                {
-                  _id: 'comment5',
-                  user: {
-                    name: 'David Lee',
-                    avatar: '/avatars/8.png.png',
-                    userId: 'user8'
-                  },
-                  text: 'Amazing footage! What camera are you using?',
-                  createdAt: new Date(Date.now() - 5400000).toISOString()
-                }
-              ],
-              shares: ['user1', 'user2', 'user3'],
-              savedBy: ['user1', 'user2', 'user3', 'user4'],
-              createdAt: new Date(Date.now() - 259200000).toISOString()
-            }
-          ];
-          allVideos = mockVideos;
-        }
+        console.log('📊 Total videos found:', allVideos.length);
+        
+        // Sort videos by creation date (newest first)
+        allVideos.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
         // Sort videos by creation date (newest first)
         allVideos.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -716,8 +585,8 @@ const WatchPage: React.FC = () => {
           <p className="text-gray-600 text-lg mb-2">{error}</p>
           <p className="text-gray-500 text-sm mb-6">Backend connection failed. You can still watch sample videos.</p>
           <div className="space-x-4">
-            <button 
-              onClick={() => window.location.reload()}
+          <button 
+            onClick={() => window.location.reload()}
               className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
             >
               Retry Backend
@@ -861,7 +730,7 @@ const WatchPage: React.FC = () => {
               className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
             >
               Watch Sample Videos
-            </button>
+          </button>
           </div>
         </div>
       </div>
