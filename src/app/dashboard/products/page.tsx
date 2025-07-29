@@ -18,7 +18,7 @@ interface FormData {
   totalItemUnits: string;
   photos: File[];
 }
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 const MarketplaceSeller: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('My Products');
   const [showSellModal, setShowSellModal] = useState<boolean>(false);
@@ -43,7 +43,7 @@ const MarketplaceSeller: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'My Products') {
       setLoading(true);
-      fetch('http://localhost:5000/api/products')
+      fetch(`${API_URL}/api/products`)
         .then(res => res.json())
         .then(data => {
           setProducts(data);
@@ -101,8 +101,8 @@ const MarketplaceSeller: React.FC = () => {
       form.append('category', formData.category);
       form.append('totalItemUnits', formData.totalItemUnits);
       if (formData.photos[0]) form.append('image', formData.photos[0]);
-      
-      const res = await fetch('http://localhost:5000/api/products', {
+
+      const res = await fetch(`${API_URL}/api/products`, {
         method: 'POST',
         body: form
       });

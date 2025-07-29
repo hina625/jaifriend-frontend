@@ -46,7 +46,7 @@ interface ProfileCompletion {
   country: boolean;
   address: boolean;
 }
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 const ProfilePage: React.FC = () => {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -141,7 +141,7 @@ const ProfilePage: React.FC = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/profile/me', {
+      const response = await fetch(`${API_URL}/api/profile/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -161,7 +161,7 @@ const ProfilePage: React.FC = () => {
   const fetchUserPosts = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/profile/posts', {
+      const response = await fetch(`${API_URL}/api/profile/posts`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -195,7 +195,7 @@ const ProfilePage: React.FC = () => {
   const updateProfile = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/profile/update', {
+      const response = await fetch(`${API_URL}/api/profile/update`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -229,7 +229,7 @@ const ProfilePage: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/posts/${postId}`, {
+      const response = await fetch(`${API_URL}/api/posts/${postId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -253,7 +253,7 @@ const ProfilePage: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/posts/${editingPost._id}`, {
+      const response = await fetch(`${API_URL}/api/posts/${editingPost._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -326,7 +326,7 @@ const ProfilePage: React.FC = () => {
   const getMediaUrl = (url: string) => {
     if (!url) return '/default-avatar.png';
     if (url.startsWith('http')) return url;
-    return `http://localhost:5000${url}`;
+    return `${API_URL}${url}`;
   };
 
   const getCompletionPercentage = () => {

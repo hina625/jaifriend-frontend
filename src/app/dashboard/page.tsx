@@ -1,4 +1,5 @@
 'use client';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import AlbumDisplay from '@/components/AlbumDisplay';
@@ -52,7 +53,7 @@ export default function Dashboard() {
     const formData = new FormData();
     formData.append('content', editContent);
     editMediaFiles.forEach(file => formData.append('media', file));
-    const res = await fetch(`http://localhost:5000/api/posts/${postId}`, {
+    const res = await fetch(`${API_URL}/api/posts/${postId}`, {
       method: 'PUT',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -71,7 +72,7 @@ export default function Dashboard() {
   // Delete a comment
   const handleDeleteComment = async (postId: string, commentId: string) => {
     const token = localStorage.getItem('token');
-    const res = await fetch(`http://localhost:5000/api/posts/${postId}/comment/${commentId}`, {
+    const res = await fetch(`${API_URL}/api/posts/${postId}/comment/${commentId}`, {
       method: 'DELETE',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -90,8 +91,8 @@ export default function Dashboard() {
       const token = localStorage.getItem('token');
       
       const [postsResponse, albumsResponse] = await Promise.all([
-        fetch('http://localhost:5000/api/posts', token ? { headers: { 'Authorization': `Bearer ${token}` } } : {}),
-        fetch('http://localhost:5000/api/albums', token ? { headers: { 'Authorization': `Bearer ${token}` } } : {})
+        fetch(`${API_URL}/api/posts`, token ? { headers: { 'Authorization': `Bearer ${token}` } } : {}),
+        fetch(`${API_URL}/api/albums`, token ? { headers: { 'Authorization': `Bearer ${token}` } } : {})
       ]);
       
       const [postsData, albumsData] = await Promise.all([
@@ -146,7 +147,7 @@ export default function Dashboard() {
         const postsToTrack = posts.slice(0, 5);
         for (const post of postsToTrack) {
           try {
-            await fetch(`http://localhost:5000/api/posts/${post._id}/view`, {
+            await fetch(`${API_URL}/api/posts/${post._id}/view`, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${token}`
@@ -173,7 +174,7 @@ export default function Dashboard() {
         const albumsToTrack = albums.slice(0, 3);
         for (const album of albumsToTrack) {
           try {
-            await fetch(`http://localhost:5000/api/albums/${album._id}/view`, {
+            await fetch(`${API_URL}/api/albums/${album._id}/view`, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${token}`
@@ -199,7 +200,7 @@ export default function Dashboard() {
       const formData = new FormData();
       formData.append('content', newPost);
       mediaFiles.forEach(file => formData.append('media', file));
-      const res = await fetch('http://localhost:5000/api/posts', {
+      const res = await fetch(`${API_URL}/api/posts`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -229,7 +230,7 @@ export default function Dashboard() {
   const handleDelete = async (id: string) => {
     if (!window.confirm('Delete this post?')) return;
     const token = localStorage.getItem('token');
-    const res = await fetch(`http://localhost:5000/api/posts/${id}`, {
+    const res = await fetch(`${API_URL}/api/posts/${id}`, {
       method: 'DELETE',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -246,7 +247,7 @@ export default function Dashboard() {
   // Like a post
   const handleLike = async (postId: string) => {
     const token = localStorage.getItem('token');
-    const res = await fetch(`http://localhost:5000/api/posts/${postId}/like`, {
+    const res = await fetch(`${API_URL}/api/posts/${postId}/like`, {
       method: 'POST',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -262,7 +263,7 @@ export default function Dashboard() {
 
   const handleReaction = async (postId: string, reactionType: string) => {
     const token = localStorage.getItem('token');
-    const res = await fetch(`http://localhost:5000/api/posts/${postId}/reaction`, {
+    const res = await fetch(`${API_URL}/api/posts/${postId}/reaction`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -283,7 +284,7 @@ export default function Dashboard() {
     const token = localStorage.getItem('token');
     console.log('Saving post:', postId);
     try {
-      const res = await fetch(`http://localhost:5000/api/posts/${postId}/save`, {
+      const res = await fetch(`${API_URL}/api/posts/${postId}/save`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -324,7 +325,7 @@ export default function Dashboard() {
     const token = localStorage.getItem('token');
     console.log('Adding comment to post:', postId, commentText);
     try {
-      const res = await fetch(`http://localhost:5000/api/posts/${postId}/comment`, {
+      const res = await fetch(`${API_URL}/api/posts/${postId}/comment`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -353,7 +354,7 @@ export default function Dashboard() {
   const handleShare = async (postId: string, shareOptions?: ShareOptions) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`http://localhost:5000/api/posts/${postId}/share`, {
+      const res = await fetch(`${API_URL}/api/posts/${postId}/share`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -387,7 +388,7 @@ export default function Dashboard() {
   const handleView = async (postId: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`http://localhost:5000/api/posts/${postId}/view`, {
+    const res = await fetch(`${API_URL}/api/posts/${postId}/view`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -408,7 +409,7 @@ export default function Dashboard() {
   const handleAlbumDelete = async (albumId: string) => {
     if (!window.confirm('Delete this album?')) return;
     const token = localStorage.getItem('token');
-    const res = await fetch(`http://localhost:5000/api/albums/${albumId}`, {
+    const res = await fetch(`${API_URL}/api/albums/${albumId}`, {
       method: 'DELETE',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -424,7 +425,7 @@ export default function Dashboard() {
   // Handle album like
   const handleAlbumLike = async (albumId: string) => {
     const token = localStorage.getItem('token');
-    const res = await fetch(`http://localhost:5000/api/albums/${albumId}/like`, {
+    const res = await fetch(`${API_URL}/api/albums/${albumId}/like`, {
       method: 'POST',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -440,7 +441,7 @@ export default function Dashboard() {
 
   const handleAlbumReaction = async (albumId: string, reactionType: string) => {
     const token = localStorage.getItem('token');
-    const res = await fetch(`http://localhost:5000/api/albums/${albumId}/reaction`, {
+    const res = await fetch(`${API_URL}/api/albums/${albumId}/reaction`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -460,7 +461,7 @@ export default function Dashboard() {
   const handleAlbumComment = async (albumId: string, comment: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`http://localhost:5000/api/albums/${albumId}/comment`, {
+      const res = await fetch(`${API_URL}/api/albums/${albumId}/comment`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -483,7 +484,7 @@ export default function Dashboard() {
   const handleAlbumSave = async (albumId: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`http://localhost:5000/api/albums/${albumId}/save`, {
+      const res = await fetch(`${API_URL}/api/albums/${albumId}/save`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -507,7 +508,7 @@ export default function Dashboard() {
   const handleAlbumShare = async (albumId: string, shareOptions?: ShareOptions) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`http://localhost:5000/api/albums/${albumId}/share`, {
+      const res = await fetch(`${API_URL}/api/albums/${albumId}/share`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -531,7 +532,7 @@ export default function Dashboard() {
   const getMediaUrl = (url: string) => {
     if (!url) return '';
     if (url.startsWith('http')) return url;
-    return `http://localhost:5000${url}`;
+    return `${API_URL}${url}`;
   };
 
   const [userEmail, setUserEmail] = useState("");

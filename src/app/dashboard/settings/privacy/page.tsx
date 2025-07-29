@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 import React, { useState, useEffect } from 'react';
 import Popup from '@/components/Popup';
@@ -58,7 +59,7 @@ const PrivacySettingsPage = () => {
           return;
         }
 
-        const response = await fetch('http://localhost:5000/api/settings/privacy/settings', {
+        const response = await fetch(`${API_URL}/api/settings/privacy/settings`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -116,7 +117,7 @@ const PrivacySettingsPage = () => {
       
       if (token) {
         // Try backend API first
-        const response = await fetch('http://localhost:5000/api/settings/privacy/settings', {
+        const response = await fetch(`${API_URL}/api/settings/privacy/settings`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

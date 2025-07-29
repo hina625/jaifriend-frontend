@@ -1,9 +1,9 @@
 import axios from 'axios';
 import { getToken, removeToken } from './auth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// ✅ Don't include `/api` here unless it's in your backend path
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-// Create axios instance
 const api = axios.create({
   baseURL: API_URL,
   timeout: 10000,
@@ -18,22 +18,15 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 // Response interceptor to handle token expiration
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
       removeToken();
-      
-      // Redirect to login page if not already there
       if (typeof window !== 'undefined' && window.location.pathname !== '/') {
         window.location.href = '/';
       }
@@ -42,10 +35,10 @@ api.interceptors.response.use(
   }
 );
 
+// === Auth APIs ===
+
 export const loginApi = async (data: { username: string; password: string }) => {
-  console.log('🔐 Login attempt with:', data);
   const res = await api.post('/auth/login', data);
-  console.log('✅ Login response:', res.data);
   return res.data;
 };
 
@@ -53,22 +46,17 @@ export const setupUserApi = async (
   token: string,
   data: { avatar: string; fullName: string; bio: string; location: string }
 ) => {
-  console.log('API URL:', `${API_URL}/auth/setup`);
-  console.log('Token:', token);
-  console.log('Data:', data);
-  
   const res = await api.post(
     '/auth/setup',
     data,
-    { 
-      headers: { 
+    {
+      headers: {
         Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      } 
+        'Content-Type': 'application/json',
+      },
     }
   );
   return res.data;
 };
 
-// Export the api instance for other components to use
 export default api;

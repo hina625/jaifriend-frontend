@@ -44,10 +44,10 @@ const EventManagement: React.FC = () => {
     title: '',
     message: ''
   });
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   useEffect(() => {
     if (currentRoute === '/events') {
-      fetch('http://localhost:5000/api/events')
+      fetch(`${API_URL}/api/events`)
         .then(res => res.json())
         .then(data => setEvents(data))
         .catch(() => setEvents([
@@ -141,7 +141,7 @@ const EventManagement: React.FC = () => {
       form.append('endTime', formData.endTime);
       if (image) form.append('image', image);
 
-      const res = await fetch('http://localhost:5000/api/events', {
+      const res = await fetch(`${API_URL}/api/events`, {
         method: 'POST',
         body: form
       });
@@ -159,7 +159,7 @@ const EventManagement: React.FC = () => {
         });
         setImage(null);
         // Refresh events list
-        fetch('http://localhost:5000/api/events')
+        fetch(`${API_URL}/api/events`)
           .then(res => res.json())
           .then(data => setEvents(data))
           .catch(() => setEvents([]));
@@ -176,9 +176,9 @@ const EventManagement: React.FC = () => {
     showPopup('warning', 'Confirm Delete', 'Are you sure you want to delete this event?');
     // Note: In a real app, you'd want to handle the confirmation properly
     try {
-      await fetch(`http://localhost:5000/api/events/${id}`, { method: 'DELETE' });
+      await fetch(`${API_URL}/api/events/${id}`, { method: 'DELETE' });
       // Refresh events list
-      fetch('http://localhost:5000/api/events')
+      fetch(`${API_URL}/api/events`)
         .then(res => res.json())
         .then(data => setEvents(data))
         .catch(() => setEvents([]));
@@ -215,7 +215,7 @@ const EventManagement: React.FC = () => {
       form.append('endDate', formData.endDate);
       form.append('endTime', formData.endTime);
       if (image) form.append('image', image);
-      const res = await fetch(`http://localhost:5000/api/events/${editingEvent._id}`, {
+      const res = await fetch(`${API_URL}/api/events/${editingEvent._id}`, {
         method: 'PUT',
         body: form
       });
@@ -234,7 +234,7 @@ const EventManagement: React.FC = () => {
         });
         setImage(null);
         // Refresh events list
-        fetch('http://localhost:5000/api/events')
+        fetch(`${API_URL}/api/events`)
           .then(res => res.json())
           .then(data => setEvents(data))
           .catch(() => setEvents([]));

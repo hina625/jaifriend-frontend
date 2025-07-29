@@ -73,7 +73,7 @@ export default function CheckoutPage() {
   };
 
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   const handleOrder = async (e: any) => {
     e.preventDefault();
     setOrderError(null);
@@ -87,7 +87,7 @@ export default function CheckoutPage() {
     }
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/orders", {
+      const res = await fetch(`${API_URL}/api/orders`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

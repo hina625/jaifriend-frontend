@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 import React, { useState } from 'react';
 import Popup from '@/components/Popup';
 
@@ -131,7 +132,7 @@ const DownloadMyInformationPage = () => {
       
       if (token) {
         // Try backend API first
-        const response = await fetch('http://localhost:5000/api/dataexports', {
+        const response = await fetch(`${API_URL}/api/dataexports`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

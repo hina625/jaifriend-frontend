@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 import React, { useState, useRef, useEffect } from 'react';
 import Popup from '@/components/Popup';
 
@@ -57,7 +58,7 @@ const AvatarCoverSettingsPage = () => {
           return;
         }
 
-        const response = await fetch('http://localhost:5000/api/userimages', {
+        const response = await fetch(`${API_URL}/api/userimages`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -136,7 +137,7 @@ const AvatarCoverSettingsPage = () => {
       
       if (token) {
         // Try backend API first
-        const response = await fetch('http://localhost:5000/api/userimages', {
+        const response = await fetch(`${API_URL}/api/userimages`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

@@ -70,7 +70,7 @@ interface Album {
     avatar: string;
   };
 }
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 export default function UserProfile() {
   const { userId } = useParams();
   const router = useRouter();
@@ -137,7 +137,7 @@ export default function UserProfile() {
 
       console.log('Fetching profile for userId:', actualUserId);
 
-      const response = await fetch(`http://localhost:5000/api/users/${actualUserId}`, {
+      const response = await fetch(`${API_URL}/api/users/${actualUserId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -151,7 +151,7 @@ export default function UserProfile() {
         setIsBlocked(userData.isBlocked);
         
         // Check if this is the current user's profile
-        const currentUserResponse = await fetch('http://localhost:5000/api/profile/me', {
+        const currentUserResponse = await fetch(`${API_URL}/api/profile/me`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -182,7 +182,7 @@ export default function UserProfile() {
       if (!token) return;
       
       // Fetch posts
-      const postsResponse = await fetch(`http://localhost:5000/api/users/${actualUserId}/posts`, {
+      const postsResponse = await fetch(`${API_URL}/api/users/${actualUserId}/posts`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -194,7 +194,7 @@ export default function UserProfile() {
       }
 
       // Fetch albums
-      const albumsResponse = await fetch(`http://localhost:5000/api/users/${actualUserId}/albums`, {
+      const albumsResponse = await fetch(`${API_URL}/api/users/${actualUserId}/albums`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -214,7 +214,7 @@ export default function UserProfile() {
       const token = localStorage.getItem('token');
       if (!token || !user) return;
 
-      const response = await fetch(`http://localhost:5000/api/users/${user.id}/follow`, {
+      const response = await fetch(`${API_URL}/api/users/${user.id}/follow`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -239,7 +239,7 @@ export default function UserProfile() {
       const token = localStorage.getItem('token');
       if (!token || !user) return;
 
-      const response = await fetch(`http://localhost:5000/api/users/${user.id}/block`, {
+      const response = await fetch(`${API_URL}/api/users/${user.id}/block`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -271,7 +271,7 @@ export default function UserProfile() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`http://localhost:5000/api/posts/${postId}`, {
+      const response = await fetch(`${API_URL}/api/posts/${postId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -295,7 +295,7 @@ export default function UserProfile() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`http://localhost:5000/api/posts/${editingPost._id}`, {
+      const response = await fetch(`${API_URL}/api/posts/${editingPost._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -365,7 +365,7 @@ export default function UserProfile() {
   const getMediaUrl = (url: string) => {
     if (!url) return '/default-avatar.png';
     if (url.startsWith('http')) return url;
-    return `http://localhost:5000${url}`;
+    return `${API_URL}${url}`;
   };
 
   const formatDate = (dateString: string) => {

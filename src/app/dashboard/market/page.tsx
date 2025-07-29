@@ -13,7 +13,7 @@ interface Product {
   imageUrl?: string;
   quantity?: number; // Added quantity for cart
 }
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 const MarketplacePage: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState<number>(0);
   const [selectedCategory, setSelectedCategory] = useState<string>('Other');
@@ -38,7 +38,7 @@ const MarketplacePage: React.FC = () => {
 
   useEffect(() => {
     setLoading(true);
-    fetch('http://localhost:5000/api/products')
+    fetch(`${API_URL}/api/products`)
       .then(res => res.json())
       .then(data => {
         setProducts(data);

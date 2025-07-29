@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 import React, { useState, useEffect } from 'react';
 import Popup from '@/components/Popup';
 
@@ -57,7 +58,7 @@ const ProfileSettingsPage = () => {
           return;
         }
 
-        const response = await fetch('http://localhost:5000/api/settings/profile/settings', {
+        const response = await fetch(`${API_URL}/api/settings/profile/settings`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -115,7 +116,7 @@ const ProfileSettingsPage = () => {
       
       if (token) {
         // Try backend API first
-        const response = await fetch('http://localhost:5000/api/settings/profile/settings', {
+        const response = await fetch(`${API_URL}/api/settings/profile/settings`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

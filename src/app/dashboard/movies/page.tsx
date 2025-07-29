@@ -32,7 +32,7 @@ interface Movie {
   createdAt: string;
   updatedAt: string;
 }
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 export default function MoviesPage() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
@@ -293,8 +293,8 @@ export default function MoviesPage() {
   const fetchMoviesByTab = async (tab: string) => {
     try {
       setLoading(true);
-      let url = 'http://localhost:5000/api/movies';
-      
+      let url = `${API_URL}/api/movies`;
+
       switch (tab) {
         case 'Recommended':
           url += '/recommended';

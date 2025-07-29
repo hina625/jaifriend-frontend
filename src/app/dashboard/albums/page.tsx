@@ -21,14 +21,14 @@ const PhotoAlbumManager: React.FC = () => {
     title: '',
     message: ''
   });
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   // Fetch real albums from API
   useEffect(() => {
     const fetchAlbums = async () => {
       setLoading(true);
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:5000/api/albums/user', {
+        const response = await fetch(`${API_URL}/api/albums/user`, {
           headers: {
             ...(token ? { Authorization: `Bearer ${token}` } : {})
           }
@@ -106,7 +106,7 @@ const PhotoAlbumManager: React.FC = () => {
         }
       });
 
-      const response = await fetch('http://localhost:5000/api/albums', {
+      const response = await fetch('${API_URL}/api/albums', {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -163,7 +163,7 @@ const PhotoAlbumManager: React.FC = () => {
   const getMediaUrl = (url: string) => {
     if (!url) return '';
     if (url.startsWith('http')) return url;
-    return `http://localhost:5000${url}`;
+    return `${API_URL}${url}`;
   };
 
   // Edit album handlers
@@ -204,7 +204,7 @@ const PhotoAlbumManager: React.FC = () => {
   const handleDeleteAlbum = async (albumId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/albums/${albumId}`, {
+      const response = await fetch(`${API_URL}/api/albums/${albumId}`, {
         method: 'DELETE',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})

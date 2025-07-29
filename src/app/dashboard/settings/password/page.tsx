@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 import React, { useState } from 'react';
 import Popup, { PopupState } from '@/components/Popup';
 
@@ -114,7 +115,7 @@ const ChangePasswordPage = () => {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/settings/password/change', {
+      const response = await fetch(`${API_URL}/api/settings/password/change`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

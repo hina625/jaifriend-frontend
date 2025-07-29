@@ -22,7 +22,7 @@ interface SuggestedPage {
   icon: string;
   color: string;
 }
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 const PagesInterface: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('My Pages');
   const [showCreateForm, setShowCreateForm] = useState<boolean>(false);
@@ -105,7 +105,7 @@ const PagesInterface: React.FC = () => {
 
   const handleCreatePage = async (): Promise<void> => {
     try {
-      const response = await fetch('http://localhost:5000/api/pages', {
+      const response = await fetch(`${API_URL}/api/pages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

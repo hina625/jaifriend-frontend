@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 import React, { useState, useEffect } from 'react';
 import Popup from '@/components/Popup';
 
@@ -61,7 +62,7 @@ const MyAddressesPage = () => {
           return;
         }
 
-        const response = await fetch('http://localhost:5000/api/addresses', {
+        const response = await fetch(`${API_URL}/api/addresses`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -124,7 +125,7 @@ const MyAddressesPage = () => {
       
       if (token) {
         // Try backend API first
-        const response = await fetch('http://localhost:5000/api/addresses', {
+        const response = await fetch(`${API_URL}/api/addresses`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -202,7 +203,7 @@ const MyAddressesPage = () => {
       
       if (token) {
         // Try backend API first
-        const response = await fetch(`http://localhost:5000/api/addresses/${addressId}`, {
+        const response = await fetch(`${API_URL}/api/addresses/${addressId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`

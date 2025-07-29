@@ -64,7 +64,9 @@ function extractYoutubeId(url: string) {
 function getMediaUrl(url: string) {
   if (!url) return '';
   if (url.startsWith('http')) return url;
-  return `http://localhost:5000${url}`;
+  // Remove trailing /api if present in API_URL for media
+  const baseUrl = API_URL.endsWith('/api') ? API_URL.slice(0, -4) : API_URL;
+  return `${baseUrl}${url}`;
 }
 
 const WatchPage: React.FC = () => {
