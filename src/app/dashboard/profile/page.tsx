@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Edit, Trash2, MoreVertical, Search, Filter, Camera, Video, Music, FileText, Plus, Heart, MessageCircle, Share2, Bookmark, Settings, Camera as CameraIcon } from 'lucide-react';
+import { Edit, Trash2, MoreVertical, Search, Filter, Camera, Video, Music, FileText, Plus, Heart, MessageCircle, Share2, Bookmark, Settings, Camera as CameraIcon, MapPin, Globe, Calendar, Users, Eye, ThumbsUp } from 'lucide-react';
 import PostDisplay from '@/components/PostDisplay';
 import Popup, { PopupState } from '@/components/Popup';
 
@@ -16,6 +16,11 @@ interface User {
   bio?: string;
   location?: string;
   website?: string;
+  workplace?: string;
+  address?: string;
+  country?: string;
+  isOnline?: boolean;
+  joinedDate?: string;
 }
 
 interface Post {
@@ -34,6 +39,14 @@ interface Post {
   };
 }
 
+interface ProfileCompletion {
+  profilePicture: boolean;
+  name: boolean;
+  workplace: boolean;
+  country: boolean;
+  address: boolean;
+}
+
 const ProfilePage: React.FC = () => {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -45,6 +58,23 @@ const ProfilePage: React.FC = () => {
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [editContent, setEditContent] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
+  const [profileCompletion, setProfileCompletion] = useState<ProfileCompletion>({
+    profilePicture: false,
+    name: false,
+    workplace: false,
+    country: false,
+    address: false
+  });
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
+  const [editingProfile, setEditingProfile] = useState({
+    name: '',
+    bio: '',
+    location: '',
+    website: '',
+    workplace: '',
+    address: '',
+    country: ''
+  });
   const [popup, setPopup] = useState<PopupState>({
     isOpen: false,
     type: 'success',
@@ -54,18 +84,22 @@ const ProfilePage: React.FC = () => {
 
   const tabs = [
     { id: 'timeline', label: 'Timeline', icon: '📝' },
-    { id: 'about', label: 'About', icon: 'ℹ️' },
-    { id: 'friends', label: 'Friends', icon: '👥' },
+    { id: 'groups', label: 'Groups', icon: '👥' },
+    { id: 'likes', label: 'Likes', icon: '👍' },
+    { id: 'following', label: 'Following', icon: '➕', count: user?.following?.length || 0 },
+    { id: 'followers', label: 'Followers', icon: '👥', count: user?.followers?.length || 0 },
     { id: 'photos', label: 'Photos', icon: '📷' },
     { id: 'videos', label: 'Videos', icon: '🎥' },
-    { id: 'saved', label: 'Saved', icon: '🔖' }
+    { id: 'reels', label: 'Reels', icon: '🎬' },
+    { id: 'products', label: 'Products', icon: '🛍️' }
   ];
 
   const filters = [
     { id: 'all', label: 'All', icon: <Filter className="w-4 h-4" /> },
     { id: 'text', label: 'Text', icon: <FileText className="w-4 h-4" /> },
     { id: 'photos', label: 'Photos', icon: <CameraIcon className="w-4 h-4" /> },
-    { id: 'videos', label: 'Videos', icon: <Video className="w-4 h-4" /> }
+    { id: 'videos', label: 'Videos', icon: <Video className="w-4 h-4" /> },
+    { id: 'sounds', label: 'Sounds', icon: <Music className="w-4 h-4" /> }
   ];
 
   useEffect(() => {
@@ -83,6 +117,21 @@ const ProfilePage: React.FC = () => {
       window.removeEventListener('postCreated', handlePostCreated);
     };
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      calculateProfileCompletion();
+      setEditingProfile({
+        name: user.name || '',
+        bio: user.bio || '',
+        location: user.location || '',
+        website: user.website || '',
+        workplace: user.workplace || '',
+        address: user.address || '',
+        country: user.country || ''
+      });
+    }
+  }, [user]);
 
   const fetchUserProfile = async () => {
     try {
@@ -128,6 +177,44 @@ const ProfilePage: React.FC = () => {
       console.error('Error fetching user posts:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const calculateProfileCompletion = () => {
+    if (!user) return;
+    
+    setProfileCompletion({
+      profilePicture: !!user.avatar && user.avatar !== '',
+      name: !!user.name && user.name.trim() !== '',
+      workplace: !!user.workplace && user.workplace.trim() !== '',
+      country: !!user.country && user.country.trim() !== '',
+      address: !!user.address && user.address.trim() !== ''
+    });
+  };
+
+  const updateProfile = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/profile/update', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(editingProfile)
+      });
+
+      if (response.ok) {
+        const updatedUser = await response.json();
+        setUser(updatedUser);
+        setShowProfileEdit(false);
+        showPopup('success', 'Profile Updated', 'Your profile has been updated successfully!');
+      } else {
+        showPopup('error', 'Error', 'Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      showPopup('error', 'Error', 'Failed to update profile');
     }
   };
 
@@ -237,9 +324,14 @@ const ProfilePage: React.FC = () => {
   };
 
   const getMediaUrl = (url: string) => {
-    if (!url) return '';
+    if (!url) return '/default-avatar.png';
     if (url.startsWith('http')) return url;
     return `http://localhost:5000${url}`;
+  };
+
+  const getCompletionPercentage = () => {
+    const completed = Object.values(profileCompletion).filter(Boolean).length;
+    return Math.round((completed / Object.keys(profileCompletion).length) * 100);
   };
 
   if (loading) {
@@ -267,98 +359,102 @@ const ProfilePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Profile Header */}
-      <div className="relative">
-        {/* Cover Photo */}
-        <div className="h-64 md:h-80 bg-gradient-to-br from-pink-400 via-purple-500 to-indigo-600 relative overflow-hidden">
-          <div className="absolute inset-0 bg-black bg-opacity-10"></div>
-          
-          {/* Cover Photo Overlay */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center text-white">
-              <CameraIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p className="text-sm opacity-75">Add cover photo</p>
-            </div>
-          </div>
+      {/* Cover Photo Section */}
+      <div className="relative h-64 md:h-80 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-800 overflow-hidden">
+        {/* Particle effect overlay */}
+        <div className="absolute inset-0" style={{
+          backgroundImage: `radial-gradient(circle at 20% 20%, rgba(255,255,255,0.1) 1px, transparent 1px),
+                           radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 1px, transparent 1px),
+                           radial-gradient(circle at 40% 40%, rgba(255,255,255,0.05) 1px, transparent 1px)`,
+          backgroundSize: '100px 100px, 80px 80px, 60px 60px'
+        }}></div>
+        
+        {/* Cover actions */}
+        <div className="absolute top-4 right-4 flex gap-2">
+          <button className="px-4 py-2 bg-black bg-opacity-20 text-white rounded-lg backdrop-blur-sm hover:bg-opacity-30 transition-all flex items-center gap-2">
+            <CameraIcon className="w-4 h-4" />
+            Cover
+          </button>
+          <button className="p-2 bg-black bg-opacity-20 text-white rounded-lg backdrop-blur-sm hover:bg-opacity-30 transition-all">
+            <Plus className="w-4 h-4" />
+          </button>
         </div>
+      </div>
 
-        {/* Profile Info Section */}
-        <div className="relative px-4 md:px-8 pb-6">
-          <div className="max-w-4xl mx-auto">
-            {/* Profile Picture */}
-            <div className="relative -mt-20 mb-4">
-              <div className="relative inline-block">
+      {/* Profile Header */}
+      <div className="relative px-4 md:px-8 pb-6 -mt-20">
+        <div className="max-w-4xl mx-auto">
+          {/* Profile Picture and Actions */}
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+            <div className="flex items-end gap-4">
+              {/* Profile Picture */}
+              <div className="relative">
                 <img
                   src={getMediaUrl(user.avatar)}
                   alt={user.name}
                   className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white shadow-xl object-cover bg-gray-200"
                 />
-                <button className="absolute bottom-2 right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-blue-600 transition-colors">
+                <button className="absolute bottom-2 right-2 w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-gray-700 transition-colors">
                   <CameraIcon className="w-4 h-4" />
                 </button>
+                {user.isOnline && (
+                  <div className="absolute bottom-6 right-6 w-6 h-6 bg-green-500 border-2 border-white rounded-full"></div>
+                )}
+              </div>
+
+              {/* User Info */}
+              <div className="flex-1 pb-4">
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{user.name}</h1>
+                <p className="text-gray-600 text-lg mb-2">@{user.username}</p>
               </div>
             </div>
 
-            {/* User Info */}
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-              <div className="flex-1">
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{user.name}</h1>
-                <p className="text-gray-600 text-lg mb-2">@{user.username}</p>
-                
-                {/* Bio */}
-                {user.bio && (
-                  <p className="text-gray-700 mb-4 max-w-2xl">{user.bio}</p>
-                )}
+            {/* Action Buttons */}
+            <div className="flex gap-2 md:pb-4">
+              <button className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition-colors">
+                <MoreVertical className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={() => setShowProfileEdit(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
+              >
+                <Edit className="w-4 h-4" />
+                Edit
+              </button>
+              <button className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                <Eye className="w-4 h-4" />
+                Activities
+              </button>
+            </div>
+          </div>
 
-                {/* Location & Website */}
-                <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4">
-                  {user.location && (
-                    <div className="flex items-center gap-1">
-                      <span>📍</span>
-                      <span>{user.location}</span>
-                    </div>
-                  )}
-                  {user.website && (
-                    <div className="flex items-center gap-1">
-                      <span>🌐</span>
-                      <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                        {user.website}
-                      </a>
-                    </div>
-                  )}
+          {/* User Details */}
+          <div className="mb-6">
+            {user.bio && (
+              <p className="text-gray-700 mb-4 max-w-2xl">{user.bio}</p>
+            )}
+
+            <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4">
+              {user.location && (
+                <div className="flex items-center gap-1">
+                  <MapPin className="w-4 h-4" />
+                  <span>{user.location}</span>
                 </div>
-
-                {/* Stats */}
-                <div className="flex gap-6 text-sm">
-                  <div className="text-center">
-                    <div className="font-bold text-gray-900">{posts.length}</div>
-                    <div className="text-gray-600">Posts</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="font-bold text-gray-900">{user.followers?.length || 0}</div>
-                    <div className="text-gray-600">Followers</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="font-bold text-gray-900">{user.following?.length || 0}</div>
-                    <div className="text-gray-600">Following</div>
-                  </div>
+              )}
+              {user.website && (
+                <div className="flex items-center gap-1">
+                  <Globe className="w-4 h-4" />
+                  <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    {user.website}
+                  </a>
                 </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button className="flex items-center justify-center gap-2 px-6 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors font-medium">
-                  <MessageCircle className="w-4 h-4" />
-                  <span>Message</span>
-                </button>
-                <button className="flex items-center justify-center gap-2 px-6 py-2 border border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 transition-colors font-medium">
-                  <Heart className="w-4 h-4" />
-                  <span>Follow</span>
-                </button>
-                <button className="flex items-center justify-center gap-2 px-3 py-2 border border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 transition-colors">
-                  <Settings className="w-4 h-4" />
-                </button>
-              </div>
+              )}
+              {user.joinedDate && (
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  <span>Joined {new Date(user.joinedDate).toLocaleDateString()}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -372,14 +468,18 @@ const ProfilePage: React.FC = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 py-4 px-6 border-b-2 transition-colors whitespace-nowrap min-w-fit ${
+                className={`flex items-center gap-2 py-4 px-4 border-b-2 transition-colors whitespace-nowrap min-w-fit ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600 font-medium'
                     : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
                 }`}
               >
-                <span className="text-lg">{tab.icon}</span>
                 <span className="text-sm font-medium">{tab.label}</span>
+                {tab.count !== undefined && (
+                  <span className="bg-gray-200 text-gray-600 px-2 py-1 rounded-full text-xs">
+                    {tab.count}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -390,140 +490,243 @@ const ProfilePage: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 md:px-8 py-6">
         {activeTab === 'timeline' && (
           <div className="space-y-6">
-            {/* Search and Filters */}
-            <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
-              <div className="flex flex-col md:flex-row gap-4">
-                {/* Search */}
-                <div className="flex-1">
+            {/* Profile Completion Card */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Completion</h3>
+              
+              {/* Progress Bar */}
+              <div className="mb-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-gray-600">Complete your profile</span>
+                  <span className="text-sm font-medium text-gray-900">{getCompletionPercentage()}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${getCompletionPercentage()}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Completion Items */}
+              <div className="flex flex-wrap gap-3">
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${
+                  profileCompletion.profilePicture 
+                    ? 'bg-green-100 text-green-700' 
+                    : 'bg-gray-100 text-gray-600'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full ${
+                    profileCompletion.profilePicture ? 'bg-green-500' : 'bg-gray-400'
+                  }`}></div>
+                  <span className={profileCompletion.profilePicture ? 'line-through' : ''}>
+                    Add your profile picture
+                  </span>
+                </div>
+
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${
+                  profileCompletion.name 
+                    ? 'bg-green-100 text-green-700' 
+                    : 'bg-gray-100 text-gray-600'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full ${
+                    profileCompletion.name ? 'bg-green-500' : 'bg-gray-400'
+                  }`}></div>
+                  <span className={profileCompletion.name ? 'line-through' : ''}>
+                    Add your name
+                  </span>
+                </div>
+
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${
+                  profileCompletion.workplace 
+                    ? 'bg-green-100 text-green-700' 
+                    : 'bg-gray-100 text-gray-600'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full ${
+                    profileCompletion.workplace ? 'bg-green-500' : 'bg-gray-400'
+                  }`}></div>
+                  <span className={profileCompletion.workplace ? 'line-through' : ''}>
+                    Add your workplace
+                  </span>
+                </div>
+
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${
+                  profileCompletion.country 
+                    ? 'bg-green-100 text-green-700' 
+                    : 'bg-gray-100 text-gray-600'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full ${
+                    profileCompletion.country ? 'bg-green-500' : 'bg-gray-400'
+                  }`}></div>
+                  <span className={profileCompletion.country ? 'line-through' : ''}>
+                    Add your country
+                  </span>
+                </div>
+
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${
+                  profileCompletion.address 
+                    ? 'bg-green-100 text-green-700' 
+                    : 'bg-gray-100 text-gray-600'
+                }`}>
+                  <div className={`w-2 h-2 rounded-full ${
+                    profileCompletion.address ? 'bg-green-500' : 'bg-gray-400'
+                  }`}></div>
+                  <span className={profileCompletion.address ? 'line-through' : ''}>
+                    Add your address
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Left Sidebar Info */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Profile Stats Sidebar */}
+              <div className="lg:col-span-1">
+                <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
+                  {/* Search Box */}
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
                       type="text"
-                      placeholder="Search your posts..."
+                      placeholder="Search for posts"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                      className="w-full pl-10 pr-4 py-2 bg-gray-100 border-0 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                     />
                   </div>
-                </div>
 
-                {/* Filters */}
-                <div className="flex gap-2">
-                  {filters.map((filter) => (
-                    <button
-                      key={filter.id}
-                      onClick={() => setActiveFilter(filter.id)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
-                        activeFilter === filter.id
-                          ? 'bg-blue-100 text-blue-600'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                      }`}
-                    >
-                      {filter.icon}
-                      <span>{filter.label}</span>
+                  {/* Status */}
+                  <div className="flex items-center gap-2 text-sm text-green-600">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span>Online</span>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Users className="w-4 h-4" />
+                      <span>{user.following?.length || 0} Following</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Users className="w-4 h-4" />
+                      <span>{user.followers?.length || 0} Followers</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <FileText className="w-4 h-4" />
+                      <span>{posts.length} posts</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <span>👤</span>
+                      <span>Male</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <MapPin className="w-4 h-4" />
+                      <span>Living in {user.location || 'Unknown'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Main Content Area */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Post Creation */}
+                <div className="bg-white rounded-xl shadow-sm p-4">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={getMediaUrl(user.avatar)}
+                      alt={user.name}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                    <div className="flex-1">
+                      <input
+                        type="text"
+                        placeholder="What's going on? #Hashtag.. @Mention.. Link.."
+                        className="w-full px-4 py-2 bg-gray-100 rounded-full focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                        onClick={() => router.push('/dashboard')}
+                        readOnly
+                      />
+                    </div>
+                    <button className="p-2 text-red-500 hover:bg-red-50 rounded-lg">
+                      <Video className="w-5 h-5" />
                     </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Posts */}
-            {filteredPosts.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-                <div className="text-gray-400 mb-4">
-                  <FileText className="w-16 h-16 mx-auto" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No posts found</h3>
-                <p className="text-gray-600 mb-4">
-                  {searchQuery ? 'Try adjusting your search terms' : 'Start sharing your thoughts!'}
-                </p>
-                <button
-                  onClick={() => router.push('/dashboard')}
-                  className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                >
-                  Create Post
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {filteredPosts.map((post) => (
-                  <div key={post._id} className="bg-white rounded-xl shadow-sm overflow-hidden">
-                    <PostDisplay
-                      post={post}
-                      onLike={async (postId) => {
-                        // Handle like
-                      }}
-                      onComment={async (postId, comment) => {
-                        // Handle comment
-                      }}
-                      onSave={async (postId) => {
-                        // Handle save
-                      }}
-                      onShare={async (postId, shareOptions) => {
-                        // Handle share
-                      }}
-                      onDelete={handleDeletePost}
-                      onEdit={handleEditPost}
-                      showEditDelete={true}
-                    />
+                    <button className="p-2 text-green-500 hover:bg-green-50 rounded-lg">
+                      <CameraIcon className="w-5 h-5" />
+                    </button>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
 
-        {activeTab === 'about' && (
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-xl font-semibold mb-4">About {user.name}</h3>
-            <div className="space-y-4">
-              <div>
-                <h4 className="font-medium text-gray-900 mb-2">Bio</h4>
-                <p className="text-gray-600">{user.bio || 'No bio added yet.'}</p>
+                  {/* Filter Tabs */}
+                  <div className="flex mt-4 border-b">
+                    {filters.map((filter) => (
+                      <button
+                        key={filter.id}
+                        onClick={() => setActiveFilter(filter.id)}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
+                          activeFilter === filter.id
+                            ? 'text-blue-600 border-b-2 border-blue-500'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        {filter.icon}
+                        <span>{filter.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Posts */}
+                {filteredPosts.length === 0 ? (
+                  <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+                    <div className="text-gray-400 mb-4">
+                      <FileText className="w-16 h-16 mx-auto" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No posts found</h3>
+                    <p className="text-gray-600 mb-4">
+                      {searchQuery ? 'Try adjusting your search terms' : 'Start sharing your thoughts!'}
+                    </p>
+                    <button
+                      onClick={() => router.push('/dashboard')}
+                      className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    >
+                      Create Post
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {filteredPosts.map((post) => (
+                      <div key={post._id} className="bg-white rounded-xl shadow-sm overflow-hidden">
+                        <PostDisplay
+                          post={post}
+                          onLike={async (postId) => {
+                            // Handle like
+                          }}
+                          onComment={async (postId, comment) => {
+                            // Handle comment
+                          }}
+                          onSave={async (postId) => {
+                            // Handle save
+                          }}
+                          onShare={async (postId, shareOptions) => {
+                            // Handle share
+                          }}
+                          onDelete={handleDeletePost}
+                          onEdit={handleEditPost}
+                          showEditDelete={true}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              {user.location && (
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Location</h4>
-                  <p className="text-gray-600">{user.location}</p>
-                </div>
-              )}
-              {user.website && (
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Website</h4>
-                  <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                    {user.website}
-                  </a>
-                </div>
-              )}
             </div>
           </div>
         )}
 
-        {activeTab === 'friends' && (
+        {/* Other Tabs */}
+        {activeTab !== 'timeline' && (
           <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-xl font-semibold mb-4">Friends</h3>
-            <p className="text-gray-600">Friends feature coming soon!</p>
-          </div>
-        )}
-
-        {activeTab === 'photos' && (
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-xl font-semibold mb-4">Photos</h3>
-            <p className="text-gray-600">Photo gallery coming soon!</p>
-          </div>
-        )}
-
-        {activeTab === 'videos' && (
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-xl font-semibold mb-4">Videos</h3>
-            <p className="text-gray-600">Video gallery coming soon!</p>
-          </div>
-        )}
-
-        {activeTab === 'saved' && (
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-xl font-semibold mb-4">Saved Posts</h3>
-            <p className="text-gray-600">Saved posts coming soon!</p>
+            <h3 className="text-xl font-semibold mb-4">
+              {tabs.find(tab => tab.id === activeTab)?.label}
+            </h3>
+            <p className="text-gray-600">This section is coming soon!</p>
           </div>
         )}
       </div>
@@ -535,6 +738,102 @@ const ProfilePage: React.FC = () => {
       >
         <Plus className="w-6 h-6" />
       </button>
+
+      {/* Profile Edit Modal */}
+      {showProfileEdit && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 max-h-[80vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-4">Edit Profile</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input
+                  type="text"
+                  value={editingProfile.name}
+                  onChange={(e) => setEditingProfile(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                <textarea
+                  value={editingProfile.bio}
+                  onChange={(e) => setEditingProfile(prev => ({ ...prev, bio: e.target.value }))}
+                  className="w-full p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <input
+                  type="text"
+                  value={editingProfile.location}
+                  onChange={(e) => setEditingProfile(prev => ({ ...prev, location: e.target.value }))}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                <input
+                  type="url"
+                  value={editingProfile.website}
+                  onChange={(e) => setEditingProfile(prev => ({ ...prev, website: e.target.value }))}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Workplace</label>
+                <input
+                  type="text"
+                  value={editingProfile.workplace}
+                  onChange={(e) => setEditingProfile(prev => ({ ...prev, workplace: e.target.value }))}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                <input
+                  type="text"
+                  value={editingProfile.country}
+                  onChange={(e) => setEditingProfile(prev => ({ ...prev, country: e.target.value }))}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <input
+                  type="text"
+                  value={editingProfile.address}
+                  onChange={(e) => setEditingProfile(prev => ({ ...prev, address: e.target.value }))}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={() => setShowProfileEdit(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={updateProfile}
+                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Post Modal */}
       {showEditModal && editingPost && (
@@ -575,4 +874,4 @@ const ProfilePage: React.FC = () => {
   );
 };
 
-export default ProfilePage; 
+export default ProfilePage;

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Edit, Trash2, MoreVertical, Search, Filter, Camera, Video, Music, FileText, Plus, Heart, MessageCircle, Share2, Bookmark, Settings, Camera as CameraIcon, UserPlus, UserCheck, MapPin, Globe, Calendar, Phone } from 'lucide-react';
+import { Edit, Trash2, MoreVertical, Search, Filter, Camera, Video, Music, FileText, Plus, Heart, MessageCircle, Share2, Bookmark, Settings, Camera as CameraIcon, UserPlus, UserCheck, MapPin, Globe, Calendar, Phone, ArrowLeft, BarChart3, Users, Clock, Link as LinkIcon, Gift } from 'lucide-react';
 import PostDisplay from '@/components/PostDisplay';
 import AlbumDisplay from '@/components/AlbumDisplay';
 import Popup, { PopupState } from '@/components/Popup';
@@ -11,6 +11,7 @@ interface User {
   name: string;
   username: string;
   avatar: string;
+  coverPhoto?: string;
   email: string;
   bio?: string;
   location?: string;
@@ -23,6 +24,10 @@ interface User {
   address?: string;
   followers: number;
   following: number;
+  posts: number;
+  albums: number;
+  photos: number;
+  videos: number;
   followersList: string[];
   followingList: string[];
   isPrivate?: boolean;
@@ -30,6 +35,7 @@ interface User {
   lastSeen?: string;
   isFollowing?: boolean;
   isBlocked?: boolean;
+  isVerified?: boolean;
 }
 
 interface Post {
@@ -94,25 +100,28 @@ export default function UserProfile() {
 
   const tabs = [
     { id: 'timeline', label: 'Timeline', icon: '📝' },
-    { id: 'about', label: 'About', icon: 'ℹ️' },
-    { id: 'friends', label: 'Friends', icon: '👥' },
+    { id: 'groups', label: 'Groups', icon: '👥' },
+    { id: 'likes', label: 'Likes', icon: '❤️' },
+    { id: 'following', label: 'Following', count: user?.following || 0 },
+    { id: 'followers', label: 'Followers', count: user?.followers || 0 },
     { id: 'photos', label: 'Photos', icon: '📷' },
     { id: 'videos', label: 'Videos', icon: '🎥' },
-    { id: 'albums', label: 'Albums', icon: '📚' },
-    { id: 'saved', label: 'Saved', icon: '🔖' }
+    { id: 'reels', label: 'Reels', icon: '🎬' },
+    { id: 'products', label: 'Products', icon: '🛍️' }
   ];
 
   const filters = [
     { id: 'all', label: 'All', icon: <Filter className="w-4 h-4" /> },
     { id: 'text', label: 'Text', icon: <FileText className="w-4 h-4" /> },
     { id: 'photos', label: 'Photos', icon: <CameraIcon className="w-4 h-4" /> },
-    { id: 'videos', label: 'Videos', icon: <Video className="w-4 h-4" /> }
+    { id: 'videos', label: 'Videos', icon: <Video className="w-4 h-4" /> },
+    { id: 'sounds', label: 'Sounds', icon: <Music className="w-4 h-4" /> }
   ];
 
   useEffect(() => {
     if (actualUserId) {
-    fetchUserProfile();
-    fetchUserContent();
+      fetchUserProfile();
+      fetchUserContent();
     }
   }, [actualUserId]);
 
@@ -354,6 +363,7 @@ export default function UserProfile() {
   };
 
   const getMediaUrl = (url: string) => {
+    if (!url) return '/default-avatar.png';
     if (url.startsWith('http')) return url;
     return `http://localhost:5000${url}`;
   };
@@ -367,6 +377,17 @@ export default function UserProfile() {
     if (diffInHours < 24) return `${diffInHours}h ago`;
     if (diffInHours < 48) return 'Yesterday';
     return date.toLocaleDateString();
+  };
+
+  const getLastSeenText = (lastSeen?: string) => {
+    if (!lastSeen) return '21 hrs';
+    const date = new Date(lastSeen);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours} hrs`;
+    return `${Math.floor(diffInHours / 24)} days`;
   };
 
   if (loading) {
@@ -418,217 +439,311 @@ export default function UserProfile() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <button 
-            onClick={() => router.back()}
-            className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-            </svg>
-            Back
-          </button>
+      {/* Header with Back Button and More Options */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <button 
+              onClick={() => router.back()}
+              className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5 mr-2" />
+              Back
+            </button>
+            <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+              <MoreVertical className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </div>
 
+      {/* Cover Photo Section */}
+      <div className="relative h-64 md:h-80 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-800 overflow-hidden">
+        {user.coverPhoto && (
+          <img
+            src={getMediaUrl(user.coverPhoto)}
+            alt="Cover"
+            className="w-full h-full object-cover"
+          />
+        )}
+        {/* Particle effect overlay */}
+        <div className="absolute inset-0" style={{
+          backgroundImage: `radial-gradient(circle at 20% 20%, rgba(255,255,255,0.1) 1px, transparent 1px),
+                           radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 1px, transparent 1px),
+                           radial-gradient(circle at 40% 40%, rgba(255,255,255,0.05) 1px, transparent 1px)`,
+          backgroundSize: '100px 100px, 80px 80px, 60px 60px'
+        }}></div>
+      </div>
+
       {/* Profile Header */}
-      <div className="bg-white">
-        <div className="max-w-6xl mx-auto px-4 py-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-            {/* Avatar */}
-      <div className="relative">
-              <img
-                src={user?.avatar}
-                alt={user?.name}
-                className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
+      <div className="relative px-4 md:px-8 pb-6 -mt-20">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+            <div className="flex items-end gap-4">
+              {/* Profile Picture */}
+              <div className="relative">
+                <img
+                  src={getMediaUrl(user.avatar)}
+                  alt={user.name}
+                  className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white shadow-xl object-cover bg-gray-200"
                 />
-              {user?.isOnline && (
-                <div className="absolute bottom-2 right-2 w-6 h-6 bg-green-500 rounded-full border-4 border-white"></div>
+                <button className="absolute bottom-2 right-2 w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-gray-700 transition-colors">
+                  <CameraIcon className="w-4 h-4" />
+                </button>
+                {user.isOnline && (
+                  <div className="absolute bottom-6 right-6 w-6 h-6 bg-green-500 border-2 border-white rounded-full"></div>
                 )}
+              </div>
+
+              {/* User Info */}
+              <div className="flex-1 pb-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900">{user.name}</h1>
+                  {user.isVerified && (
+                    <div className="bg-blue-500 text-white px-2 py-1 rounded text-xs font-medium">
+                      PRO
+                    </div>
+                  )}
+                </div>
+                <p className="text-gray-600 text-lg mb-2">@{user.username}</p>
+              </div>
             </div>
 
-            {/* User Info */}
-              <div className="flex-1">
-              <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">{user?.name}</h1>
-                  <p className="text-gray-600">@{user?.username}</p>
-                </div>
-                
-                <div className="flex gap-2">
-                {!isCurrentUser && (
-                  <>
-                    <button 
-                      onClick={handleFollow}
-                        className={`px-6 py-2 rounded-full font-semibold transition-colors ${
-                        isFollowing 
-                          ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
-                            : 'bg-blue-500 text-white hover:bg-blue-600'
-                      }`}
-                    >
-                        {isFollowing ? (
-                          <>
-                            <UserCheck className="w-4 h-4 inline mr-2" />
-                            Following
-                          </>
-                        ) : (
-                          <>
-                            <UserPlus className="w-4 h-4 inline mr-2" />
-                            Follow
-                          </>
-                        )}
-                    </button>
-                    <button 
-                        onClick={handleMessage}
-                        className="px-6 py-2 bg-gray-100 text-gray-700 rounded-full font-semibold hover:bg-gray-200 transition-colors"
-                    >
-                        <MessageCircle className="w-4 h-4 inline mr-2" />
-                        Message
-                    </button>
-                  </>
-                )}
-                </div>
-              </div>
-
-              <p className="text-gray-700 mb-4">{user?.bio}</p>
-
-              {/* Stats */}
-              <div className="flex gap-6 text-sm text-gray-600">
-                <span><strong className="text-gray-900">{user?.followers || 0}</strong> followers</span>
-                <span><strong className="text-gray-900">{user?.following || 0}</strong> following</span>
-                <span><strong className="text-gray-900">{posts.length}</strong> posts</span>
-              </div>
+            {/* Action Buttons */}
+            <div className="flex gap-2 md:pb-4">
+              {!isCurrentUser ? (
+                <>
+                  <button className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                    <Heart className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={handleMessage}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                  >
+                    Message
+                  </button>
+                  <button 
+                    onClick={handleFollow}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                      isFollowing 
+                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                    }`}
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    {isFollowing ? 'Following' : 'Follow'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition-colors">
+                    <BarChart3 className="w-4 h-4" />
+                  </button>
+                  <button className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors">
+                    <Edit className="w-4 h-4" />
+                    Edit
+                  </button>
+                  <button className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                    <FileText className="w-4 h-4" />
+                    Activities
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="bg-white border-b">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="flex space-x-8">
+      <div className="bg-white border-b sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
+          <div className="flex overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
+                className={`flex items-center gap-2 py-4 px-4 border-b-2 transition-colors whitespace-nowrap min-w-fit ${
                   activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-blue-500 text-blue-600 font-medium'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
                 }`}
               >
-                <span className="mr-2">{tab.icon}</span>
-                {tab.label}
+                <span className="text-sm font-medium">{tab.label}</span>
+                {tab.count !== undefined && (
+                  <span className="bg-gray-200 text-gray-600 px-2 py-1 rounded-full text-xs">
+                    {tab.count}
+                  </span>
+                )}
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Content Area */}
-      <div className="max-w-6xl mx-auto px-4 py-6">
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
         {activeTab === 'timeline' && (
-          <div className="space-y-6">
-            {/* Search and Filter */}
-              <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="text"
-                      placeholder="Search posts..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Sidebar */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-xl shadow-sm p-6 space-y-4 sticky top-24">
+                {/* Search Box */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Search for posts"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 bg-gray-100 border-0 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                  />
+                </div>
+
+                {/* User Stats */}
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Clock className="w-4 h-4" />
+                    <span>{getLastSeenText(user.lastSeen)}</span>
                   </div>
-                <div className="flex gap-2">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Users className="w-4 h-4" />
+                    <span>{user.following || 0} Following</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Users className="w-4 h-4" />
+                    <span>{user.followers || 0} Followers</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <FileText className="w-4 h-4" />
+                    <span>{posts.length} posts</span>
+                  </div>
+                  {user.website && (
+                    <div className="flex items-center gap-2 text-blue-600">
+                      <LinkIcon className="w-4 h-4" />
+                      <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-sm hover:underline truncate">
+                        {user.website.replace('https://', '').replace('http://', '')}
+                      </a>
+                    </div>
+                  )}
+                  {user.gender && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <span>👤</span>
+                      <span>{user.gender}</span>
+                    </div>
+                  )}
+                  {user.location && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <MapPin className="w-4 h-4" />
+                      <span>Living in {user.location}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Profile Picture */}
+                <div className="pt-4 border-t">
+                  <img
+                    src={getMediaUrl(user.avatar)}
+                    alt={user.name}
+                    className="w-full h-48 object-cover rounded-lg"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Main Content Area */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Filter Tabs */}
+              <div className="bg-white rounded-xl shadow-sm p-4">
+                <div className="flex border-b -mb-4">
                   {filters.map((filter) => (
                     <button
                       key={filter.id}
                       onClick={() => setActiveFilter(filter.id)}
-                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-2 ${
+                      className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
                         activeFilter === filter.id
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'text-blue-600 border-b-2 border-blue-500 -mb-px'
+                          : 'text-gray-600 hover:text-gray-900'
                       }`}
                     >
                       {filter.icon}
-                    {filter.label}
+                      <span>{filter.label}</span>
                     </button>
                   ))}
-              </div>
-            </div>
-
-            {/* Posts */}
-              <div className="space-y-6">
-              {getFilteredPosts().map((post) => (
-                    <PostDisplay
-                  key={post._id}
-                      post={post}
-                  onEdit={handleEditPost}
-                  onDelete={handleDeletePost}
-                  isOwner={isCurrentUser}
-                    />
-                ))}
-              </div>
-          </div>
-        )}
-
-        {activeTab === 'about' && (
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">About {user?.name}</h2>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <MapPin className="w-5 h-5 text-gray-400" />
-                <span className="text-gray-700">{user?.location}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Globe className="w-5 h-5 text-gray-400" />
-                <a href={user?.website} className="text-blue-500 hover:underline">{user?.website}</a>
-              </div>
-              <div className="flex items-center gap-3">
-                <Calendar className="w-5 h-5 text-gray-400" />
-                <span className="text-gray-700">Born {user?.dateOfBirth}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Phone className="w-5 h-5 text-gray-400" />
-                <span className="text-gray-700">{user?.phone}</span>
                 </div>
-                </div>
-                </div>
-              )}
+              </div>
 
-        {activeTab === 'friends' && (
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Friends</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Array.isArray(user?.followersList) && user.followersList.length > 0 ? (
-                user.followersList.map((followerId, index) => (
-                  <div key={followerId} className="flex items-center gap-3 p-3 border rounded-lg">
+              {/* User Bio Card */}
+              {user.bio && (
+                <div className="bg-white rounded-xl shadow-sm p-6">
+                  <div className="flex items-start gap-3">
                     <img
-                      src={`/avatars/${(index % 20) + 1}.png`}
-                      alt="Friend"
-                      className="w-12 h-12 rounded-full object-cover"
+                      src={getMediaUrl(user.avatar)}
+                      alt={user.name}
+                      className="w-10 h-10 rounded-full object-cover"
                     />
-                <div>
-                      <p className="font-medium text-gray-900">Friend {index + 1}</p>
-                      <p className="text-sm text-gray-600">@friend{index + 1}</p>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-gray-900">{user.name}</h3>
+                        {user.isVerified && (
+                          <div className="bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-medium">
+                            PRO
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">1 w</p>
+                      <p className="text-gray-800">{user.bio}</p>
+                    </div>
+                    <button className="p-1 text-gray-400 hover:text-gray-600">
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
+              )}
+
+              {/* Posts */}
+              {getFilteredPosts().length === 0 ? (
+                <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+                  <div className="text-gray-400 mb-4">
+                    <FileText className="w-16 h-16 mx-auto" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No posts found</h3>
+                  <p className="text-gray-600 mb-4">
+                    {searchQuery ? 'Try adjusting your search terms' : 'No posts to display.'}
+                  </p>
                 </div>
-                ))
               ) : (
-                <div className="col-span-full text-center py-8">
-                  <p className="text-gray-600">No friends yet.</p>
+                <div className="space-y-6">
+                  {getFilteredPosts().map((post) => (
+                    <div key={post._id} className="bg-white rounded-xl shadow-sm overflow-hidden">
+                      <PostDisplay
+                        post={post}
+                        onLike={async (postId) => {
+                          // Handle like
+                        }}
+                        onComment={async (postId, comment) => {
+                          // Handle comment
+                        }}
+                        onSave={async (postId) => {
+                          // Handle save
+                        }}
+                        onShare={async (postId, shareOptions) => {
+                          // Handle share
+                        }}
+                        onDelete={handleDeletePost}
+                        onEdit={handleEditPost}
+                        showEditDelete={isCurrentUser}
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
           </div>
         )}
 
+        {/* Other tabs content */}
         {activeTab === 'photos' && (
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Photos</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {posts.filter(post => post.media && post.media.length > 0).map((post, index) => (
@@ -636,7 +751,7 @@ export default function UserProfile() {
                   <img
                     src={getMediaUrl(post.media[0])}
                     alt="Post media"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover hover:scale-105 transition-transform"
                   />
                 </div>
               ))}
@@ -645,72 +760,79 @@ export default function UserProfile() {
         )}
 
         {activeTab === 'videos' && (
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Videos</h2>
             <p className="text-gray-600">No videos yet.</p>
           </div>
         )}
 
-        {activeTab === 'albums' && (
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Albums</h2>
-            {albums.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {albums.map((album) => (
-                  <AlbumDisplay key={album._id} album={album} />
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-600">No albums yet.</p>
-            )}
+        {activeTab === 'following' && (
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Following ({user.following || 0})</h2>
+            <p className="text-gray-600">Following list coming soon!</p>
           </div>
         )}
 
-        {activeTab === 'saved' && (
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Saved Posts</h2>
-            <p className="text-gray-600">No saved posts yet.</p>
+        {activeTab === 'followers' && (
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Followers ({user.followers || 0})</h2>
+            <p className="text-gray-600">Followers list coming soon!</p>
+          </div>
+        )}
+
+        {activeTab !== 'timeline' && activeTab !== 'photos' && activeTab !== 'videos' && activeTab !== 'following' && activeTab !== 'followers' && (
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              {tabs.find(tab => tab.id === activeTab)?.label}
+            </h2>
+            <p className="text-gray-600">This section is coming soon!</p>
           </div>
         )}
       </div>
 
-      {/* Edit Modal */}
+      {/* Floating Action Button */}
+      <button
+        onClick={() => router.push('/dashboard')}
+        className="fixed bottom-6 right-6 w-14 h-14 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center transition-colors z-50"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
+
+      {/* Edit Post Modal */}
       {showEditModal && editingPost && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
             <h3 className="text-lg font-semibold mb-4">Edit Post</h3>
             <textarea
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-4"
-              rows={4}
+              className="w-full h-32 p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              placeholder="What's on your mind?"
             />
-            <div className="flex gap-2">
-              <button
-                onClick={handleSaveEdit}
-                className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                Save
-              </button>
+            <div className="flex space-x-3 mt-4">
               <button
                 onClick={() => {
                   setShowEditModal(false);
                   setEditingPost(null);
                   setEditContent('');
                 }}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Save Changes
               </button>
             </div>
           </div>
         </div>
       )}
 
-      <Popup
-        popup={popup}
-        onClose={closePopup}
-      />
+      {/* Popup */}
+      <Popup popup={popup} onClose={closePopup} />
     </div>
   );
-} 
+}
