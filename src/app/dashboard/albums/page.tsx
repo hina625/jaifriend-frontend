@@ -36,7 +36,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
           return;
         }
         
-        const response = await fetch('${API_URL}/api/albums/user', {
+        const response = await fetch(`${API_URL}/api/albums/user`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -207,14 +207,75 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
   };
 
   const handleEditAlbum = async (albumId: string) => {
-    const updatedAlbum = albums.find(a => a._id === albumId);
-    if (updatedAlbum) {
-      updatedAlbum.name = editAlbumName;
-      setAlbums([...albums]);
-      showPopup('success', 'Album Updated!', 'Album updated successfully!');
-      setEditingAlbumId(null);
-      setEditAlbumName('');
-      setEditPhotos([]);
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Check if token exists and is valid
+      if (!token || token === 'null' || token === 'undefined') {
+        showPopup('error', 'Authentication Error', 'Please log in again');
+        setIsAuthenticated(false);
+        return;
+      }
+      
+      const formData = new FormData();
+      formData.append('name', editAlbumName);
+      
+      // Add new photos to form data
+      editPhotos.forEach((photo, index) => {
+        if (typeof photo === 'string') {
+          // If it's a URL, add it as mediaUrls
+          formData.append('mediaUrls', photo);
+        } else {
+          // If it's a file, add it as photos
+          formData.append('photos', photo);
+        }
+      });
+
+      const response = await fetch(`${API_URL}/api/albums/${albumId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const updatedAlbum = await response.json();
+        setAlbums(prev => prev.map(a => a._id === albumId ? updatedAlbum : a));
+        showPopup('success', 'Album Updated!', 'Album updated successfully!');
+        setEditingAlbumId(null);
+        setEditAlbumName('');
+        setEditPhotos([]);
+        
+        // Dispatch event to refresh feed
+        window.dispatchEvent(new CustomEvent('albumUpdated'));
+      } else if (response.status === 401) {
+        console.error('Authentication failed');
+        setIsAuthenticated(false);
+        localStorage.removeItem('token');
+        showPopup('error', 'Authentication Error', 'Please log in again');
+      } else {
+        console.error('Server response error:', response.status, response.statusText);
+        try {
+          const error = await response.json();
+          console.error('Server error details:', error);
+          showPopup('error', 'Failed to Update Album', error.message || error.error || 'Something went wrong');
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
+          showPopup('error', 'Failed to Update Album', `Server error: ${response.status} ${response.statusText}`);
+        }
+      }
+    } catch (error: unknown) {
+      console.error('Error updating album:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : 'No stack trace',
+        albumId,
+        editAlbumName,
+        editPhotosCount: editPhotos.length,
+        token: localStorage.getItem('token') ? 'Present' : 'Missing'
+      });
+      showPopup('error', 'Network Error', 'Failed to update album. Please try again.');
     }
   };
 
@@ -238,7 +299,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
         return;
       }
       
-      const response = await fetch(`${API_URL}/api/albums${albumId}`, {
+      const response = await fetch(`${API_URL}/api/albums/${albumId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -404,14 +465,30 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
                   <div className="font-semibold text-base sm:text-lg mb-2 pr-8">{album.name}</div>
                   <div className="grid grid-cols-3 gap-1 sm:gap-2 mb-2">
                     {album.media && album.media.length > 0 ? (
-                      album.media.slice(0, 6).map((media: any, pidx: number) => (
-                        <img
-                          key={pidx}
-                          src={getMediaUrl(media.url)}
-                          alt="album media"
-                          className="w-full aspect-square object-cover rounded"
-                        />
-                      ))
+                      album.media.slice(0, 6).map((media: any, pidx: number) => {
+                        const mediaUrl = getMediaUrl(media.url);
+                        
+                        if (media.type === 'video' || media.url.match(/\.(mp4|webm|ogg|mov|avi)$/i)) {
+                          return (
+                            <video
+                              key={pidx}
+                              src={mediaUrl}
+                              className="w-full aspect-square object-cover rounded"
+                              muted
+                              preload="metadata"
+                            />
+                          );
+                        } else {
+                          return (
+                            <img
+                              key={pidx}
+                              src={mediaUrl}
+                              alt="album media"
+                              className="w-full aspect-square object-cover rounded"
+                            />
+                          );
+                        }
+                      })
                     ) : (
                       <div className="col-span-3 text-xs text-gray-400 py-4 text-center">No media</div>
                     )}
