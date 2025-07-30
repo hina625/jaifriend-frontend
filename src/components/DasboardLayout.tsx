@@ -150,7 +150,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      fetch('http://localhost:5000/api/profile/me', {
+              fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
@@ -227,7 +227,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       const token = localStorage.getItem('token');
       if (token) {
         // Get current user's profile to get their ID
-        const response = await fetch('http://localhost:5000/api/profile/me', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

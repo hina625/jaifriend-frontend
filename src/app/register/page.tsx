@@ -144,7 +144,7 @@ export default function Register(): React.ReactElement {
     setErrors({});
 
     try {
-      const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/auth/register', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

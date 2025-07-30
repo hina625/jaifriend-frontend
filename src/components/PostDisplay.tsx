@@ -40,7 +40,7 @@ export default function PostDisplay({
       const token = localStorage.getItem('token');
       if (token && post._id) {
         try {
-          await fetch(`http://localhost:5000/api/posts/${post._id}/view`, {
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${post._id}/view`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`

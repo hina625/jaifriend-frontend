@@ -21,7 +21,7 @@ const PhotoAlbumManager: React.FC = () => {
     title: '',
     message: ''
   });
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
   // Fetch real albums from API
   useEffect(() => {
     const fetchAlbums = async () => {

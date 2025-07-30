@@ -35,7 +35,7 @@ export default function AlbumCreator({ onAlbumCreated }: AlbumCreatorProps) {
         formData.append('photos', photo);
       });
 
-      const response = await fetch('http://localhost:5000/api/albums', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})

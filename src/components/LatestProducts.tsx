@@ -26,7 +26,7 @@ const LatestProducts: React.FC = () => {
 
   const fetchLatestProducts = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/products');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/products`);
       if (response.ok) {
         const data = await response.json();
         // Get latest 4 products for sidebar

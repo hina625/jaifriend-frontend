@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Play, ThumbsUp, MessageCircle, Share2, MoreHorizontal, Plus, Settings, Users, User, FileText, Heart, Bookmark } from 'lucide-react';
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
 
 interface UserInfo {
   name: string;
@@ -64,9 +64,7 @@ function extractYoutubeId(url: string) {
 function getMediaUrl(url: string) {
   if (!url) return '';
   if (url.startsWith('http')) return url;
-  // Remove trailing /api if present in API_URL for media
-  const baseUrl = API_URL.endsWith('/api') ? API_URL.slice(0, -4) : API_URL;
-  return `${baseUrl}${url}`;
+  return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${url}`;
 }
 
 const WatchPage: React.FC = () => {
