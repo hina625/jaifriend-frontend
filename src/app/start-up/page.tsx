@@ -86,24 +86,30 @@ export default function StartUpPage() {
 
   return (
     <ResponsiveContainer>
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-8">
-        <div className="bg-white rounded-2xl shadow-xl flex w-full max-w-5xl overflow-hidden">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+        <div className="bg-white rounded-2xl shadow-xl flex flex-col lg:flex-row w-full max-w-5xl overflow-hidden">
           {/* Left Panel */}
-          <div className="bg-gray-200 flex flex-col justify-between items-center w-1/4 min-w-[180px] py-8 px-4">
-            <div className="text-lg font-semibold text-gray-700 text-center mb-4">Follow our famous users.</div>
-            <div className="w-full flex-1 flex items-end justify-center">
+          <div className="bg-gray-200 flex flex-col lg:flex-col items-center justify-between lg:w-1/4 lg:min-w-[180px] p-4 lg:py-8 lg:px-4">
+            <div className="text-base lg:text-lg font-semibold text-gray-700 text-center mb-4 lg:mb-4">
+              Follow our famous users.
+            </div>
+            <div className="hidden lg:flex w-full flex-1 items-end justify-center">
               <Image src="/illustration.svg" alt="illustration" width={120} height={60} />
             </div>
+            <div className="lg:hidden flex justify-center">
+              <Image src="/illustration.svg" alt="illustration" width={80} height={40} />
+            </div>
           </div>
+
           {/* Main Content */}
-          <div className="flex-1 p-8">
+          <div className="flex-1 p-4 sm:p-6 lg:p-8">
             {/* Steps */}
-            <div className="flex items-center justify-center gap-2 mb-6">
+            <div className="flex items-center justify-center gap-1 sm:gap-2 mb-6">
               {steps.map((s, i) => (
                 <>
                   <button
                     key={s}
-                    className={`px-4 py-1 rounded-full text-xs font-semibold transition-all duration-200 ${
+                    className={`px-2 sm:px-4 py-1 rounded-full text-xs font-semibold transition-all duration-200 ${
                       step === i
                         ? "bg-orange-400 text-white"
                         : step > i
@@ -114,17 +120,19 @@ export default function StartUpPage() {
                   >
                     {s}
                   </button>
-                  {i < steps.length - 1 && <span className="text-gray-400">&#9654;</span>}
+                  {i < steps.length - 1 && <span className="text-gray-400 text-xs sm:text-sm">&#9654;</span>}
                 </>
               ))}
             </div>
 
             {/* Step Content */}
             {step === 0 && (
-              <div className="flex flex-col items-center justify-center min-h-[320px]">
-                <div className="mb-6 text-gray-700 font-medium text-center">Upload your profile media (photo/avatar).</div>
+              <div className="flex flex-col items-center justify-center min-h-[280px] sm:min-h-[320px]">
+                <div className="mb-6 text-gray-700 font-medium text-center text-sm sm:text-base px-4">
+                  Upload your profile media (photo/avatar).
+                </div>
                 <div className="flex flex-col items-center gap-4">
-                  <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-blue-300">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-blue-300">
                     {selectedAvatar ? (
                       <Image 
                         src={selectedAvatar} 
@@ -132,17 +140,18 @@ export default function StartUpPage() {
                         width={96} 
                         height={96}
                         onError={handleImageError}
+                        className="w-full h-full object-cover"
                       />
                     ) : null}
                     {!selectedAvatar && (
-                      <span className="text-gray-400">No avatar selected</span>
+                      <span className="text-gray-400 text-xs sm:text-sm text-center px-2">No avatar selected</span>
                     )}
                   </div>
-                  <div className="flex gap-2 flex-wrap justify-center">
+                  <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 justify-center max-w-sm sm:max-w-md">
                     {users.slice(0, 8).map((user, i) => (
                       <button
                         key={i}
-                        className={`w-12 h-12 rounded-full overflow-hidden border-2 ${selectedAvatar === user.img ? "border-blue-500" : "border-gray-200"}`}
+                        className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 ${selectedAvatar === user.img ? "border-blue-500" : "border-gray-200"}`}
                         onClick={() => setSelectedAvatar(user.img)}
                         type="button"
                       >
@@ -152,6 +161,7 @@ export default function StartUpPage() {
                           width={48} 
                           height={48}
                           onError={handleImageError}
+                          className="w-full h-full object-cover"
                         />
                         <div className="w-full h-full bg-gray-300 flex items-center justify-center text-xs text-gray-600" style={{display: 'none'}}>
                           {user.name.charAt(0)}
@@ -161,48 +171,51 @@ export default function StartUpPage() {
                   </div>
                 </div>
                 <button
-                  className="mt-8 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-semibold text-sm"
+                  className="mt-6 sm:mt-8 bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded font-semibold text-sm"
                   onClick={() => setStep(1)}
                 >
                   Next
                 </button>
               </div>
             )}
+
             {step === 1 && (
-              <div className="flex flex-col items-center justify-center min-h-[320px]">
-                <div className="mb-6 text-gray-700 font-medium text-center">Fill in your info to continue.</div>
-                <form className="w-full max-w-sm flex flex-col gap-4">
+              <div className="flex flex-col items-center justify-center min-h-[280px] sm:min-h-[320px]">
+                <div className="mb-6 text-gray-700 font-medium text-center text-sm sm:text-base px-4">
+                  Fill in your info to continue.
+                </div>
+                <form className="w-full max-w-sm sm:max-w-md flex flex-col gap-4 px-4 sm:px-0">
                   <input 
                     type="text" 
                     placeholder="Full Name" 
-                    className="border rounded px-4 py-2 w-full"
+                    className="border rounded px-4 py-2 w-full text-sm sm:text-base"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                   />
                   <input 
                     type="text" 
                     placeholder="Bio" 
-                    className="border rounded px-4 py-2 w-full"
+                    className="border rounded px-4 py-2 w-full text-sm sm:text-base"
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
                   />
                   <input 
                     type="text" 
                     placeholder="Location" 
-                    className="border rounded px-4 py-2 w-full"
+                    className="border rounded px-4 py-2 w-full text-sm sm:text-base"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                   />
                 </form>
-                <div className="flex gap-4 mt-8">
+                <div className="flex gap-4 mt-6 sm:mt-8">
                   <button
-                    className="bg-gray-200 text-gray-700 px-6 py-2 rounded font-semibold text-sm"
+                    className="bg-gray-200 text-gray-700 px-4 sm:px-6 py-2 rounded font-semibold text-sm"
                     onClick={() => setStep(0)}
                   >
                     Back
                   </button>
                   <button
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-semibold text-sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded font-semibold text-sm"
                     onClick={() => setStep(2)}
                   >
                     Next
@@ -210,37 +223,47 @@ export default function StartUpPage() {
                 </div>
               </div>
             )}
+
             {step === 2 && (
               <>
-                <div className="text-center mb-6 text-gray-700 font-medium">Get latest activities from our popular users.</div>
-                <div className="grid grid-cols-4 gap-4 mb-6">
+                <div className="text-center mb-4 sm:mb-6 text-gray-700 font-medium text-sm sm:text-base px-4">
+                  Get latest activities from our popular users.
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6 px-2 sm:px-0">
                   {users.map((user, i) => (
-                    <button key={i} className="flex flex-col items-center border border-gray-200 rounded-lg p-3 bg-white hover:bg-blue-50 transition">
-                      <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-100 mb-2 flex items-center justify-center">
+                    <button key={i} className="flex flex-col items-center border border-gray-200 rounded-lg p-2 sm:p-3 bg-white hover:bg-blue-50 transition">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden bg-gray-100 mb-2 flex items-center justify-center">
                         <Image 
                           src={user.img} 
                           alt={user.name} 
                           width={56} 
                           height={56}
                           onError={handleImageError}
+                          className="w-full h-full object-cover"
                         />
                         <div className="w-full h-full bg-gray-300 flex items-center justify-center text-xs text-gray-600" style={{display: 'none'}}>
                           {user.name.charAt(0)}
                         </div>
                       </div>
-                      <span className="text-xs font-medium text-gray-700 truncate w-20 text-center">{user.name}</span>
+                      <span className="text-xs font-medium text-gray-700 truncate w-16 sm:w-20 text-center">
+                        {user.name}
+                      </span>
                     </button>
                   ))}
                 </div>
-                <div className="flex items-center justify-between mt-2">
-                  <span className="text-xs text-gray-500 pl-1">Or <button 
-                    className="underline hover:text-blue-600"
-                    onClick={() => router.push('/dashboard')}
-                  >Skip this step for now.</button></span>
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-0 mt-4 sm:mt-2 px-2 sm:px-0">
+                  <span className="text-xs text-gray-500 text-center sm:text-left sm:pl-1">
+                    Or <button 
+                      className="underline hover:text-blue-600"
+                      onClick={() => router.push('/dashboard')}
+                    >
+                      Skip this step for now.
+                    </button>
+                  </span>
                   <button 
                     onClick={handleFinishSetup}
                     disabled={isLoading}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
                   >
                     {isLoading ? 'Setting up...' : 'Follow 20 & Finish'}
                   </button>
