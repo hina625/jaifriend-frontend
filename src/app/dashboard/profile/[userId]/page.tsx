@@ -70,7 +70,7 @@ interface Album {
     avatar: string;
   };
 }
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 export default function UserProfile() {
   const { userId } = useParams();
   const router = useRouter();
@@ -137,35 +137,53 @@ export default function UserProfile() {
 
       console.log('Fetching profile for userId:', actualUserId);
 
-      const response = await fetch(`${API_URL}/api/users/${actualUserId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${actualUserId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
       if (response.ok) {
-        const userData = await response.json();
-        console.log('User data received:', userData);
-        setUser(userData);
-        setIsFollowing(userData.isFollowing);
-        setIsBlocked(userData.isBlocked);
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const userData = await response.json();
+          console.log('User data received:', userData);
+          setUser(userData);
+          setIsFollowing(userData.isFollowing);
+          setIsBlocked(userData.isBlocked);
+        } else {
+          console.error('Response is not JSON:', await response.text());
+          setError('Invalid response format from server');
+          showPopup('error', 'Error', 'Invalid response format from server');
+        }
         
         // Check if this is the current user's profile
-        const currentUserResponse = await fetch(`${API_URL}/api/profile/me`, {
+        const currentUserResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, { 
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
         
         if (currentUserResponse.ok) {
-          const currentUser = await currentUserResponse.json();
-          setIsCurrentUser(currentUser.id === actualUserId);
+          const contentType = currentUserResponse.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const currentUser = await currentUserResponse.json();
+            setIsCurrentUser(currentUser.id === actualUserId);
+          }
         }
       } else {
-        const errorData = await response.json();
-        console.error('Profile fetch error:', errorData);
-        setError(errorData.error || 'User not found');
-        showPopup('error', 'Error', errorData.error || 'User not found');
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          console.error('Profile fetch error:', errorData);
+          setError(errorData.error || 'User not found');
+          showPopup('error', 'Error', errorData.error || 'User not found');
+        } else {
+          const errorText = await response.text();
+          console.error('Profile fetch error (non-JSON):', errorText);
+          setError('User not found');
+          showPopup('error', 'Error', 'User not found');
+        }
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -182,27 +200,33 @@ export default function UserProfile() {
       if (!token) return;
       
       // Fetch posts
-      const postsResponse = await fetch(`${API_URL}/api/users/${actualUserId}/posts`, {
+      const postsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${actualUserId}/posts`, { 
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
       if (postsResponse.ok) {
-        const postsData = await postsResponse.json();
-        setPosts(postsData);
+        const contentType = postsResponse.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const postsData = await postsResponse.json();
+          setPosts(postsData);
+        }
       }
 
       // Fetch albums
-      const albumsResponse = await fetch(`${API_URL}/api/users/${actualUserId}/albums`, {
+      const albumsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${actualUserId}/albums`, { 
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
       if (albumsResponse.ok) {
-        const albumsData = await albumsResponse.json();
-        setAlbums(albumsData);
+        const contentType = albumsResponse.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const albumsData = await albumsResponse.json();
+          setAlbums(albumsData);
+        }
       }
     } catch (error) {
       console.error('Error fetching user content:', error);
@@ -214,7 +238,7 @@ export default function UserProfile() {
       const token = localStorage.getItem('token');
       if (!token || !user) return;
 
-      const response = await fetch(`${API_URL}/api/users/${user.id}/follow`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${user.id}/follow`, { 
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -239,7 +263,7 @@ export default function UserProfile() {
       const token = localStorage.getItem('token');
       if (!token || !user) return;
 
-      const response = await fetch(`${API_URL}/api/users/${user.id}/block`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${user.id}/block`, { 
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -271,7 +295,7 @@ export default function UserProfile() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${API_URL}/api/posts/${postId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}`, { 
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -295,7 +319,7 @@ export default function UserProfile() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${API_URL}/api/posts/${editingPost._id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${editingPost._id}`, { 
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -365,7 +389,7 @@ export default function UserProfile() {
   const getMediaUrl = (url: string) => {
     if (!url) return '/default-avatar.png';
     if (url.startsWith('http')) return url;
-    return `${API_URL}${url}`;
+    return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${url}`;
   };
 
   const formatDate = (dateString: string) => {

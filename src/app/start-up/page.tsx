@@ -43,9 +43,24 @@ export default function StartUpPage() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
-      router.push('/login');
+      router.push('/');
     }
   }, [router]);
+
+  // Prevent zoom on mobile input focus
+  useEffect(() => {
+    const preventZoom = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+    
+    document.addEventListener('touchstart', preventZoom, { passive: false });
+    
+    return () => {
+      document.removeEventListener('touchstart', preventZoom);
+    };
+  }, []);
 
   const handleFinishSetup = async () => {
     const token = localStorage.getItem('token');
@@ -86,8 +101,8 @@ export default function StartUpPage() {
 
   return (
     <ResponsiveContainer>
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
-        <div className="bg-white rounded-2xl shadow-xl flex flex-col lg:flex-row w-full max-w-5xl overflow-hidden">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-2 sm:p-4 lg:p-8">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl flex flex-col lg:flex-row w-full max-w-5xl overflow-hidden">
           {/* Left Panel */}
           <div className="bg-gray-200 flex flex-col lg:flex-col items-center justify-between lg:w-1/4 lg:min-w-[180px] p-4 lg:py-8 lg:px-4">
             <div className="text-base lg:text-lg font-semibold text-gray-700 text-center mb-4 lg:mb-4">
@@ -103,8 +118,21 @@ export default function StartUpPage() {
 
           {/* Main Content */}
           <div className="flex-1 p-4 sm:p-6 lg:p-8">
+            {/* Mobile Progress Bar */}
+            <div className="lg:hidden mb-4">
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-orange-400 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${((step + 1) / steps.length) * 100}%` }}
+                ></div>
+              </div>
+              <div className="text-center mt-2 text-xs text-gray-600">
+                Step {step + 1} of {steps.length}
+              </div>
+            </div>
+
             {/* Steps */}
-            <div className="flex items-center justify-center gap-1 sm:gap-2 mb-6">
+            <div className="hidden lg:flex items-center justify-center gap-1 sm:gap-2 mb-6">
               {steps.map((s, i) => (
                 <>
                   <button
@@ -151,7 +179,7 @@ export default function StartUpPage() {
                     {users.slice(0, 8).map((user, i) => (
                       <button
                         key={i}
-                        className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 ${selectedAvatar === user.img ? "border-blue-500" : "border-gray-200"}`}
+                        className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2 transition-all duration-200 hover:scale-105 ${selectedAvatar === user.img ? "border-blue-500 ring-2 ring-blue-200" : "border-gray-200 hover:border-blue-300"}`}
                         onClick={() => setSelectedAvatar(user.img)}
                         type="button"
                       >
@@ -171,7 +199,7 @@ export default function StartUpPage() {
                   </div>
                 </div>
                 <button
-                  className="mt-6 sm:mt-8 bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded font-semibold text-sm"
+                  className="mt-6 sm:mt-8 bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded-lg font-semibold text-sm transition-all duration-200 hover:scale-105 active:scale-95"
                   onClick={() => setStep(1)}
                 >
                   Next
@@ -188,34 +216,34 @@ export default function StartUpPage() {
                   <input 
                     type="text" 
                     placeholder="Full Name" 
-                    className="border rounded px-4 py-2 w-full text-sm sm:text-base"
+                    className="border border-gray-300 rounded-lg px-4 py-3 w-full text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                   />
-                  <input 
-                    type="text" 
-                    placeholder="Bio" 
-                    className="border rounded px-4 py-2 w-full text-sm sm:text-base"
+                  <textarea 
+                    placeholder="Bio (Tell us about yourself)" 
+                    rows={3}
+                    className="border border-gray-300 rounded-lg px-4 py-3 w-full text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
                   />
                   <input 
                     type="text" 
-                    placeholder="Location" 
-                    className="border rounded px-4 py-2 w-full text-sm sm:text-base"
+                    placeholder="Location (City, Country)" 
+                    className="border border-gray-300 rounded-lg px-4 py-3 w-full text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                   />
                 </form>
-                <div className="flex gap-4 mt-6 sm:mt-8">
+                <div className="flex gap-3 sm:gap-4 mt-6 sm:mt-8 w-full max-w-sm sm:max-w-md px-4 sm:px-0">
                   <button
-                    className="bg-gray-200 text-gray-700 px-4 sm:px-6 py-2 rounded font-semibold text-sm"
+                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 sm:px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-200 hover:scale-105 active:scale-95"
                     onClick={() => setStep(0)}
                   >
                     Back
                   </button>
                   <button
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded font-semibold text-sm"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-200 hover:scale-105 active:scale-95"
                     onClick={() => setStep(2)}
                   >
                     Next
@@ -229,9 +257,12 @@ export default function StartUpPage() {
                 <div className="text-center mb-4 sm:mb-6 text-gray-700 font-medium text-sm sm:text-base px-4">
                   Get latest activities from our popular users.
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6 px-2 sm:px-0">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 mb-4 sm:mb-6 px-2 sm:px-0 max-h-[300px] sm:max-h-[400px] overflow-y-auto">
                   {users.map((user, i) => (
-                    <button key={i} className="flex flex-col items-center border border-gray-200 rounded-lg p-2 sm:p-3 bg-white hover:bg-blue-50 transition">
+                    <button 
+                      key={i} 
+                      className="flex flex-col items-center border border-gray-200 rounded-lg p-2 sm:p-3 bg-white hover:bg-blue-50 transition-all duration-200 hover:scale-105 active:scale-95"
+                    >
                       <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden bg-gray-100 mb-2 flex items-center justify-center">
                         <Image 
                           src={user.img} 
@@ -254,7 +285,7 @@ export default function StartUpPage() {
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-0 mt-4 sm:mt-2 px-2 sm:px-0">
                   <span className="text-xs text-gray-500 text-center sm:text-left sm:pl-1">
                     Or <button 
-                      className="underline hover:text-blue-600"
+                      className="underline hover:text-blue-600 transition-colors duration-200"
                       onClick={() => router.push('/dashboard')}
                     >
                       Skip this step for now.
@@ -263,7 +294,7 @@ export default function StartUpPage() {
                   <button 
                     onClick={handleFinishSetup}
                     disabled={isLoading}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 rounded font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-3 rounded-lg font-semibold text-sm disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto transition-all duration-200 hover:scale-105 active:scale-95"
                   >
                     {isLoading ? 'Setting up...' : 'Follow 20 & Finish'}
                   </button>
