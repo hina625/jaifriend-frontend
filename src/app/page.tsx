@@ -350,7 +350,7 @@ export default function Home(): React.ReactElement {
                 Login
               </button>
               <button
-                onClick={() => { setAuthType('register'); setAuthModalOpen(true); setModalMessage(undefined); }}
+                onClick={() => router.push('/register')}
                 className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 shadow-lg text-sm sm:text-base"
               >
                 Register
@@ -606,7 +606,7 @@ export default function Home(): React.ReactElement {
                 <button className="w-full bg-red-500 hover:bg-red-600 text-white py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg text-base">
                   Continue with Google
                 </button>
-                <button className="w-full bg-gray-800 hover:bg-gray-900 text-white py-4 rounded-xl font-semibural transition-all duration-300 transform hover:scale-105 shadow-lg text-base">
+                <button className="w-full bg-gray-800 hover:bg-gray-900 text-white py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg text-base">
                   Continue with Apple
                 </button>
               </div>
@@ -774,173 +774,91 @@ export default function Home(): React.ReactElement {
           </div>
         </footer>
 
-        {/* Auth Modal */}
+        {/* Auth Modal (Only for Login now) */}
         <Modal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} message={modalMessage}>
-          {authType === 'login' ? (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Login</h2>
-              <input
-                type="text"
-                name="username"
-                placeholder="Username"
-                value={formData.username}
-                onChange={handleInputChange}
-                className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-300 text-gray-700 placeholder-gray-400 text-base"
-                required
-              />
-              <input
-                type="password"
-                name="password"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-300 text-gray-700 placeholder-gray-400 text-base"
-                required
-              />
-              <button
-                onClick={() => {
-                  setIsLoading(true);
-                  setModalMessage(undefined);
-                  
-                  // Use actual API call for modal login
-                  loginApi({
-                    username: formData.username,
-                    password: formData.password
-                  })
-                  .then(response => {
-                    if (response.token) {
-                      setToken(response.token);
-                      localStorage.setItem('userEmail', formData.username);
-                      
-                      setModalMessage({ text: 'Login successful! Redirecting...', type: 'success' });
-                      setTimeout(() => {
-                        if (response.isSetupDone) {
-                          router.push('/dashboard');
-                        } else {
-                          router.push('/start-up');
-                        }
-                      }, 1200);
-                    } else {
-                      setModalMessage({ text: 'Invalid credentials. Please try again.', type: 'error' });
-                    }
-                  })
-                  .catch(error => {
-                    console.error('Login error:', error);
-                    const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
-                    setModalMessage({ text: errorMessage, type: 'error' });
-                  })
-                  .finally(() => {
-                    setIsLoading(false);
-                  });
-                }}
-                disabled={isLoading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none shadow-lg hover:shadow-xl text-base"
-              >
-                {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Logging in...
-                  </div>
-                ) : (
-                  'Login'
-                )}
-              </button>
-              <div className="text-center mt-4">
-                <span className="text-sm text-gray-600">Don't have an account?{' '}
-                  <button type="button" className="text-blue-500 hover:underline font-medium" onClick={() => { setAuthType('register'); setModalMessage(undefined); }}>
-                    Register
-                  </button>
-                </span>
-              </div>
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Login</h2>
+            <input
+              type="text"
+              name="username"
+              placeholder="Username"
+              value={formData.username}
+              onChange={handleInputChange}
+              className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-300 text-gray-700 placeholder-gray-400 text-base"
+              required
+            />
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={formData.password}
+              onChange={handleInputChange}
+              className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-300 text-gray-700 placeholder-gray-400 text-base"
+              required
+            />
+            <button
+              onClick={() => {
+                setIsLoading(true);
+                setModalMessage(undefined);
+                
+                // Use actual API call for modal login
+                loginApi({
+                  username: formData.username,
+                  password: formData.password
+                })
+                .then(response => {
+                  if (response.token) {
+                    setToken(response.token);
+                    localStorage.setItem('userEmail', formData.username);
+                    
+                    setModalMessage({ text: 'Login successful! Redirecting...', type: 'success' });
+                    setTimeout(() => {
+                      if (response.isSetupDone) {
+                        router.push('/dashboard');
+                      } else {
+                        router.push('/start-up');
+                      }
+                    }, 1200);
+                  } else {
+                    setModalMessage({ text: 'Invalid credentials. Please try again.', type: 'error' });
+                  }
+                })
+                .catch(error => {
+                  console.error('Login error:', error);
+                  const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
+                  setModalMessage({ text: errorMessage, type: 'error' });
+                })
+                .finally(() => {
+                  setIsLoading(false);
+                });
+              }}
+              disabled={isLoading}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none shadow-lg hover:shadow-xl text-base"
+            >
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  Logging in...
+                </div>
+              ) : (
+                'Login'
+              )}
+            </button>
+            <div className="text-center mt-4">
+              <span className="text-sm text-gray-600">Don't have an account?{' '}
+                <button 
+                  type="button" 
+                  className="text-blue-500 hover:underline font-medium" 
+                  onClick={() => {
+                    setAuthModalOpen(false);
+                    router.push('/register');
+                  }}
+                >
+                  Register
+                </button>
+              </span>
             </div>
-          ) : (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Register</h2>
-              <input
-                type="text"
-                name="username"
-                placeholder="Username"
-                value={formData.username}
-                onChange={handleInputChange}
-                className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-300 text-gray-700 placeholder-gray-400 text-base"
-                required
-              />
-              <input
-                type="email"
-                name="email"
-                placeholder="E-mail address"
-                value={formData.email || ''}
-                onChange={handleInputChange}
-                className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-300 text-gray-700 placeholder-gray-400 text-base"
-                required
-              />
-              <input
-                type="password"
-                name="password"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-300 text-gray-700 placeholder-gray-400 text-base"
-                required
-              />
-              <input
-                type="password"
-                name="confirmPassword"
-                placeholder="Confirm Password"
-                value={formData.confirmPassword || ''}
-                onChange={handleInputChange}
-                className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-300 text-gray-700 placeholder-gray-400 text-base"
-                required
-              />
-              <button
-                onClick={() => {
-                  setIsLoading(true);
-                  setModalMessage(undefined);
-                  
-                  const email = formData.email ?? '';
-                  if (!formData.username.trim()) {
-                    setModalMessage({ text: 'Username is required', type: 'error' }); setIsLoading(false); return;
-                  }
-                  if (!email.trim()) {
-                    setModalMessage({ text: 'Email is required', type: 'error' }); setIsLoading(false); return;
-                  } else if (!/\S+@\S+\.\S+/.test(email)) {
-                    setModalMessage({ text: 'Email is invalid', type: 'error' }); setIsLoading(false); return;
-                  }
-                  if (!formData.password) {
-                    setModalMessage({ text: 'Password is required', type: 'error' }); setIsLoading(false); return;
-                  } else if (formData.password.length < 6) {
-                    setModalMessage({ text: 'Password must be at least 6 characters', type: 'error' }); setIsLoading(false); return;
-                  }
-                  if (formData.password !== formData.confirmPassword) {
-                    setModalMessage({ text: 'Passwords do not match', type: 'error' }); setIsLoading(false); return;
-                  }
-                  
-                  setTimeout(() => {
-                    setModalMessage({ text: 'Registration successful! Welcome to Jaifriend.', type: 'success' });
-                    setIsLoading(false);
-                  }, 1500);
-                }}
-                disabled={isLoading}
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none shadow-lg hover:shadow-xl text-base"
-              >
-                {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Creating Account...
-                  </div>
-                ) : (
-                  "Let's Go !"
-                )}
-              </button>
-              <div className="text-center mt-4">
-                <span className="text-sm text-gray-600">Already have an account?{' '}
-                  <button type="button" className="text-blue-500 hover:underline font-medium" onClick={() => { setAuthType('login'); setModalMessage(undefined); }}>
-                    Login
-                  </button>
-                </span>
-              </div>
-            </div>
-          )}
+          </div>
         </Modal>
       </div>
     </AuthGuard>
