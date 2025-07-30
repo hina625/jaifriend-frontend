@@ -1,11 +1,11 @@
 import axios from 'axios';
 
 // Simple API URL configuration
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-export const loginApi = async (data: { email: string; password: string }) => {
+export const loginApi = async (data: { username: string; password: string }) => {
   console.log('🔐 Login attempt with:', data);
-  const res = await axios.post(`${API_URL}/auth/login`, data);
+  const res = await axios.post(`${API_URL}/api/auth/login`, data);
   console.log('✅ Login response:', res.data);
   return res.data;
 };
