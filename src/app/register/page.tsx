@@ -65,22 +65,8 @@ export default function Register(): React.ReactElement {
   const closePopup = () => {
     setPopup(prev => ({ ...prev, isOpen: false }));
     if (popup.type === 'success') {
-      // Open profile in new tab instead of redirecting
-      const token = localStorage.getItem('token');
-      if (token) {
-        // Try to get user ID from token payload
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          if (payload.userId) {
-            window.open(`/dashboard/profile/${payload.userId}`, '_blank');
-            return;
-          }
-        } catch (error) {
-          console.error('Error decoding token:', error);
-        }
-      }
-      // Fallback to dashboard in new tab if token decoding fails
-      window.open('/dashboard', '_blank');
+      // Redirect to start-up page for profile setup
+      router.push('/start-up');
     }
   };
 
@@ -160,7 +146,7 @@ export default function Register(): React.ReactElement {
 
       if (response.ok) {
         localStorage.setItem('token', data.token);
-        showPopup('success', 'Registration Successful!', 'Your account has been created successfully. You will be redirected to the dashboard.');
+        showPopup('success', 'Registration Successful!', 'Your account has been created successfully. You will be redirected to complete your profile setup.');
       } else {
         showPopup('error', 'Registration Failed', data.message || 'Something went wrong. Please try again.');
       }
