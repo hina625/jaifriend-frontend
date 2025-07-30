@@ -46,7 +46,7 @@ interface ProfileCompletion {
   country: boolean;
   address: boolean;
 }
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 const ProfilePage: React.FC = () => {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -141,7 +141,7 @@ const ProfilePage: React.FC = () => {
         return;
       }
 
-      const response = await fetch(`${API_URL}/api/profile/me`, {
+      const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/profile/me', { 
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -161,7 +161,7 @@ const ProfilePage: React.FC = () => {
   const fetchUserPosts = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/profile/posts`, {
+      const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/profile/posts', {  
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -195,7 +195,7 @@ const ProfilePage: React.FC = () => {
   const updateProfile = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/profile/update`, {
+      const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/profile/update', { 
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -229,7 +229,7 @@ const ProfilePage: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/posts/${postId}`, {
+      const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/${postId}', { 
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -253,7 +253,7 @@ const ProfilePage: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/posts/${editingPost._id}`, {
+      const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/${editingPost._id}', { 
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -326,7 +326,7 @@ const ProfilePage: React.FC = () => {
   const getMediaUrl = (url: string) => {
     if (!url) return '/default-avatar.png';
     if (url.startsWith('http')) return url;
-    return `${API_URL}${url}`;
+    return `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
   };
 
   const getCompletionPercentage = () => {
@@ -336,10 +336,10 @@ const ProfilePage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading profile...</p>
+          <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-3 sm:mt-4 text-gray-600 text-sm sm:text-base">Loading profile...</p>
         </div>
       </div>
     );
@@ -347,9 +347,9 @@ const ProfilePage: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
-          <p className="text-gray-600">User not found</p>
+          <p className="text-gray-600 text-sm sm:text-base">User not found</p>
         </div>
       </div>
     );
@@ -360,7 +360,7 @@ const ProfilePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Cover Photo Section */}
-      <div className="relative h-64 md:h-80 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-800 overflow-hidden">
+      <div className="relative h-48 sm:h-64 md:h-80 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-800 overflow-hidden">
         {/* Particle effect overlay */}
         <div className="absolute inset-0" style={{
           backgroundImage: `radial-gradient(circle at 20% 20%, rgba(255,255,255,0.1) 1px, transparent 1px),
@@ -370,80 +370,80 @@ const ProfilePage: React.FC = () => {
         }}></div>
         
         {/* Cover actions */}
-        <div className="absolute top-4 right-4 flex gap-2">
-          <button className="px-4 py-2 bg-black bg-opacity-20 text-white rounded-lg backdrop-blur-sm hover:bg-opacity-30 transition-all flex items-center gap-2">
-            <CameraIcon className="w-4 h-4" />
-            Cover
+        <div className="absolute top-2 sm:top-4 right-2 sm:right-4 flex gap-1 sm:gap-2">
+          <button className="px-2 sm:px-4 py-1 sm:py-2 bg-black bg-opacity-20 text-white rounded-lg backdrop-blur-sm hover:bg-opacity-30 transition-all flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+            <CameraIcon className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="hidden sm:inline">Cover</span>
           </button>
-          <button className="p-2 bg-black bg-opacity-20 text-white rounded-lg backdrop-blur-sm hover:bg-opacity-30 transition-all">
-            <Plus className="w-4 h-4" />
+          <button className="p-1 sm:p-2 bg-black bg-opacity-20 text-white rounded-lg backdrop-blur-sm hover:bg-opacity-30 transition-all">
+            <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
           </button>
         </div>
       </div>
 
       {/* Profile Header */}
-      <div className="relative px-4 md:px-8 pb-6 -mt-20">
+      <div className="relative px-3 sm:px-4 md:px-8 pb-4 sm:pb-6 -mt-16 sm:-mt-20">
         <div className="max-w-4xl mx-auto">
           {/* Profile Picture and Actions */}
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
-            <div className="flex items-end gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
               {/* Profile Picture */}
-              <div className="relative">
+              <div className="relative mx-auto sm:mx-0">
                 <img
                   src={getMediaUrl(user.avatar)}
                   alt={user.name}
-                  className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white shadow-xl object-cover bg-gray-200"
+                  className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full border-4 border-white shadow-xl object-cover bg-gray-200"
                 />
-                <button className="absolute bottom-2 right-2 w-8 h-8 bg-gray-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-gray-700 transition-colors">
-                  <CameraIcon className="w-4 h-4" />
+                <button className="absolute bottom-1 sm:bottom-2 right-1 sm:right-2 w-6 h-6 sm:w-8 sm:h-8 bg-gray-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-gray-700 transition-colors">
+                  <CameraIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                 </button>
                 {user.isOnline && (
-                  <div className="absolute bottom-6 right-6 w-6 h-6 bg-green-500 border-2 border-white rounded-full"></div>
+                  <div className="absolute bottom-4 sm:bottom-6 right-4 sm:right-6 w-4 h-4 sm:w-6 sm:h-6 bg-green-500 border-2 border-white rounded-full"></div>
                 )}
               </div>
 
               {/* User Info */}
-              <div className="flex-1 pb-4">
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1">{user.name}</h1>
-                <p className="text-gray-600 text-lg mb-2">@{user.username}</p>
+              <div className="flex-1 pb-2 sm:pb-4 text-center sm:text-left">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-1">{user.name}</h1>
+                <p className="text-gray-600 text-base sm:text-lg mb-2">@{user.username}</p>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-2 md:pb-4">
+            <div className="flex justify-center sm:justify-end gap-2 sm:pb-4">
               <button className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition-colors">
                 <MoreVertical className="w-4 h-4" />
               </button>
               <button 
                 onClick={() => setShowProfileEdit(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors"
+                className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors text-sm"
               >
-                <Edit className="w-4 h-4" />
-                Edit
+                <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Edit</span>
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
-                <Eye className="w-4 h-4" />
-                Activities
+              <button className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm">
+                <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Activities</span>
               </button>
             </div>
           </div>
 
           {/* User Details */}
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             {user.bio && (
-              <p className="text-gray-700 mb-4 max-w-2xl">{user.bio}</p>
+              <p className="text-gray-700 mb-3 sm:mb-4 max-w-2xl text-sm sm:text-base text-center sm:text-left">{user.bio}</p>
             )}
 
-            <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4">
+            <div className="flex flex-wrap gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 justify-center sm:justify-start">
               {user.location && (
                 <div className="flex items-center gap-1">
-                  <MapPin className="w-4 h-4" />
+                  <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span>{user.location}</span>
                 </div>
               )}
               {user.website && (
                 <div className="flex items-center gap-1">
-                  <Globe className="w-4 h-4" />
+                  <Globe className="w-3 h-3 sm:w-4 sm:h-4" />
                   <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                     {user.website}
                   </a>
@@ -451,7 +451,7 @@ const ProfilePage: React.FC = () => {
               )}
               {user.joinedDate && (
                 <div className="flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
+                  <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span>Joined {new Date(user.joinedDate).toLocaleDateString()}</span>
                 </div>
               )}
@@ -462,21 +462,21 @@ const ProfilePage: React.FC = () => {
 
       {/* Navigation Tabs */}
       <div className="bg-white border-b sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-4 md:px-8">
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 md:px-8">
           <div className="flex overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 py-4 px-4 border-b-2 transition-colors whitespace-nowrap min-w-fit ${
+                className={`flex items-center gap-1 sm:gap-2 py-3 sm:py-4 px-2 sm:px-4 border-b-2 transition-colors whitespace-nowrap min-w-fit ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600 font-medium'
                     : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
                 }`}
               >
-                <span className="text-sm font-medium">{tab.label}</span>
+                <span className="text-xs sm:text-sm font-medium">{tab.label}</span>
                 {tab.count !== undefined && (
-                  <span className="bg-gray-200 text-gray-600 px-2 py-1 rounded-full text-xs">
+                  <span className="bg-gray-200 text-gray-600 px-1 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs">
                     {tab.count}
                   </span>
                 )}
@@ -487,12 +487,12 @@ const ProfilePage: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 md:px-8 py-6">
+      <div className="max-w-4xl mx-auto px-3 sm:px-4 md:px-8 py-4 sm:py-6">
         {activeTab === 'timeline' && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Profile Completion Card */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Profile Completion</h3>
+            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Profile Completion</h3>
               
               {/* Progress Bar */}
               <div className="mb-4">
@@ -509,13 +509,13 @@ const ProfilePage: React.FC = () => {
               </div>
 
               {/* Completion Items */}
-              <div className="flex flex-wrap gap-3">
-                <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${
+              <div className="flex flex-wrap gap-2 sm:gap-3">
+                <div className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm ${
                   profileCompletion.profilePicture 
                     ? 'bg-green-100 text-green-700' 
                     : 'bg-gray-100 text-gray-600'
                 }`}>
-                  <div className={`w-2 h-2 rounded-full ${
+                  <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
                     profileCompletion.profilePicture ? 'bg-green-500' : 'bg-gray-400'
                   }`}></div>
                   <span className={profileCompletion.profilePicture ? 'line-through' : ''}>
@@ -523,12 +523,12 @@ const ProfilePage: React.FC = () => {
                   </span>
                 </div>
 
-                <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${
+                <div className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm ${
                   profileCompletion.name 
                     ? 'bg-green-100 text-green-700' 
                     : 'bg-gray-100 text-gray-600'
                 }`}>
-                  <div className={`w-2 h-2 rounded-full ${
+                  <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
                     profileCompletion.name ? 'bg-green-500' : 'bg-gray-400'
                   }`}></div>
                   <span className={profileCompletion.name ? 'line-through' : ''}>
@@ -536,12 +536,12 @@ const ProfilePage: React.FC = () => {
                   </span>
                 </div>
 
-                <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${
+                <div className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm ${
                   profileCompletion.workplace 
                     ? 'bg-green-100 text-green-700' 
                     : 'bg-gray-100 text-gray-600'
                 }`}>
-                  <div className={`w-2 h-2 rounded-full ${
+                  <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
                     profileCompletion.workplace ? 'bg-green-500' : 'bg-gray-400'
                   }`}></div>
                   <span className={profileCompletion.workplace ? 'line-through' : ''}>
@@ -549,12 +549,12 @@ const ProfilePage: React.FC = () => {
                   </span>
                 </div>
 
-                <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${
+                <div className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm ${
                   profileCompletion.country 
                     ? 'bg-green-100 text-green-700' 
                     : 'bg-gray-100 text-gray-600'
                 }`}>
-                  <div className={`w-2 h-2 rounded-full ${
+                  <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
                     profileCompletion.country ? 'bg-green-500' : 'bg-gray-400'
                   }`}></div>
                   <span className={profileCompletion.country ? 'line-through' : ''}>
@@ -562,12 +562,12 @@ const ProfilePage: React.FC = () => {
                   </span>
                 </div>
 
-                <div className={`flex items-center gap-2 px-3 py-2 rounded-full text-sm ${
+                <div className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm ${
                   profileCompletion.address 
                     ? 'bg-green-100 text-green-700' 
                     : 'bg-gray-100 text-gray-600'
                 }`}>
-                  <div className={`w-2 h-2 rounded-full ${
+                  <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
                     profileCompletion.address ? 'bg-green-500' : 'bg-gray-400'
                   }`}></div>
                   <span className={profileCompletion.address ? 'line-through' : ''}>
@@ -578,10 +578,10 @@ const ProfilePage: React.FC = () => {
             </div>
 
             {/* Left Sidebar Info */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
               {/* Profile Stats Sidebar */}
               <div className="lg:col-span-1">
-                <div className="bg-white rounded-xl shadow-sm p-6 space-y-4">
+                <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 space-y-3 sm:space-y-4">
                   {/* Search Box */}
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -627,39 +627,39 @@ const ProfilePage: React.FC = () => {
               </div>
 
               {/* Main Content Area */}
-              <div className="lg:col-span-2 space-y-6">
+              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
                 {/* Post Creation */}
-                <div className="bg-white rounded-xl shadow-sm p-4">
-                  <div className="flex items-center gap-3">
+                <div className="bg-white rounded-xl shadow-sm p-3 sm:p-4">
+                  <div className="flex items-center gap-2 sm:gap-3">
                     <img
                       src={getMediaUrl(user.avatar)}
                       alt={user.name}
-                      className="w-10 h-10 rounded-full object-cover"
+                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"
                     />
                     <div className="flex-1">
                       <input
                         type="text"
                         placeholder="What's going on? #Hashtag.. @Mention.. Link.."
-                        className="w-full px-4 py-2 bg-gray-100 rounded-full focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                        className="w-full px-3 sm:px-4 py-2 bg-gray-100 rounded-full focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                         onClick={() => router.push('/dashboard')}
                         readOnly
                       />
                     </div>
-                    <button className="p-2 text-red-500 hover:bg-red-50 rounded-lg">
-                      <Video className="w-5 h-5" />
+                    <button className="p-1.5 sm:p-2 text-red-500 hover:bg-red-50 rounded-lg">
+                      <Video className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
-                    <button className="p-2 text-green-500 hover:bg-green-50 rounded-lg">
-                      <CameraIcon className="w-5 h-5" />
+                    <button className="p-1.5 sm:p-2 text-green-500 hover:bg-green-50 rounded-lg">
+                      <CameraIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
                   </div>
 
                   {/* Filter Tabs */}
-                  <div className="flex mt-4 border-b">
+                  <div className="flex mt-3 sm:mt-4 border-b overflow-x-auto">
                     {filters.map((filter) => (
                       <button
                         key={filter.id}
                         onClick={() => setActiveFilter(filter.id)}
-                        className={`flex items-center gap-2 px-4 py-2 text-sm transition-colors ${
+                        className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-xs sm:text-sm transition-colors whitespace-nowrap ${
                           activeFilter === filter.id
                             ? 'text-blue-600 border-b-2 border-blue-500'
                             : 'text-gray-600 hover:text-gray-900'
@@ -674,23 +674,23 @@ const ProfilePage: React.FC = () => {
 
                 {/* Posts */}
                 {filteredPosts.length === 0 ? (
-                  <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-                    <div className="text-gray-400 mb-4">
-                      <FileText className="w-16 h-16 mx-auto" />
+                  <div className="bg-white rounded-xl shadow-sm p-6 sm:p-8 text-center">
+                    <div className="text-gray-400 mb-3 sm:mb-4">
+                      <FileText className="w-12 h-12 sm:w-16 sm:h-16 mx-auto" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No posts found</h3>
-                    <p className="text-gray-600 mb-4">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">No posts found</h3>
+                    <p className="text-gray-600 mb-3 sm:mb-4 text-sm sm:text-base">
                       {searchQuery ? 'Try adjusting your search terms' : 'Start sharing your thoughts!'}
                     </p>
                     <button
                       onClick={() => router.push('/dashboard')}
-                      className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                      className="px-4 sm:px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm sm:text-base"
                     >
                       Create Post
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-6">
+                  <div className="space-y-4 sm:space-y-6">
                     {filteredPosts.map((post) => (
                       <div key={post._id} className="bg-white rounded-xl shadow-sm overflow-hidden">
                         <PostDisplay
@@ -722,11 +722,11 @@ const ProfilePage: React.FC = () => {
 
         {/* Other Tabs */}
         {activeTab !== 'timeline' && (
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h3 className="text-xl font-semibold mb-4">
+          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+            <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">
               {tabs.find(tab => tab.id === activeTab)?.label}
             </h3>
-            <p className="text-gray-600">This section is coming soon!</p>
+            <p className="text-gray-600 text-sm sm:text-base">This section is coming soon!</p>
           </div>
         )}
       </div>
@@ -734,25 +734,25 @@ const ProfilePage: React.FC = () => {
       {/* Floating Action Button */}
       <button
         onClick={() => router.push('/dashboard')}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center transition-colors z-50"
+        className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 w-12 h-12 sm:w-14 sm:h-14 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center transition-colors z-50"
       >
-        <Plus className="w-6 h-6" />
+        <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
       </button>
 
       {/* Profile Edit Modal */}
       {showProfileEdit && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 max-h-[80vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold mb-4">Edit Profile</h3>
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-3 sm:p-4 bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-4 sm:p-6 max-h-[80vh] overflow-y-auto">
+            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Edit Profile</h3>
             
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                 <input
                   type="text"
                   value={editingProfile.name}
                   onChange={(e) => setEditingProfile(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base"
                 />
               </div>
 
@@ -817,16 +817,16 @@ const ProfilePage: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex space-x-3 mt-6">
+            <div className="flex space-x-2 sm:space-x-3 mt-4 sm:mt-6">
               <button
                 onClick={() => setShowProfileEdit(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex-1 px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base"
               >
                 Cancel
               </button>
               <button
                 onClick={updateProfile}
-                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                className="flex-1 px-3 sm:px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm sm:text-base"
               >
                 Save Changes
               </button>
@@ -837,29 +837,29 @@ const ProfilePage: React.FC = () => {
 
       {/* Edit Post Modal */}
       {showEditModal && editingPost && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black bg-opacity-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold mb-4">Edit Post</h3>
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-3 sm:p-4 bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Edit Post</h3>
             <textarea
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
-              className="w-full h-32 p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              className="w-full h-24 sm:h-32 p-2 sm:p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base"
               placeholder="What's on your mind?"
             />
-            <div className="flex space-x-3 mt-4">
+            <div className="flex space-x-2 sm:space-x-3 mt-3 sm:mt-4">
               <button
                 onClick={() => {
                   setShowEditModal(false);
                   setEditingPost(null);
                   setEditContent('');
                 }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex-1 px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveEdit}
-                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                className="flex-1 px-3 sm:px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm sm:text-base"
               >
                 Save Changes
               </button>
