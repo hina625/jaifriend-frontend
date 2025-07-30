@@ -2,8 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Camera, ArrowLeft, Settings, Users, User, X } from 'lucide-react';
 import Popup, { PopupState } from '../../../components/Popup';
-import AuthDebug from '../../../components/AuthDebug';
-import LoginTest from '../../../components/LoginTest';
 
 const PhotoAlbumManager: React.FC = () => {
   const [currentView, setCurrentView] = useState<'albums' | 'create'>('albums');
@@ -23,7 +21,7 @@ const PhotoAlbumManager: React.FC = () => {
     title: '',
     message: ''
   });
-
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   // Fetch real albums from API
   useEffect(() => {
     const fetchAlbums = async () => {
@@ -38,7 +36,7 @@ const PhotoAlbumManager: React.FC = () => {
           return;
         }
         
-        const response = await fetch('http://localhost:5000/api/albums/user', {
+        const response = await fetch('${API_URL}/api/albums/user', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -129,7 +127,7 @@ const PhotoAlbumManager: React.FC = () => {
         }
       });
 
-      const response = await fetch('http://localhost:5000/api/albums', {
+      const response = await fetch(`${API_URL}/api/albums`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -191,7 +189,7 @@ const PhotoAlbumManager: React.FC = () => {
   const getMediaUrl = (url: string) => {
     if (!url) return '';
     if (url.startsWith('http')) return url;
-    return `http://localhost:5000${url}`;
+    return `${API_URL}${url}`;
   };
 
   // Edit album handlers
@@ -240,7 +238,7 @@ const PhotoAlbumManager: React.FC = () => {
         return;
       }
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/albums/${albumId}`, {
+      const response = await fetch(`${API_URL}/api/albums${albumId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -469,10 +467,6 @@ const PhotoAlbumManager: React.FC = () => {
             <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         )}
-        
-        {/* Auth Debug Component */}
-        <AuthDebug />
-        <LoginTest />
       </div>
     );
   }
@@ -634,10 +628,6 @@ const PhotoAlbumManager: React.FC = () => {
           </div>
         </div>
       </div>
-      
-      {/* Auth Debug Component */}
-      <AuthDebug />
-      <LoginTest />
     </div>
   );
 };
