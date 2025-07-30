@@ -201,19 +201,30 @@ export default function Home(): React.ReactElement {
   };
 
   const handleSubmit = async (): Promise<void> => {
+    // Validate form fields before API call
+    if (!formData.username.trim()) {
+      showPopup('error', 'Validation Error', 'Please enter your username.');
+      return;
+    }
+    
+    if (!formData.password.trim()) {
+      showPopup('error', 'Validation Error', 'Please enter your password.');
+      return;
+    }
+
     setIsLoading(true);
     
     try {
       // Use actual API call instead of simulation
       const response = await loginApi({
-        username: formData.username,
-        password: formData.password
+        username: formData.username.trim(),
+        password: formData.password.trim()
       });
       
-      if (response.token) {
+      if (response?.token) {
         // Store token using auth utility
         setToken(response.token);
-        localStorage.setItem('userEmail', formData.username);
+        localStorage.setItem('userEmail', formData.username.trim());
         
         showPopup('success', 'Login Successful!', 'Welcome back! You will be redirected to your dashboard.');
         setTimeout(() => {
@@ -228,7 +239,7 @@ export default function Home(): React.ReactElement {
       }
     } catch (error: any) {
       console.error('Login error:', error);
-      const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
+      const errorMessage = error?.response?.data?.message || error?.message || 'Login failed. Please try again.';
       showPopup('error', 'Login Failed', errorMessage);
     } finally {
       setIsLoading(false);
@@ -569,7 +580,7 @@ export default function Home(): React.ReactElement {
                   <div className="xl:col-span-1">
                     <button
                       onClick={handleSubmit}
-                      disabled={isLoading}
+                      disabled={isLoading || !formData.username.trim() || !formData.password.trim()}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none shadow-lg hover:shadow-xl text-base"
                     >
                       {isLoading ? (
@@ -798,18 +809,29 @@ export default function Home(): React.ReactElement {
             />
             <button
               onClick={() => {
+                // Validate form fields before API call
+                if (!formData.username.trim()) {
+                  setModalMessage({ text: 'Please enter your username.', type: 'error' });
+                  return;
+                }
+                
+                if (!formData.password.trim()) {
+                  setModalMessage({ text: 'Please enter your password.', type: 'error' });
+                  return;
+                }
+
                 setIsLoading(true);
                 setModalMessage(undefined);
                 
                 // Use actual API call for modal login
                 loginApi({
-                  username: formData.username,
-                  password: formData.password
+                  username: formData.username.trim(),
+                  password: formData.password.trim()
                 })
                 .then(response => {
-                  if (response.token) {
+                  if (response?.token) {
                     setToken(response.token);
-                    localStorage.setItem('userEmail', formData.username);
+                    localStorage.setItem('userEmail', formData.username.trim());
                     
                     setModalMessage({ text: 'Login successful! Redirecting...', type: 'success' });
                     setTimeout(() => {
@@ -825,14 +847,14 @@ export default function Home(): React.ReactElement {
                 })
                 .catch(error => {
                   console.error('Login error:', error);
-                  const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
+                  const errorMessage = error?.response?.data?.message || error?.message || 'Login failed. Please try again.';
                   setModalMessage({ text: errorMessage, type: 'error' });
                 })
                 .finally(() => {
                   setIsLoading(false);
                 });
               }}
-              disabled={isLoading}
+              disabled={isLoading || !formData.username.trim() || !formData.password.trim()}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none shadow-lg hover:shadow-xl text-base"
             >
               {isLoading ? (
