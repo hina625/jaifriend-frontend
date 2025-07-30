@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Camera, ArrowLeft, Settings, Users, User, X } from 'lucide-react';
 import Popup, { PopupState } from '../../../components/Popup';
+import AuthDebug from '../../../components/AuthDebug';
+import LoginTest from '../../../components/LoginTest';
 
 const PhotoAlbumManager: React.FC = () => {
   const [currentView, setCurrentView] = useState<'albums' | 'create'>('albums');
@@ -21,22 +23,35 @@ const PhotoAlbumManager: React.FC = () => {
     title: '',
     message: ''
   });
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
   // Fetch real albums from API
   useEffect(() => {
     const fetchAlbums = async () => {
       setLoading(true);
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${API_URL}/api/albums/user`, {
+        
+        // Check if token exists and is valid
+        if (!token || token === 'null' || token === 'undefined') {
+          console.error('No valid token found');
+          setIsAuthenticated(false);
+          return;
+        }
+        
+        const response = await fetch('http://localhost:5000/api/albums/user', {
           headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {})
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
         });
         
         if (response.ok) {
           const albumsData = await response.json();
           setAlbums(albumsData);
+        } else if (response.status === 401) {
+          console.error('Authentication failed');
+          setIsAuthenticated(false);
+          localStorage.removeItem('token');
         } else {
           console.error('Failed to fetch albums');
         }
@@ -92,6 +107,14 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
     
     try {
       const token = localStorage.getItem('token');
+      
+      // Check if token exists and is valid
+      if (!token || token === 'null' || token === 'undefined') {
+        showPopup('error', 'Authentication Error', 'Please log in again');
+        setIsAuthenticated(false);
+        return;
+      }
+      
       const formData = new FormData();
       formData.append('name', albumName);
       
@@ -106,10 +129,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
         }
       });
 
-      const response = await fetch('${API_URL}/api/albums', {
+      const response = await fetch('http://localhost:5000/api/albums', {
         method: 'POST',
         headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
+          'Authorization': `Bearer ${token}`
         },
         body: formData
       });
@@ -124,6 +147,11 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
         
         // Dispatch event to refresh feed
         window.dispatchEvent(new CustomEvent('albumCreated'));
+      } else if (response.status === 401) {
+        console.error('Authentication failed');
+        setIsAuthenticated(false);
+        localStorage.removeItem('token');
+        showPopup('error', 'Authentication Error', 'Please log in again');
       } else {
         console.error('Server response error:', response.status, response.statusText);
         try {
@@ -163,7 +191,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   const getMediaUrl = (url: string) => {
     if (!url) return '';
     if (url.startsWith('http')) return url;
-    return `${API_URL}${url}`;
+    return `http://localhost:5000${url}`;
   };
 
   // Edit album handlers
@@ -204,10 +232,19 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   const handleDeleteAlbum = async (albumId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_URL}/api/albums/${albumId}`, {
+      
+      // Check if token exists and is valid
+      if (!token || token === 'null' || token === 'undefined') {
+        showPopup('error', 'Authentication Error', 'Please log in again');
+        setIsAuthenticated(false);
+        return;
+      }
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/albums/${albumId}`, {
         method: 'DELETE',
         headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
 
@@ -218,6 +255,11 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
         
         // Dispatch event to refresh feed
         window.dispatchEvent(new CustomEvent('albumDeleted'));
+      } else if (response.status === 401) {
+        console.error('Authentication failed');
+        setIsAuthenticated(false);
+        localStorage.removeItem('token');
+        showPopup('error', 'Authentication Error', 'Please log in again');
       } else {
         const error = await response.json();
         showPopup('error', 'Failed to Delete Album', error.message || 'Something went wrong');
@@ -233,8 +275,17 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <User className="w-8 h-8 text-red-500" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Authentication Required</h2>
+          <p className="text-gray-600 mb-4">Please log in to access your albums</p>
+          <button 
+            onClick={() => window.location.href = '/login'}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
+          >
+            Go to Login
+          </button>
         </div>
       </div>
     );
@@ -418,6 +469,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
             <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         )}
+        
+        {/* Auth Debug Component */}
+        <AuthDebug />
+        <LoginTest />
       </div>
     );
   }
@@ -579,6 +634,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
           </div>
         </div>
       </div>
+      
+      {/* Auth Debug Component */}
+      <AuthDebug />
+      <LoginTest />
     </div>
   );
 };
