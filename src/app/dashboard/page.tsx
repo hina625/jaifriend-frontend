@@ -278,7 +278,7 @@ export default function Dashboard() {
 
   const handleReaction = async (postId: string, reactionType: string) => {
     const token = localStorage.getItem('token');
-    const res = await fetch(process.env.NEXT_PUBLIC_API_URL || `http://localhost:5000/api/posts/${postId}/reaction`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/reaction`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -369,7 +369,7 @@ export default function Dashboard() {
   const handleShare = async (postId: string, shareOptions?: ShareOptions) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || `http://localhost:5000/api/posts/${postId}/share`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/share`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -380,6 +380,9 @@ export default function Dashboard() {
       if (res.ok) {
         const data = await res.json();
         setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? { ...p, shares: data.shares, shared: data.shared } : p));
+        
+        // Refresh feed to show the shared post
+        fetchFeedData();
         
         // Show success message
         const post = posts.find(p => (p._id === postId || p.id === postId));
@@ -440,7 +443,7 @@ export default function Dashboard() {
   // Handle album like
   const handleAlbumLike = async (albumId: string) => {
     const token = localStorage.getItem('token');
-    const res = await fetch(process.env.NEXT_PUBLIC_API_URL || `http://localhost:5000/api/albums/${albumId}/like`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/like`, {
       method: 'POST',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -456,7 +459,7 @@ export default function Dashboard() {
 
   const handleAlbumReaction = async (albumId: string, reactionType: string) => {
     const token = localStorage.getItem('token');
-    const res = await fetch(process.env.NEXT_PUBLIC_API_URL || `http://localhost:5000/api/albums/${albumId}/reaction`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/reaction`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -476,7 +479,7 @@ export default function Dashboard() {
   const handleAlbumComment = async (albumId: string, comment: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || `http://localhost:5000/api/albums/${albumId}/comment`, { 
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/comment`, { 
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -499,7 +502,7 @@ export default function Dashboard() {
   const handleAlbumSave = async (albumId: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || `http://localhost:5000/api/albums/${albumId}/save`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/save`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -523,7 +526,7 @@ export default function Dashboard() {
   const handleAlbumShare = async (albumId: string, shareOptions?: ShareOptions) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || `http://localhost:5000/api/albums/${albumId}/share`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/share`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -536,6 +539,10 @@ export default function Dashboard() {
         setAlbums(prev => prev.map(album => 
           album._id === albumId ? { ...album, shares: data.shares, shared: data.shared } : album
         ));
+        
+        // Refresh feed to show the shared post
+        fetchFeedData();
+        
         console.log('Album Shared!');
       }
     } catch (error) {
@@ -881,7 +888,53 @@ export default function Dashboard() {
                               </div>
                             </div>
                           ) : (
-                            <div className="mb-2 sm:mb-3 text-sm sm:text-base">{item.content}</div>
+                            <div className="mb-2 sm:mb-3 text-sm sm:text-base">
+                              {/* Show shared post indicator */}
+                              {item.isShared && item.sharedFrom && (
+                                <div className="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-blue-600">🔄</span>
+                                    <span className="text-sm text-gray-600">
+                                      {item.sharedFrom.userName} shared this
+                                    </span>
+                                  </div>
+                                  {item.shareMessage && (
+                                    <div className="text-sm mb-2">{item.shareMessage}</div>
+                                  )}
+                                  {/* Show original post content */}
+                                  {item.sharedFrom.postId && (
+                                    <div className="text-sm text-gray-700 italic">
+                                      "{item.content}"
+                                    </div>
+                                  )}
+                                  {/* Show shared album */}
+                                  {item.sharedFrom.albumId && (
+                                    <div className="text-sm text-gray-700 italic">
+                                      Album: {item.sharedFrom.albumName}
+                                      {item.sharedFrom.albumMedia && item.sharedFrom.albumMedia.length > 0 && (
+                                        <div className="mt-2 flex gap-2 overflow-x-auto">
+                                          {item.sharedFrom.albumMedia.slice(0, 3).map((media: any, idx: number) => (
+                                            <img
+                                              key={idx}
+                                              src={getMediaUrl(media.url)}
+                                              alt={`Album media ${idx + 1}`}
+                                              className="w-16 h-16 object-cover rounded"
+                                            />
+                                          ))}
+                                          {item.sharedFrom.albumMedia.length > 3 && (
+                                            <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center text-xs">
+                                              +{item.sharedFrom.albumMedia.length - 3}
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              {/* Show regular post content */}
+                              {(!item.isShared || !item.sharedFrom) && item.content}
+                            </div>
                           )}
 
                           {/* Show media if present */}

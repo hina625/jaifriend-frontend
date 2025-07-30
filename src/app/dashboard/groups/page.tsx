@@ -3,33 +3,64 @@ import React, { useState, useEffect } from 'react';
 import { Users, Plus, X, Menu, Search, Settings, MessageCircle, Star } from 'lucide-react';
 
 interface FormData {
-  groupName: string;
-  groupUrl: string;
-  groupType: string;
+  name: string;
+  description: string;
+  privacy: string;
   category: string;
+  website?: string;
+  email?: string;
+  phone?: string;
 }
 
 interface Group {
-  id: number;
+  _id: string;
   name: string;
   description: string;
-  members: number;
   category: string;
-  type: 'Public' | 'Private';
-  image: string;
-  isJoined: boolean;
-  lastActivity: string;
+  privacy: 'public' | 'private' | 'secret';
+  avatar?: string;
+  coverPhoto?: string;
+  creator: {
+    _id: string;
+    name: string;
+    username?: string;
+    avatar?: string;
+  };
+  members: Array<{
+    user: {
+      _id: string;
+      name: string;
+      username?: string;
+      avatar?: string;
+    };
+    role: 'member' | 'moderator' | 'admin';
+    joinedAt: string;
+    isActive: boolean;
+  }>;
+  stats: {
+    memberCount: number;
+    postCount: number;
+    eventCount: number;
+  };
+  isActive: boolean;
+  website?: string;
+  email?: string;
+  phone?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const GroupsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('My Groups');
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [showEditModal, setShowEditModal] = useState<boolean>(false);
+  const [editingGroup, setEditingGroup] = useState<Group | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [formData, setFormData] = useState<FormData>({
-    groupName: '',
-    groupUrl: '',
-    groupType: 'Public',
-    category: 'Cars and Vehicles'
+    name: '',
+    description: '',
+    privacy: 'public',
+    category: 'general'
   });
 
   const tabs: string[] = ['My Groups', 'Suggested groups', 'Joined Groups'];
@@ -37,20 +68,36 @@ const GroupsPage: React.FC = () => {
   // Empty groups data - will be populated from API
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
 
   // Fetch groups from API
   useEffect(() => {
     const fetchGroups = async () => {
       try {
-        // TODO: Replace with actual API call when groups endpoint is ready
-        // const response = await fetch('http://localhost:5000/api/groups');
-        // const groupsData = await response.json();
-        // setGroups(groupsData);
+        const token = localStorage.getItem('token');
         
-        // For now, show empty state
+        if (!token) {
+          setLoading(false);
+          return;
+        }
+
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups`;
+
+        const response = await fetch(apiUrl, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const groupsData = await response.json();
+          setGroups(groupsData);
+        } else {
+          setGroups([]);
+        }
+      } catch {
         setGroups([]);
-      } catch (error) {
-        console.error('Error fetching groups:', error);
       } finally {
         setLoading(false);
       }
@@ -59,7 +106,7 @@ const GroupsPage: React.FC = () => {
     fetchGroups();
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>): void => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -67,63 +114,250 @@ const GroupsPage: React.FC = () => {
     }));
   };
 
-  const handleCreateGroup = (): void => {
-    console.log('Creating group:', formData);
-    setShowCreateModal(false);
-    setFormData({
-      groupName: '',
-      groupUrl: '',
-      groupType: 'Public',
-      category: 'Cars and Vehicles'
-    });
+  const handleCreateGroup = async (): Promise<void> => {
+    try {
+      setCreating(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return;
+      }
+
+      // Validate required fields
+      if (!formData.name.trim()) {
+        return;
+      }
+
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name.trim());
+      formDataToSend.append('description', formData.description || '');
+      formDataToSend.append('privacy', formData.privacy);
+      formDataToSend.append('category', formData.category);
+      if (formData.website) formDataToSend.append('website', formData.website);
+      if (formData.email) formDataToSend.append('email', formData.email);
+      if (formData.phone) formDataToSend.append('phone', formData.phone);
+
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups`;
+
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formDataToSend
+      });
+
+      if (response.ok) {
+        const newGroup = await response.json();
+        setGroups(prev => [newGroup, ...prev]);
+        setShowCreateModal(false);
+        setFormData({
+          name: '',
+          description: '',
+          privacy: 'public',
+          category: 'general'
+        });
+      }
+    } catch {
+      // Silent error handling
+    } finally {
+      setCreating(false);
+    }
   };
 
   const handleCancel = (): void => {
     setShowCreateModal(false);
     setFormData({
-      groupName: '',
-      groupUrl: '',
-      groupType: 'Public',
-      category: 'Cars and Vehicles'
+      name: '',
+      description: '',
+      privacy: 'public',
+      category: 'general'
     });
   };
 
-  const handleJoinGroup = (groupId: number) => {
-    console.log('Joining group:', groupId);
+  const handleJoinGroup = async (groupId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups/${groupId}/join`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        // Refresh groups
+        const groupsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (groupsResponse.ok) {
+          const updatedGroups = await groupsResponse.json();
+          setGroups(updatedGroups);
+        }
+      }
+    } catch {
+      // Silent error handling
+    }
+  };
+
+  const handleEditGroup = (group: Group) => {
+    setEditingGroup(group);
+    setFormData({
+      name: group.name,
+      description: group.description,
+      privacy: group.privacy,
+      category: group.category,
+      website: group.website || '',
+      email: group.email || '',
+      phone: group.phone || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateGroup = async () => {
+    if (!editingGroup) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return;
+      }
+
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('privacy', formData.privacy);
+      formDataToSend.append('category', formData.category);
+      if (formData.website) formDataToSend.append('website', formData.website);
+      if (formData.email) formDataToSend.append('email', formData.email);
+      if (formData.phone) formDataToSend.append('phone', formData.phone);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups/${editingGroup._id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formDataToSend
+      });
+
+      if (response.ok) {
+        const updatedGroup = await response.json();
+        setGroups(prev => prev.map(g => g._id === editingGroup._id ? updatedGroup : g));
+        setShowEditModal(false);
+        setEditingGroup(null);
+        setFormData({
+          name: '',
+          description: '',
+          privacy: 'public',
+          category: 'general'
+        });
+      }
+    } catch {
+      // Silent error handling
+    }
+  };
+
+  const handleDeleteGroup = async (groupId: string) => {
+    if (!confirm('Are you sure you want to delete this group?')) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups/${groupId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        setGroups(prev => prev.filter(g => g._id !== groupId));
+      }
+    } catch {
+      // Silent error handling
+    }
   };
 
   const getGroupsForTab = (): Group[] => {
+    const userId = localStorage.getItem('userId') || (() => {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          return user.id || user._id;
+        } catch {
+          return null;
+        }
+      }
+      return null;
+    })();
+    
     switch (activeTab) {
       case 'My Groups':
-        return groups.filter(group => group.isJoined);
+        return groups.filter(group => 
+          group.creator._id === userId || 
+          group.members.some(member => member.user._id === userId && member.role === 'admin')
+        );
       case 'Suggested groups':
-        return groups.filter(group => !group.isJoined);
+        return groups.filter(group => 
+          group.privacy === 'public' && 
+          !group.members.some(member => member.user._id === userId)
+        );
       case 'Joined Groups':
-        return groups.filter(group => group.isJoined);
+        return groups.filter(group => 
+          group.members.some(member => member.user._id === userId)
+        );
       default:
         return [];
     }
   };
 
   // Group Card Component
-  const GroupCard: React.FC<{ group: Group }> = ({ group }) => (
+  const GroupCard: React.FC<{ group: Group }> = ({ group }) => {
+    const userId = localStorage.getItem('userId') || (() => {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          return user.id || user._id;
+        } catch {
+          return null;
+        }
+      }
+      return null;
+    })();
+    const isMember = group.members.some(member => member.user._id === userId);
+    const isAdmin = group.members.some(member => member.user._id === userId && member.role === 'admin');
+    const isCreator = group.creator._id === userId;
+
+    return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
       <div className="relative">
         <img 
-          src={group.image} 
+            src={group.avatar || group.coverPhoto || '/avatars/1.png.png'} 
           alt={group.name}
           className="w-full h-32 sm:h-40 object-cover"
         />
         <div className="absolute top-2 left-2 flex gap-2">
           <span className={`px-2 py-1 text-xs rounded-full ${
-            group.type === 'Public' 
+              group.privacy === 'public' 
               ? 'bg-green-100 text-green-700' 
-              : 'bg-orange-100 text-orange-700'
+                : group.privacy === 'private'
+                ? 'bg-orange-100 text-orange-700'
+                : 'bg-red-100 text-red-700'
           }`}>
-            {group.type}
+              {group.privacy.charAt(0).toUpperCase() + group.privacy.slice(1)}
           </span>
           <span className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
-            {group.category}
+              {group.category.charAt(0).toUpperCase() + group.category.slice(1)}
           </span>
         </div>
       </div>
@@ -141,25 +375,40 @@ const GroupsPage: React.FC = () => {
         <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
           <div className="flex items-center gap-1">
             <Users className="w-4 h-4" />
-            <span>{group.members.toLocaleString()} members</span>
-          </div>
-          <span>Active {group.lastActivity}</span>
+              <span>{group.stats.memberCount.toLocaleString()} members</span>
+            </div>
+            <span>Created {new Date(group.createdAt).toLocaleDateString()}</span>
         </div>
         
         <div className="flex gap-2">
-          {group.isJoined ? (
+            {isMember || isAdmin || isCreator ? (
             <>
               <button className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors flex items-center justify-center gap-2">
                 <MessageCircle className="w-4 h-4" />
                 Chat
               </button>
-              <button className="px-3 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
+                {(isAdmin || isCreator) && (
+                  <div className="flex gap-1">
+                    <button 
+                      onClick={() => handleEditGroup(group)}
+                      className="px-3 py-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
+                    >
                 <Settings className="w-4 h-4" />
               </button>
+                    {(isCreator) && (
+                      <button 
+                        onClick={() => handleDeleteGroup(group._id)}
+                        className="px-3 py-2 border border-red-200 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+                      >
+                        🗑️
+                      </button>
+                    )}
+                  </div>
+                )}
             </>
           ) : (
             <button 
-              onClick={() => handleJoinGroup(group.id)}
+                onClick={() => handleJoinGroup(group._id)}
               className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors"
             >
               Join Group
@@ -169,6 +418,7 @@ const GroupsPage: React.FC = () => {
       </div>
     </div>
   );
+  };
 
   // Empty State Component
   const EmptyState: React.FC = () => (
@@ -289,7 +539,7 @@ const GroupsPage: React.FC = () => {
         {getGroupsForTab().length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {getGroupsForTab().map((group) => (
-              <GroupCard key={group.id} group={group} />
+              <GroupCard key={group._id} group={group} />
             ))}
           </div>
         ) : (
@@ -325,39 +575,39 @@ const GroupsPage: React.FC = () => {
                 <div>
                   <input
                     type="text"
-                    name="groupName"
+                    name="name"
                     placeholder="Group name"
-                    value={formData.groupName}
+                    value={formData.name}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                   />
                 </div>
 
-                {/* Group URL */}
+                {/* Group Description */}
                 <div>
-                  <input
-                    type="text"
-                    name="groupUrl"
-                    placeholder="Group URL"
-                    value={formData.groupUrl}
+                  <textarea
+                    name="description"
+                    placeholder="Group description"
+                    value={formData.description}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                    rows={3}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base resize-none"
                   />
-                  <p className="text-xs text-gray-500 mt-1">https://jarfriend.com/Group URL</p>
                 </div>
 
-                {/* Group Type and Category */}
+                {/* Group Privacy and Category */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm text-gray-600 mb-1">Group type</label>
                     <select
-                      name="groupType"
-                      value={formData.groupType}
+                      name="privacy"
+                      value={formData.privacy}
                       onChange={handleInputChange}
                       className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     >
-                      <option value="Public">Public</option>
-                      <option value="Private">Private</option>
+                      <option value="public">Public</option>
+                      <option value="private">Private</option>
+                      <option value="secret">Secret</option>
                     </select>
                   </div>
                   
@@ -369,11 +619,15 @@ const GroupsPage: React.FC = () => {
                       onChange={handleInputChange}
                       className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     >
-                      <option value="Cars and Vehicles">Cars and Vehicles</option>
-                      <option value="Technology">Technology</option>
-                      <option value="Sports">Sports</option>
-                      <option value="Entertainment">Entertainment</option>
-                      <option value="Education">Education</option>
+                      <option value="general">General</option>
+                      <option value="business">Business</option>
+                      <option value="education">Education</option>
+                      <option value="entertainment">Entertainment</option>
+                      <option value="health">Health</option>
+                      <option value="sports">Sports</option>
+                      <option value="technology">Technology</option>
+                      <option value="travel">Travel</option>
+                      <option value="other">Other</option>
                     </select>
                   </div>
                 </div>
@@ -389,10 +643,127 @@ const GroupsPage: React.FC = () => {
                 </button>
                 <button
                   onClick={handleCreateGroup}
-                  disabled={!formData.groupName.trim()}
+                  disabled={!formData.name.trim() || creating}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-colors w-full sm:w-auto text-sm flex items-center justify-center"
+                >
+                  {creating ? 'Creating...' : 'Create'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Group Modal */}
+      {showEditModal && editingGroup && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-screen overflow-y-auto">
+            <div className="p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Edit Group</h2>
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingGroup(null);
+                    setFormData({
+                      name: '',
+                      description: '',
+                      privacy: 'public',
+                      category: 'general'
+                    });
+                  }}
+                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {/* Group Name */}
+                <div>
+                  <input
+                    type="text"
+                    name="name"
+                    placeholder="Group name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                  />
+                </div>
+
+                {/* Group Description */}
+                <div>
+                  <textarea
+                    name="description"
+                    placeholder="Group description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    rows={3}
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base resize-none"
+                  />
+                </div>
+
+                {/* Group Privacy and Category */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Group type</label>
+                    <select
+                      name="privacy"
+                      value={formData.privacy}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    >
+                      <option value="public">Public</option>
+                      <option value="private">Private</option>
+                      <option value="secret">Secret</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Category</label>
+                    <select
+                      name="category"
+                      value={formData.category}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    >
+                      <option value="general">General</option>
+                      <option value="business">Business</option>
+                      <option value="education">Education</option>
+                      <option value="entertainment">Entertainment</option>
+                      <option value="health">Health</option>
+                      <option value="sports">Sports</option>
+                      <option value="technology">Technology</option>
+                      <option value="travel">Travel</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Actions */}
+              <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 mt-6 sm:mt-8">
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingGroup(null);
+                    setFormData({
+                      name: '',
+                      description: '',
+                      privacy: 'public',
+                      category: 'general'
+                    });
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors w-full sm:w-auto text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUpdateGroup}
+                  disabled={!formData.name.trim()}
                   className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-colors w-full sm:w-auto text-sm"
                 >
-                  Create
+                  Update
                 </button>
               </div>
             </div>

@@ -44,37 +44,37 @@ const EventManagement: React.FC = () => {
     title: '',
     message: ''
   });
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
   useEffect(() => {
     if (currentRoute === '/events') {
-      fetch(`${API_URL}/api/events`)
+      const token = localStorage.getItem('token');
+      
+      if (!token || token === 'null' || token === 'undefined') {
+        console.error('No valid token found');
+        setEvents([]);
+        return;
+      }
+
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
         .then(res => res.json())
-        .then(data => setEvents(data))
-        .catch(() => setEvents([
-          // Mock data for demonstration
-          {
-            _id: '1',
-            eventName: 'Tech Conference 2024',
-            eventDescription: 'Annual technology conference featuring the latest innovations',
-            location: 'Convention Center, New York',
-            startDate: '2024-08-15',
-            startTime: '09:00',
-            endDate: '2024-08-17',
-            endTime: '18:00',
-            imageUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=300&fit=crop'
-          },
-          {
-            _id: '2', 
-            eventName: 'Music Festival',
-            eventDescription: 'Three days of amazing music and entertainment',
-            location: 'Central Park, New York',
-            startDate: '2024-09-01',
-            startTime: '12:00',
-            endDate: '2024-09-03',
-            endTime: '23:00',
-            imageUrl: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=300&fit=crop'
+        .then(data => {
+          // Ensure data is an array before setting it
+          if (Array.isArray(data)) {
+            setEvents(data);
+          } else {
+            console.error('API returned non-array data:', data);
+            setEvents([]);
           }
-        ]));
+        })
+        .catch((error) => {
+          console.error('Error fetching events:', error);
+          setEvents([]);
+        });
     }
   }, [currentRoute]);
 
@@ -131,18 +131,29 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
   const handleSubmit = async () => {
     try {
-      const form = new FormData();
-      form.append('eventName', formData.eventName);
-      form.append('eventDescription', formData.eventDescription);
-      form.append('location', formData.location);
-      form.append('startDate', formData.startDate);
-      form.append('startTime', formData.startTime);
-      form.append('endDate', formData.endDate);
-      form.append('endTime', formData.endTime);
-      if (image) form.append('image', image);
+      const token = localStorage.getItem('token');
+      
+      // Check if token exists and is valid
+      if (!token || token === 'null' || token === 'undefined') {
+        showPopup('error', 'Authentication Error', 'Please log in again');
+        return;
+      }
 
-      const res = await fetch(`${API_URL}/api/events`, {
+      const form = new FormData();
+      form.append('title', formData.eventName);
+      form.append('description', formData.eventDescription);
+      form.append('location[address]', formData.location);
+      form.append('location[coordinates]', '');
+      form.append('startDate', formData.startDate + 'T' + formData.startTime);
+      form.append('endDate', formData.endDate + 'T' + formData.endTime);
+      form.append('category', 'social'); // Valid category from enum
+      if (image) form.append('coverImage', image);
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`, {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         body: form
       });
       if (res.ok) {
@@ -159,30 +170,79 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
         });
         setImage(null);
         // Refresh events list
-        fetch(`${API_URL}/api/events`)
+         fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`, {
+           headers: {
+             'Authorization': `Bearer ${token}`,
+             'Content-Type': 'application/json'
+           }
+         })
           .then(res => res.json())
-          .then(data => setEvents(data))
+           .then(data => {
+             if (Array.isArray(data)) {
+               setEvents(data);
+             } else {
+               setEvents([]);
+             }
+           })
           .catch(() => setEvents([]));
       } else {
+         console.error('Server response error:', res.status, res.statusText);
+         try {
         const data = await res.json();
-        showPopup('error', 'Error', 'Error: ' + data.error);
+           console.error('Server error details:', data);
+           showPopup('error', 'Error', 'Error: ' + (data.error || data.message || 'Failed to create event'));
+         } catch (parseError) {
+           console.error('Failed to parse error response:', parseError);
+           showPopup('error', 'Error', `Server error: ${res.status} ${res.statusText}`);
+         }
       }
     } catch (err) {
-      showPopup('error', 'Network Error', 'Network error occurred');
+       console.error('Network error:', err);
+       showPopup('error', 'Network Error', 'Network error occurred. Please check your connection and try again.');
     }
   };
 
   const handleDelete = async (id: string) => {
-    showPopup('warning', 'Confirm Delete', 'Are you sure you want to delete this event?');
-    // Note: In a real app, you'd want to handle the confirmation properly
     try {
-      await fetch(`${API_URL}/api/events/${id}`, { method: 'DELETE' });
+      const token = localStorage.getItem('token');
+      
+      // Check if token exists and is valid
+      if (!token || token === 'null' || token === 'undefined') {
+        showPopup('error', 'Authentication Error', 'Please log in again');
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events/${id}`, { 
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+             if (response.ok) {
       // Refresh events list
-      fetch(`${API_URL}/api/events`)
+         fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`, {
+           headers: {
+             'Authorization': `Bearer ${token}`,
+             'Content-Type': 'application/json'
+           }
+         })
         .then(res => res.json())
-        .then(data => setEvents(data))
+           .then(data => {
+             if (Array.isArray(data)) {
+               setEvents(data);
+             } else {
+               setEvents([]);
+             }
+           })
         .catch(() => setEvents([]));
       showPopup('success', 'Event Deleted!', 'Event deleted successfully!');
+      } else if (response.status === 401) {
+        showPopup('error', 'Authentication Error', 'Please log in again');
+      } else {
+        const error = await response.json();
+        showPopup('error', 'Error', 'Error: ' + (error.message || error.error || 'Failed to delete event'));
+      }
     } catch (err) {
       showPopup('error', 'Network Error', 'Network error occurred');
     }
@@ -190,14 +250,19 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
   const handleEdit = (event: any) => {
     setEditingEvent(event);
+     
+     // Parse the start and end dates to extract date and time
+     const startDate = new Date(event.startDate);
+     const endDate = new Date(event.endDate);
+     
     setFormData({
-      eventName: event.eventName,
-      eventDescription: event.eventDescription,
-      location: event.location,
-      startDate: event.startDate,
-      startTime: event.startTime,
-      endDate: event.endDate,
-      endTime: event.endTime
+       eventName: event.title,
+       eventDescription: event.description,
+       location: event.location?.address || event.location?.name || '',
+       startDate: startDate.toISOString().split('T')[0],
+       startTime: startDate.toTimeString().slice(0, 5),
+       endDate: endDate.toISOString().split('T')[0],
+       endTime: endDate.toTimeString().slice(0, 5)
     });
     setImage(null);
     navigateTo('/events/edit');
@@ -206,17 +271,28 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   const handleUpdate = async () => {
     if (!editingEvent) return;
     try {
+      const token = localStorage.getItem('token');
+      
+      // Check if token exists and is valid
+      if (!token || token === 'null' || token === 'undefined') {
+        showPopup('error', 'Authentication Error', 'Please log in again');
+        return;
+      }
+
       const form = new FormData();
-      form.append('eventName', formData.eventName);
-      form.append('eventDescription', formData.eventDescription);
-      form.append('location', formData.location);
-      form.append('startDate', formData.startDate);
-      form.append('startTime', formData.startTime);
-      form.append('endDate', formData.endDate);
-      form.append('endTime', formData.endTime);
-      if (image) form.append('image', image);
-      const res = await fetch(`${API_URL}/api/events/${editingEvent._id}`, {
+      form.append('title', formData.eventName);
+      form.append('description', formData.eventDescription);
+      form.append('location[address]', formData.location);
+      form.append('location[coordinates]', '');
+      form.append('startDate', formData.startDate + 'T' + formData.startTime);
+      form.append('endDate', formData.endDate + 'T' + formData.endTime);
+      form.append('category', 'social'); // Valid category from enum
+      if (image) form.append('coverImage', image);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events/${editingEvent._id}`, {
         method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         body: form
       });
       if (res.ok) {
@@ -234,9 +310,20 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
         });
         setImage(null);
         // Refresh events list
-        fetch(`${API_URL}/api/events`)
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
           .then(res => res.json())
-          .then(data => setEvents(data))
+          .then(data => {
+            if (Array.isArray(data)) {
+              setEvents(data);
+            } else {
+              setEvents([]);
+            }
+          })
           .catch(() => setEvents([]));
       } else {
         const data = await res.json();
@@ -337,7 +424,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       <TabsNavigation />
       
       <div className="mb-6">
-        {events.length === 0 ? (
+        {!Array.isArray(events) || events.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-gray-500 text-base sm:text-lg mb-4">No events to show</p>
           </div>
@@ -353,11 +440,11 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
                   />
                 )}
                 <div className="p-4">
-                  <h3 className="font-bold text-lg mb-2 line-clamp-2">{event.eventName}</h3>
-                  <p className="text-gray-600 text-sm mb-2 line-clamp-3">{event.eventDescription}</p>
-                  <p className="text-gray-500 text-sm mb-2">📍 {event.location}</p>
+                                     <h3 className="font-bold text-lg mb-2 line-clamp-2">{event.title}</h3>
+                   <p className="text-gray-600 text-sm mb-2 line-clamp-3">{event.description}</p>
+                   <p className="text-gray-500 text-sm mb-2">📍 {event.location?.address || event.location?.name || 'Location not specified'}</p>
                   <p className="text-xs text-gray-400 mb-3">
-                    {new Date(event.startDate).toLocaleDateString()} {event.startTime} - {new Date(event.endDate).toLocaleDateString()} {event.endTime}
+                     {new Date(event.startDate).toLocaleDateString()} {new Date(event.startDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(event.endDate).toLocaleDateString()} {new Date(event.endDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                   </p>
                   <div className="flex gap-2">
                     <button 
