@@ -19,5 +19,11 @@ Thumbs.db
 
 # IDEs and editors
 .vscode/
-.idea/
+..next/
+*.log
+node_modules/
+.env*
+.next/static/
+next-env.d.tsidea/
 *.swp
+

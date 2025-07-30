@@ -37,7 +37,7 @@ export default function AlbumDisplay({
       const token = localStorage.getItem('token');
       if (token && album._id) {
         try {
-          await fetch(`http://localhost:5000/api/albums/${album._id}/view`, {
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${album._id}/view`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`
