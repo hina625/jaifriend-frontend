@@ -116,7 +116,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   // Close dropdown on outside click
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent): void {
+    function handleClickOutside(event: MouseEvent | TouchEvent): void {
       const target = event.target as HTMLElement;
       if (!target.closest('.dropdown-container')) {
         setOpenDropdown(null);
@@ -124,7 +124,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     }
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
   // Close mobile sidebar when route changes
@@ -509,12 +513,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 {/* People Icon */}
                 <div className="dropdown-container relative">
                   <button
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-all ${
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-all touch-manipulation ${
                       openDropdown === 'people' 
                         ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' 
                         : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300'
                     }`}
                     onClick={() => handleDropdownClick('people')}
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      handleDropdownClick('people');
+                    }}
+                    style={{ touchAction: 'manipulation' }}
                   >
                     👥
                   </button>
@@ -536,12 +545,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 {/* Messages Icon */}
                 <div className="dropdown-container relative">
                   <button
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-all ${
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-all touch-manipulation ${
                       openDropdown === 'messages' 
                         ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' 
                         : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300'
                     }`}
                     onClick={() => handleDropdownClick('messages')}
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      handleDropdownClick('messages');
+                    }}
+                    style={{ touchAction: 'manipulation' }}
                   >
                     💬
                   </button>
@@ -563,12 +577,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 {/* Notifications Icon */}
                 <div className="dropdown-container relative">
                   <button
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-all ${
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-all touch-manipulation ${
                       openDropdown === 'notifications' 
                         ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' 
                         : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300'
                     }`}
                     onClick={() => handleDropdownClick('notifications')}
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      handleDropdownClick('notifications');
+                    }}
+                    style={{ touchAction: 'manipulation' }}
                   >
                     🔔
                   </button>
@@ -615,22 +634,27 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             {/* Profile Avatar */}
             <div className="dropdown-container relative">
               <button
-                className={`w-8 h-8 rounded-full overflow-hidden border-2 transition-all ${
+                className={`w-8 h-8 rounded-full overflow-hidden border-2 transition-all touch-manipulation ${
                   openDropdown === 'profile' 
                     ? 'border-blue-400 dark:border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800' 
                     : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                 }`}
                 onClick={() => handleDropdownClick('profile')}
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  handleDropdownClick('profile');
+                }}
+                style={{ touchAction: 'manipulation' }}
               >
                 <img
                   src={profile.avatar}
                   alt="Profile"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover pointer-events-none"
                 />
               </button>
               
               {openDropdown === 'profile' && (
-                <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-2xl z-50 border border-gray-100 dark:bg-gray-800 dark:border-gray-700 max-h-[80vh] overflow-y-auto scrollbar-hide">
+                <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-2xl z-50 border border-gray-100 dark:bg-gray-800 dark:border-gray-700 max-h-[80vh] overflow-y-auto scrollbar-hide sm:w-80 w-72 max-w-[calc(100vw-2rem)]">
                   <div className="p-4 flex flex-col gap-2">
                     {/* Profile Section */}
                     <div className="flex items-center gap-3 mb-2">
@@ -1294,6 +1318,27 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           display: none;
           width: 0;
           height: 0;
+        }
+        
+        /* Mobile touch improvements */
+        .touch-manipulation {
+          touch-action: manipulation;
+          -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Ensure dropdowns are properly positioned on mobile */
+        @media (max-width: 640px) {
+          .dropdown-container {
+            position: relative;
+          }
+          
+          .dropdown-container > div {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            margin-top: 0.5rem;
+            z-index: 50;
+          }
         }
       `}</style>
     </div>
