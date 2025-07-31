@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import AlbumDisplay from '@/components/AlbumDisplay';
 import SharePopup, { ShareOptions } from '@/components/SharePopup';
 import LatestProducts from '@/components/LatestProducts';
+import Popup from '@/components/Popup';
+import type { PopupState } from '@/components/Popup';
 
 function getUserAvatar() {
   // Try to get avatar from localStorage (if you store it there after login), otherwise use default
@@ -34,6 +36,24 @@ export default function Dashboard() {
   // Share popup state
   const [showSharePopup, setShowSharePopup] = useState(false);
   const [selectedPostForShare, setSelectedPostForShare] = useState<any>(null);
+
+  // Popup state
+  const [popup, setPopup] = useState<PopupState>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: ''
+  });
+  const [postToDelete, setPostToDelete] = useState<string | null>(null);
+
+  // Popup functions
+  const showPopup = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
+    setPopup({ isOpen: true, type, title, message });
+  };
+
+  const closePopup = () => {
+    setPopup({ ...popup, isOpen: false });
+  };
 
   const startEditPost = (post: any) => {
     setEditingPostId(post._id || post.id);
@@ -243,19 +263,66 @@ export default function Dashboard() {
 
   // Delete a post
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Delete this post?')) return;
-    const token = localStorage.getItem('token');
-    const res = await fetch(process.env.NEXT_PUBLIC_API_URL || `http://localhost:5000/api/posts/${id}`, {
-      method: 'DELETE',
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      }
+    // Store the post ID for deletion
+    setPostToDelete(id);
+    
+    // Show confirmation popup
+    setPopup({
+      isOpen: true,
+      type: 'warning',
+      title: 'Delete Post',
+      message: 'Are you sure you want to delete this post? This action cannot be undone.',
+      showConfirm: true,
+      confirmText: 'Delete',
+      cancelText: 'Cancel'
     });
-    if (res.ok) {
-      setPosts(posts.filter(p => (p._id || p.id) !== id));
-      if (editingPostId === id) cancelEditPost();
-    } else {
-      console.error('Failed to delete post');
+  };
+
+  // Handle popup confirmation for delete
+  const handlePopupConfirm = async () => {
+    if (popup.title === 'Delete Post' && postToDelete) {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          showPopup('error', 'Authentication Error', 'Please log in again to delete posts.');
+          return;
+        }
+
+        const deletePostId = postToDelete;
+
+        // Show loading popup
+        showPopup('info', 'Deleting Post', 'Please wait while we delete your post...');
+
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${deletePostId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (res.ok) {
+          // Remove post from state
+          setPosts(posts.filter(p => (p._id || p.id) !== deletePostId));
+          if (editingPostId === deletePostId) cancelEditPost();
+          
+          // Clear the post to delete
+          setPostToDelete(null);
+          
+          // Show success popup
+          showPopup('success', 'Post Deleted', 'Your post has been successfully deleted.');
+          
+          // Dispatch event to refresh other pages
+          window.dispatchEvent(new CustomEvent('postDeleted'));
+        } else {
+          const errorData = await res.json().catch(() => ({}));
+          const errorMessage = errorData.message || 'Failed to delete post. Please try again.';
+          showPopup('error', 'Delete Failed', errorMessage);
+        }
+      } catch (error) {
+        console.error('Error deleting post:', error);
+        showPopup('error', 'Network Error', 'Failed to connect to server. Please check your internet connection.');
+      }
     }
   };
 
@@ -605,7 +672,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="bg-[#f4f7fb] min-h-screen pt-2 sm:pt-4 pb-6 w-full">
+    <div className="bg-[#f4f7fb] min-h-screen pt-2 sm:pt-4 pb-6 w-full scrollbar-hide">
       <div className="px-3 sm:px-4 lg:px-6">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4">
           {userEmail ? `Hello, ${userEmail}! 👋` : "Hello!"}
@@ -619,7 +686,7 @@ export default function Dashboard() {
 
         {/* Stories Row at the top */}
         <div className="w-full pt-2 mb-3 sm:mb-4">
-          <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2">
+          <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-hide">
             {/* Current user story */}
             <div className="flex-shrink-0 flex flex-col items-center group cursor-pointer" onClick={() => storyInputRef.current?.click()}>
               {userStory ? (
@@ -665,9 +732,9 @@ export default function Dashboard() {
         </div>
 
         {/* Main layout - Responsive */}
-        <div className="flex flex-col xl:flex-row gap-3 sm:gap-4 w-full">
+        <div className="flex flex-col xl:flex-row gap-3 sm:gap-4 w-full scrollbar-hide">
           {/* Main content */}
-          <div className="w-full xl:flex-1 max-w-none xl:max-w-2xl xl:mx-0">
+          <div className="w-full xl:flex-1 max-w-none xl:max-w-2xl xl:mx-0 scrollbar-hide">
             {/* Post Creation */}
             <div className="bg-white rounded-lg sm:rounded-xl shadow p-3 sm:p-4 mb-3 sm:mb-4">
               <div className="flex items-center gap-2 mb-2 sm:mb-3">
@@ -818,15 +885,56 @@ export default function Dashboard() {
                                 <div className="font-semibold text-sm sm:text-base">Anonymous</div>
                               )}
                             </div>
-                            {/* Media indicator */}
-                            {item.media && item.media.length > 0 && (
-                              <div className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-                                {item.media.some((m: any) => m.type === 'video') && <span>🎥</span>}
-                                {item.media.some((m: any) => m.type === 'image') && <span>📷</span>}
-                                <span className="hidden sm:inline">{item.media.length} media</span>
-                                <span className="sm:hidden">{item.media.length}</span>
-                              </div>
-                            )}
+                            
+                            {/* Post Actions Menu */}
+                            <div className="flex items-center gap-2">
+                              {/* Media indicator */}
+                              {item.media && item.media.length > 0 && (
+                                <div className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                                  {item.media.some((m: any) => m.type === 'video') && <span>🎥</span>}
+                                  {item.media.some((m: any) => m.type === 'image') && <span>📷</span>}
+                                  <span className="hidden sm:inline">{item.media.length} media</span>
+                                  <span className="sm:hidden">{item.media.length}</span>
+                                </div>
+                              )}
+                              
+                              {/* Edit/Delete Menu for own posts */}
+                              {(() => {
+                                const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+                                const isOwnPost = item.user && (
+                                  item.user._id === currentUser._id || 
+                                  item.user.id === currentUser.id || 
+                                  item.user.userId === currentUser.id
+                                );
+                                
+                                if (isOwnPost) {
+                                  return (
+                                    <div className="relative group">
+                                      <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+                                        <span className="text-gray-500 hover:text-gray-700">⋮</span>
+                                      </button>
+                                      <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto min-w-[120px]">
+                                        <button
+                                          onClick={() => startEditPost(item)}
+                                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
+                                        >
+                                          <span>✏️</span>
+                                          <span>Edit</span>
+                                        </button>
+                                        <button
+                                          onClick={() => handleDelete(item._id || item.id)}
+                                          className="w-full text-left px-3 py-2 text-sm hover:bg-red-50 text-red-600 flex items-center gap-2"
+                                        >
+                                          <span>🗑️</span>
+                                          <span>Delete</span>
+                                        </button>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              })()}
+                            </div>
                           </div>
 
                           {/* Edit post form */}
@@ -1138,6 +1246,30 @@ export default function Dashboard() {
                                 <span className="hidden sm:inline"> views</span>
                               </span>
                             </span>
+                            
+                            {/* Delete button for own posts */}
+                            {(() => {
+                              const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+                              const isOwnPost = item.user && (
+                                item.user._id === currentUser._id || 
+                                item.user.id === currentUser.id || 
+                                item.user.userId === currentUser.id
+                              );
+                              
+                              if (isOwnPost) {
+                                return (
+                                  <button 
+                                    onClick={() => handleDelete(item._id || item.id)}
+                                    className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-all duration-200 text-xs sm:text-sm text-red-500 hover:text-red-700 hover:bg-red-50"
+                                    title="Delete post"
+                                  >
+                                    <span>🗑️</span>
+                                    <span className="font-medium hidden sm:inline">Delete</span>
+                                  </button>
+                                );
+                              }
+                              return null;
+                            })()}
                           </div>
 
                           {/* Comments Section */}
@@ -1190,7 +1322,7 @@ export default function Dashboard() {
           </div>
 
           {/* Sidebar */}
-          <div className="w-full xl:w-1/4 flex flex-col gap-3 sm:gap-4">
+          <div className="w-full xl:w-1/4 flex flex-col gap-3 sm:gap-4 scrollbar-hide">
             <div className="bg-white rounded-lg sm:rounded-xl shadow p-3 sm:p-4">
               <div className="font-semibold mb-2 text-sm">Pro Members</div>
               <button className="bg-orange-400 text-white px-3 py-2 rounded-full w-full mb-2 text-sm">Upgrade To Pro</button>
@@ -1224,9 +1356,30 @@ export default function Dashboard() {
           postMedia={selectedPostForShare.media}
         />
       )}
+
+      {/* General Popup */}
+      <Popup 
+        popup={popup} 
+        onClose={closePopup} 
+        onConfirm={handlePopupConfirm}
+        onCancel={() => {
+          setPostToDelete(null);
+          closePopup();
+        }}
+      />
+        <style jsx>{`
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar { 
+          display: none;
+        }
+      `}</style>
     </div>
   );
 }
+
 
 function AddCommentForm({ postId, onAddComment }: { postId: string, onAddComment: (postId: string, text: string, clearInput: () => void) => void }) {
   const [text, setText] = useState('');

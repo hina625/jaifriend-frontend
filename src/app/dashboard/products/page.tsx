@@ -18,7 +18,7 @@ interface FormData {
   totalItemUnits: string;
   photos: File[];
 }
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 const MarketplaceSeller: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('My Products');
   const [showSellModal, setShowSellModal] = useState<boolean>(false);
@@ -43,7 +43,7 @@ const MarketplaceSeller: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'My Products') {
       setLoading(true);
-      fetch(`${API_URL}/api/products`)
+      fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/products')
         .then(res => res.json())
         .then(data => {
           setProducts(data);
@@ -101,8 +101,8 @@ const MarketplaceSeller: React.FC = () => {
       form.append('category', formData.category);
       form.append('totalItemUnits', formData.totalItemUnits);
       if (formData.photos[0]) form.append('image', formData.photos[0]);
-
-      const res = await fetch(`${API_URL}/api/products`, {
+      
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/products', {
         method: 'POST',
         body: form
       });
@@ -307,9 +307,9 @@ const MarketplaceSeller: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="w-full">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-30">
+      <header className="bg-white shadow-sm border-b z-30">
         <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

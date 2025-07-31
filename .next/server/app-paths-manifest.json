@@ -1,5 +1,5 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/dashboard/profile/[userId]/page": "app/dashboard/profile/[userId]/page.js"
+  "/dashboard/albums/page": "app/dashboard/albums/page.js",
+  "/dashboard/settings/page": "app/dashboard/settings/page.js",
+  "/dashboard/page": "app/dashboard/page.js"
 }

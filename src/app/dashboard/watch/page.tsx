@@ -566,7 +566,7 @@ const WatchPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="w-full h-full overflow-y-auto scrollbar-hide flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading videos...</p>
@@ -577,7 +577,7 @@ const WatchPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="w-full h-full overflow-y-auto scrollbar-hide flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 bg-red-100 rounded-xl mx-auto mb-6 flex items-center justify-center">
             <FileText className="w-8 h-8 text-red-600" />
@@ -738,9 +738,9 @@ const WatchPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="w-full h-full overflow-y-auto scrollbar-hide">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
+              <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-30">
         <div className="flex items-center justify-between max-w-4xl mx-auto">
           <h1 className="text-2xl font-semibold text-gray-900">Watch</h1>
           <div className="flex items-center space-x-3">

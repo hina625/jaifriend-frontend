@@ -7,10 +7,9 @@ const OffersPage = () => {
   const [showSearch, setShowSearch] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 relative">
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    <div className="w-full">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
+      <div className="bg-white border-b border-gray-200 z-30">
         <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -120,7 +119,7 @@ const OffersPage = () => {
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         
-        {/* Quick Stats Cards (Optional Enhancement) */}
+        {/* Quick Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
           <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200">
             <div className="text-lg sm:text-2xl font-bold text-blue-600">0</div>
@@ -204,4 +203,4 @@ const OffersPage = () => {
   );
 };
 
-export default OffersPage;
+export default OffersPage; 

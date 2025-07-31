@@ -352,11 +352,12 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
 
   if (currentView === 'albums') {
       return (
-    <div className="min-h-screen bg-gray-50 pb-20 sm:pb-6">
+    <div className="min-h-screen w-full bg-gray-50">
+      <div className="h-full overflow-y-auto scrollbar-hide">
       {/* Popup Modal */}
       <Popup popup={popup} onClose={closePopup} />
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-40">
+        <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-30">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">My Albums</h1>
             <div className="flex items-center space-x-2 sm:space-x-3">
@@ -544,16 +545,17 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
             <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         )}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="w-full h-full overflow-y-auto scrollbar-hide">
       {/* Popup Modal */}
       <Popup popup={popup} onClose={closePopup} />
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-40">
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-30">
         <div className="flex items-center justify-between max-w-4xl mx-auto">
           <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Create Album</h1>
           <div className="flex items-center space-x-2 sm:space-x-3">

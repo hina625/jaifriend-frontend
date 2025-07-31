@@ -21,7 +21,7 @@ export default function SavedPosts() {
     { id: 'posts', label: 'Posts', count: 0 },
     { id: 'recent', label: 'Recent', count: 0 },
   ];
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
   const checkAuthAndFetchSaved = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -30,7 +30,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
     }
     try {
       // Fetch saved albums
-      const savedAlbumsRes = await fetch(`${API_URL}/api/albums/saved`, {
+      const savedAlbumsRes = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/albums/saved', {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -45,7 +45,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
       }
       
       // Fetch saved posts
-      const savedPostsRes = await fetch(`${API_URL}/api/posts/saved`, {
+      const savedPostsRes = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/saved', {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -149,7 +149,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   const handleAlbumLike = async (albumId: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_URL}/api/albums/${albumId}/like`, {
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/albums/${albumId}/like', {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -170,7 +170,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   const handleAlbumComment = async (albumId: string, comment: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_URL}/api/albums/${albumId}/comment`, {
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/albums/${albumId}/comment', {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -193,7 +193,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   const handleAlbumSave = async (albumId: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_URL}/api/albums/${albumId}/save`, {
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/albums/${albumId}/save', {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -219,7 +219,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   const handleAlbumShare = async (albumId: string, shareOptions?: any) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_URL}/api/albums/${albumId}/share`, {
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/albums/${albumId}/share', {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -243,7 +243,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   const handlePostLike = async (postId: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_URL}/api/posts/${postId}/like`, {
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/${postId}/like', {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -264,7 +264,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   const handlePostSave = async (postId: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_URL}/api/posts/${postId}/save`, {
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/${postId}/save', {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -290,7 +290,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   const handlePostComment = async (postId: string, comment: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_URL}/api/posts/${postId}/comment`, {
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/${postId}/comment', {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -312,7 +312,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   const handlePostShare = async (postId: string, shareOptions?: any) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_URL}/api/posts/${postId}/share`, {
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/${postId}/share', {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -335,7 +335,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   const handlePostView = async (postId: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_URL}/api/posts/${postId}/view`, {
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/${postId}/view', {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -354,7 +354,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
   const handleReaction = async (postId: string, reactionType: string) => {
     const token = localStorage.getItem('token');
-    const res = await fetch(`${API_URL}/api/posts/${postId}/reaction`, {
+    const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/${postId}/reaction', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -371,9 +371,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="w-full h-full overflow-y-auto scrollbar-hide">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
+              <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
         <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

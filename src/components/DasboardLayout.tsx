@@ -97,18 +97,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   useEffect(() => {
     const handleResize = (): void => {
       const width = window.innerWidth;
-      setIsMobile(width < 768);
+      setIsMobile(width < 1024); // Changed to 1024 to include tablets in mobile layout
       
-      // Auto-collapse on tablet, auto-expand on desktop
-      if (width < 1024 && width >= 768) {
-        setSidebarCollapsed(true);
-      } else if (width >= 1024) {
-        setSidebarCollapsed(false);
-      }
-      
-      // Close mobile sidebar on resize
-      if (width >= 768) {
+      // For mobile and tablet, start with sidebar closed
+      if (width < 1024) {
         setSidebarOpen(false);
+        setSidebarCollapsed(false);
+      } else {
+        // Desktop behavior
+        setSidebarCollapsed(false);
       }
     };
 
@@ -295,19 +292,19 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const renderMenuItems = (items: MenuItem[], collapsed: boolean = false): React.ReactElement => {
     if (collapsed) {
       return (
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-2">
           {items.map((item) => (
             <Link
               key={item.name}
               href={item.href}
-              className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 border-2 group relative ${
+              className={`flex flex-col items-center gap-1 p-3 rounded-lg transition-all duration-200 group relative ${
                 pathname === item.href 
-                  ? 'bg-[#eaf0fb] border-[#022e8a] shadow scale-105' 
-                  : 'hover:bg-[#eaf0fb] border-transparent'
+                  ? 'bg-blue-50 text-blue-600' 
+                  : 'hover:bg-gray-50 text-gray-700'
               }`}
               title={item.name}
             >
-              <div className={`w-8 h-8 rounded-lg ${item.color} flex items-center justify-center text-sm shadow group-hover:scale-110 transition-transform`}>
+              <div className={`w-8 h-8 rounded-lg ${item.color} flex items-center justify-center text-sm group-hover:scale-110 transition-transform`}>
                 {item.icon}
               </div>
               <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
@@ -320,22 +317,21 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     }
 
     return (
-      <div className={`grid gap-1 ${isMobile ? 'grid-cols-2' : 'grid-cols-3'}`}>
+      <div className="space-y-2">
         {items.map((item) => (
           <Link
             key={item.name}
             href={item.href}
-            onClick={isMobile ? () => setSidebarOpen(false) : undefined}
-            className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 border-2 group ${
+            className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 group ${
               pathname === item.href 
-                ? 'bg-[#eaf0fb] border-[#022e8a] shadow scale-105 text-[#022e8a]' 
-                : 'hover:bg-[#eaf0fb] border-transparent text-[#34495e]'
+                ? 'bg-blue-50 text-blue-600' 
+                : 'hover:bg-gray-50 text-gray-700'
             }`}
           >
-            <div className={`${isMobile ? 'w-8 h-8' : 'w-10 h-10'} rounded-xl ${item.color} flex items-center justify-center ${isMobile ? 'text-sm' : 'text-lg'} shadow group-hover:scale-110 transition-transform`}>
+            <div className={`w-10 h-10 rounded-lg ${item.color} flex items-center justify-center text-lg group-hover:scale-110 transition-transform`}>
               {item.icon}
             </div>
-            <span className="text-xs font-semibold text-center leading-tight">
+            <span className="text-sm font-medium">
               {item.name}
             </span>
           </Link>
@@ -350,14 +346,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         <Link
           key={item.name}
           href={item.href}
-          onClick={isMobile ? () => setSidebarOpen(false) : undefined}
-          className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+          className={`w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-colors ${
             pathname === item.href
               ? 'bg-blue-100 text-blue-700'
               : 'text-gray-700 hover:bg-gray-100'
           }`}
         >
-          <span className="text-sm mr-3">{item.icon}</span>
+          <span className="text-lg mr-3">{item.icon}</span>
           {item.name}
         </Link>
       ))}
@@ -365,7 +360,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
       {/* Popup Modals */}
       {popup.isOpen && (
         <div className="fixed inset-0 flex items-center justify-center z-[100] p-4 bg-black bg-opacity-50">
@@ -487,8 +482,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </div>
           </div>
 
-          {/* Center - Search Bar (Hidden on mobile) */}
-          <div className="hidden md:flex flex-1 justify-center max-w-lg mx-4">
+          {/* Center - Search Bar (Hidden on mobile and tablet) */}
+          <div className="hidden lg:flex flex-1 justify-center max-w-lg mx-4">
             <div className="rounded-full px-4 py-2 w-full flex items-center gap-2 focus-within:ring-2 focus-within:ring-blue-400 transition-all bg-gray-100 dark:bg-gray-700 focus-within:bg-white dark:focus-within:bg-gray-600">
               <span className="text-sm text-gray-500 dark:text-gray-400">🔍</span>
               <input
@@ -508,7 +503,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               </button>
             )}
 
-            {/* Desktop Icons */}
+            {/* Desktop Icons Only */}
             {!isMobile && (
               <>
                 {/* People Icon */}
@@ -778,38 +773,38 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         {/* Sidebar */}
         {/* Mobile Sidebar Overlay */}
         {isMobile && sidebarOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-30" onClick={() => setSidebarOpen(false)} />
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-[55]" onClick={() => setSidebarOpen(false)} />
         )}
 
-        {/* Sidebar */}
+        {/* Mobile Sidebar - Slide out overlay */}
         {isMobile ? (
-          <aside className={`fixed left-0 top-16 w-80 h-[calc(100vh-4rem)] bg-[#f4f7fb] shadow-xl overflow-y-auto flex flex-col z-40 transform transition-transform duration-300 ${
+          <aside className={`fixed left-0 top-16 w-64 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 shadow-xl overflow-y-auto overflow-x-hidden flex flex-col z-[60] transform transition-transform duration-300 ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}>
-            <div className="p-4 border-b border-[#eaf0fb] flex items-center justify-between">
-              <h2 className="text-[#022e8a] font-bold text-lg">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-gray-900 font-bold text-lg">
                 {isSettingsPage ? 'Settings' : 'Menu'}
               </h2>
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition-colors"
+                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
               >
                 ✕
               </button>
             </div>
 
-            <div className="flex-1 p-3 overflow-y-auto scrollbar-hide">
+            <div className="flex-1 p-4 overflow-y-auto scrollbar-hide">
               {isSettingsPage ? (
                 <>
                   {/* Back to Dashboard */}
                   <div className="mb-4">
-                    <Link
-                      href="/dashboard"
-                      className="flex items-center gap-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors text-[#022e8a] font-medium"
-                    >
-                      <span>←</span>
-                      <span>Back to Dashboard</span>
-                    </Link>
+                                            <Link
+                          href="/dashboard"
+                          className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium"
+                        >
+                          <span>←</span>
+                          <span>Back to Dashboard</span>
+                        </Link>
                   </div>
 
                   {/* SETTINGS Section */}
@@ -819,9 +814,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
                     >
                       <h3 className="text-[#022e8a] font-bold text-sm">SETTINGS</h3>
+                      {!isMobile && (
                       <span className={`text-[#022e8a] transition-transform duration-200 ${settingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                      )}
                     </button>
-                    {settingsOpen && (
+                    {(settingsOpen || isMobile) && (
                       <div className="pl-2">
                         {renderSettingsMenuItems(settingsSections.settings)}
                       </div>
@@ -835,9 +832,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
                     >
                       <h3 className="text-[#022e8a] font-bold text-sm">PROFILE</h3>
+                      {!isMobile && (
                       <span className={`text-[#022e8a] transition-transform duration-200 ${profileSettingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                      )}
                     </button>
-                    {profileSettingsOpen && (
+                    {(profileSettingsOpen || isMobile) && (
                       <div className="pl-2">
                         {renderSettingsMenuItems(settingsSections.profile)}
                       </div>
@@ -851,9 +850,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
                     >
                       <h3 className="text-[#022e8a] font-bold text-sm">SECURITY</h3>
+                      {!isMobile && (
                       <span className={`text-[#022e8a] transition-transform duration-200 ${securitySettingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                      )}
                     </button>
-                    {securitySettingsOpen && (
+                    {(securitySettingsOpen || isMobile) && (
                       <div className="pl-2">
                         {renderSettingsMenuItems(settingsSections.security)}
                       </div>
@@ -866,12 +867,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   <div className="mb-4">
                     <button 
                       onClick={() => setMeOpen(!meOpen)} 
-                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none"
                     >
-                      <h3 className="text-[#022e8a] font-bold text-sm">ME</h3>
-                      <span className={`text-[#022e8a] transition-transform duration-200 ${meOpen ? 'rotate-180' : ''}`}>▼</span>
+                      <h3 className="text-gray-900 font-semibold text-sm">ME</h3>
+                      {!isMobile && (
+                      <span className={`text-gray-500 transition-transform duration-200 ${meOpen ? 'rotate-180' : ''}`}>▼</span>
+                      )}
                     </button>
-                    {meOpen && (
+                    {(meOpen || isMobile) && (
                       <div className="pl-2">
                         {renderMenuItems(menuSections.me)}
                       </div>
@@ -882,12 +885,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   <div className="mb-4">
                     <button 
                       onClick={() => setCommunityOpen(!communityOpen)} 
-                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none"
                     >
-                      <h3 className="text-[#022e8a] font-bold text-sm">COMMUNITY</h3>
-                      <span className={`text-[#022e8a] transition-transform duration-200 ${communityOpen ? 'rotate-180' : ''}`}>▼</span>
+                      <h3 className="text-gray-900 font-semibold text-sm">COMMUNITY</h3>
+                      {!isMobile && (
+                      <span className={`text-gray-500 transition-transform duration-200 ${communityOpen ? 'rotate-180' : ''}`}>▼</span>
+                      )}
                     </button>
-                    {communityOpen && (
+                    {(communityOpen || isMobile) && (
                       <div className="pl-2">
                         {renderMenuItems(menuSections.community)}
                       </div>
@@ -898,12 +903,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   <div className="mb-4">
                     <button 
                       onClick={() => setExploreOpen(!exploreOpen)} 
-                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none"
                     >
-                      <h3 className="text-[#022e8a] font-bold text-sm">EXPLORE</h3>
-                      <span className={`text-[#022e8a] transition-transform duration-200 ${exploreOpen ? 'rotate-180' : ''}`}>▼</span>
+                      <h3 className="text-gray-900 font-semibold text-sm">EXPLORE</h3>
+                      {!isMobile && (
+                      <span className={`text-gray-500 transition-transform duration-200 ${exploreOpen ? 'rotate-180' : ''}`}>▼</span>
+                      )}
                     </button>
-                    {exploreOpen && (
+                    {(exploreOpen || isMobile) && (
                       <div className="pl-2">
                         {renderMenuItems(menuSections.explore)}
                       </div>
@@ -914,9 +921,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </div>
 
             {/* Footer */}
-            <div className="p-3 border-t border-[#eaf0fb]">
-              <div className="text-xs text-[#34495e] mb-2">© 2025 Jaifriend</div>
-              <div className="text-xs text-[#34495e]">🌐 Language</div>
+            <div className="p-4 border-t border-gray-200">
+              <div className="text-xs text-gray-500 mb-2">© 2025 Jaifriend</div>
+              <div className="text-xs text-gray-500">🌐 Language</div>
             </div>
           </aside>
         ) : (
@@ -929,18 +936,18 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               {sidebarCollapsed ? '→' : '←'}
             </button>
 
-            <aside className={`bg-[#f4f7fb] shadow-lg overflow-y-auto flex flex-col fixed left-0 top-16 h-[calc(100vh-4rem)] transition-all duration-300 scrollbar-hide ${
-              sidebarCollapsed ? 'w-16' : 'w-80'
+            <aside className={`bg-white border-r border-gray-200 overflow-y-auto overflow-x-hidden flex flex-col fixed left-0 top-16 h-[calc(100vh-4rem)] transition-all duration-300 scrollbar-hide ${
+              sidebarCollapsed ? 'w-16' : 'w-64'
             }`}>
               
-              <div className="flex-1 p-3 overflow-y-auto scrollbar-hide">
+              <div className="flex-1 p-4 overflow-y-auto scrollbar-hide">
                 {isSettingsPage ? (
                   <>
                     {!sidebarCollapsed && (
                       <div className="mb-4">
                         <Link
                           href="/dashboard"
-                          className="flex items-center gap-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors text-[#022e8a] font-medium"
+                          className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium"
                         >
                           <span>←</span>
                           <span>Back to Dashboard</span>
@@ -953,10 +960,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       {!sidebarCollapsed && (
                         <button 
                           onClick={() => setSettingsOpen(!settingsOpen)} 
-                          className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                          className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none"
                         >
-                          <h3 className="text-[#022e8a] font-bold text-sm">SETTINGS</h3>
-                          <span className={`text-[#022e8a] transition-transform duration-200 ${settingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                          <h3 className="text-gray-900 font-semibold text-sm">SETTINGS</h3>
+                          <span className={`text-gray-500 transition-transform duration-200 ${settingsOpen ? 'rotate-180' : ''}`}>▼</span>
                         </button>
                       )}
                       {(settingsOpen || sidebarCollapsed) && (
@@ -990,17 +997,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       )}
                     </div>
 
-                    {sidebarCollapsed && <div className="border-t border-[#eaf0fb] my-2"></div>}
+                    {sidebarCollapsed && <div className="border-t border-gray-200 my-2"></div>}
 
                     {/* PROFILE Section */}
                     <div className="mb-4">
                       {!sidebarCollapsed && (
                         <button 
                           onClick={() => setProfileSettingsOpen(!profileSettingsOpen)} 
-                          className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                          className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none"
                         >
-                          <h3 className="text-[#022e8a] font-bold text-sm">PROFILE</h3>
-                          <span className={`text-[#022e8a] transition-transform duration-200 ${profileSettingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                          <h3 className="text-gray-900 font-semibold text-sm">PROFILE</h3>
+                          <span className={`text-gray-500 transition-transform duration-200 ${profileSettingsOpen ? 'rotate-180' : ''}`}>▼</span>
                         </button>
                       )}
                       {(profileSettingsOpen || sidebarCollapsed) && (
@@ -1034,17 +1041,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       )}
                     </div>
 
-                    {sidebarCollapsed && <div className="border-t border-[#eaf0fb] my-2"></div>}
+                    {sidebarCollapsed && <div className="border-t border-gray-200 my-2"></div>}
 
                     {/* SECURITY Section */}
                     <div className="mb-4">
                       {!sidebarCollapsed && (
                         <button 
                           onClick={() => setSecuritySettingsOpen(!securitySettingsOpen)} 
-                          className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                          className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none"
                         >
-                          <h3 className="text-[#022e8a] font-bold text-sm">SECURITY</h3>
-                          <span className={`text-[#022e8a] transition-transform duration-200 ${securitySettingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                          <h3 className="text-gray-900 font-semibold text-sm">SECURITY</h3>
+                          <span className={`text-gray-500 transition-transform duration-200 ${securitySettingsOpen ? 'rotate-180' : ''}`}>▼</span>
                         </button>
                       )}
                       {(securitySettingsOpen || sidebarCollapsed) && (
@@ -1098,7 +1105,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       )}
                     </div>
 
-                    {sidebarCollapsed && <div className="border-t border-[#eaf0fb] my-2"></div>}
+                    {sidebarCollapsed && <div className="border-t border-gray-200 my-2"></div>}
 
                     {/* COMMUNITY Section */}
                     <div className="mb-4">
@@ -1118,7 +1125,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       )}
                     </div>
 
-                    {sidebarCollapsed && <div className="border-t border-[#eaf0fb] my-2"></div>}
+                    {sidebarCollapsed && <div className="border-t border-gray-200 my-2"></div>}
 
                     {/* EXPLORE Section */}
                     <div className="mb-4">
@@ -1143,9 +1150,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
               {/* Footer */}
               {!sidebarCollapsed && (
-                <div className="p-3 border-t border-[#eaf0fb]">
-                  <div className="text-xs text-[#34495e] mb-2">© 2025 Jaifriend</div>
-                  <div className="text-xs text-[#34495e]">🌐 Language</div>
+                <div className="p-4 border-t border-gray-200">
+                  <div className="text-xs text-gray-500 mb-2">© 2025 Jaifriend</div>
+                  <div className="text-xs text-gray-500">🌐 Language</div>
                 </div>
               )}
             </aside>
@@ -1154,19 +1161,90 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
         {/* Main Content Area */}
         <main className={`
-          flex-1 transition-all duration-300 pt-16 min-h-screen
+          flex-1 transition-all duration-300 pt-16 min-h-screen overflow-x-hidden
           ${isMobile 
-            ? 'ml-0' 
+            ? 'ml-0 pb-20' 
             : sidebarCollapsed 
               ? 'ml-16' 
-              : 'ml-80'
+              : 'ml-64'
           }
         `}>
-          <div className="container mx-auto px-4 py-6 max-w-7xl">
+          <div className="w-full h-full overflow-x-hidden">
             {children}
           </div>
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      {isMobile && (
+        <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50 overflow-x-hidden">
+          <div className="flex justify-around items-center py-2 w-full max-w-full">
+            <Link
+              href="/dashboard"
+              className={`flex flex-col items-center p-2 rounded-lg transition-colors ${
+                pathname === '/dashboard' 
+                  ? 'text-blue-600 dark:text-blue-400' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+              }`}
+            >
+              <span className="text-xl mb-1">🏠</span>
+              <span className="text-xs font-medium">Home</span>
+            </Link>
+            
+            <Link
+              href="/dashboard/find-friends"
+              className={`flex flex-col items-center p-2 rounded-lg transition-colors ${
+                pathname === '/dashboard/find-friends' 
+                  ? 'text-blue-600 dark:text-blue-400' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+              }`}
+            >
+              <span className="text-xl mb-1">👥</span>
+              <span className="text-xs font-medium">Friends</span>
+            </Link>
+            
+            <Link
+              href="/dashboard/messages"
+              className={`flex flex-col items-center p-2 rounded-lg transition-colors ${
+                pathname === '/dashboard/messages' 
+                  ? 'text-blue-600 dark:text-blue-400' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+              }`}
+            >
+              <span className="text-xl mb-1">💬</span>
+              <span className="text-xs font-medium">Messages</span>
+            </Link>
+            
+            <Link
+              href="/dashboard/notifications"
+              className={`flex flex-col items-center p-2 rounded-lg transition-colors ${
+                pathname === '/dashboard/notifications' 
+                  ? 'text-blue-600 dark:text-blue-400' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+              }`}
+            >
+              <span className="text-xl mb-1">🔔</span>
+              <span className="text-xs font-medium">Notifications</span>
+            </Link>
+            
+            <Link
+              href="/dashboard/profile"
+              className={`flex flex-col items-center p-2 rounded-lg transition-colors ${
+                pathname === '/dashboard/profile' 
+                  ? 'text-blue-600 dark:text-blue-400' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+              }`}
+            >
+              <img
+                src={profile.avatar}
+                alt="Profile"
+                className="w-6 h-6 rounded-full mb-1 object-cover"
+              />
+              <span className="text-xs font-medium">Profile</span>
+            </Link>
+          </div>
+        </nav>
+      )}
 
       <style jsx>{`
         .scrollbar-hide {
@@ -1175,6 +1253,47 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         }
         .scrollbar-hide::-webkit-scrollbar { 
           display: none;
+        }
+        
+        /* Hide scrollbars for sidebar specifically */
+        aside .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        
+        aside .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
+        }
+        
+        /* Hide horizontal scrollbars */
+        aside .scrollbar-hide::-webkit-scrollbar:horizontal {
+          display: none;
+          height: 0;
+        }
+        
+        /* Hide vertical scrollbars */
+        aside .scrollbar-hide::-webkit-scrollbar:vertical {
+          display: none;
+          width: 0;
+        }
+        
+        /* Ensure sidebar content doesn't overflow horizontally */
+        aside {
+          overflow-x: hidden;
+        }
+        
+        /* Hide scrollbars for all sidebar elements */
+        aside * {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        
+        aside *::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
         }
       `}</style>
     </div>

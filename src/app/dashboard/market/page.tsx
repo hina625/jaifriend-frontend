@@ -13,7 +13,7 @@ interface Product {
   imageUrl?: string;
   quantity?: number; // Added quantity for cart
 }
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 const MarketplacePage: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState<number>(0);
   const [selectedCategory, setSelectedCategory] = useState<string>('Other');
@@ -38,7 +38,7 @@ const MarketplacePage: React.FC = () => {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`${API_URL}/api/products`)
+    fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/products')
       .then(res => res.json())
       .then(data => {
         setProducts(data);
@@ -112,11 +112,11 @@ const MarketplacePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="w-full h-full overflow-y-auto scrollbar-hide">
       {/* Popup Modal */}
       <Popup popup={popup} onClose={closePopup} />
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white shadow-sm border-b sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2 sm:gap-4">
             <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 flex-shrink-0">Market</h1>

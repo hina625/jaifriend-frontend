@@ -29,8 +29,8 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
-      <body className="bg-gray-50">
-        <div className="w-full px-4">
+      <body className="bg-gray-50 overflow-x-hidden">
+        <div className="w-full overflow-x-hidden">
         {children}
         </div>
       </body>

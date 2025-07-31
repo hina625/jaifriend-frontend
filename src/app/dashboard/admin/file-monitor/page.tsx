@@ -31,11 +31,11 @@ const FileMonitorPage: React.FC = () => {
   const closePopup = () => {
     setPopup(prev => ({ ...prev, isOpen: false }));
   };
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
   const fetchStatus = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/api/filemonitor/status`);
+      const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/filemonitor/status');
       const data = await response.json();
       
       if (data.success) {
@@ -53,7 +53,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   const startMonitoring = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/api/filemonitor/start`, {
+      const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/filemonitor/start', {
         method: 'POST'
       });
       const data = await response.json();
@@ -74,7 +74,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   const stopMonitoring = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/api/filemonitor/stop`, {
+      const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/filemonitor/stop', {
         method: 'POST'
       });
       const data = await response.json();
@@ -95,7 +95,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   const runCleanup = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/api/filemonitor/cleanup`, {
+      const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/filemonitor/cleanup', {
         method: 'POST'
       });
       const data = await response.json();
@@ -118,12 +118,12 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 sm:pb-6">
+    <div className="w-full h-full overflow-y-auto scrollbar-hide pb-20 sm:pb-6">
       {/* Popup Modal */}
       <Popup popup={popup} onClose={closePopup} />
       
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-40">
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-30">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">File Monitor Admin</h1>
           <div className="flex items-center space-x-2">

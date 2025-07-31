@@ -113,9 +113,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen w-full bg-gray-50 scrollbar-hide">
+      <div className="h-full overflow-y-auto scrollbar-hide">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b sticky top-0 z-40">
+      <div className="bg-white shadow-sm border-b sticky top-0 z-30">
         <div className="flex items-center justify-between p-4 max-w-6xl mx-auto">
           <div className="flex items-center gap-3">
             <button 
@@ -374,6 +375,37 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
           <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
       )}
+      </div>
+
+      <style jsx>{`
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar { 
+          display: none;
+        }
+        
+        /* Completely fixed page - no scrolling */
+        body {
+          overflow: hidden;
+          margin: 0;
+          padding: 0;
+          height: 100vh;
+          width: 100vw;
+        }
+        
+        html {
+          overflow: hidden;
+          height: 100vh;
+          width: 100vw;
+        }
+        
+        /* Ensure content doesn't overflow */
+        * {
+          box-sizing: border-box;
+        }
+      `}</style>
     </div>
   );
 }

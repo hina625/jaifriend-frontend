@@ -5,14 +5,19 @@ interface PopupState {
   type: 'success' | 'error' | 'info' | 'warning';
   title: string;
   message: string;
+  showConfirm?: boolean;
+  confirmText?: string;
+  cancelText?: string;
 }
 
 interface PopupProps {
   popup: PopupState;
   onClose: () => void;
+  onConfirm?: () => void;
+  onCancel?: () => void;
 }
 
-const Popup: React.FC<PopupProps> = ({ popup, onClose }) => {
+const Popup: React.FC<PopupProps> = ({ popup, onClose, onConfirm, onCancel }) => {
   if (!popup.isOpen) return null;
 
   const getIcon = () => {
@@ -77,12 +82,35 @@ const Popup: React.FC<PopupProps> = ({ popup, onClose }) => {
             <h3 className="text-xl font-semibold mb-2 text-gray-900">{popup.title}</h3>
             <p className="mb-6 text-gray-600">{popup.message}</p>
             
-            <button
-              onClick={onClose}
-              className={`w-full py-3 px-4 rounded-xl font-medium transition-all duration-200 ${getButtonClass()}`}
-            >
-              OK
-            </button>
+            {popup.showConfirm ? (
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    if (onCancel) onCancel();
+                    onClose();
+                  }}
+                  className="flex-1 py-3 px-4 rounded-xl font-medium transition-all duration-200 bg-gray-300 hover:bg-gray-400 text-gray-800"
+                >
+                  {popup.cancelText || 'Cancel'}
+                </button>
+                <button
+                  onClick={() => {
+                    if (onConfirm) onConfirm();
+                    onClose();
+                  }}
+                  className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all duration-200 ${getButtonClass()}`}
+                >
+                  {popup.confirmText || 'Confirm'}
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={onClose}
+                className={`w-full py-3 px-4 rounded-xl font-medium transition-all duration-200 ${getButtonClass()}`}
+              >
+                OK
+              </button>
+            )}
           </div>
         </div>
       </div>
