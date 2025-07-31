@@ -174,7 +174,8 @@ const GamesPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 sm:pb-6">
+    <div className="w-full h-full overflow-y-auto scrollbar-hide">
+      
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
         
         {/* Header */}

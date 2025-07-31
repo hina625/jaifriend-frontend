@@ -60,7 +60,9 @@ const FindFriendsPage = () => {
   );
 
   return (
-    <div className="h-screen bg-gray-100 flex flex-col lg:flex-row relative">
+    <div className="min-h-screen w-full bg-gray-100 scrollbar-hide">
+      <div className="h-full overflow-y-auto scrollbar-hide">
+        <div className="flex flex-col lg:flex-row relative h-full">
       
       {/* Mobile Header */}
       <div className="lg:hidden bg-white border-b p-4">
@@ -311,6 +313,38 @@ const FindFriendsPage = () => {
       <button className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-12 h-12 sm:w-14 sm:h-14 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 transition-colors flex items-center justify-center z-30">
         <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
       </button>
+        </div>
+      </div>
+
+      <style jsx>{`
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar { 
+          display: none;
+        }
+        
+        /* Completely fixed page - no scrolling */
+        body {
+          overflow: hidden;
+          margin: 0;
+          padding: 0;
+          height: 100vh;
+          width: 100vw;
+        }
+        
+        html {
+          overflow: hidden;
+          height: 100vh;
+          width: 100vw;
+        }
+        
+        /* Ensure content doesn't overflow */
+        * {
+          box-sizing: border-box;
+        }
+      `}</style>
     </div>
   );
 };

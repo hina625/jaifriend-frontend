@@ -377,7 +377,8 @@ const SocialExplorePage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 sm:pb-6">
+    <div className="w-full h-full overflow-y-auto scrollbar-hide">
+      
       {/* Popup Modal */}
       <Popup popup={popup} onClose={closePopup} />
       <div className="max-w-6xl mx-auto px-3 sm:px-6 py-3 sm:py-6">

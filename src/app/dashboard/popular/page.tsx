@@ -4,7 +4,6 @@ import { ArrowLeft, Filter, Search, TrendingUp, Grid, List, Bookmark, Share2, He
 import PostDisplay from '@/components/PostDisplay';
 import AlbumDisplay from '@/components/AlbumDisplay';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 export default function PopularPostsPage() {
   const [posts, setPosts] = useState<any[]>([]);
   const [albums, setAlbums] = useState<any[]>([]);
@@ -24,8 +23,8 @@ export default function PopularPostsPage() {
   const fetchPopularContent = async () => {
     try {
       const [postsResponse, albumsResponse] = await Promise.all([
-        fetch(`${API_URL}/api/posts`),
-        fetch(`${API_URL}/api/albums`)
+        fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts'),
+        fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/albums')
       ]);
       
       const [postsData, albumsData] = await Promise.all([
@@ -100,7 +99,7 @@ export default function PopularPostsPage() {
   const handlePostShare = async (postId: string, shareOptions?: any) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_URL}/api/posts/${postId}/share`, {
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/${postId}/share', {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -123,7 +122,7 @@ export default function PopularPostsPage() {
   const handlePostView = async (postId: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_URL}/api/posts/${postId}/view`, {
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/${postId}/view', {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -142,7 +141,7 @@ export default function PopularPostsPage() {
 
   const handleLike = async (postId: string) => {
     const token = localStorage.getItem('token');
-    const res = await fetch(`${API_URL}/api/posts/${postId}/like`, {
+    const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/${postId}/like', { 
       method: 'POST',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -158,7 +157,7 @@ export default function PopularPostsPage() {
 
   const handleReaction = async (postId: string, reactionType: string) => {
     const token = localStorage.getItem('token');
-    const res = await fetch(`${API_URL}/api/posts/${postId}/reaction`, {
+    const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/${postId}/reaction', { 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -186,9 +185,9 @@ export default function PopularPostsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="w-full">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
+      <div className="bg-white border-b border-gray-200 z-30">
         <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

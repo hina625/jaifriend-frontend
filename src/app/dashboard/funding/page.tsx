@@ -273,9 +273,9 @@ const FundingsPage = () => {
 
   if (showCreateForm) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-20 sm:pb-6">
+      <div className="w-full h-full overflow-y-auto scrollbar-hide">
         {/* Header */}
-        <div className="bg-white border-b px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-40">
+        <div className="bg-white border-b px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-30">
           <div className="flex items-center justify-between">
             <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Fundings</h1>
             <button
@@ -309,7 +309,8 @@ const FundingsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 sm:pb-6">
+    <div className="w-full h-full overflow-y-auto scrollbar-hide">
+      <div className="h-full overflow-y-auto scrollbar-hide pb-20 sm:pb-6">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
         
         {/* Header */}
@@ -399,6 +400,7 @@ const FundingsPage = () => {
           {activeTab === 'Browse Funding' && <BrowseFunding />}
         </div>
 
+      </div>
       </div>
 
       {/* Right Sidebar Icons - Hidden on mobile */}

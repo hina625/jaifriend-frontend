@@ -3,7 +3,7 @@ import React from 'react';
 
 const SubscriptionPage = () => {
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="w-full h-full overflow-y-auto scrollbar-hide p-4 sm:p-6">
       <div className="max-w-6xl mx-auto">
         <div className="mb-12">
           <h1 className="text-3xl font-semibold text-gray-900">

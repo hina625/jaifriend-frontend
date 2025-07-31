@@ -290,9 +290,10 @@ const ForumPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 sm:pb-6">
+    <div className="w-full h-full overflow-y-auto scrollbar-hide">
+      
       {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-40">
+      <header className="bg-white shadow-sm border-b sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Forum</h1>

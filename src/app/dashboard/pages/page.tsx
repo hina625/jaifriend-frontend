@@ -22,7 +22,7 @@ interface SuggestedPage {
   icon: string;
   color: string;
 }
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
 const PagesInterface: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('My Pages');
   const [showCreateForm, setShowCreateForm] = useState<boolean>(false);
@@ -105,7 +105,7 @@ const PagesInterface: React.FC = () => {
 
   const handleCreatePage = async (): Promise<void> => {
     try {
-      const response = await fetch(`${API_URL}/api/pages`, {
+      const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/pages', { 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -361,9 +361,9 @@ const PagesInterface: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="w-full">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-30">
+      <header className="bg-white shadow-sm border-b z-30">
         <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
