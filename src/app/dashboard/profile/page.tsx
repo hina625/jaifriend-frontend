@@ -184,9 +184,9 @@ const ProfilePage: React.FC = () => {
     window.addEventListener('albumDeleted', handleAlbumDeleted);
     
     return () => {
-          window.removeEventListener('postCreated', handlePostCreated);
-    window.removeEventListener('postDeleted', handlePostDeleted);
-    window.removeEventListener('postUpdated', handlePostUpdated);
+      window.removeEventListener('postCreated', handlePostCreated);
+      window.removeEventListener('postDeleted', handlePostDeleted);
+      window.removeEventListener('postUpdated', handlePostUpdated);
       window.removeEventListener('imagesUpdated', handleImagesUpdated);
       window.removeEventListener('privacySettingsUpdated', handlePrivacySettingsUpdated);
       window.removeEventListener('passwordChanged', handlePasswordChanged);
@@ -234,7 +234,9 @@ const ProfilePage: React.FC = () => {
         return;
       }
 
-      const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/profile/me', { 
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`;
+      console.log('🔍 Fetching user profile from:', apiUrl);
+      const response = await fetch(apiUrl, { 
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -243,11 +245,16 @@ const ProfilePage: React.FC = () => {
       if (response.ok) {
         const userData = await response.json();
         setUser(userData);
+        setLoading(false);
       } else {
-        console.error('Failed to fetch user profile');
+        console.error('❌ Failed to fetch user profile:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('❌ Error details:', errorText);
+        setLoading(false);
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
+      setLoading(false);
     }
   };
 
@@ -256,7 +263,7 @@ const ProfilePage: React.FC = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/userimages`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/userimages`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -326,7 +333,7 @@ const ProfilePage: React.FC = () => {
   const updateProfile = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/profile/update', { 
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/update`, { 
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -360,7 +367,7 @@ const ProfilePage: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/posts/${postId}`, { 
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}`, { 
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -387,7 +394,7 @@ const ProfilePage: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/posts/${editingPost._id}`, { 
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${editingPost._id}`, { 
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -461,6 +468,7 @@ const ProfilePage: React.FC = () => {
     try {
       setCreatingPost(true);
       const token = localStorage.getItem('token');
+      console.log('🔍 Token present:', !!token);
       if (!token) {
         showPopup('error', 'Error', 'Please log in to create a post');
         return;
@@ -475,7 +483,11 @@ const ProfilePage: React.FC = () => {
         formData.append('media', file);
       });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`, {
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`;
+      console.log('🔍 Creating post at:', apiUrl);
+      console.log('🔍 FormData content:', postContent);
+      console.log('🔍 Media files:', postMedia.length);
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -485,6 +497,7 @@ const ProfilePage: React.FC = () => {
 
       if (response.ok) {
         const newPost = await response.json();
+        console.log('✅ Post created successfully:', newPost);
         setPosts(prev => [newPost, ...prev]);
         setShowPostModal(false);
         setPostContent('');
@@ -495,8 +508,17 @@ const ProfilePage: React.FC = () => {
         // Dispatch event to notify other components
         window.dispatchEvent(new CustomEvent('postCreated'));
       } else {
-        const error = await response.json();
-        showPopup('error', 'Error', error.message || 'Failed to create post');
+        console.error('❌ Failed to create post:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('❌ Error details:', errorText);
+        let errorMessage = 'Failed to create post';
+        try {
+          const error = JSON.parse(errorText);
+          errorMessage = error.message || errorMessage;
+        } catch (e) {
+          console.error('❌ Could not parse error response:', e);
+        }
+        showPopup('error', 'Error', errorMessage);
       }
     } catch (error) {
       console.error('Error creating post:', error);
@@ -687,7 +709,7 @@ const ProfilePage: React.FC = () => {
       </div>
 
       {/* Navigation Tabs */}
-              <div className="bg-white border-b sticky top-0 z-30">
+      <div className="bg-white border-b sticky top-0 z-30">
         <div className="w-full px-3">
           <div className="flex overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => (
@@ -734,8 +756,8 @@ const ProfilePage: React.FC = () => {
                 </div>
               </div>
 
-                             {/* Completion Items */}
-               <div className="grid grid-cols-1 gap-2 text-xs">
+              {/* Completion Items */}
+              <div className="grid grid-cols-1 gap-2 text-xs">
                 <div className={`flex items-center gap-2 px-2 py-1.5 rounded-full ${
                   profileCompletion.profilePicture 
                     ? 'bg-green-100 text-green-700' 
@@ -788,11 +810,11 @@ const ProfilePage: React.FC = () => {
                   </span>
                 </div>
 
-                                 <div className={`flex items-center gap-2 px-2 py-1.5 rounded-full ${
-                   profileCompletion.address 
-                     ? 'bg-green-100 text-green-700' 
-                     : 'bg-gray-100 text-gray-600'
-                 }`}>
+                <div className={`flex items-center gap-2 px-2 py-1.5 rounded-full ${
+                  profileCompletion.address 
+                    ? 'bg-green-100 text-green-700' 
+                    : 'bg-gray-100 text-gray-600'
+                }`}>
                   <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
                     profileCompletion.address ? 'bg-green-500' : 'bg-gray-400'
                   }`}></div>
@@ -819,8 +841,8 @@ const ProfilePage: React.FC = () => {
                   />
                 </div>
 
-                                 {/* Stats */}
-                 <div className="grid grid-cols-1 gap-3 text-sm">
+                {/* Stats */}
+                <div className="grid grid-cols-1 gap-3 text-sm">
                   <div className="flex items-center gap-2 text-gray-600">
                     <Users className="w-4 h-4 flex-shrink-0" />
                     <span>{user.following?.length || 0} Following</span>
@@ -842,58 +864,109 @@ const ProfilePage: React.FC = () => {
 
               {/* Main Content */}
               <div className="space-y-4">
-                                 {/* Post Creation */}
-                 <div className="bg-white rounded-xl shadow-sm p-3">
-                   <div className="flex items-center gap-2">
+                {/* Post Creation */}
+                <div className="bg-white rounded-xl shadow-sm p-4">
+                  <div className="flex items-center gap-3">
                     <img
                       src={getMediaUrl(user.avatar)}
                       alt={user.name}
                       className="w-10 h-10 rounded-full object-cover flex-shrink-0"
                     />
-                                         <div className="flex-1 min-w-0">
-                       <input
-                         type="text"
-                         placeholder="What's going on? #Hashtag.. @Mention.. Link.."
-                         className="w-full px-3 py-2 bg-gray-100 rounded-full focus:ring-2 focus:ring-blue-500 outline-none text-sm cursor-pointer"
-                         onClick={() => setShowPostModal(true)}
-                         readOnly
-                       />
-                     </div>
-                    <div className="flex gap-1 flex-shrink-0">
-                      <button 
-                        onClick={() => setShowPostModal(true)}
-                        className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Add video"
+                    <div className="flex-1 min-w-0">
+                      <input
+                        type="text"
+                        placeholder="What's going on? #Hashtag.. @Mention.. Link.."
+                        value={postContent}
+                        onChange={(e) => setPostContent(e.target.value)}
+                        className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm transition-colors"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+                        <button 
+                          onClick={() => document.getElementById('photo-upload')?.click()}
+                          className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          title="Add photo"
+                        >
+                          <CameraIcon className="w-4 h-4" />
+                        </button>
+                        <div className="w-px bg-gray-300"></div>
+                        <button 
+                          onClick={() => document.getElementById('video-upload')?.click()}
+                          className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Add video"
+                        >
+                          <Video className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <button
+                        onClick={createPost}
+                        disabled={(!postContent.trim() && postMedia.length === 0) || creatingPost}
+                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm font-medium flex items-center justify-center"
                       >
-                        <Video className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => setShowPostModal(true)}
-                        className="p-1.5 text-green-500 hover:bg-green-50 rounded-lg transition-colors"
-                        title="Add photo"
-                      >
-                        <CameraIcon className="w-4 h-4" />
+                        {creatingPost ? 'Posting...' : 'Post'}
                       </button>
                     </div>
                   </div>
+                  
+                  {/* Hidden file inputs */}
+                  <input
+                    id="photo-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleMediaUpload}
+                    className="hidden"
+                    multiple
+                  />
+                  <input
+                    id="video-upload"
+                    type="file"
+                    accept="video/*"
+                    onChange={handleMediaUpload}
+                    className="hidden"
+                    multiple
+                  />
+                  
+                  {/* Media Preview */}
+                  {postMediaUrls.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <div className="grid grid-cols-2 gap-2">
+                        {postMediaUrls.map((url, index) => (
+                          <div key={index} className="relative">
+                            <img
+                              src={url}
+                              alt={`Preview ${index + 1}`}
+                              className="w-full h-20 object-cover rounded-lg"
+                            />
+                            <button
+                              onClick={() => removeMedia(index)}
+                              className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
 
-                  {/* Filter Tabs */}
-                  <div className="flex mt-3 border-b overflow-x-auto scrollbar-hide">
-                    {filters.map((filter) => (
-                      <button
-                        key={filter.id}
-                        onClick={() => setActiveFilter(filter.id)}
-                        className={`flex items-center gap-1 px-3 py-2 text-sm transition-colors whitespace-nowrap ${
-                          activeFilter === filter.id
-                            ? 'text-blue-600 border-b-2 border-blue-500'
-                            : 'text-gray-600 hover:text-gray-900'
-                        }`}
-                      >
-                        {filter.icon}
-                        <span>{filter.label}</span>
-                      </button>
-                    ))}
-                  </div>
+                {/* Filter Tabs */}
+                <div className="flex mt-3 border-b overflow-x-auto scrollbar-hide">
+                  {filters.map((filter) => (
+                    <button
+                      key={filter.id}
+                      onClick={() => setActiveFilter(filter.id)}
+                      className={`flex items-center gap-1 px-3 py-2 text-sm transition-colors whitespace-nowrap ${
+                        activeFilter === filter.id
+                          ? 'text-blue-600 border-b-2 border-blue-500'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      {filter.icon}
+                      <span>{filter.label}</span>
+                    </button>
+                  ))}
                 </div>
 
                 {/* Posts */}
@@ -1007,23 +1080,15 @@ const ProfilePage: React.FC = () => {
               </div>
             ) : (
               <div>
-            <h3 className="text-xl font-semibold mb-4">
-              {tabs.find(tab => tab.id === activeTab)?.label}
-            </h3>
-            <p className="text-gray-600 text-sm">This section is coming soon!</p>
+                <h3 className="text-xl font-semibold mb-4">
+                  {tabs.find(tab => tab.id === activeTab)?.label}
+                </h3>
+                <p className="text-gray-600 text-sm">This section is coming soon!</p>
               </div>
             )}
           </div>
         )}
       </div>
-
-      {/* Floating Action Button */}
-      <button
-        onClick={() => router.push('/dashboard')}
-        className="fixed bottom-20 right-4 w-12 h-12 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center transition-colors z-50"
-      >
-        <Plus className="w-5 h-5" />
-      </button>
 
       {/* Profile Edit Modal */}
       {showProfileEdit && (
@@ -1154,9 +1219,6 @@ const ProfilePage: React.FC = () => {
         </div>
       )}
 
-      {/* Popup */}
-      <Popup popup={popup} onClose={closePopup} />
-
       {/* Post Creation Modal */}
       {showPostModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -1271,6 +1333,17 @@ const ProfilePage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Popup */}
+      <Popup popup={popup} onClose={closePopup} />
+
+      {/* Floating Action Button */}
+      <button
+        onClick={() => router.push('/dashboard')}
+        className="fixed bottom-20 right-4 w-12 h-12 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center transition-colors z-50"
+      >
+        <Plus className="w-5 h-5" />
+      </button>
     </div>
   );
 };

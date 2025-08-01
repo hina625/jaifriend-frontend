@@ -183,7 +183,36 @@ export default function UserProfile() {
 
       console.log('Fetching profile for userId:', actualUserId);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${actualUserId}`, {
+      // Handle "me" case - get current user's ID first
+      let targetUserId = actualUserId;
+      if (actualUserId === 'me') {
+        try {
+          const currentUserResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (currentUserResponse.ok) {
+            const currentUser = await currentUserResponse.json();
+            targetUserId = currentUser.id;
+            // Redirect to the actual user ID to avoid "me" in URL
+            router.replace(`/dashboard/profile/${targetUserId}`);
+            return;
+          } else {
+            setError('Failed to get current user information');
+            showPopup('error', 'Error', 'Failed to get current user information');
+            return;
+          }
+        } catch (error) {
+          console.error('Error fetching current user:', error);
+          setError('Failed to get current user information');
+          showPopup('error', 'Error', 'Failed to get current user information');
+          return;
+        }
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${targetUserId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -244,6 +273,9 @@ export default function UserProfile() {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
+      
+      // Skip content fetching if userId is "me" (will be handled after redirect)
+      if (actualUserId === 'me') return;
       
       // Fetch posts
       const postsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${actualUserId}/posts`, { 

@@ -374,7 +374,7 @@ const MarketplaceSeller: React.FC = () => {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full relative">
       {/* Header */}
       <header className="bg-white shadow-sm border-b z-30">
         <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
@@ -466,17 +466,34 @@ const MarketplaceSeller: React.FC = () => {
       </nav>
 
       {/* Main Content */}
-      <main className="bg-white">
+      <main className="bg-white relative">
         {renderContent()}
       </main>
 
       {/* Floating Action Button */}
-      <button 
-        onClick={() => setShowSellModal(true)}
-        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-12 h-12 sm:w-14 sm:h-14 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 hover:shadow-xl transition-all flex items-center justify-center z-20 group"
-      >
-        <Plus className="w-5 h-5 sm:w-6 sm:h-6 group-hover:rotate-90 transition-transform" />
-      </button>
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9999] pointer-events-none">
+        <button 
+          onClick={() => setShowSellModal(true)}
+          className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 hover:shadow-xl transition-all flex items-center justify-center group pointer-events-auto"
+          style={{ 
+            position: 'relative',
+            width: '3rem',
+            height: '3rem',
+            borderRadius: '50%',
+            backgroundColor: '#3b82f6',
+            color: 'white',
+            border: 'none',
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease-in-out'
+          }}
+        >
+          <Plus className="w-5 h-5 sm:w-6 sm:h-6 group-hover:rotate-90 transition-transform" />
+        </button>
+      </div>
 
       {/* Sell New Product Modal */}
       {showSellModal && (
