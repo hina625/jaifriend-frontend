@@ -140,10 +140,32 @@ const PrivacySettingsPage = () => {
           // Dispatch event to notify other components
           window.dispatchEvent(new CustomEvent('privacySettingsUpdated'));
           
-          // Navigate to profile page after successful save
-          setTimeout(() => {
-            router.push('/dashboard/profile/me');
-          }, 1500);
+          // Get current user ID and navigate to profile page
+          try {
+            const currentUserResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+
+            if (currentUserResponse.ok) {
+              const currentUser = await currentUserResponse.json();
+              setTimeout(() => {
+                router.push(`/dashboard/profile/${currentUser.id}`);
+              }, 1500);
+            } else {
+              // Fallback to "me" if we can't get the user ID
+              setTimeout(() => {
+                router.push('/dashboard/profile/me');
+              }, 1500);
+            }
+          } catch (error) {
+            console.error('Error getting current user ID:', error);
+            // Fallback to "me" if there's an error
+            setTimeout(() => {
+              router.push('/dashboard/profile/me');
+            }, 1500);
+          }
         } else {
           // Fallback to localStorage if API fails
           throw new Error('API failed, using localStorage');

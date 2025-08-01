@@ -154,7 +154,17 @@ export default function PostDisplay({
   };
 
   const currentUserId = getCurrentUserId();
-  const isSaved = post.savedBy?.includes(currentUserId);
+  // Check if current user has saved this post
+  const isSaved = post.savedBy && Array.isArray(post.savedBy) && 
+    post.savedBy.some((savedUser: any) => {
+      // Handle both user ID strings and user objects
+      if (typeof savedUser === 'string') {
+        return savedUser === currentUserId;
+      } else if (savedUser && typeof savedUser === 'object') {
+        return savedUser._id === currentUserId || savedUser.userId === currentUserId;
+      }
+      return false;
+    });
 
   return (
     <div className="bg-white rounded-xl shadow p-3 sm:p-4 mb-4 sm:mb-6">

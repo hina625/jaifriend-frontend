@@ -29,33 +29,52 @@ export default function SavedPosts() {
       return;
     }
     try {
+      console.log('🔄 Fetching saved content...');
+      
       // Fetch saved albums
-      const savedAlbumsRes = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/albums/saved', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+      console.log('🌐 Fetching saved albums from:', `${apiUrl}/api/albums/saved`);
+      
+      const savedAlbumsRes = await fetch(`${apiUrl}/api/albums/saved`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
+      console.log('📡 Saved albums response status:', savedAlbumsRes.status);
+      
       if (savedAlbumsRes.ok) {
         const savedAlbumsData = await savedAlbumsRes.json();
+        console.log('✅ Saved albums data:', savedAlbumsData);
         setSavedAlbums(savedAlbumsData);
       } else if (savedAlbumsRes.status === 401) {
+        console.log('❌ Unauthorized - redirecting to login');
         localStorage.removeItem('token');
         router.push('/login');
         return;
+      } else {
+        const errorData = await savedAlbumsRes.json().catch(() => ({}));
+        console.error('❌ Failed to fetch saved albums:', savedAlbumsRes.status, errorData);
       }
       
       // Fetch saved posts
-      const savedPostsRes = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/saved', {
+      console.log('🌐 Fetching saved posts from:', `${apiUrl}/api/posts/saved`);
+      const savedPostsRes = await fetch(`${apiUrl}/api/posts/saved`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
+      console.log('📡 Saved posts response status:', savedPostsRes.status);
+      
       if (savedPostsRes.ok) {
         const savedPostsData = await savedPostsRes.json();
+        console.log('✅ Saved posts data:', savedPostsData);
         setSavedPosts(savedPostsData);
+      } else {
+        const errorData = await savedPostsRes.json().catch(() => ({}));
+        console.error('❌ Failed to fetch saved posts:', savedPostsRes.status, errorData);
       }
     } catch (error) {
-      console.error('Error fetching saved albums:', error);
+      console.error('❌ Error fetching saved content:', error);
     } finally {
       setLoading(false);
     }
@@ -149,7 +168,8 @@ export default function SavedPosts() {
   const handleAlbumLike = async (albumId: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/albums/${albumId}/like', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+      const res = await fetch(`${apiUrl}/api/albums/${albumId}/like`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -170,7 +190,8 @@ export default function SavedPosts() {
   const handleAlbumComment = async (albumId: string, comment: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/albums/${albumId}/comment', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+      const res = await fetch(`${apiUrl}/api/albums/${albumId}/comment`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -192,26 +213,48 @@ export default function SavedPosts() {
   // Handle album save
   const handleAlbumSave = async (albumId: string) => {
     const token = localStorage.getItem('token');
+    console.log('🎯 Attempting to save album:', albumId);
+    console.log('🔑 Token available:', !!token);
+    
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/albums/${albumId}/save', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+      const url = `${apiUrl}/api/albums/${albumId}/save`;
+      console.log('🌐 Making request to:', url);
+      
+      const res = await fetch(url, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
         }
       });
+      
+      console.log('📡 Response status:', res.status);
+      
       if (res.ok) {
         const data = await res.json();
+        console.log('✅ Album save response:', data);
+        
+        // Check if the album was saved or unsaved
+        const isSaved = data.saved || data.isSaved;
+        
         // Remove from saved list if unsaved
-        if (!data.saved) {
+        if (!isSaved) {
           setSavedAlbums((prev: any[]) => prev.filter((album: any) => album._id !== albumId));
+          // Dispatch event to notify other components
+          window.dispatchEvent(new CustomEvent('albumSaved', { detail: { albumId, saved: false } }));
         } else {
           setSavedAlbums((prev: any[]) => prev.map((album: any) => 
-            album._id === albumId ? { ...album, savedBy: data.savedBy, saved: data.saved } : album
+            album._id === albumId ? { ...album, savedBy: data.savedBy || data.album?.savedBy, saved: isSaved } : album
           ));
+          // Dispatch event to notify other components
+          window.dispatchEvent(new CustomEvent('albumSaved', { detail: { albumId, saved: true } }));
         }
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('❌ Album save failed:', res.status, errorData);
       }
     } catch (error) {
-      console.error('Error saving album:', error);
+      console.error('❌ Error saving album:', error);
     }
   };
 
@@ -219,7 +262,8 @@ export default function SavedPosts() {
   const handleAlbumShare = async (albumId: string, shareOptions?: any) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/albums/${albumId}/share', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+      const res = await fetch(`${apiUrl}/api/albums/${albumId}/share`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -243,7 +287,8 @@ export default function SavedPosts() {
   const handlePostLike = async (postId: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/${postId}/like', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+      const res = await fetch(`${apiUrl}/api/posts/${postId}/like`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -263,26 +308,48 @@ export default function SavedPosts() {
   // Handle post save
   const handlePostSave = async (postId: string) => {
     const token = localStorage.getItem('token');
+    console.log('🎯 Attempting to save post:', postId);
+    console.log('🔑 Token available:', !!token);
+    
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/${postId}/save', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+      const url = `${apiUrl}/api/posts/${postId}/save`;
+      console.log('🌐 Making request to:', url);
+      
+      const res = await fetch(url, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
         }
       });
+      
+      console.log('📡 Response status:', res.status);
+      
       if (res.ok) {
         const data = await res.json();
+        console.log('✅ Post save response:', data);
+        
+        // Check if the post was saved or unsaved
+        const isSaved = data.saved || data.isSaved;
+        
         // Remove from saved list if unsaved
-        if (!data.saved) {
+        if (!isSaved) {
           setSavedPosts((prev: any[]) => prev.filter((post: any) => post._id !== postId));
+          // Dispatch event to notify other components
+          window.dispatchEvent(new CustomEvent('postSaved', { detail: { postId, saved: false } }));
         } else {
           setSavedPosts((prev: any[]) => prev.map((post: any) => 
-            post._id === postId ? { ...post, savedBy: data.savedBy, saved: data.saved } : post
+            post._id === postId ? { ...post, savedBy: data.savedBy || data.post?.savedBy, saved: isSaved } : post
           ));
+          // Dispatch event to notify other components
+          window.dispatchEvent(new CustomEvent('postSaved', { detail: { postId, saved: true } }));
         }
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('❌ Post save failed:', res.status, errorData);
       }
     } catch (error) {
-      console.error('Error saving post:', error);
+      console.error('❌ Error saving post:', error);
     }
   };
 
@@ -290,7 +357,8 @@ export default function SavedPosts() {
   const handlePostComment = async (postId: string, comment: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/${postId}/comment', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+      const res = await fetch(`${apiUrl}/api/posts/${postId}/comment`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -312,7 +380,8 @@ export default function SavedPosts() {
   const handlePostShare = async (postId: string, shareOptions?: any) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/${postId}/share', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+      const res = await fetch(`${apiUrl}/api/posts/${postId}/share`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -335,7 +404,8 @@ export default function SavedPosts() {
   const handlePostView = async (postId: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/${postId}/view', {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+      const res = await fetch(`${apiUrl}/api/posts/${postId}/view`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -354,7 +424,8 @@ export default function SavedPosts() {
 
   const handleReaction = async (postId: string, reactionType: string) => {
     const token = localStorage.getItem('token');
-    const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/${postId}/reaction', {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+    const res = await fetch(`${apiUrl}/api/posts/${postId}/reaction`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

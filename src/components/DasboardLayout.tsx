@@ -398,7 +398,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               }`}
               title={item.name}
             >
-              <div className={`w-8 h-8 rounded-lg ${item.color} flex items-center justify-center text-sm group-hover:scale-110 transition-transform`}>
+              <div className={`w-8 h-8 rounded-lg ${item.color} flex items-center justify-center text-sm group-hover:scale-110 transition-transform leading-none`}>
                 {item.icon}
               </div>
               <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
@@ -422,7 +422,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 : 'hover:bg-gray-50 text-gray-700'
             }`}
           >
-            <div className={`w-10 h-10 rounded-lg ${item.color} flex items-center justify-center text-lg group-hover:scale-110 transition-transform`}>
+            <div className={`w-10 h-10 rounded-lg ${item.color} flex items-center justify-center text-lg group-hover:scale-110 transition-transform leading-none`}>
               {item.icon}
             </div>
             <span className="text-sm font-medium">
@@ -446,7 +446,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               : 'text-gray-700 hover:bg-gray-100'
           }`}
         >
-          <span className="text-lg mr-3">{item.icon}</span>
+          <span className="text-lg mr-3 leading-none flex items-center justify-center w-6">{item.icon}</span>
           {item.name}
         </Link>
       ))}
@@ -731,7 +731,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             <aside className={`fixed left-0 top-0 w-64 h-screen bg-white border-r border-gray-200 shadow-xl overflow-y-auto overflow-x-hidden flex flex-col z-[60] transform transition-transform duration-300 ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}>
-              <div className="p-4 border-b border-gray-200 flex items-center justify-between mt-16">
+              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
               <h2 className="text-gray-900 font-bold text-lg">
                 {isSettingsPage ? 'Settings' : 'Menu'}
               </h2>
@@ -881,7 +881,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             <aside className={`fixed left-0 top-0 w-80 h-screen bg-white border-r border-gray-200 shadow-xl overflow-y-auto overflow-x-hidden flex flex-col z-[60] transform transition-transform duration-300 ${
               profileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
             }`}>
-              <div className="p-4 border-b border-gray-200 flex items-center justify-between mt-16">
+              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
                 <h2 className="text-gray-900 font-bold text-lg">Profile</h2>
                 <button
                   onClick={() => setProfileSidebarOpen(false)}
@@ -1080,7 +1080,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                                   }`}
                                   title={item.name}
                                 >
-                                  <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-sm shadow group-hover:scale-110 transition-transform">
+                                  <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-sm shadow group-hover:scale-110 transition-transform leading-none">
                                     {item.icon}
                                   </div>
                                   <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
@@ -1124,7 +1124,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                                   }`}
                                   title={item.name}
                                 >
-                                  <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-sm shadow group-hover:scale-110 transition-transform">
+                                  <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-sm shadow group-hover:scale-110 transition-transform leading-none">
                                     {item.icon}
                                   </div>
                                   <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
@@ -1168,7 +1168,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                                   }`}
                                   title={item.name}
                                 >
-                                  <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center text-sm shadow group-hover:scale-110 transition-transform">
+                                  <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center text-sm shadow group-hover:scale-110 transition-transform leading-none">
                                     {item.icon}
                                   </div>
                                   <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">

@@ -134,7 +134,35 @@ export default function AlbumDisplay({
     if (onReaction) {
       onReaction(album._id, reactionType);
     }
+    setShowReactionPopup(false);
   };
+
+  // Get current user ID for save checking
+  const getCurrentUserId = () => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        return user.id || user._id;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const currentUserId = getCurrentUserId();
+  // Check if current user has saved this album
+  const isSaved = album.savedBy && Array.isArray(album.savedBy) && 
+    album.savedBy.some((savedUser: any) => {
+      // Handle both user ID strings and user objects
+      if (typeof savedUser === 'string') {
+        return savedUser === currentUserId;
+      } else if (savedUser && typeof savedUser === 'object') {
+        return savedUser._id === currentUserId || savedUser.userId === currentUserId;
+      }
+      return false;
+    });
 
   const displayedMedia = showAllPhotos ? album.media : (album.media || []).slice(0, 3);
   const hasMoreMedia = (album.media || []).length > 3;
@@ -295,12 +323,12 @@ export default function AlbumDisplay({
         <button 
           onClick={() => onSave && onSave(album._id)}
           className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-colors touch-manipulation ${
-            album.savedBy && album.savedBy.length > 0 ? 'text-blue-500 bg-blue-50' : 'text-gray-600 hover:text-blue-500 hover:bg-blue-50'
+            isSaved ? 'text-blue-500 bg-blue-50' : 'text-gray-600 hover:text-blue-500 hover:bg-blue-50'
           }`}
           style={{ touchAction: 'manipulation' }}
         >
-          <span className="text-lg sm:text-xl">{album.savedBy && album.savedBy.length > 0 ? '💾' : '🔖'}</span>
-          <span className="text-xs sm:text-sm font-medium hidden sm:inline">{album.savedBy && album.savedBy.length > 0 ? 'Saved' : 'Save'}</span>
+          <span className="text-lg sm:text-xl">{isSaved ? '💾' : '🔖'}</span>
+          <span className="text-xs sm:text-sm font-medium hidden sm:inline">{isSaved ? 'Saved' : 'Save'}</span>
         </button>
       </div>
 

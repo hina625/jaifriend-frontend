@@ -50,24 +50,36 @@ const GeneralSettings = () => {
   const loadUserSettings = async () => {
     try {
       const token = localStorage.getItem('token');
+      console.log('🔍 Loading user settings...');
+      console.log('🔍 Token available:', !!token);
+      
       if (!token) {
+        console.log('❌ No token found, using localStorage fallback');
         // Fallback to localStorage if no token
-      const savedSettings = localStorage.getItem('userSettings');
-      if (savedSettings) {
+        const savedSettings = localStorage.getItem('userSettings');
+        if (savedSettings) {
           setSettings(JSON.parse(savedSettings));
         }
         setInitialLoading(false);
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`;
+      console.log('🌐 Making request to:', apiUrl);
+      console.log('🔐 Sending token:', token.substring(0, 20) + '...');
+
+      const response = await fetch(apiUrl, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response ok:', response.ok);
+
       if (response.ok) {
         const userData = await response.json();
+        console.log('✅ User data received:', userData);
         
         // Map backend data to frontend settings
         const mappedSettings = {
@@ -85,10 +97,13 @@ const GeneralSettings = () => {
           workplace: userData.workplace || ''
         };
 
+        console.log('📋 Mapped settings:', mappedSettings);
         setSettings(mappedSettings);
         // Also save to localStorage as backup
         localStorage.setItem('userSettings', JSON.stringify(mappedSettings));
       } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ API request failed:', response.status, errorData);
         // Fallback to localStorage if API fails
         const savedSettings = localStorage.getItem('userSettings');
         if (savedSettings) {
@@ -96,7 +111,7 @@ const GeneralSettings = () => {
         }
       }
     } catch (error) {
-      console.error('Error fetching user settings:', error);
+      console.error('❌ Error fetching user settings:', error);
       // Fallback to localStorage if network error
       const savedSettings = localStorage.getItem('userSettings');
       if (savedSettings) {
@@ -195,10 +210,32 @@ const GeneralSettings = () => {
           // Dispatch event to notify other components
           window.dispatchEvent(new CustomEvent('profileUpdated'));
           
-          // Navigate to profile page after successful save
-          setTimeout(() => {
-            router.push('/dashboard/profile/me');
-          }, 1500);
+          // Get current user ID and navigate to profile page
+          try {
+            const currentUserResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            });
+
+            if (currentUserResponse.ok) {
+              const currentUser = await currentUserResponse.json();
+              setTimeout(() => {
+                router.push(`/dashboard/profile/${currentUser.id}`);
+              }, 1500);
+            } else {
+              // Fallback to "me" if we can't get the user ID
+              setTimeout(() => {
+                router.push('/dashboard/profile/me');
+              }, 1500);
+            }
+          } catch (error) {
+            console.error('Error getting current user ID:', error);
+            // Fallback to "me" if there's an error
+            setTimeout(() => {
+              router.push('/dashboard/profile/me');
+            }, 1500);
+          }
         } else {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to update profile');
