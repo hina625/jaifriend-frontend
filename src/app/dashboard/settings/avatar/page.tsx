@@ -50,6 +50,12 @@ const AvatarCoverSettingsPage = () => {
     setPopup(prev => ({ ...prev, isOpen: false }));
   };
 
+  const getMediaUrl = (url: string) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    return `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
+  };
+
   const handlePopupConfirm = () => {
     // Handle confirmation for delete operations
     if (popup.title === 'Delete Profile Picture') {
@@ -120,6 +126,19 @@ const AvatarCoverSettingsPage = () => {
         return;
       }
 
+      // Validate file size
+      const maxSize = type === 'avatar' ? 5 * 1024 * 1024 : 10 * 1024 * 1024; // 5MB for avatar, 10MB for cover
+      if (file.size > maxSize) {
+        showPopup('error', 'File Too Large', `${type === 'avatar' ? 'Avatar' : 'Cover'} image must be less than ${maxSize / 1024 / 1024}MB`);
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        showPopup('error', 'Invalid File Type', 'Please select an image file (JPG, PNG, GIF, WebP)');
+        return;
+      }
+
       // Create FormData for file upload
       const formData = new FormData();
       formData.append(type, file);
@@ -141,6 +160,7 @@ const AvatarCoverSettingsPage = () => {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Upload response data:', data);
         
         // Update local state with the new image URL
         setImages(prev => ({
@@ -157,11 +177,13 @@ const AvatarCoverSettingsPage = () => {
 
         // Dispatch event to refresh other pages
         window.dispatchEvent(new CustomEvent('imagesUpdated'));
+        window.dispatchEvent(new CustomEvent('profileUpdated'));
 
         showPopup('success', 'Upload Successful', `${type === 'avatar' ? 'Profile picture' : 'Cover photo'} uploaded successfully!`);
       } else {
         const errorData = await response.json().catch(() => ({}));
-        showPopup('error', 'Upload Failed', errorData.message || `Failed to upload ${type}. Please try again.`);
+        console.error('Upload error response:', errorData);
+        showPopup('error', 'Upload Failed', errorData.message || errorData.error || `Failed to upload ${type}. Please try again.`);
       }
     } catch (error) {
       console.error(`Error uploading ${type}:`, error);
@@ -182,17 +204,6 @@ const AvatarCoverSettingsPage = () => {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        showPopup('error', 'File Too Large', 'Avatar image must be less than 5MB');
-        return;
-      }
-      
-      // Check file type
-      if (!file.type.startsWith('image/')) {
-        showPopup('error', 'Invalid File Type', 'Please select an image file (JPG, PNG, GIF)');
-        return;
-      }
-      
       handleImageUpload('avatar', file);
     }
     // Reset input value to allow selecting the same file again
@@ -202,17 +213,6 @@ const AvatarCoverSettingsPage = () => {
   const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
-        showPopup('error', 'File Too Large', 'Cover image must be less than 10MB');
-        return;
-      }
-      
-      // Check file type
-      if (!file.type.startsWith('image/')) {
-        showPopup('error', 'Invalid File Type', 'Please select an image file (JPG, PNG, GIF)');
-        return;
-      }
-      
       handleImageUpload('cover', file);
     }
     // Reset input value to allow selecting the same file again
@@ -250,11 +250,13 @@ const AvatarCoverSettingsPage = () => {
 
         // Dispatch event to refresh other pages
         window.dispatchEvent(new CustomEvent('imagesUpdated'));
+        window.dispatchEvent(new CustomEvent('profileUpdated'));
 
         showPopup('success', 'Deleted Successfully', `${type === 'avatar' ? 'Profile picture' : 'Cover photo'} removed successfully!`);
       } else {
         const errorData = await response.json().catch(() => ({}));
-        showPopup('error', 'Delete Failed', errorData.message || `Failed to delete ${type}. Please try again.`);
+        console.error('Delete error response:', errorData);
+        showPopup('error', 'Delete Failed', errorData.message || errorData.error || `Failed to delete ${type}. Please try again.`);
       }
     } catch (error) {
       console.error(`Error deleting ${type}:`, error);
@@ -276,7 +278,7 @@ const AvatarCoverSettingsPage = () => {
           >
             {images.cover ? (
               <img 
-                src={images.cover} 
+                src={getMediaUrl(images.cover)} 
                 alt="Cover" 
                 className="w-full h-full object-cover"
               />
@@ -340,7 +342,7 @@ const AvatarCoverSettingsPage = () => {
             >
               {images.avatar ? (
                 <img 
-                  src={images.avatar} 
+                  src={getMediaUrl(images.avatar)} 
                   alt="Avatar" 
                   className="w-full h-full object-cover rounded-full"
                 />

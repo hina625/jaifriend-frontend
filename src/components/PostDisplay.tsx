@@ -175,12 +175,10 @@ export default function PostDisplay({
           className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0" 
         />
         <div className="flex-1 min-w-0">
-          {post.user?.userId ? (
+          {post.user?.userId || post.user?._id ? (
             <a 
-              href={`/dashboard/profile/${String(post.user.userId)}`} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="font-semibold hover:underline cursor-pointer text-sm sm:text-base truncate block"
+              href={`/dashboard/profile/${String(post.user.userId || post.user._id)}`} 
+              className="font-semibold hover:underline cursor-pointer text-sm sm:text-base truncate block text-blue-600"
             >
               {post.user?.name || 'Unknown User'}
             </a>

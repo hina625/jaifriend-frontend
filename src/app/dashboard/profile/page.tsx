@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Edit, Trash2, MoreVertical, Search, Filter, Camera, Video, Music, FileText, Plus, Heart, MessageCircle, Share2, Bookmark, Settings, Camera as CameraIcon, MapPin, Globe, Calendar, Users, Eye, ThumbsUp, X } from 'lucide-react';
+import { Edit, Trash2, MoreVertical, Search, Filter, Camera, Video, Music, FileText, Plus, Heart, MessageCircle, Share2, Bookmark, Settings, Camera as CameraIcon, MapPin, Globe, Calendar, Users, Eye, ThumbsUp, X, ShoppingBag } from 'lucide-react';
 import PostDisplay from '@/components/PostDisplay';
 import Popup, { PopupState } from '@/components/Popup';
 
@@ -52,6 +52,65 @@ interface Album {
   user: string;
 }
 
+interface Group {
+  _id: string;
+  name: string;
+  description: string;
+  category: string;
+  privacy: 'public' | 'private' | 'secret';
+  avatar?: string;
+  coverPhoto?: string;
+  creator: {
+    _id: string;
+    name: string;
+    username?: string;
+    avatar?: string;
+  };
+  members: Array<{
+    user: {
+      _id: string;
+      name: string;
+      username?: string;
+      avatar?: string;
+    };
+    role: 'member' | 'moderator' | 'admin';
+    joinedAt: string;
+    isActive: boolean;
+  }>;
+  stats: {
+    memberCount: number;
+    postCount: number;
+    eventCount: number;
+  };
+  isActive: boolean;
+  website?: string;
+  email?: string;
+  phone?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Product {
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
+  type: string;
+  category: string;
+  location: string;
+  imageUrl?: string;
+  totalItemUnits: number;
+  seller: {
+    _id: string;
+    name: string;
+    username?: string;
+    avatar?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface ProfileCompletion {
   profilePicture: boolean;
   name: boolean;
@@ -66,7 +125,14 @@ const ProfilePage: React.FC = () => {
   const [userImages, setUserImages] = useState<UserImages>({ avatar: null, cover: null });
   const [posts, setPosts] = useState<Post[]>([]);
   const [albums, setAlbums] = useState<Album[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [groupsLoading, setGroupsLoading] = useState<boolean>(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
+  const [newAvatar, setNewAvatar] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [activeTab, setActiveTab] = useState('timeline');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
@@ -104,6 +170,7 @@ const ProfilePage: React.FC = () => {
 
   const tabs = [
     { id: 'timeline', label: 'Timeline', icon: '📝' },
+    { id: 'posts', label: 'Posts', icon: '📄' },
     { id: 'groups', label: 'Groups', icon: '👥' },
     { id: 'likes', label: 'Likes', icon: '👍' },
     { id: 'following', label: 'Following', icon: '➕', count: user?.following?.length || 0 },
@@ -128,6 +195,8 @@ const ProfilePage: React.FC = () => {
     fetchUserImages();
     fetchUserPosts();
     fetchUserAlbums();
+    fetchUserGroups();
+    fetchUserProducts();
     
     // Listen for post creation events to refresh posts
     const handlePostCreated = () => {
@@ -148,28 +217,60 @@ const ProfilePage: React.FC = () => {
       fetchUserImages();
     };
     
+    // Listen for privacy settings updates
     const handlePrivacySettingsUpdated = () => {
       fetchUserProfile();
     };
     
+    // Listen for password changes
     const handlePasswordChanged = () => {
       fetchUserProfile();
     };
     
+    // Listen for profile updates from settings pages
     const handleProfileUpdated = () => {
+      console.log('Profile updated event received in profile page, refreshing profile...');
       fetchUserProfile();
+      fetchUserImages();
     };
-
+    
+    // Listen for album events
     const handleAlbumCreated = () => {
       fetchUserAlbums();
     };
-
+    
     const handleAlbumUpdated = () => {
       fetchUserAlbums();
     };
-
+    
     const handleAlbumDeleted = () => {
       fetchUserAlbums();
+    };
+    
+    // Listen for group events
+    const handleGroupCreated = () => {
+      fetchUserGroups();
+    };
+    
+    const handleGroupUpdated = () => {
+      fetchUserGroups();
+    };
+    
+    const handleGroupDeleted = () => {
+      fetchUserGroups();
+    };
+    
+    // Listen for product events
+    const handleProductCreated = () => {
+      fetchUserProducts();
+    };
+    
+    const handleProductUpdated = () => {
+      fetchUserProducts();
+    };
+    
+    const handleProductDeleted = () => {
+      fetchUserProducts();
     };
     
     window.addEventListener('postCreated', handlePostCreated);
@@ -182,6 +283,12 @@ const ProfilePage: React.FC = () => {
     window.addEventListener('albumCreated', handleAlbumCreated);
     window.addEventListener('albumUpdated', handleAlbumUpdated);
     window.addEventListener('albumDeleted', handleAlbumDeleted);
+    window.addEventListener('groupCreated', handleGroupCreated);
+    window.addEventListener('groupUpdated', handleGroupUpdated);
+    window.addEventListener('groupDeleted', handleGroupDeleted);
+    window.addEventListener('productCreated', handleProductCreated);
+    window.addEventListener('productUpdated', handleProductUpdated);
+    window.addEventListener('productDeleted', handleProductDeleted);
     
     return () => {
       window.removeEventListener('postCreated', handlePostCreated);
@@ -194,6 +301,12 @@ const ProfilePage: React.FC = () => {
       window.removeEventListener('albumCreated', handleAlbumCreated);
       window.removeEventListener('albumUpdated', handleAlbumUpdated);
       window.removeEventListener('albumDeleted', handleAlbumDeleted);
+      window.removeEventListener('groupCreated', handleGroupCreated);
+      window.removeEventListener('groupUpdated', handleGroupUpdated);
+      window.removeEventListener('groupDeleted', handleGroupDeleted);
+      window.removeEventListener('productCreated', handleProductCreated);
+      window.removeEventListener('productUpdated', handleProductUpdated);
+      window.removeEventListener('productDeleted', handleProductDeleted);
     };
   }, []);
 
@@ -315,6 +428,64 @@ const ProfilePage: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching user albums:', error);
+    }
+  };
+
+  const fetchUserGroups = async () => {
+    try {
+      setGroupsLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const groupsData = await response.json();
+        console.log('📊 User groups fetched:', groupsData.length);
+        setGroups(groupsData);
+      } else {
+        console.error('Failed to fetch user groups:', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching user groups:', error);
+    } finally {
+      setGroupsLoading(false);
+    }
+  };
+
+  const fetchUserProducts = async () => {
+    try {
+      setProductsLoading(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.log('No token found for fetching products');
+        setProductsLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/products`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const productsData = await response.json();
+        console.log('Products data fetched:', productsData);
+        setProducts(productsData);
+      } else {
+        console.error('Failed to fetch products:', response.status, response.statusText);
+        setProducts([]);
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      setProducts([]);
+    } finally {
+      setProductsLoading(false);
     }
   };
 
@@ -576,6 +747,142 @@ const ProfilePage: React.FC = () => {
     return Math.round((completed / Object.keys(profileCompletion).length) * 100);
   };
 
+  // Helper function to get current user ID
+  const getCurrentUserId = (): string | null => {
+    // Try multiple ways to get user ID
+    let userId = localStorage.getItem('userId');
+    
+    if (!userId) {
+      // Try from user object
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          userId = user.id || user._id || user.userId;
+        } catch (e) {
+          console.error('Error parsing user from localStorage:', e);
+        }
+      }
+    }
+    
+    // Try from token (decode JWT)
+    if (!userId) {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          userId = payload.userId || payload.id || payload.sub;
+        } catch (e) {
+          console.error('Error decoding token:', e);
+        }
+      }
+    }
+    
+    return userId;
+  };
+
+  // Helper function to filter user's groups
+  const getUserGroups = (): Group[] => {
+    const currentUserId = getCurrentUserId();
+    if (!currentUserId) return [];
+    
+    return groups.filter(group => {
+      // Check if user is creator
+      const isCreator = typeof group.creator === 'object' 
+        ? group.creator?._id === currentUserId
+        : group.creator === currentUserId;
+      
+      // Check if user is a member
+      const isMember = group.members?.some(member => 
+        typeof member.user === 'object'
+          ? member.user?._id === currentUserId
+          : member.user === currentUserId
+      );
+      
+      return isCreator || isMember;
+    });
+  };
+
+  const getUserProducts = (): Product[] => {
+    const currentUserId = getCurrentUserId();
+    if (!currentUserId) return [];
+    
+    return products.filter(product => {
+      return typeof product.seller === 'object'
+        ? product.seller?._id === currentUserId
+        : product.seller === currentUserId;
+    });
+  };
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNewAvatar(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setAvatarPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+      handleSaveAvatar();
+    }
+  };
+
+  const handleSaveAvatar = async () => {
+    if (!newAvatar) return;
+    
+    try {
+      setUploadingAvatar(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showPopup('error', 'Authentication Error', 'Please log in again');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('avatar', newAvatar);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/userimages/avatar`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Avatar uploaded successfully:', data);
+        
+        // Update local state
+        setUserImages(prev => ({
+          ...prev,
+          avatar: data.avatar
+        }));
+        
+        // Clear upload state
+        setNewAvatar(null);
+        setAvatarPreview(null);
+        
+        // Show success message
+        showPopup('success', 'Avatar Updated!', 'Your profile picture has been updated successfully!');
+        
+        // Trigger profile update event to refresh navbar
+        window.dispatchEvent(new CustomEvent('profileUpdated'));
+        
+        // Refresh user images
+        fetchUserImages();
+      } else {
+        const errorData = await response.json();
+        showPopup('error', 'Upload Failed', errorData.error || 'Failed to upload avatar');
+      }
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      showPopup('error', 'Upload Failed', 'Failed to upload avatar. Please try again.');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -639,13 +946,24 @@ const ProfilePage: React.FC = () => {
             {/* Profile Picture */}
             <div className="relative">
               <img
-                src={userImages.avatar ? getMediaUrl(userImages.avatar) : getMediaUrl(user.avatar)}
+                src={avatarPreview || (userImages.avatar ? getMediaUrl(userImages.avatar) : getMediaUrl(user.avatar))}
                 alt={user.name}
                 className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white shadow-xl object-cover bg-gray-200"
               />
-              <button className="absolute bottom-1 right-1 w-6 h-6 bg-gray-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-gray-700 transition-colors">
-                <CameraIcon className="w-3 h-3" />
-              </button>
+              <label className="absolute bottom-1 right-1 w-6 h-6 sm:w-8 sm:h-8 bg-blue-500 text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-600 transition-colors shadow-lg">
+                {uploadingAvatar ? (
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <CameraIcon className="w-3 h-3 sm:w-4 sm:h-4" />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                  disabled={uploadingAvatar}
+                />
+              </label>
               {user.isOnline && (
                 <div className="absolute bottom-3 right-3 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
               )}
@@ -1078,12 +1396,233 @@ const ProfilePage: React.FC = () => {
                   </div>
                 )}
               </div>
+            ) : activeTab === 'groups' ? (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold">My Groups</h3>
+                  <button
+                    onClick={() => router.push('/dashboard/groups')}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Create Group
+                  </button>
+                </div>
+                
+                {groupsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-500">Loading groups...</p>
+                  </div>
+                ) : getUserGroups().length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {getUserGroups().map((group) => (
+                      <div key={group._id} className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="font-semibold text-gray-900 text-sm line-clamp-1">{group.name}</h4>
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            group.privacy === 'public' 
+                              ? 'bg-green-100 text-green-700' 
+                              : group.privacy === 'private'
+                              ? 'bg-orange-100 text-orange-700'
+                              : 'bg-red-100 text-red-700'
+                          }`}>
+                            {group.privacy.charAt(0).toUpperCase() + group.privacy.slice(1)}
+                          </span>
+                        </div>
+                        
+                        <p className="text-gray-600 text-xs mb-3 line-clamp-2">{group.description}</p>
+                        
+                        <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                          <div className="flex items-center gap-1">
+                            <Users className="w-3 h-3" />
+                            <span>{group.stats?.memberCount || group.members?.length || 0} members</span>
+                          </div>
+                          <span>{group.category}</span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-gray-400">
+                            Created {new Date(group.createdAt).toLocaleDateString()}
+                          </p>
+                          <button
+                            onClick={() => router.push(`/dashboard/groups`)}
+                            className="text-blue-500 hover:text-blue-600 text-xs font-medium"
+                          >
+                            View Group
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Users className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">No groups yet</h4>
+                    <p className="text-gray-600 mb-4">Create your first group to connect with others</p>
+                    <button
+                      onClick={() => router.push('/dashboard/groups')}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      Create Group
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : activeTab === 'posts' ? (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold">My Posts</h3>
+                  <button
+                    onClick={() => setShowPostModal(true)}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Create Post
+                  </button>
+                </div>
+                
+                {/* Filter Tabs */}
+                <div className="flex space-x-1 mb-4 overflow-x-auto">
+                  {filters.map((filter) => (
+                    <button
+                      key={filter.id}
+                      onClick={() => setActiveFilter(filter.id)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                        activeFilter === filter.id
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {filter.icon}
+                      <span>{filter.label}</span>
+                    </button>
+                  ))}
+                </div>
+                
+                {/* Posts Content */}
+                {getFilteredPosts().length === 0 ? (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <FileText className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">No posts yet</h4>
+                    <p className="text-gray-600 mb-4">Start sharing your thoughts, photos, and videos</p>
+                    <button
+                      onClick={() => setShowPostModal(true)}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      Create Post
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {getFilteredPosts().map((post) => (
+                      <div key={post._id} className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
+                        <PostDisplay
+                          post={post}
+                          onLike={async (postId) => {
+                            // Handle like
+                          }}
+                          onComment={async (postId, comment) => {
+                            // Handle comment
+                          }}
+                          onSave={async (postId) => {
+                            // Handle save
+                          }}
+                          onShare={async (postId, shareOptions) => {
+                            // Handle share
+                          }}
+                          onDelete={handleDeletePost}
+                          onEdit={handleEditPost}
+                          showEditDelete={true}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : activeTab === 'products' ? (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold">My Products</h3>
+                  <button
+                    onClick={() => router.push('/dashboard/products')}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Create Product
+                  </button>
+                </div>
+                
+                {productsLoading ? (
+                  <div className="text-center py-8">
+                    <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-500">Loading products...</p>
+                  </div>
+                ) : getUserProducts().length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {getUserProducts().map((product) => (
+                      <div key={product._id} className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
+                        {product.imageUrl && (
+                          <div className="mb-3">
+                            <img
+                              src={getMediaUrl(product.imageUrl)}
+                              alt={product.name}
+                              className="w-full h-32 object-cover rounded-lg"
+                            />
+                          </div>
+                        )}
+                        
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="font-semibold text-gray-900 text-sm line-clamp-1">{product.name}</h4>
+                          <span className="text-green-600 font-semibold text-sm">
+                            {product.currency} {product.price}
+                          </span>
+                        </div>
+                        
+                        <p className="text-gray-600 text-xs mb-3 line-clamp-2">{product.description}</p>
+                        
+                        <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                          <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full">{product.category}</span>
+                          <span>{product.type}</span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-gray-400">
+                            {product.totalItemUnits} units available
+                          </p>
+                          <button
+                            onClick={() => router.push(`/dashboard/products`)}
+                            className="text-blue-500 hover:text-blue-600 text-xs font-medium"
+                          >
+                            View Product
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <ShoppingBag className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">No products yet</h4>
+                    <p className="text-gray-600 mb-4">Start selling your products in the marketplace</p>
+                    <button
+                      onClick={() => router.push('/dashboard/products')}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                    >
+                      Create Product
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               <div>
                 <h3 className="text-xl font-semibold mb-4">
                   {tabs.find(tab => tab.id === activeTab)?.label}
                 </h3>
-                <p className="text-gray-600 text-sm">This section is coming soon!</p>
+                <p className="text-gray-600">This feature is coming soon!</p>
               </div>
             )}
           </div>

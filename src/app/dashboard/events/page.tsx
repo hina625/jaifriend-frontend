@@ -38,6 +38,8 @@ const EventManagement: React.FC = () => {
   const [image, setImage] = useState<File | null>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [editingEvent, setEditingEvent] = useState<any>(null);
+  const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [showEditModal, setShowEditModal] = useState<boolean>(false);
   const [popup, setPopup] = useState<PopupState>({
     isOpen: false,
     type: 'success',
@@ -126,7 +128,45 @@ const EventManagement: React.FC = () => {
   };
 
   const closePopup = () => {
-    setPopup(prev => ({ ...prev, isOpen: false }));
+    setPopup({ isOpen: false, type: 'success', title: '', message: '' });
+  };
+
+  const openCreateModal = () => {
+    setShowCreateModal(true);
+    // Reset form data
+    setFormData({
+      eventName: '',
+      eventDescription: '',
+      location: '',
+      startDate: '',
+      startTime: '',
+      endDate: '',
+      endTime: ''
+    });
+    setImage(null);
+  };
+
+  const closeCreateModal = () => {
+    setShowCreateModal(false);
+  };
+
+  const openEditModal = (event: any) => {
+    setEditingEvent(event);
+    setFormData({
+      eventName: event.title || '',
+      eventDescription: event.description || '',
+      location: event.location?.address || event.location?.name || '',
+      startDate: event.startDate ? new Date(event.startDate).toISOString().split('T')[0] : '',
+      startTime: event.startDate ? new Date(event.startDate).toTimeString().slice(0, 5) : '',
+      endDate: event.endDate ? new Date(event.endDate).toISOString().split('T')[0] : '',
+      endTime: event.endDate ? new Date(event.endDate).toTimeString().slice(0, 5) : ''
+    });
+    setShowEditModal(true);
+  };
+
+  const closeEditModal = () => {
+    setShowEditModal(false);
+    setEditingEvent(null);
   };
 
   const handleSubmit = async () => {
@@ -170,19 +210,40 @@ const EventManagement: React.FC = () => {
         return;
       }
 
-      console.log('Creating event with data:', formData);
+      console.log('=== Event Creation Debug ===');
+      console.log('Token exists:', !!token);
+      console.log('Token length:', token.length);
+      console.log('Form data:', formData);
+      console.log('API URL:', process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app');
 
       const form = new FormData();
-      form.append('title', formData.eventName);
-      form.append('description', formData.eventDescription);
-      form.append('location[address]', formData.location);
+      form.append('title', formData.eventName.trim());
+      form.append('description', formData.eventDescription || '');
+      form.append('location[address]', formData.location || '');
       form.append('location[coordinates]', '');
       form.append('startDate', formData.startDate + 'T' + formData.startTime);
       form.append('endDate', formData.endDate + 'T' + formData.endTime);
       form.append('category', 'social'); // Valid category from enum
-      if (image) form.append('coverImage', image);
+      form.append('privacy', 'public');
+      if (image) {
+        form.append('coverImage', image);
+        console.log('Image file attached:', image.name, image.size, image.type);
+      }
+      
+      // Log the FormData contents for debugging
+      console.log('FormData contents:');
+      for (let [key, value] of form.entries()) {
+        if (value instanceof File) {
+          console.log(`${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
+        } else {
+          console.log(`${key}: ${value}`);
+        }
+      }
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`, {
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`;
+      console.log('Making request to:', apiUrl);
+      
+      const res = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -191,6 +252,8 @@ const EventManagement: React.FC = () => {
       });
 
       console.log('Response status:', res.status);
+      console.log('Response status text:', res.statusText);
+      console.log('Response headers:', Object.fromEntries(res.headers.entries()));
       
       if (res.ok) {
         const eventData = await res.json();
@@ -210,10 +273,8 @@ const EventManagement: React.FC = () => {
         });
         setImage(null);
         
-        // Navigate back to events list
-        setTimeout(() => {
-          navigateTo('/events');
-        }, 1500);
+        // Close modal
+        closeCreateModal();
         
         // Refresh events list
         fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`, {
@@ -233,17 +294,33 @@ const EventManagement: React.FC = () => {
         .catch(() => setEvents([]));
       } else {
         console.error('Server response error:', res.status, res.statusText);
+        let errorMessage = `Server error: ${res.status} ${res.statusText}`;
+        
         try {
           const data = await res.json();
           console.error('Server error details:', data);
-          showPopup('error', 'Error', 'Error: ' + (data.error || data.message || 'Failed to create event'));
+          errorMessage = data.error || data.message || data.details || errorMessage;
         } catch (parseError) {
           console.error('Failed to parse error response:', parseError);
-          showPopup('error', 'Error', `Server error: ${res.status} ${res.statusText}`);
+          // Try to get the raw text
+          try {
+            const rawText = await res.text();
+            console.error('Raw error response:', rawText);
+            errorMessage = `Server error: ${res.status} ${res.statusText} - ${rawText}`;
+          } catch (textError) {
+            console.error('Failed to get raw response text:', textError);
+          }
         }
+        
+        showPopup('error', 'Error', errorMessage);
       }
     } catch (err) {
       console.error('Network error:', err);
+      console.error('Error details:', {
+        name: err instanceof Error ? err.name : 'Unknown',
+        message: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : 'No stack trace'
+      });
       showPopup('error', 'Network Error', 'Network error occurred. Please check your connection and try again.');
     }
   };
@@ -372,19 +449,40 @@ const EventManagement: React.FC = () => {
         return;
       }
 
-      console.log('Updating event with data:', formData);
+      console.log('=== Event Update Debug ===');
+      console.log('Token exists:', !!token);
+      console.log('Token length:', token.length);
+      console.log('Form data:', formData);
+      console.log('Editing event ID:', editingEvent._id);
 
       const form = new FormData();
-      form.append('title', formData.eventName);
-      form.append('description', formData.eventDescription);
-      form.append('location[address]', formData.location);
+      form.append('title', formData.eventName.trim());
+      form.append('description', formData.eventDescription || '');
+      form.append('location[address]', formData.location || '');
       form.append('location[coordinates]', '');
       form.append('startDate', formData.startDate + 'T' + formData.startTime);
       form.append('endDate', formData.endDate + 'T' + formData.endTime);
       form.append('category', 'social'); // Valid category from enum
-      if (image) form.append('coverImage', image);
+      form.append('privacy', 'public');
+      if (image) {
+        form.append('coverImage', image);
+        console.log('Image file attached:', image.name, image.size, image.type);
+      }
       
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events/${editingEvent._id}`, {
+      // Log the FormData contents for debugging
+      console.log('FormData contents:');
+      for (let [key, value] of form.entries()) {
+        if (value instanceof File) {
+          console.log(`${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
+        } else {
+          console.log(`${key}: ${value}`);
+        }
+      }
+      
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events/${editingEvent._id}`;
+      console.log('Making request to:', apiUrl);
+      
+      const res = await fetch(apiUrl, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -393,30 +491,17 @@ const EventManagement: React.FC = () => {
       });
       
       console.log('Update response status:', res.status);
+      console.log('Response status text:', res.statusText);
+      console.log('Response headers:', Object.fromEntries(res.headers.entries()));
       
       if (res.ok) {
         const eventData = await res.json();
         console.log('Event updated successfully:', eventData);
         
         showPopup('success', 'Event Updated!', 'Event updated successfully!');
-        setEditingEvent(null);
         
-        // Reset form
-        setFormData({
-          eventName: '',
-          eventDescription: '',
-          location: '',
-          startDate: '',
-          startTime: '',
-          endDate: '',
-          endTime: ''
-        });
-        setImage(null);
-        
-        // Navigate back to events list
-        setTimeout(() => {
-          navigateTo('/events');
-        }, 1500);
+        // Close modal
+        closeEditModal();
         
         // Refresh events list
         fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`, {
@@ -436,17 +521,33 @@ const EventManagement: React.FC = () => {
         .catch(() => setEvents([]));
       } else {
         console.error('Server response error:', res.status, res.statusText);
+        let errorMessage = `Server error: ${res.status} ${res.statusText}`;
+        
         try {
           const data = await res.json();
           console.error('Server error details:', data);
-          showPopup('error', 'Error', 'Error: ' + (data.error || data.message || 'Failed to update event'));
+          errorMessage = data.error || data.message || data.details || errorMessage;
         } catch (parseError) {
           console.error('Failed to parse error response:', parseError);
-          showPopup('error', 'Error', `Server error: ${res.status} ${res.statusText}`);
+          // Try to get the raw text
+          try {
+            const rawText = await res.text();
+            console.error('Raw error response:', rawText);
+            errorMessage = `Server error: ${res.status} ${res.statusText} - ${rawText}`;
+          } catch (textError) {
+            console.error('Failed to get raw response text:', textError);
+          }
         }
+        
+        showPopup('error', 'Error', errorMessage);
       }
     } catch (err) {
       console.error('Network error:', err);
+      console.error('Error details:', {
+        name: err instanceof Error ? err.name : 'Unknown',
+        message: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : 'No stack trace'
+      });
       showPopup('error', 'Network Error', 'Network error occurred. Please check your connection and try again.');
     }
   };
@@ -557,15 +658,15 @@ const EventManagement: React.FC = () => {
                   />
                 )}
                 <div className="p-4">
-                                     <h3 className="font-bold text-lg mb-2 line-clamp-2">{event.title}</h3>
-                   <p className="text-gray-600 text-sm mb-2 line-clamp-3">{event.description}</p>
-                   <p className="text-gray-500 text-sm mb-2">📍 {event.location?.address || event.location?.name || 'Location not specified'}</p>
+                  <h3 className="font-bold text-lg mb-2 line-clamp-2">{event.title}</h3>
+                  <p className="text-gray-600 text-sm mb-2 line-clamp-3">{event.description}</p>
+                  <p className="text-gray-500 text-sm mb-2">📍 {event.location?.address || event.location?.name || 'Location not specified'}</p>
                   <p className="text-xs text-gray-400 mb-3">
-                     {new Date(event.startDate).toLocaleDateString()} {new Date(event.startDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(event.endDate).toLocaleDateString()} {new Date(event.endDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    {new Date(event.startDate).toLocaleDateString()} {new Date(event.startDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {new Date(event.endDate).toLocaleDateString()} {new Date(event.endDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                   </p>
                   <div className="flex gap-2">
                     <button 
-                      onClick={() => handleEdit(event)} 
+                      onClick={() => openEditModal(event)} 
                       className="flex-1 px-3 py-2 bg-yellow-400 text-white rounded text-sm hover:bg-yellow-500 transition-colors"
                     >
                       Edit
@@ -590,7 +691,7 @@ const EventManagement: React.FC = () => {
           <Calendar className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
         </div>
         <button
-          onClick={() => navigateTo('/events/create')}
+          onClick={openCreateModal}
           className="bg-blue-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors"
         >
           Create Event
@@ -599,11 +700,301 @@ const EventManagement: React.FC = () => {
 
       {/* Floating Action Button */}
       <button
-        onClick={() => navigateTo('/events/create')}
+        onClick={openCreateModal}
         className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-12 h-12 sm:w-14 sm:h-14 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 transition-colors flex items-center justify-center z-30"
       >
         <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
       </button>
+
+      {/* Create Event Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b sticky top-0 bg-white">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Create New Event</h2>
+              <button
+                onClick={closeCreateModal}
+                className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
+              {/* Event Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Event Name *</label>
+                <input
+                  type="text"
+                  name="eventName"
+                  value={formData.eventName}
+                  onChange={handleInputChange}
+                  placeholder="Enter event name"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                  required
+                />
+              </div>
+
+              {/* Event Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <textarea
+                  name="eventDescription"
+                  value={formData.eventDescription}
+                  onChange={handleInputChange}
+                  placeholder="Describe your event"
+                  rows={3}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm sm:text-base"
+                />
+              </div>
+
+              {/* Location */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                <input
+                  type="text"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleInputChange}
+                  placeholder="Event location"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                />
+              </div>
+
+              {/* Start Date & Time */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Start Date & Time *</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <input
+                    type="date"
+                    name="startDate"
+                    value={formData.startDate}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    required
+                  />
+                  <input
+                    type="time"
+                    name="startTime"
+                    value={formData.startTime}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* End Date & Time */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">End Date & Time *</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <input
+                    type="date"
+                    name="endDate"
+                    value={formData.endDate}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    required
+                  />
+                  <input
+                    type="time"
+                    name="endTime"
+                    value={formData.endTime}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Image Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Event Image</label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleImageChange} 
+                    className="hidden" 
+                    id="event-image-upload"
+                  />
+                  <label htmlFor="event-image-upload" className="cursor-pointer">
+                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600">Click to upload image</p>
+                    {image && (
+                      <p className="text-xs text-green-600 mt-1">Selected: {image.name}</p>
+                    )}
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex flex-col sm:flex-row justify-end gap-3 p-4 sm:p-6 border-t bg-gray-50 sticky bottom-0">
+              <button
+                onClick={closeCreateModal}
+                className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={!formData.eventName.trim() || !formData.startDate || !formData.startTime || !formData.endDate || !formData.endTime}
+                className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium text-sm sm:text-base"
+              >
+                Create Event
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Event Modal */}
+      {showEditModal && editingEvent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b sticky top-0 bg-white">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Edit Event</h2>
+              <button
+                onClick={closeEditModal}
+                className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
+              {/* Event Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Event Name *</label>
+                <input
+                  type="text"
+                  name="eventName"
+                  value={formData.eventName}
+                  onChange={handleInputChange}
+                  placeholder="Enter event name"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                  required
+                />
+              </div>
+
+              {/* Event Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <textarea
+                  name="eventDescription"
+                  value={formData.eventDescription}
+                  onChange={handleInputChange}
+                  placeholder="Describe your event"
+                  rows={3}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm sm:text-base"
+                />
+              </div>
+
+              {/* Location */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                <input
+                  type="text"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleInputChange}
+                  placeholder="Event location"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                />
+              </div>
+
+              {/* Start Date & Time */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Start Date & Time *</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <input
+                    type="date"
+                    name="startDate"
+                    value={formData.startDate}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    required
+                  />
+                  <input
+                    type="time"
+                    name="startTime"
+                    value={formData.startTime}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* End Date & Time */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">End Date & Time *</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <input
+                    type="date"
+                    name="endDate"
+                    value={formData.endDate}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    required
+                  />
+                  <input
+                    type="time"
+                    name="endTime"
+                    value={formData.endTime}
+                    onChange={handleInputChange}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Image Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Event Image</label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleImageChange} 
+                    className="hidden" 
+                    id="edit-event-image-upload"
+                  />
+                  <label htmlFor="edit-event-image-upload" className="cursor-pointer">
+                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                    <p className="text-sm text-gray-600">Click to upload image</p>
+                    {image && (
+                      <p className="text-xs text-green-600 mt-1">Selected: {image.name}</p>
+                    )}
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex flex-col sm:flex-row justify-end gap-3 p-4 sm:p-6 border-t bg-gray-50 sticky bottom-0">
+              <button
+                onClick={closeEditModal}
+                className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdate}
+                disabled={!formData.eventName.trim() || !formData.startDate || !formData.startTime || !formData.endDate || !formData.endTime}
+                className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium text-sm sm:text-base"
+              >
+                Update Event
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -890,31 +1281,8 @@ const EventManagement: React.FC = () => {
     </div>
   );
 
-  // Render based on current route
-  const renderCurrentPage = (): React.ReactElement => {
-    switch (currentRoute) {
-      case '/events':
-        return <MainEventsPage />;
-      case '/events/create':
-        return <CreateEventPage />;
-      case '/events/edit':
-        return <EditEventPage />;
-      case '/events/browse':
-        return <OtherEventsPage pageTitle="Browse Events" />;
-      case '/events/going':
-        return <OtherEventsPage pageTitle="Events Going" />;
-      case '/events/invited':
-        return <OtherEventsPage pageTitle="Invited Events" />;
-      case '/events/interested':
-        return <OtherEventsPage pageTitle="Events Interested" />;
-      case '/events/past':
-        return <OtherEventsPage pageTitle="Past Events" />;
-      default:
-        return <MainEventsPage />;
-    }
-  };
-
-  return renderCurrentPage();
+  // Always render the main page with modals
+  return <MainEventsPage />;
 };
 
 export default EventManagement;
