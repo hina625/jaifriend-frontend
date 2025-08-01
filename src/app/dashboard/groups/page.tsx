@@ -104,9 +104,12 @@ const GroupsPage: React.FC = () => {
       if (response.ok) {
         const groupsData = await response.json();
         console.log('📊 Groups fetched:', groupsData.length);
+        console.log('📊 Groups data:', groupsData);
         setGroups(groupsData);
       } else {
         console.error('Failed to fetch groups:', response.status);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
         setGroups([]);
       }
     } catch (error) {
@@ -138,12 +141,14 @@ const GroupsPage: React.FC = () => {
       const token = localStorage.getItem('token');
       if (!token) {
         console.log('No token found for group creation');
+        alert('Please log in to create a group');
         return;
       }
 
       // Validate required fields
       if (!formData.name.trim()) {
         console.log('Group name is required');
+        alert('Group name is required');
         return;
       }
 
@@ -173,7 +178,10 @@ const GroupsPage: React.FC = () => {
       if (response.ok) {
         const newGroup = await response.json();
         console.log('Group created successfully:', newGroup);
+        
+        // Add the new group to the beginning of the list
         setGroups(prev => [newGroup, ...prev]);
+        
         setShowCreateModal(false);
         setFormData({
           name: '',
@@ -181,16 +189,33 @@ const GroupsPage: React.FC = () => {
           privacy: 'public',
           category: 'general'
         });
+        
         // Show success message
         alert('Group created successfully!');
+        
+        // Refresh the groups list to ensure everything is up to date
+        setTimeout(() => {
+          fetchGroups(true);
+        }, 1000);
       } else {
         console.error('Failed to create group:', response.status);
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Error details:', errorData);
-        alert('Failed to create group. Please try again.');
+        let errorMessage = 'Failed to create group. Please try again.';
+        
+        try {
+          const errorData = await response.json();
+          console.error('Error details:', errorData);
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
+          const errorText = await response.text();
+          console.error('Raw error response:', errorText);
+        }
+        
+        alert(errorMessage);
       }
     } catch (error) {
       console.error('Error creating group:', error);
+      alert('Network error occurred. Please check your connection and try again.');
     } finally {
       setCreating(false);
     }
@@ -349,44 +374,95 @@ const GroupsPage: React.FC = () => {
     }
   };
 
-  const getGroupsForTab = (): Group[] => {
-    const userId = localStorage.getItem('userId') || (() => {
+  // Helper function to get current user ID
+  const getCurrentUserId = (): string | null => {
+    // Try multiple ways to get user ID
+    let userId = localStorage.getItem('userId');
+    
+    if (!userId) {
+      // Try from user object
       const userStr = localStorage.getItem('user');
       if (userStr) {
         try {
           const user = JSON.parse(userStr);
-          return user.id || user._id;
-        } catch {
-          return null;
+          userId = user.id || user._id || user.userId;
+        } catch (e) {
+          console.error('Error parsing user from localStorage:', e);
         }
       }
-      return null;
-    })();
+    }
+    
+    // Try from token (decode JWT)
+    if (!userId) {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          userId = payload.userId || payload.id || payload.sub;
+        } catch (e) {
+          console.error('Error decoding token:', e);
+        }
+      }
+    }
+    
+    console.log('🔍 Current user ID:', userId);
+    return userId;
+  };
+
+  const getGroupsForTab = (): Group[] => {
+    const userId = getCurrentUserId();
     
     console.log('Filtering groups for tab:', activeTab, 'User ID:', userId);
     console.log('Total groups:', groups.length);
+    console.log('Groups data:', groups);
+    
+    if (!userId) {
+      console.log('❌ No user ID found, showing all groups');
+      return groups;
+    }
     
     switch (activeTab) {
-      case 'My Groups':
-        const myGroups = groups.filter(group => 
-          group.creator._id === userId || 
-          group.members.some(member => member.user._id === userId && member.role === 'admin')
-        );
-        console.log('My Groups count:', myGroups.length);
-        return myGroups;
-      case 'Suggested groups':
-        const suggestedGroups = groups.filter(group => 
-          group.privacy === 'public' && 
-          !group.members.some(member => member.user._id === userId)
-        );
-        console.log('Suggested Groups count:', suggestedGroups.length);
-        return suggestedGroups;
-      case 'Joined Groups':
-        const joinedGroups = groups.filter(group => 
-          group.members.some(member => member.user._id === userId)
-        );
-        console.log('Joined Groups count:', joinedGroups.length);
-        return joinedGroups;
+              case 'My Groups':
+          const myGroups = groups.filter(group => {
+            const creatorId = typeof group.creator === 'object' ? group.creator?._id : group.creator;
+            const isCreator = creatorId === userId;
+            const isAdmin = group.members?.some(member => {
+              const memberId = typeof member.user === 'object' ? member.user?._id : member.user;
+              return memberId === userId && member.role === 'admin';
+            });
+            console.log(`Group ${group.name}: creator=${isCreator}, admin=${isAdmin}`);
+            return isCreator || isAdmin;
+          });
+          console.log('My Groups count:', myGroups.length);
+          return myGroups;
+          
+        case 'Suggested groups':
+          const suggestedGroups = groups.filter(group => {
+            const isPublic = group.privacy === 'public';
+            const isNotMember = !group.members?.some(member => {
+              const memberId = typeof member.user === 'object' ? member.user?._id : member.user;
+              return memberId === userId;
+            });
+            const creatorId = typeof group.creator === 'object' ? group.creator?._id : group.creator;
+            const isNotCreator = creatorId !== userId;
+            return isPublic && isNotMember && isNotCreator;
+          });
+          console.log('Suggested Groups count:', suggestedGroups.length);
+          return suggestedGroups;
+          
+        case 'Joined Groups':
+          const joinedGroups = groups.filter(group => {
+            const isMember = group.members?.some(member => {
+              const memberId = typeof member.user === 'object' ? member.user?._id : member.user;
+              return memberId === userId;
+            });
+            const creatorId = typeof group.creator === 'object' ? group.creator?._id : group.creator;
+            const isCreator = creatorId === userId;
+            return isMember || isCreator;
+          });
+          console.log('Joined Groups count:', joinedGroups.length);
+          return joinedGroups;
+        
       default:
         return [];
     }
@@ -394,21 +470,19 @@ const GroupsPage: React.FC = () => {
 
   // Group Card Component
   const GroupCard: React.FC<{ group: Group }> = ({ group }) => {
-    const userId = localStorage.getItem('userId') || (() => {
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        try {
-          const user = JSON.parse(userStr);
-          return user.id || user._id;
-        } catch {
-          return null;
-        }
-      }
-      return null;
-    })();
-    const isMember = group.members.some(member => member.user._id === userId);
-    const isAdmin = group.members.some(member => member.user._id === userId && member.role === 'admin');
-    const isCreator = group.creator._id === userId;
+    const userId = getCurrentUserId();
+    const isMember = group.members?.some(member => {
+      const memberId = typeof member.user === 'object' ? member.user?._id : member.user;
+      return memberId === userId;
+    });
+    const isAdmin = group.members?.some(member => {
+      const memberId = typeof member.user === 'object' ? member.user?._id : member.user;
+      return memberId === userId && member.role === 'admin';
+    });
+    const creatorId = typeof group.creator === 'object' ? group.creator?._id : group.creator;
+    const isCreator = creatorId === userId;
+
+    console.log(`Group ${group.name}: userId=${userId}, isMember=${isMember}, isAdmin=${isAdmin}, isCreator=${isCreator}`);
 
     return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
@@ -447,7 +521,7 @@ const GroupsPage: React.FC = () => {
         <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
           <div className="flex items-center gap-1">
             <Users className="w-4 h-4" />
-              <span>{group.stats?.memberCount || 0} members</span>
+              <span>{group.stats?.memberCount || group.members?.length || 0} members</span>
             </div>
             <span>Created {new Date(group.createdAt).toLocaleDateString()}</span>
         </div>
@@ -630,6 +704,19 @@ const GroupsPage: React.FC = () => {
 
       {/* Main Content */}
       <div className="px-4 sm:px-6 py-6 sm:py-8">
+        {/* Debug Info - Remove this in production */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mb-4 p-4 bg-gray-100 rounded-lg text-xs">
+            <h3 className="font-bold mb-2">Debug Info:</h3>
+            <p>Total Groups: {groups.length}</p>
+            <p>Current User ID: {getCurrentUserId()}</p>
+            <p>Active Tab: {activeTab}</p>
+            <p>Filtered Groups: {getGroupsForTab().length}</p>
+            <p>Loading: {loading.toString()}</p>
+            <p>Refreshing: {refreshing.toString()}</p>
+          </div>
+        )}
+        
         {loading ? (
           <div className="text-center py-12 sm:py-16">
             <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>

@@ -127,20 +127,42 @@ const MarketplaceSeller: React.FC = () => {
         return;
       }
 
-      console.log('Creating product with data:', formData);
+      console.log('=== Product Creation Debug ===');
+      console.log('Token exists:', !!token);
+      console.log('Token length:', token.length);
+      console.log('Form data:', formData);
+      console.log('API URL:', process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app');
 
       const form = new FormData();
-      form.append('name', formData.name);
-      form.append('description', formData.description);
+      form.append('name', formData.name.trim());
+      form.append('description', formData.description.trim());
       form.append('currency', formData.currency);
       form.append('price', formData.price);
       form.append('type', formData.type);
-      form.append('location', formData.location);
+      form.append('location', formData.location.trim());
       form.append('category', formData.category);
-      form.append('totalItemUnits', formData.totalItemUnits);
-      if (formData.photos[0]) form.append('image', formData.photos[0]);
+      form.append('totalItemUnits', formData.totalItemUnits || '1');
       
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/products`, {
+      // Only append image if it exists
+      if (formData.photos[0]) {
+        form.append('image', formData.photos[0]);
+        console.log('Image file attached:', formData.photos[0].name, formData.photos[0].size, formData.photos[0].type);
+      }
+      
+      // Log the FormData contents for debugging
+      console.log('FormData contents:');
+      for (let [key, value] of form.entries()) {
+        if (value instanceof File) {
+          console.log(`${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
+        } else {
+          console.log(`${key}: ${value}`);
+        }
+      }
+      
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/products`;
+      console.log('Making request to:', apiUrl);
+      
+      const res = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -149,6 +171,8 @@ const MarketplaceSeller: React.FC = () => {
       });
       
       console.log('Response status:', res.status);
+      console.log('Response status text:', res.statusText);
+      console.log('Response headers:', Object.fromEntries(res.headers.entries()));
       
       if (res.ok) {
         const productData = await res.json();
@@ -169,17 +193,33 @@ const MarketplaceSeller: React.FC = () => {
           });
       } else {
         console.error('Server response error:', res.status, res.statusText);
+        let errorMessage = `Server error: ${res.status} ${res.statusText}`;
+        
         try {
           const data = await res.json();
           console.error('Server error details:', data);
-          alert('Error: ' + (data.error || data.message || 'Failed to create product'));
+          errorMessage = data.error || data.message || data.details || errorMessage;
         } catch (parseError) {
           console.error('Failed to parse error response:', parseError);
-          alert(`Server error: ${res.status} ${res.statusText}`);
+          // Try to get the raw text
+          try {
+            const rawText = await res.text();
+            console.error('Raw error response:', rawText);
+            errorMessage = `Server error: ${res.status} ${res.statusText} - ${rawText}`;
+          } catch (textError) {
+            console.error('Failed to get raw response text:', textError);
+          }
         }
+        
+        alert('Error: ' + errorMessage);
       }
     } catch (err) {
       console.error('Network error:', err);
+      console.error('Error details:', {
+        name: err instanceof Error ? err.name : 'Unknown',
+        message: err instanceof Error ? err.message : String(err),
+        stack: err instanceof Error ? err.stack : 'No stack trace'
+      });
       alert('Network error occurred. Please check your connection and try again.');
     }
   };

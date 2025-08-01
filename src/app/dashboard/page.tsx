@@ -264,34 +264,71 @@ export default function Dashboard() {
   }, [albums]);
 
   const handlePost = async () => {
-    if (!newPost.trim() && !mediaFiles.length) return;
+    if (!newPost.trim() && !mediaFiles.length) {
+      showPopup('error', 'Empty Post', 'Please add some content or media to your post');
+      return;
+    }
+    
     setPosting(true);
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        showPopup('error', 'Authentication Error', 'Please log in again to create posts');
+        return;
+      }
+
       const formData = new FormData();
-      formData.append('content', newPost);
-      mediaFiles.forEach(file => formData.append('media', file));
+      formData.append('content', newPost.trim());
+      
+      // Add media files with proper validation
+      mediaFiles.forEach((file, index) => {
+        // Validate file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          throw new Error(`File "${file.name}" is too large. Maximum size is 10MB.`);
+        }
+        
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg'];
+        if (!validTypes.includes(file.type)) {
+          throw new Error(`File "${file.name}" has an unsupported format. Please use images (JPEG, PNG, GIF, WebP) or videos (MP4, WebM, OGG).`);
+        }
+        
+        formData.append('media', file);
+      });
+
+      console.log('Creating post with content:', newPost.trim());
+      console.log('Media files:', mediaFiles.length);
+      
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`, {
         method: 'POST',
         headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
+          'Authorization': `Bearer ${token}`
         },
         body: formData
       });
+      
       if (res.ok) {
         const post = await res.json();
+        console.log('Post created successfully:', post);
         setPosts([post, ...posts]);
         setNewPost('');
         setMediaFiles([]);
         if (fileInputRef.current) fileInputRef.current.value = '';
         
+        showPopup('success', 'Post Created!', 'Your post has been shared successfully!');
+        
         // Dispatch event to refresh profile pages
         window.dispatchEvent(new CustomEvent('postCreated'));
       } else {
-        console.error('Failed to post');
+        const errorData = await res.json().catch(() => ({}));
+        const errorMessage = errorData.message || errorData.error || 'Failed to create post. Please try again.';
+        showPopup('error', 'Post Failed', errorMessage);
+        console.error('Failed to create post:', res.status, errorMessage);
       }
     } catch (err) {
-      console.error('Failed to post');
+      console.error('Error creating post:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create post. Please try again.';
+      showPopup('error', 'Post Failed', errorMessage);
     } finally {
       setPosting(false);
     }
@@ -824,14 +861,37 @@ export default function Dashboard() {
                     const files = e.target.files;
                     if (files) {
                       const fileArray = Array.from(files);
-                      setMediaFiles(prev => [...prev, ...fileArray]);
+                      
+                      // Validate files before adding
+                      const validFiles = fileArray.filter(file => {
+                        // Check file size (max 10MB)
+                        if (file.size > 10 * 1024 * 1024) {
+                          showPopup('error', 'File Too Large', `File "${file.name}" is too large. Maximum size is 10MB.`);
+                          return false;
+                        }
+                        
+                        // Check file type
+                        const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg'];
+                        if (!validTypes.includes(file.type)) {
+                          showPopup('error', 'Unsupported Format', `File "${file.name}" has an unsupported format. Please use images (JPEG, PNG, GIF, WebP) or videos (MP4, WebM, OGG).`);
+                          return false;
+                        }
+                        
+                        return true;
+                      });
+                      
+                      if (validFiles.length > 0) {
+                        setMediaFiles(prev => [...prev, ...validFiles]);
+                        showPopup('success', 'Files Added', `${validFiles.length} file(s) added successfully!`);
+                      }
                     }
                   }}
                 />
                 <button
-                  className="bg-gray-100 px-3 py-2 rounded-full text-xs sm:text-sm"
+                  className="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-full text-xs sm:text-sm transition-colors"
                   onClick={() => fileInputRef.current && fileInputRef.current.click()}
                   disabled={posting}
+                  title="Add photos or videos"
                 >
                   📷/🎥
                 </button>
@@ -845,20 +905,38 @@ export default function Dashboard() {
               </div>
               {mediaFiles.length > 0 && (
                 <div className="mt-2">
-                  <div className="text-xs text-gray-600 mb-1">Selected files:</div>
-                  <div className="flex flex-wrap gap-1">
+                  <div className="text-xs text-gray-600 mb-2">Selected files ({mediaFiles.length}):</div>
+                  <div className="flex flex-wrap gap-2">
                     {mediaFiles.map((file, index) => (
-                      <div key={index} className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded text-xs">
-                        <span className="truncate max-w-[80px] sm:max-w-none">{file.name}</span>
+                      <div key={index} className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-lg text-xs">
+                        <div className="flex items-center gap-1">
+                          <span className="text-lg">
+                            {file.type.startsWith('image/') ? '🖼️' : '🎥'}
+                          </span>
+                          <div className="flex flex-col">
+                            <span className="font-medium truncate max-w-[120px]">{file.name}</span>
+                            <span className="text-gray-500">{(file.size / 1024 / 1024).toFixed(1)}MB</span>
+                          </div>
+                        </div>
                         <button
                           onClick={() => setMediaFiles(prev => prev.filter((_, i) => i !== index))}
-                          className="text-red-500 hover:text-red-700"
+                          className="text-red-500 hover:text-red-700 hover:bg-red-100 p-1 rounded transition-colors"
+                          title="Remove file"
                         >
-                          ×
+                          ✕
                         </button>
                       </div>
                     ))}
                   </div>
+                  <button
+                    onClick={() => {
+                      setMediaFiles([]);
+                      if (fileInputRef.current) fileInputRef.current.value = '';
+                    }}
+                    className="mt-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded transition-colors"
+                  >
+                    Clear all files
+                  </button>
                 </div>
               )}
             </div>

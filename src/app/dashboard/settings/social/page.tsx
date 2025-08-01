@@ -20,6 +20,7 @@ interface PopupState {
 
 const SocialLinksPage = () => {
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [popup, setPopup] = useState<PopupState>({
     isOpen: false,
     type: 'info',
@@ -36,11 +37,37 @@ const SocialLinksPage = () => {
   });
 
   useEffect(() => {
-    // Load social links from API or localStorage
-    const loadSocialLinks = () => {
-      const savedLinks = localStorage.getItem('socialLinks');
-      if (savedLinks) {
-        setSocialLinks(JSON.parse(savedLinks));
+    // Load social links from API
+    const loadSocialLinks = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          showPopup('error', 'Authentication Error', 'Please log in to manage your social links.');
+          return;
+        }
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/social-links`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Social links loaded:', data);
+          setSocialLinks(data);
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Failed to load social links:', errorData);
+          showPopup('error', 'Load Failed', errorData.message || 'Failed to load social links. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error loading social links:', error);
+        showPopup('error', 'Network Error', 'Failed to connect to server. Please check your internet connection.');
+      } finally {
+        setLoading(false);
       }
     };
     
@@ -68,42 +95,84 @@ const SocialLinksPage = () => {
   };
 
   const handleSave = async () => {
-    setLoading(true);
+    setSaving(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Save to localStorage (replace with actual API call)
-      localStorage.setItem('socialLinks', JSON.stringify(socialLinks));
-      
-      console.log('Social links saved:', socialLinks);
-      showPopup('success', 'Success', 'Social links saved successfully!');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showPopup('error', 'Authentication Error', 'Please log in to save social links.');
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/social-links`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(socialLinks)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Social links saved:', data);
+        showPopup('success', 'Success', 'Social links saved successfully!');
+        
+        // Dispatch event to refresh profile
+        window.dispatchEvent(new CustomEvent('profileUpdated'));
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to save social links:', errorData);
+        showPopup('error', 'Save Failed', errorData.message || 'Failed to save social links. Please try again.');
+      }
     } catch (error) {
       console.error('Error saving social links:', error);
-      showPopup('error', 'Error', 'Failed to save social links. Please try again.');
+      showPopup('error', 'Network Error', 'Failed to connect to server. Please check your internet connection.');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
   const socialPlatforms = [
-    { key: 'facebook', placeholder: 'Facebook Username' },
-    { key: 'twitter', placeholder: 'Twitter Username' },
-    { key: 'vkontakte', placeholder: 'Vkontakte Username' },
-    { key: 'linkedin', placeholder: 'LinkedIn Username' },
-    { key: 'instagram', placeholder: 'Instagram Username' },
-    { key: 'youtube', placeholder: 'YouTube Username' }
+    { key: 'facebook', placeholder: 'Facebook Username', icon: '📘' },
+    { key: 'twitter', placeholder: 'Twitter Username', icon: '🐦' },
+    { key: 'vkontakte', placeholder: 'Vkontakte Username', icon: '💙' },
+    { key: 'linkedin', placeholder: 'LinkedIn Username', icon: '💼' },
+    { key: 'instagram', placeholder: 'Instagram Username', icon: '📷' },
+    { key: 'youtube', placeholder: 'YouTube Username', icon: '📺' }
   ];
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading social links...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
         <h1 className="text-2xl font-semibold text-gray-900 mb-8">Social Links</h1>
         
+        <p className="text-gray-600 mb-6">
+          Add your social media usernames to connect with others and build your network.
+        </p>
+        
         {/* Social Links Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           {socialPlatforms.map((platform) => (
-            <div key={platform.key}>
+            <div key={platform.key} className="relative">
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-xl">{platform.icon}</span>
+                <label className="text-sm font-medium text-gray-700 capitalize">
+                  {platform.key}
+                </label>
+              </div>
               <input
                 type="text"
                 value={socialLinks[platform.key as keyof SocialLinks]}
@@ -119,10 +188,10 @@ const SocialLinksPage = () => {
         <div className="flex justify-center">
           <button
             onClick={handleSave}
-            disabled={loading}
-            className="bg-gray-700 hover:bg-gray-800 disabled:bg-gray-600 text-white px-8 py-3 rounded-md font-medium transition-colors duration-200 disabled:cursor-not-allowed"
+            disabled={saving}
+            className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white px-8 py-3 rounded-md font-medium transition-colors duration-200 disabled:cursor-not-allowed"
           >
-            {loading ? 'Saving...' : 'Save'}
+            {saving ? 'Saving...' : 'Save Social Links'}
           </button>
         </div>
       </div>
