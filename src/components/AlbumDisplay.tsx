@@ -140,25 +140,25 @@ export default function AlbumDisplay({
   const hasMoreMedia = (album.media || []).length > 3;
 
   return (
-    <div className="bg-white rounded-xl shadow p-4 mb-6">
+    <div className="bg-white rounded-xl shadow p-3 sm:p-4 mb-4 sm:mb-6">
       <div className="flex items-center gap-2 mb-3">
         <img 
           src={album.user?.avatar || '/avatars/1.png.png'} 
           alt="avatar" 
-          className="w-10 h-10 rounded-full" 
+          className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" 
         />
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           {album.user?._id ? (
             <a 
               href={`/dashboard/profile/${String(album.user._id)}`} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="font-semibold hover:underline cursor-pointer"
+              className="font-semibold text-sm sm:text-base hover:underline cursor-pointer truncate block"
             >
               {album.user?.name || 'Unknown User'}
             </a>
           ) : (
-            <div className="font-semibold">{album.user?.name || 'Unknown User'}</div>
+            <div className="font-semibold text-sm sm:text-base truncate">{album.user?.name || 'Unknown User'}</div>
           )}
           <div className="text-xs text-gray-400">
             {new Date(album.createdAt).toLocaleString()}
@@ -167,15 +167,21 @@ export default function AlbumDisplay({
         {isOwner && onDelete && (
           <button
             onClick={() => onDelete(album._id)}
-            className="text-red-500 hover:text-red-700 text-sm"
+            className="text-red-500 hover:text-red-700 text-xs sm:text-sm touch-manipulation"
+            style={{ touchAction: 'manipulation' }}
           >
-            🗑️ Delete
+            🗑️ <span className="hidden sm:inline">Delete</span>
           </button>
         )}
       </div>
 
       <div className="mb-3">
-        <h3 className="font-semibold text-lg mb-2">📸 {album.name}</h3>
+        <div className="flex items-center gap-2 mb-2">
+          <h3 className="font-semibold text-lg">📸 {album.name}</h3>
+          <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
+            Album
+          </span>
+        </div>
         <div className="text-sm text-gray-600">
           {album.media ? album.media.length : 0} media item{(album.media ? album.media.length : 0) !== 1 ? 's' : ''}
         </div>
@@ -189,20 +195,20 @@ export default function AlbumDisplay({
                 <video 
                   src={getMediaUrl(mediaItem.url)} 
                   controls 
-                  className="w-full h-96 object-cover rounded-lg shadow-lg"
+                  className="w-full h-64 sm:h-96 object-cover rounded-lg shadow-lg"
                   style={{ maxHeight: '70vh' }}
                 />
               ) : (
                 <img
                   src={getMediaUrl(mediaItem.url)}
                   alt={`Media ${index + 1}`}
-                  className="w-full h-96 object-cover rounded-lg shadow-lg"
+                  className="w-full h-64 sm:h-96 object-cover rounded-lg shadow-lg"
                   style={{ maxHeight: '70vh' }}
                 />
               )}
               {index === 2 && hasMoreMedia && !showAllPhotos && (
                 <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
-                  <span className="text-white font-bold text-xl">+{album.media.length - 3}</span>
+                  <span className="text-white font-bold text-lg sm:text-xl">+{album.media.length - 3}</span>
                 </div>
               )}
             </div>
@@ -213,7 +219,8 @@ export default function AlbumDisplay({
       {hasMoreMedia && (
         <button
           onClick={() => setShowAllPhotos(!showAllPhotos)}
-          className="text-blue-500 hover:text-blue-700 text-sm"
+          className="text-blue-500 hover:text-blue-700 text-sm touch-manipulation"
+          style={{ touchAction: 'manipulation' }}
         >
           {showAllPhotos ? 'Show Less' : `Show All ${album.media.length} Media`}
         </button>
@@ -221,19 +228,20 @@ export default function AlbumDisplay({
 
       {/* Social Actions */}
       <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-200">
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3 sm:gap-6">
           {/* Reaction Button with Popup */}
           <div className="relative">
             <button 
               onMouseEnter={handleReactionButtonMouseEnter}
               onMouseLeave={handleReactionButtonMouseLeave}
               onClick={() => onLike && onLike(album._id)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+              className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-colors touch-manipulation ${
                 getCurrentReaction() ? 'text-red-500 bg-red-50' : 'text-gray-600 hover:text-red-500 hover:bg-red-50'
               }`}
+              style={{ touchAction: 'manipulation' }}
             >
-              <span className="text-xl">{getMostCommonReactionEmoji()}</span>
-              <span className="text-sm font-medium">
+              <span className="text-lg sm:text-xl">{getMostCommonReactionEmoji()}</span>
+              <span className="text-xs sm:text-sm font-medium">
                 {getReactionCount()}
               </span>
             </button>
@@ -255,26 +263,30 @@ export default function AlbumDisplay({
           
           <button 
             onClick={() => setShowCommentInput(!showCommentInput)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-600 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-gray-600 hover:text-blue-500 hover:bg-blue-50 transition-colors touch-manipulation"
+            style={{ touchAction: 'manipulation' }}
           >
-            <span className="text-xl">💬</span>
-            <span className="text-sm font-medium">
+            <span className="text-lg sm:text-xl">💬</span>
+            <span className="text-xs sm:text-sm font-medium">
               {album.comments ? album.comments.length : 0}
             </span>
           </button>
 
           {/* Views count */}
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-600">
-            <span className="text-xl">👁️</span>
-            <span className="text-sm font-medium">{album.views ? album.views.length : 0}</span>
+          <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-gray-600">
+            <span className="text-lg sm:text-xl">👁️</span>
+            <span className="text-xs sm:text-sm font-medium">{album.views ? album.views.length : 0}</span>
           </div>
           
           <button 
             onClick={() => setShowSharePopup(true)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-600 hover:text-green-500 hover:bg-green-50 transition-colors"
+            className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-colors touch-manipulation ${
+              album.shares && album.shares.length > 0 ? 'text-green-500 bg-green-50' : 'text-gray-600 hover:text-green-500 hover:bg-green-50'
+            }`}
+            style={{ touchAction: 'manipulation' }}
           >
-            <span className="text-xl">📤</span>
-            <span className="text-sm font-medium">
+            <span className="text-lg sm:text-xl">📤</span>
+            <span className="text-xs sm:text-sm font-medium">
               {album.shares ? (Array.isArray(album.shares) ? album.shares.length : album.shares) : 0}
             </span>
           </button>
@@ -282,25 +294,26 @@ export default function AlbumDisplay({
         
         <button 
           onClick={() => onSave && onSave(album._id)}
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+          className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-colors touch-manipulation ${
             album.savedBy && album.savedBy.length > 0 ? 'text-blue-500 bg-blue-50' : 'text-gray-600 hover:text-blue-500 hover:bg-blue-50'
           }`}
+          style={{ touchAction: 'manipulation' }}
         >
-          <span className="text-xl">{album.savedBy && album.savedBy.length > 0 ? '💾' : '🔖'}</span>
-          <span className="text-sm font-medium">{album.savedBy && album.savedBy.length > 0 ? 'Saved' : 'Save'}</span>
+          <span className="text-lg sm:text-xl">{album.savedBy && album.savedBy.length > 0 ? '💾' : '🔖'}</span>
+          <span className="text-xs sm:text-sm font-medium hidden sm:inline">{album.savedBy && album.savedBy.length > 0 ? 'Saved' : 'Save'}</span>
         </button>
       </div>
 
       {/* Comment Input */}
       {showCommentInput && (
-        <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+        <div className="mt-3 p-2 sm:p-3 bg-gray-50 rounded-lg">
           <div className="flex gap-2">
             <input
               type="text"
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               placeholder="Write a comment..."
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              className="flex-1 px-2 sm:px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base"
             />
             <button
               onClick={() => {
@@ -311,7 +324,8 @@ export default function AlbumDisplay({
                 }
               }}
               disabled={!commentText.trim()}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              className="px-3 sm:px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm sm:text-base touch-manipulation"
+              style={{ touchAction: 'manipulation' }}
             >
               Post
             </button>
@@ -365,6 +379,7 @@ export default function AlbumDisplay({
         }}
         postContent={album.name}
         postMedia={album.media}
+        isAlbum={true}
       />
     </div>
   );

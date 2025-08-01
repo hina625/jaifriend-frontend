@@ -1,6 +1,6 @@
 "use client";
-import React, { useState } from 'react';
-import { Plus, FileText, ArrowLeft, ThumbsUp, Camera, Users, Menu, X, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, FileText, ArrowLeft, ThumbsUp, Camera, Users, Menu, X, Search, Heart, MessageCircle, Share2 } from 'lucide-react';
 
 interface Tab {
   name: string;
@@ -12,6 +12,27 @@ interface FormData {
   pageURL: string;
   pageDescription: string;
   pageCategory: string;
+}
+
+interface Page {
+  _id: string;
+  name: string;
+  url: string;
+  description: string;
+  category: string;
+  createdBy: {
+    _id: string;
+    name: string;
+    username: string;
+    avatar: string;
+  };
+  creatorName: string;
+  creatorAvatar: string;
+  likes: string[];
+  followers: string[];
+  isVerified: boolean;
+  isActive: boolean;
+  createdAt: string;
 }
 
 interface SuggestedPage {
@@ -27,6 +48,10 @@ const PagesInterface: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('My Pages');
   const [showCreateForm, setShowCreateForm] = useState<boolean>(false);
   const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
+  const [pages, setPages] = useState<Page[]>([]);
+  const [userPages, setUserPages] = useState<Page[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     pageName: '',
     pageURL: '',
@@ -95,6 +120,43 @@ const PagesInterface: React.FC = () => {
     }
   ];
 
+  // Fetch pages from backend
+  const fetchPages = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching pages...');
+      
+      const [allPagesResponse, userPagesResponse] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/pages`),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/pages/user`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        })
+      ]);
+      
+      if (allPagesResponse.ok) {
+        const allPagesData = await allPagesResponse.json();
+        console.log('All pages fetched:', allPagesData.length);
+        setPages(allPagesData);
+      }
+      
+      if (userPagesResponse.ok) {
+        const userPagesData = await userPagesResponse.json();
+        console.log('User pages fetched:', userPagesData.length);
+        setUserPages(userPagesData);
+      }
+    } catch (error) {
+      console.error('Error fetching pages:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPages();
+  }, []);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>): void => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -105,10 +167,48 @@ const PagesInterface: React.FC = () => {
 
   const handleCreatePage = async (): Promise<void> => {
     try {
-      const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/pages', { 
+      const token = localStorage.getItem('token');
+      
+      // Check if token exists and is valid
+      if (!token || token === 'null' || token === 'undefined') {
+        alert('Please log in to create a page');
+        return;
+      }
+
+      // Validate required fields
+      if (!formData.pageName.trim()) {
+        alert('Page name is required');
+        return;
+      }
+
+      if (!formData.pageURL.trim()) {
+        alert('Page URL is required');
+        return;
+      }
+
+      if (!formData.pageDescription.trim()) {
+        alert('Page description is required');
+        return;
+      }
+
+      if (formData.pageDescription.length < 10) {
+        alert('Page description must be at least 10 characters long');
+        return;
+      }
+
+      if (formData.pageDescription.length > 200) {
+        alert('Page description must be less than 200 characters');
+        return;
+      }
+
+      setCreating(true);
+      console.log('Creating page with data:', formData);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/pages`, { 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           name: formData.pageName,
@@ -118,13 +218,18 @@ const PagesInterface: React.FC = () => {
         }),
       });
 
+      console.log('Response status:', response.status);
+
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Server error details:', errorData);
         alert('Error: ' + (errorData.error || 'Failed to create page'));
         return;
       }
 
       const data = await response.json();
+      console.log('Page created successfully:', data);
+      
       alert('Page created successfully!');
       setShowCreateForm(false);
       setFormData({
@@ -133,12 +238,18 @@ const PagesInterface: React.FC = () => {
         pageDescription: '',
         pageCategory: 'Cars and Vehicles'
       });
+      
+      // Refresh pages list
+      fetchPages();
     } catch (error: unknown) {
+      console.error('Network error:', error);
       if (error instanceof Error) {
         alert('Error: ' + error.message);
       } else {
-        alert('An unknown error occurred');
+        alert('Network error occurred. Please check your connection and try again.');
       }
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -157,20 +268,92 @@ const PagesInterface: React.FC = () => {
   };
 
   // My Pages Component
-  const MyPagesComponent: React.FC = () => (
-    <div className="bg-white rounded-lg border min-h-64 sm:min-h-96 flex flex-col items-center justify-center p-6 sm:p-8">
-      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-red-100 rounded-lg flex items-center justify-center mb-3 sm:mb-4">
-        <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-red-500" />
+  const MyPagesComponent: React.FC = () => {
+    if (loading) {
+      return (
+        <div className="bg-white rounded-lg border min-h-64 sm:min-h-96 flex flex-col items-center justify-center p-6 sm:p-8">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your pages...</p>
+        </div>
+      );
+    }
+
+    if (userPages.length === 0) {
+      return (
+        <div className="bg-white rounded-lg border min-h-64 sm:min-h-96 flex flex-col items-center justify-center p-6 sm:p-8">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-red-100 rounded-lg flex items-center justify-center mb-3 sm:mb-4">
+            <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-red-500" />
+          </div>
+          <p className="text-gray-600 font-medium mb-4 sm:mb-6 text-sm sm:text-base">No pages to show</p>
+          <button
+            onClick={() => setShowCreateForm(true)}
+            className="bg-blue-500 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors text-sm sm:text-base"
+          >
+            Create New Page
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Your Pages ({userPages.length})</h3>
+          <button
+            onClick={() => setShowCreateForm(true)}
+            className="bg-blue-500 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors text-sm sm:text-base"
+          >
+            Create New Page
+          </button>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          {userPages.map((page) => (
+            <div key={page._id} className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
+              <div className="p-4 sm:p-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{page.name}</h4>
+                    <p className="text-xs text-gray-500">@{page.url}</p>
+                  </div>
+                  {page.isVerified && (
+                    <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">✓</span>
+                    </div>
+                  )}
+                </div>
+                
+                <p className="text-gray-600 text-sm mb-3 line-clamp-2">{page.description}</p>
+                
+                <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                  <span className="bg-gray-100 px-2 py-1 rounded">{page.category}</span>
+                  <span>{new Date(page.createdAt).toLocaleDateString()}</span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                    <span>{page.likes.length} likes</span>
+                    <span>{page.followers.length} followers</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors">
+                      <MessageCircle className="w-4 h-4" />
+                    </button>
+                    <button className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors">
+                      <Share2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-      <p className="text-gray-600 font-medium mb-4 sm:mb-6 text-sm sm:text-base">No pages to show</p>
-      <button
-        onClick={() => setShowCreateForm(true)}
-        className="bg-blue-500 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors text-sm sm:text-base"
-      >
-        Create New Page
-      </button>
-    </div>
-  );
+    );
+  };
 
   // Create Page Form Component
   const CreatePageForm: React.FC = () => (
@@ -261,16 +444,25 @@ const PagesInterface: React.FC = () => {
       <div className="flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-3 mt-6 pt-4 border-t">
         <button
           onClick={handleGoBack}
-          className="hidden sm:flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
+          disabled={creating}
+          className="hidden sm:flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors disabled:opacity-50"
         >
           <ArrowLeft className="w-4 h-4" />
           Go back
         </button>
         <button
           onClick={handleCreatePage}
-          className="w-full sm:w-auto bg-blue-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors text-sm sm:text-base"
+          disabled={creating || !formData.pageName.trim() || !formData.pageURL.trim() || !formData.pageDescription.trim()}
+          className="w-full sm:w-auto bg-blue-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm sm:text-base flex items-center justify-center gap-2"
         >
-          Create Page
+          {creating ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Creating...
+            </>
+          ) : (
+            'Create Page'
+          )}
         </button>
       </div>
     </div>

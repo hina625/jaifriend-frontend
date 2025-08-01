@@ -83,6 +83,9 @@ export default function Dashboard() {
       const updatedPost = await res.json();
       setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? updatedPost : p));
       cancelEditPost();
+      
+      // Dispatch event to notify other components (like profile)
+      window.dispatchEvent(new CustomEvent('postUpdated'));
     } else {
       console.error('Failed to edit post');
     }
@@ -135,11 +138,22 @@ export default function Dashboard() {
         albumsResponse.ok ? albumsResponse.json() : []
       ]);
       
+      console.log('📊 Posts fetched:', postsData.length);
+      console.log('📊 Albums fetched:', albumsData.length);
+      console.log('📊 Sample album:', albumsData[0]);
+      
       // Combine posts and albums into a single feed
       const combinedFeed = [
         ...postsData.map((post: any) => ({ ...post, type: 'post' })),
         ...albumsData.map((album: any) => ({ ...album, type: 'album' }))
       ].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
+      console.log('📊 Combined feed items:', combinedFeed.length);
+      console.log('📊 Feed breakdown:', {
+        posts: postsData.length,
+        albums: albumsData.length,
+        total: combinedFeed.length
+      });
       
       setPosts(postsData);
       setAlbums(albumsData);
@@ -165,11 +179,33 @@ export default function Dashboard() {
       fetchFeedData();
     };
 
+    const handlePostCreated = () => {
+      console.log('Post created event received, refreshing feed...');
+      fetchFeedData();
+    };
+
+    const handlePostDeleted = () => {
+      console.log('Post deleted event received, refreshing feed...');
+      fetchFeedData();
+    };
+
+    const handlePostUpdated = () => {
+      console.log('Post updated event received, refreshing feed...');
+      fetchFeedData();
+    };
+
     window.addEventListener('albumCreated', handleAlbumCreated);
     window.addEventListener('albumDeleted', handleAlbumDeleted);
+    window.addEventListener('postCreated', handlePostCreated);
+    window.addEventListener('postDeleted', handlePostDeleted);
+    window.addEventListener('postUpdated', handlePostUpdated);
+    
     return () => {
       window.removeEventListener('albumCreated', handleAlbumCreated);
       window.removeEventListener('albumDeleted', handleAlbumDeleted);
+      window.removeEventListener('postCreated', handlePostCreated);
+      window.removeEventListener('postDeleted', handlePostDeleted);
+      window.removeEventListener('postUpdated', handlePostUpdated);
     };
   }, []);
 
@@ -436,31 +472,45 @@ export default function Dashboard() {
   const handleShare = async (postId: string, shareOptions?: ShareOptions) => {
     const token = localStorage.getItem('token');
     try {
+      console.log('Sharing post:', postId, 'with options:', shareOptions);
+      
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/share`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(shareOptions || {})
+        body: JSON.stringify({
+          message: shareOptions?.customMessage || '',
+          shareTo: shareOptions?.shareTo || 'friends',
+          shareOnTimeline: shareOptions?.shareOnTimeline || false,
+          shareToPage: shareOptions?.shareToPage || false,
+          shareToGroup: shareOptions?.shareToGroup || false
+        })
       });
+      
       if (res.ok) {
         const data = await res.json();
-        setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? { ...p, shares: data.shares, shared: data.shared } : p));
+        console.log('Post shared successfully:', data);
+        
+        // Update post shares count
+        setPosts(posts => posts.map(p => 
+          (p._id === postId || p.id === postId) ? { ...p, shares: data.shares, shared: data.shared } : p
+        ));
+        
+        // Show success message
+        showPopup('success', 'Post Shared!', 'Your post has been shared successfully!');
         
         // Refresh feed to show the shared post
         fetchFeedData();
-        
-        // Show success message
-        const post = posts.find(p => (p._id === postId || p.id === postId));
-        if (post) {
-          console.log('Post Shared!');
-        }
       } else {
-        console.error('Failed to share post');
+        const errorData = await res.json();
+        console.error('Post share error:', errorData);
+        showPopup('error', 'Share Failed', errorData.message || 'Failed to share post');
       }
     } catch (error) {
       console.error('Error sharing post:', error);
+      showPopup('error', 'Network Error', 'Failed to share post. Please try again.');
     }
   };
 
@@ -593,27 +643,45 @@ export default function Dashboard() {
   const handleAlbumShare = async (albumId: string, shareOptions?: ShareOptions) => {
     const token = localStorage.getItem('token');
     try {
+      console.log('Sharing album:', albumId, 'with options:', shareOptions);
+      
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/share`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(shareOptions || {})
+        body: JSON.stringify({
+          message: shareOptions?.customMessage || '',
+          shareTo: shareOptions?.shareTo || 'friends',
+          shareOnTimeline: shareOptions?.shareOnTimeline || false,
+          shareToPage: shareOptions?.shareToPage || false,
+          shareToGroup: shareOptions?.shareToGroup || false
+        })
       });
+      
       if (res.ok) {
         const data = await res.json();
+        console.log('Album shared successfully:', data);
+        
+        // Update album shares count
         setAlbums(prev => prev.map(album => 
           album._id === albumId ? { ...album, shares: data.shares, shared: data.shared } : album
         ));
         
+        // Show success message
+        showPopup('success', 'Album Shared!', 'Your album has been shared successfully!');
+        
         // Refresh feed to show the shared post
         fetchFeedData();
-        
-        console.log('Album Shared!');
+      } else {
+        const errorData = await res.json();
+        console.error('Album share error:', errorData);
+        showPopup('error', 'Share Failed', errorData.message || 'Failed to share album');
       }
     } catch (error) {
       console.error('Error sharing album:', error);
+      showPopup('error', 'Network Error', 'Failed to share album. Please try again.');
     }
   };
 
@@ -833,7 +901,16 @@ export default function Dashboard() {
                     ...albums.map((album: any) => ({ ...album, type: 'album' }))
                   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
+                  console.log('🎯 Rendering feed with items:', combinedFeed.length);
+                  console.log('🎯 Feed items breakdown:', {
+                    posts: posts.length,
+                    albums: albums.length,
+                    combined: combinedFeed.length
+                  });
+
                   return combinedFeed.map((item: any) => {
+                    console.log('🎯 Rendering item:', item.type, item._id, item.name || item.content?.substring(0, 50));
+                    
                     if (item.type === 'album') {
                       return (
                         <AlbumDisplay
@@ -872,18 +949,26 @@ export default function Dashboard() {
                                   alt="User"
                                 />
                               )}
-                              {item.user ? (
-                                <a 
-                                  href={`/dashboard/profile/${String(item.user._id || item.user.id || item.user.userId || '')}`} 
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                  className="font-semibold text-sm sm:text-base hover:underline cursor-pointer"
-                                >
-                                  {item.user.name || 'Anonymous'}
-                                </a>
-                              ) : (
-                                <div className="font-semibold text-sm sm:text-base">Anonymous</div>
-                              )}
+                              <div className="flex-1 min-w-0">
+                                {item.user ? (
+                                  <a 
+                                    href={`/dashboard/profile/${String(item.user._id || item.user.id || item.user.userId || '')}`} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="font-semibold text-sm sm:text-base hover:underline cursor-pointer truncate block"
+                                  >
+                                    {item.user.name || 'Anonymous'}
+                                  </a>
+                                ) : (
+                                  <div className="font-semibold text-sm sm:text-base truncate">Anonymous</div>
+                                )}
+                                <div className="text-xs text-gray-400">
+                                  {new Date(item.createdAt).toLocaleString()}
+                                  {item.isShared && (
+                                    <span className="ml-2 text-blue-600">📤 Shared</span>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                             
                             {/* Post Actions Menu */}
@@ -1206,12 +1291,13 @@ export default function Dashboard() {
                               </div>
                             </div>
                             <button 
-                              className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-all duration-200 text-xs sm:text-sm ${
+                              className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-all duration-200 text-xs sm:text-sm touch-manipulation ${
                                 Array.isArray(item.savedBy) && item.savedBy.length > 0 
                                   ? 'text-green-500 bg-green-50 border border-green-200' 
                                   : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
                               }`} 
                               onClick={() => handleSave(item._id || item.id)}
+                              style={{ touchAction: 'manipulation' }}
                             >
                               <span>💾</span>
                               <span className="font-medium hidden sm:inline">
@@ -1219,14 +1305,15 @@ export default function Dashboard() {
                               </span>
                             </button>
                             <button 
-                              className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-all duration-200 text-xs sm:text-sm ${
+                              className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-all duration-200 text-xs sm:text-sm touch-manipulation ${
                                 Array.isArray(item.shares) && item.shares.length > 0 
-                                  ? 'text-purple-500 bg-purple-50 border border-purple-200' 
-                                  : 'text-gray-500 hover:text-purple-500 hover:bg-purple-50'
+                                  ? 'text-green-500 bg-green-50 border border-green-200' 
+                                  : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
                               }`} 
                               onClick={() => openSharePopup(item)}
+                              style={{ touchAction: 'manipulation' }}
                             >
-                              <span>🔗</span>
+                              <span>📤</span>
                               <span className="font-medium">
                                 <span className="hidden sm:inline">Share </span>
                                 {Array.isArray(item.shares) && item.shares.length > 0 ? `(${item.shares.length})` : ''}

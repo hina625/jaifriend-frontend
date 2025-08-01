@@ -9,6 +9,7 @@ const PhotoAlbumManager: React.FC = () => {
   const [selectedPhotos, setSelectedPhotos] = useState<(File | string)[]>([]);
   const [albums, setAlbums] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [creatingAlbum, setCreatingAlbum] = useState<boolean>(false);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [editingAlbumId, setEditingAlbumId] = useState<string | null>(null);
   const [editAlbumName, setEditAlbumName] = useState('');
@@ -103,6 +104,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
       return;
     }
     
+    setCreatingAlbum(true);
     try {
       const token = localStorage.getItem('token');
       
@@ -171,6 +173,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
         token: localStorage.getItem('token') ? 'Present' : 'Missing'
       });
       showPopup('error', 'Network Error', 'Failed to create album. Please try again.');
+    } finally {
+      setCreatingAlbum(false);
     }
   };
 
@@ -611,7 +615,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
               <button
                 type="button"
                 onClick={handleAddPhotoUrl}
-                className="bg-blue-500 text-white px-4 py-2 rounded whitespace-nowrap text-sm"
+                className="bg-blue-500 text-white px-4 py-2 rounded whitespace-nowrap text-sm touch-manipulation"
+                style={{ touchAction: 'manipulation' }}
               >
                 Add URL
               </button>
@@ -627,7 +632,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
                 className="hidden"
                 id="photo-upload"
               />
-              <label htmlFor="photo-upload" className="cursor-pointer">
+              <label htmlFor="photo-upload" className="cursor-pointer touch-manipulation" style={{ touchAction: 'manipulation' }}>
                 <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-lg mx-auto mb-4 flex items-center justify-center relative">
                   <Camera className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
                   <div className="absolute -top-1 -right-1">
@@ -635,7 +640,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
                   </div>
                 </div>
                 <p className="text-gray-500 text-xs sm:text-sm px-4">
-                  Click to upload photos or videos, or drag and drop
+                  Tap to upload photos or videos, or drag and drop
+                </p>
+                <p className="text-gray-400 text-xs mt-2">
+                  Supports: JPG, PNG, GIF, MP4, MOV, AVI
                 </p>
               </label>
             </div>
@@ -692,17 +700,19 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
           <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4">
             <button
               onClick={handleGoBack}
-              className="flex items-center px-6 py-3 text-gray-600 hover:text-gray-800 font-medium transition-colors w-full sm:w-auto justify-center"
+              className="flex items-center px-6 py-3 text-gray-600 hover:text-gray-800 font-medium transition-colors w-full sm:w-auto justify-center touch-manipulation"
+              style={{ touchAction: 'manipulation' }}
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Go back
             </button>
             <button
               onClick={handlePublish}
-              disabled={!albumName.trim() || selectedPhotos.length === 0}
-              className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-8 py-3 rounded-lg font-medium transition-colors shadow-sm w-full sm:w-auto"
+              disabled={!albumName.trim() || selectedPhotos.length === 0 || creatingAlbum}
+              className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-8 py-3 rounded-lg font-medium transition-colors shadow-sm w-full sm:w-auto touch-manipulation"
+              style={{ touchAction: 'manipulation' }}
             >
-              Publish
+              {creatingAlbum ? 'Creating...' : 'Publish'}
             </button>
           </div>
         </div>

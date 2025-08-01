@@ -64,7 +64,7 @@ function extractYoutubeId(url: string) {
 function getMediaUrl(url: string) {
   if (!url) return '';
   if (url.startsWith('http')) return url;
-  return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${url}`;
+  return `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
 }
 
 const WatchPage: React.FC = () => {
@@ -74,6 +74,7 @@ const WatchPage: React.FC = () => {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [commentText, setCommentText] = useState<{ [key: string]: string }>({});
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Get current user ID from localStorage
   useEffect(() => {
@@ -89,61 +90,78 @@ const WatchPage: React.FC = () => {
   }, []);
 
   // Fetch videos from backend
-  useEffect(() => {
-    const fetchAllVideos = async () => {
-      try {
+  const fetchAllVideos = async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
         setLoading(true);
-        console.log('Fetching videos from backend...');
-        
-        // Try to fetch videos from all sources with individual error handling
-        let allVideos: Video[] = [];
-        
-        try {
-          console.log('Fetching from /videos endpoint...');
-          const videosResponse = await axios.get(`${API_URL}/videos`);
-          console.log('Videos response:', videosResponse.data);
-          allVideos = [...allVideos, ...videosResponse.data];
-        } catch (err) {
-          console.error('Error fetching videos:', err);
-        }
-        
-        try {
-          console.log('Fetching from /posts/videos endpoint...');
-          const postsResponse = await axios.get(`${API_URL}/posts/videos`);
-          console.log('Posts videos response:', postsResponse.data);
-          allVideos = [...allVideos, ...postsResponse.data];
-        } catch (err) {
-          console.error('Error fetching posts videos:', err);
-        }
-        
-        try {
-          console.log('Fetching from /albums/videos endpoint...');
-          const albumsResponse = await axios.get(`${API_URL}/albums/videos`);
-          console.log('Albums videos response:', albumsResponse.data);
-          allVideos = [...allVideos, ...albumsResponse.data];
-        } catch (err) {
-          console.error('Error fetching albums videos:', err);
-        }
-
-        console.log('📊 Total videos found:', allVideos.length);
-        
-        // Sort videos by creation date (newest first)
-        allVideos.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-        // Sort videos by creation date (newest first)
-        allVideos.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-        console.log('Final videos array:', allVideos);
-        setVideos(allVideos);
-        setError(null);
-      } catch (err) {
-        console.error('Error in fetchAllVideos:', err);
-        setError('Failed to load videos');
-      } finally {
-        setLoading(false);
       }
-    };
+      console.log('Fetching videos from backend...');
+      
+      // Try to fetch videos from all sources with individual error handling
+      let allVideos: Video[] = [];
+      let fetchErrors: string[] = [];
+      
+      try {
+        console.log('Fetching from /api/videos endpoint...');
+        const videosResponse = await axios.get(`${API_URL}/api/videos`);
+        console.log('Videos response:', videosResponse.data);
+        allVideos = [...allVideos, ...videosResponse.data];
+      } catch (err) {
+        console.error('Error fetching videos:', err);
+        fetchErrors.push('Videos');
+      }
+      
+      try {
+        console.log('Fetching from /api/posts/videos endpoint...');
+        const postsResponse = await axios.get(`${API_URL}/api/posts/videos`);
+        console.log('Posts videos response:', postsResponse.data);
+        allVideos = [...allVideos, ...postsResponse.data];
+      } catch (err) {
+        console.error('Error fetching posts videos:', err);
+        fetchErrors.push('Posts with videos');
+      }
+      
+      try {
+        console.log('Fetching from /api/albums/videos endpoint...');
+        const albumsResponse = await axios.get(`${API_URL}/api/albums/videos`);
+        console.log('Albums videos response:', albumsResponse.data);
+        allVideos = [...allVideos, ...albumsResponse.data];
+      } catch (err) {
+        console.error('Error fetching albums videos:', err);
+        fetchErrors.push('Albums with videos');
+      }
 
+      console.log('📊 Total videos found:', allVideos.length);
+      
+      // Sort videos by creation date (newest first)
+      allVideos.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      console.log('Final videos array:', allVideos);
+      setVideos(allVideos);
+      
+      // Show warning if some sources failed but we have videos
+      if (fetchErrors.length > 0 && allVideos.length > 0) {
+        console.warn('Some video sources failed to load:', fetchErrors.join(', '));
+      }
+      
+      // Only set error if no videos were loaded at all
+      if (allVideos.length === 0 && fetchErrors.length > 0) {
+        setError(`Failed to load videos from: ${fetchErrors.join(', ')}`);
+      } else {
+        setError(null);
+      }
+    } catch (err) {
+      console.error('Error in fetchAllVideos:', err);
+      setError('Failed to load videos');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
     fetchAllVideos();
   }, []);
 
@@ -156,13 +174,13 @@ const WatchPage: React.FC = () => {
         return;
       }
 
-      let endpoint = `${API_URL}/videos/${videoId}/like`;
+      let endpoint = `${API_URL}/api/videos/${videoId}/like`;
       if (category === 'post') {
-        endpoint = `${API_URL}/posts/${videoId}/like`;
+        endpoint = `${API_URL}/api/posts/${videoId}/like`;
       } else if (category === 'album') {
         // For albums, we need to extract the album ID from the combined ID
         const albumId = videoId.split('_')[0];
-        endpoint = `${API_URL}/albums/${albumId}/like`;
+        endpoint = `${API_URL}/api/albums/${albumId}/like`;
       }
 
       const response = await axios.post(
@@ -198,12 +216,12 @@ const WatchPage: React.FC = () => {
         return;
       }
 
-      let endpoint = `${API_URL}/videos/${videoId}/comment`;
+      let endpoint = `${API_URL}/api/videos/${videoId}/comment`;
       if (category === 'post') {
-        endpoint = `${API_URL}/posts/${videoId}/comment`;
+        endpoint = `${API_URL}/api/posts/${videoId}/comment`;
       } else if (category === 'album') {
         const albumId = videoId.split('_')[0];
-        endpoint = `${API_URL}/albums/${albumId}/comment`;
+        endpoint = `${API_URL}/api/albums/${albumId}/comment`;
       }
 
       const response = await axios.post(
@@ -237,10 +255,10 @@ const WatchPage: React.FC = () => {
         return;
       }
 
-      let endpoint = `${API_URL}/videos/${videoId}/share`;
+      let endpoint = `${API_URL}/api/videos/${videoId}/share`;
       if (category === 'album') {
         const albumId = videoId.split('_')[0];
-        endpoint = `${API_URL}/albums/${albumId}/share`;
+        endpoint = `${API_URL}/api/albums/${albumId}/share`;
       }
 
       const response = await axios.post(
@@ -271,12 +289,12 @@ const WatchPage: React.FC = () => {
         return;
       }
 
-      let endpoint = `${API_URL}/videos/${videoId}/save`;
+      let endpoint = `${API_URL}/api/videos/${videoId}/save`;
       if (category === 'post') {
-        endpoint = `${API_URL}/posts/${videoId}/save`;
+        endpoint = `${API_URL}/api/posts/${videoId}/save`;
       } else if (category === 'album') {
         const albumId = videoId.split('_')[0];
-        endpoint = `${API_URL}/albums/${albumId}/save`;
+        endpoint = `${API_URL}/api/albums/${albumId}/save`;
       }
 
       const response = await axios.post(
@@ -583,13 +601,14 @@ const WatchPage: React.FC = () => {
             <FileText className="w-8 h-8 text-red-600" />
           </div>
           <p className="text-gray-600 text-lg mb-2">{error}</p>
-          <p className="text-gray-500 text-sm mb-6">Backend connection failed. You can still watch sample videos.</p>
+          <p className="text-gray-500 text-sm mb-6">Unable to load videos from the feed.</p>
           <div className="space-x-4">
-          <button 
-            onClick={() => window.location.reload()}
-              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            <button 
+              onClick={() => fetchAllVideos(true)}
+              disabled={refreshing}
+              className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
             >
-              Retry Backend
+              {refreshing ? 'Refreshing...' : 'Retry'}
             </button>
             <button 
               onClick={() => {
@@ -730,7 +749,7 @@ const WatchPage: React.FC = () => {
               className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
             >
               Watch Sample Videos
-          </button>
+            </button>
           </div>
         </div>
       </div>
@@ -740,10 +759,29 @@ const WatchPage: React.FC = () => {
   return (
     <div className="w-full h-full overflow-y-auto scrollbar-hide">
       {/* Header */}
-              <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-30">
+      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-30">
         <div className="flex items-center justify-between max-w-4xl mx-auto">
-          <h1 className="text-2xl font-semibold text-gray-900">Watch</h1>
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">Watch</h1>
+            {!loading && !error && (
+              <p className="text-sm text-gray-500 mt-1">
+                {videos.length} video{videos.length !== 1 ? 's' : ''} from feed
+              </p>
+            )}
+          </div>
           <div className="flex items-center space-x-3">
+            <button 
+              onClick={() => fetchAllVideos(true)}
+              disabled={refreshing}
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-50"
+              title="Refresh videos"
+            >
+              <div className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`}>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </div>
+            </button>
             <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
               <Settings className="w-5 h-5" />
             </button>

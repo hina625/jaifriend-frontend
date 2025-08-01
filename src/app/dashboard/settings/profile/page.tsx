@@ -1,6 +1,6 @@
 "use client";
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Popup from '@/components/Popup';
 
 interface ProfileSettings {
@@ -24,6 +24,7 @@ interface PopupState {
 }
 
 const ProfileSettingsPage = () => {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [popup, setPopup] = useState<PopupState>({
     isOpen: false,
@@ -58,17 +59,37 @@ const ProfileSettingsPage = () => {
           return;
         }
 
-        const response = await fetch(`${API_URL}/api/settings/profile/settings`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, { 
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
 
         if (response.ok) {
-          const result = await response.json();
-          setProfileSettings(result.data);
+          const userData = await response.json();
+          console.log('User data loaded:', userData);
+          
+          // Map user data to settings format
+          const nameParts = (userData.name || '').split(' ');
+          const firstName = nameParts[0] || '';
+          const lastName = nameParts.slice(1).join(' ') || '';
+          
+          const mappedSettings = {
+            firstName,
+            lastName,
+            aboutMe: userData.bio || '',
+            location: userData.location || '',
+            website: userData.website || '',
+            relationship: 'None', // Not in user model yet
+            school: '', // Not in user model yet
+            schoolCompleted: false, // Not in user model yet
+            workingAt: userData.workplace || '',
+            companyWebsite: '' // Not in user model yet
+          };
+          
+          setProfileSettings(mappedSettings);
           // Also save to localStorage as backup
-          localStorage.setItem('profileSettings', JSON.stringify(result.data));
+          localStorage.setItem('profileSettings', JSON.stringify(mappedSettings));
         } else {
           // Fallback to localStorage if API fails
           const savedSettings = localStorage.getItem('profileSettings');
@@ -115,50 +136,49 @@ const ProfileSettingsPage = () => {
       const token = localStorage.getItem('token');
       
       if (token) {
-        // Try backend API first
-        const response = await fetch(`${API_URL}/api/settings/profile/settings`, {
+        // Map the settings to the correct API format
+        const profileData = {
+          name: `${profileSettings.firstName} ${profileSettings.lastName}`.trim(),
+          bio: profileSettings.aboutMe,
+          location: profileSettings.location,
+          website: profileSettings.website,
+          workplace: profileSettings.workingAt,
+          // Add other fields as needed
+        };
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/update`, { 
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify(profileSettings)
+          body: JSON.stringify(profileData)
         });
 
         if (response.ok) {
           const result = await response.json();
-          console.log('Profile settings saved:', result);
+          console.log('Profile updated successfully:', result);
           
-          // Update settings with backend data
-          setProfileSettings(result.data);
-          localStorage.setItem('profileSettings', JSON.stringify(result.data));
+          // Save to localStorage as backup
+          localStorage.setItem('profileSettings', JSON.stringify(profileSettings));
           
-          showPopup('success', 'Success', 'Profile settings saved successfully!');
+          showPopup('success', 'Success', 'Profile updated successfully!');
+          
+          // Navigate to profile page after successful update
+          setTimeout(() => {
+            router.push('/dashboard/profile/me');
+          }, 1500);
         } else {
-          // Fallback to localStorage if API fails
-          throw new Error('API failed, using localStorage');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update profile');
         }
       } else {
-        // Fallback to localStorage if no token
-        throw new Error('No token, using localStorage');
+        throw new Error('No authentication token found');
       }
     } catch (error) {
-      console.error('Error saving profile settings:', error);
-      
-      // Fallback to localStorage
-      try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Save to localStorage (replace with actual API call)
-        localStorage.setItem('profileSettings', JSON.stringify(profileSettings));
-        
-        console.log('Profile settings saved (local):', profileSettings);
-        showPopup('success', 'Success', 'Profile settings saved successfully! (Saved locally)');
-      } catch (localError) {
-        console.error('Error in local save:', localError);
-        showPopup('error', 'Error', 'Failed to save profile settings. Please try again.');
-      }
+      console.error('Error updating profile:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update profile. Please try again.';
+      showPopup('error', 'Error', errorMessage);
     } finally {
       setLoading(false);
     }

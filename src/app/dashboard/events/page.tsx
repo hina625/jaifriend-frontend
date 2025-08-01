@@ -139,6 +139,39 @@ const EventManagement: React.FC = () => {
         return;
       }
 
+      // Validate required fields
+      if (!formData.eventName.trim()) {
+        showPopup('error', 'Validation Error', 'Event name is required');
+        return;
+      }
+
+      if (!formData.startDate || !formData.startTime) {
+        showPopup('error', 'Validation Error', 'Start date and time are required');
+        return;
+      }
+
+      if (!formData.endDate || !formData.endTime) {
+        showPopup('error', 'Validation Error', 'End date and time are required');
+        return;
+      }
+
+      // Validate dates
+      const startDateTime = new Date(formData.startDate + 'T' + formData.startTime);
+      const endDateTime = new Date(formData.endDate + 'T' + formData.endTime);
+      const now = new Date();
+
+      if (startDateTime < now) {
+        showPopup('error', 'Validation Error', 'Start date and time must be in the future');
+        return;
+      }
+
+      if (endDateTime <= startDateTime) {
+        showPopup('error', 'Validation Error', 'End date and time must be after start date and time');
+        return;
+      }
+
+      console.log('Creating event with data:', formData);
+
       const form = new FormData();
       form.append('title', formData.eventName);
       form.append('description', formData.eventDescription);
@@ -156,9 +189,16 @@ const EventManagement: React.FC = () => {
         },
         body: form
       });
+
+      console.log('Response status:', res.status);
+      
       if (res.ok) {
+        const eventData = await res.json();
+        console.log('Event created successfully:', eventData);
+        
         showPopup('success', 'Event Created!', 'Event created successfully!');
-        navigateTo('/events');
+        
+        // Reset form
         setFormData({
           eventName: '',
           eventDescription: '',
@@ -169,40 +209,51 @@ const EventManagement: React.FC = () => {
           endTime: ''
         });
         setImage(null);
+        
+        // Navigate back to events list
+        setTimeout(() => {
+          navigateTo('/events');
+        }, 1500);
+        
         // Refresh events list
-         fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`, {
-           headers: {
-             'Authorization': `Bearer ${token}`,
-             'Content-Type': 'application/json'
-           }
-         })
-          .then(res => res.json())
-           .then(data => {
-             if (Array.isArray(data)) {
-               setEvents(data);
-             } else {
-               setEvents([]);
-             }
-           })
-          .catch(() => setEvents([]));
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setEvents(data);
+          } else {
+            setEvents([]);
+          }
+        })
+        .catch(() => setEvents([]));
       } else {
-         console.error('Server response error:', res.status, res.statusText);
-         try {
-        const data = await res.json();
-           console.error('Server error details:', data);
-           showPopup('error', 'Error', 'Error: ' + (data.error || data.message || 'Failed to create event'));
-         } catch (parseError) {
-           console.error('Failed to parse error response:', parseError);
-           showPopup('error', 'Error', `Server error: ${res.status} ${res.statusText}`);
-         }
+        console.error('Server response error:', res.status, res.statusText);
+        try {
+          const data = await res.json();
+          console.error('Server error details:', data);
+          showPopup('error', 'Error', 'Error: ' + (data.error || data.message || 'Failed to create event'));
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
+          showPopup('error', 'Error', `Server error: ${res.status} ${res.statusText}`);
+        }
       }
     } catch (err) {
-       console.error('Network error:', err);
-       showPopup('error', 'Network Error', 'Network error occurred. Please check your connection and try again.');
+      console.error('Network error:', err);
+      showPopup('error', 'Network Error', 'Network error occurred. Please check your connection and try again.');
     }
   };
 
   const handleDelete = async (id: string) => {
+    // Add confirmation dialog
+    if (!window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+      return;
+    }
+    
     try {
       const token = localStorage.getItem('token');
       
@@ -212,6 +263,8 @@ const EventManagement: React.FC = () => {
         return;
       }
 
+      console.log('Deleting event:', id);
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events/${id}`, { 
         method: 'DELETE',
         headers: {
@@ -219,32 +272,46 @@ const EventManagement: React.FC = () => {
         }
       });
       
-             if (response.ok) {
-      // Refresh events list
-         fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`, {
-           headers: {
-             'Authorization': `Bearer ${token}`,
-             'Content-Type': 'application/json'
-           }
-         })
+      console.log('Delete response status:', response.status);
+      
+      if (response.ok) {
+        console.log('Event deleted successfully');
+        showPopup('success', 'Event Deleted!', 'Event deleted successfully!');
+        
+        // Refresh events list
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
         .then(res => res.json())
-           .then(data => {
-             if (Array.isArray(data)) {
-               setEvents(data);
-             } else {
-               setEvents([]);
-             }
-           })
+        .then(data => {
+          if (Array.isArray(data)) {
+            setEvents(data);
+          } else {
+            setEvents([]);
+          }
+        })
         .catch(() => setEvents([]));
-      showPopup('success', 'Event Deleted!', 'Event deleted successfully!');
       } else if (response.status === 401) {
         showPopup('error', 'Authentication Error', 'Please log in again');
+      } else if (response.status === 403) {
+        showPopup('error', 'Permission Error', 'You are not authorized to delete this event');
+      } else if (response.status === 404) {
+        showPopup('error', 'Not Found', 'Event not found');
       } else {
-        const error = await response.json();
-        showPopup('error', 'Error', 'Error: ' + (error.message || error.error || 'Failed to delete event'));
+        try {
+          const error = await response.json();
+          showPopup('error', 'Error', 'Error: ' + (error.message || error.error || 'Failed to delete event'));
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
+          showPopup('error', 'Error', `Server error: ${response.status} ${response.statusText}`);
+        }
       }
     } catch (err) {
-      showPopup('error', 'Network Error', 'Network error occurred');
+      console.error('Network error:', err);
+      showPopup('error', 'Network Error', 'Network error occurred. Please check your connection and try again.');
     }
   };
 
@@ -270,6 +337,7 @@ const EventManagement: React.FC = () => {
 
   const handleUpdate = async () => {
     if (!editingEvent) return;
+    
     try {
       const token = localStorage.getItem('token');
       
@@ -278,6 +346,33 @@ const EventManagement: React.FC = () => {
         showPopup('error', 'Authentication Error', 'Please log in again');
         return;
       }
+
+      // Validate required fields
+      if (!formData.eventName.trim()) {
+        showPopup('error', 'Validation Error', 'Event name is required');
+        return;
+      }
+
+      if (!formData.startDate || !formData.startTime) {
+        showPopup('error', 'Validation Error', 'Start date and time are required');
+        return;
+      }
+
+      if (!formData.endDate || !formData.endTime) {
+        showPopup('error', 'Validation Error', 'End date and time are required');
+        return;
+      }
+
+      // Validate dates
+      const startDateTime = new Date(formData.startDate + 'T' + formData.startTime);
+      const endDateTime = new Date(formData.endDate + 'T' + formData.endTime);
+
+      if (endDateTime <= startDateTime) {
+        showPopup('error', 'Validation Error', 'End date and time must be after start date and time');
+        return;
+      }
+
+      console.log('Updating event with data:', formData);
 
       const form = new FormData();
       form.append('title', formData.eventName);
@@ -288,6 +383,7 @@ const EventManagement: React.FC = () => {
       form.append('endDate', formData.endDate + 'T' + formData.endTime);
       form.append('category', 'social'); // Valid category from enum
       if (image) form.append('coverImage', image);
+      
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events/${editingEvent._id}`, {
         method: 'PUT',
         headers: {
@@ -295,10 +391,17 @@ const EventManagement: React.FC = () => {
         },
         body: form
       });
+      
+      console.log('Update response status:', res.status);
+      
       if (res.ok) {
+        const eventData = await res.json();
+        console.log('Event updated successfully:', eventData);
+        
         showPopup('success', 'Event Updated!', 'Event updated successfully!');
         setEditingEvent(null);
-        navigateTo('/events');
+        
+        // Reset form
         setFormData({
           eventName: '',
           eventDescription: '',
@@ -309,6 +412,12 @@ const EventManagement: React.FC = () => {
           endTime: ''
         });
         setImage(null);
+        
+        // Navigate back to events list
+        setTimeout(() => {
+          navigateTo('/events');
+        }, 1500);
+        
         // Refresh events list
         fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`, {
           headers: {
@@ -316,21 +425,29 @@ const EventManagement: React.FC = () => {
             'Content-Type': 'application/json'
           }
         })
-          .then(res => res.json())
-          .then(data => {
-            if (Array.isArray(data)) {
-              setEvents(data);
-            } else {
-              setEvents([]);
-            }
-          })
-          .catch(() => setEvents([]));
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setEvents(data);
+          } else {
+            setEvents([]);
+          }
+        })
+        .catch(() => setEvents([]));
       } else {
-        const data = await res.json();
-        showPopup('error', 'Error', 'Error: ' + data.error);
+        console.error('Server response error:', res.status, res.statusText);
+        try {
+          const data = await res.json();
+          console.error('Server error details:', data);
+          showPopup('error', 'Error', 'Error: ' + (data.error || data.message || 'Failed to update event'));
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
+          showPopup('error', 'Error', `Server error: ${res.status} ${res.statusText}`);
+        }
       }
     } catch (err) {
-      showPopup('error', 'Network Error', 'Network error occurred');
+      console.error('Network error:', err);
+      showPopup('error', 'Network Error', 'Network error occurred. Please check your connection and try again.');
     }
   };
 
