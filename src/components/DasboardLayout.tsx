@@ -90,6 +90,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [profileSettingsOpen, setProfileSettingsOpen] = useState<boolean>(false);
   const [securitySettingsOpen, setSecuritySettingsOpen] = useState<boolean>(false);
 
+  // Profile Sidebar State
+  const [profileSidebarOpen, setProfileSidebarOpen] = useState<boolean>(false);
+
   // Check if current route is settings
   const isSettingsPage = pathname.startsWith('/dashboard/settings');
 
@@ -160,6 +163,80 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     }
   }, []);
 
+  // Listen for image updates from settings page
+  useEffect(() => {
+    const handleImagesUpdated = () => {
+      console.log('Images updated event received in DasboardLayout, refreshing profile...');
+      const token = localStorage.getItem('token');
+      if (token) {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((res) => res.json())
+          .then((data) => setProfile(data))
+          .catch(() => console.log('Profile refresh failed'));
+      }
+    };
+
+    const handlePrivacySettingsUpdated = () => {
+      console.log('Privacy settings updated event received in DasboardLayout, refreshing profile...');
+      const token = localStorage.getItem('token');
+      if (token) {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((res) => res.json())
+          .then((data) => setProfile(data))
+          .catch(() => console.log('Profile refresh failed'));
+      }
+    };
+
+    const handlePasswordChanged = () => {
+      console.log('Password changed event received in DasboardLayout, refreshing profile...');
+      const token = localStorage.getItem('token');
+      if (token) {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((res) => res.json())
+          .then((data) => setProfile(data))
+          .catch(() => console.log('Profile refresh failed'));
+      }
+    };
+
+    window.addEventListener('imagesUpdated', handleImagesUpdated);
+    window.addEventListener('privacySettingsUpdated', handlePrivacySettingsUpdated);
+    window.addEventListener('passwordChanged', handlePasswordChanged);
+
+    return () => {
+      window.removeEventListener('imagesUpdated', handleImagesUpdated);
+      window.removeEventListener('privacySettingsUpdated', handlePrivacySettingsUpdated);
+      window.removeEventListener('passwordChanged', handlePasswordChanged);
+    };
+  }, []);
+
+  // Listen for profile updates from settings pages
+  useEffect(() => {
+    const handleProfileUpdated = () => {
+      console.log('Profile updated event received in DasboardLayout, refreshing profile...');
+      const token = localStorage.getItem('token');
+      if (token) {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((res) => res.json())
+          .then((data) => setProfile(data))
+          .catch(() => console.log('Profile refresh failed'));
+      }
+    };
+
+    window.addEventListener('profileUpdated', handleProfileUpdated);
+
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdated);
+    };
+  }, []);
+
   // Menu sections for sidebar
   const menuSections: MenuSections = {
     me: [
@@ -218,7 +295,20 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   // Navbar Functions
   const handleDropdownClick = (dropdownType: 'people' | 'messages' | 'notifications' | 'profile'): void => {
+    if (dropdownType === 'profile') {
+      setProfileSidebarOpen(true);
+      setOpenDropdown(null);
+      // Close main sidebar on mobile when opening profile sidebar
+      if (isMobile) {
+        setSidebarOpen(false);
+      }
+    } else if (dropdownType === 'notifications') {
+      // Navigate to notifications page instead of showing dropdown
+      router.push('/dashboard/notifications');
+      setOpenDropdown(null);
+    } else {
     setOpenDropdown(openDropdown === dropdownType ? null : dropdownType);
+    }
   };
 
   const handleMyProfile = async (): Promise<void> => {
@@ -468,7 +558,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             {/* Mobile Menu Button */}
             {isMobile && (
               <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
+                onClick={() => {
+                  setSidebarOpen(!sidebarOpen);
+                  // Close profile sidebar when opening main sidebar
+                  if (!sidebarOpen) {
+                    setProfileSidebarOpen(false);
+                  }
+                }}
                 className="w-10 h-10 rounded-lg bg-blue-600 dark:bg-blue-500 text-white flex items-center justify-center shadow-sm hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
               >
                 ☰
@@ -575,58 +671,18 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 </div>
 
                 {/* Notifications Icon */}
-                <div className="dropdown-container relative">
+                <div className="relative">
                   <button
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-all touch-manipulation ${
-                      openDropdown === 'notifications' 
-                        ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' 
-                        : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300'
-                    }`}
-                    onClick={() => handleDropdownClick('notifications')}
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-lg transition-all touch-manipulation bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300"
+                    onClick={() => router.push('/dashboard/notifications')}
                     onTouchStart={(e) => {
                       e.preventDefault();
-                      handleDropdownClick('notifications');
+                      router.push('/dashboard/notifications');
                     }}
                     style={{ touchAction: 'manipulation' }}
                   >
                     🔔
-                  </button>
-                  
-                  {openDropdown === 'notifications' && (
-                    <div className="absolute top-10 right-0 w-72 rounded-xl shadow-xl z-50 overflow-hidden bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                      <div className="flex border-b border-gray-200 dark:border-gray-700">
-                        <button className="flex-1 px-3 py-2 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
-                          Activities
                         </button>
-                        <button className="flex-1 px-3 py-2 text-xs font-medium text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400">
-                          Notifications
-                        </button>
-                      </div>
-                      
-                      <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-                        <button 
-                          className="flex items-center justify-between w-full rounded-lg px-2 py-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
-                          onClick={handleNotificationSound}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm">🔊</span>
-                            <span className="text-xs text-gray-900 dark:text-white">
-                              Turn off notification sound
-                            </span>
-                          </div>
-                        </button>
-                      </div>
-                      
-                      <div className="p-4 text-center">
-                        <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-3 mx-auto">
-                          <span className="text-blue-600 dark:text-blue-400 text-lg">🔔</span>
-                        </div>
-                        <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                          You do not have any notifications
-                        </h3>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </>
             )}
@@ -634,10 +690,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             {/* Profile Avatar */}
             <div className="dropdown-container relative">
               <button
-                className={`w-8 h-8 rounded-full overflow-hidden border-2 transition-all touch-manipulation ${
-                  openDropdown === 'profile' 
-                    ? 'border-blue-400 dark:border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800' 
-                    : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                className={`w-8 h-8 rounded-full overflow-hidden transition-all touch-manipulation ${
+                  profileSidebarOpen 
+                    ? 'ring-2 ring-blue-200 dark:ring-blue-800' 
+                    : 'hover:ring-2 hover:ring-gray-200 dark:hover:ring-gray-600'
                 }`}
                 onClick={() => handleDropdownClick('profile')}
                 onTouchStart={(e) => {
@@ -652,141 +708,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   className="w-full h-full object-cover pointer-events-none"
                 />
               </button>
-              
-              {openDropdown === 'profile' && (
-                <div className="absolute right-0 top-12 w-80 bg-white rounded-2xl shadow-2xl z-50 border border-gray-100 dark:bg-gray-800 dark:border-gray-700 max-h-[80vh] overflow-y-auto scrollbar-hide sm:w-80 w-72 max-w-[calc(100vw-2rem)]">
-                  <div className="p-4 flex flex-col gap-2">
-                    {/* Profile Section */}
-                    <div className="flex items-center gap-3 mb-2">
-                      <img
-                        src={profile.avatar}
-                        alt="avatar"
-                        className="w-12 h-12 rounded-full border border-gray-200 object-cover"
-                      />
-                      <div className="flex flex-col">
-                        <span 
-                          className="font-semibold text-base text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
-                          onClick={handleMyProfile}
-                        >
-                          My Profile
-                        </span>
-                        <div className="flex gap-2 mt-1">
-                          <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-xs font-medium text-gray-700 dark:text-gray-300">
-                            💳 {profile.balance}
-                          </span>
-                          <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-xs font-medium text-gray-700 dark:text-gray-300">
-                            👍 {profile.pokes} Pokes
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Menu Items */}
-                    <div className="flex flex-col gap-1 divide-y divide-gray-100 dark:divide-gray-700">
-                      <button 
-                        className="flex items-center gap-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 text-left"
-                        onClick={handleSwitchAccount}
-                      >
-                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🔄</span>
-                        <span className="font-medium text-gray-900 dark:text-white">Switch Account</span>
-                      </button>
-                      
-                      <div className="py-1" />
-                      
-                      <button 
-                        className="flex items-center gap-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 text-left"
-                        onClick={() => router.push('/dashboard/upgrade')}
-                      >
-                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🛠️</span>
-                        <span className="font-medium text-gray-900 dark:text-white">Upgrade To Pro</span>
-                      </button>
-                      
-                      <button 
-                        className="flex items-center gap-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 text-left"
-                        onClick={() => router.push('/dashboard/advertising')}
-                      >
-                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">📢</span>
-                        <span className="font-medium text-gray-900 dark:text-white">Advertising</span>
-                      </button>
-                      
-                      <button 
-                        className="flex items-center gap-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 text-left"
-                        onClick={() => router.push('/dashboard/subscriptions')}
-                      >
-                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">💳</span>
-                        <span className="font-medium text-gray-900 dark:text-white">Subscriptions</span>
-                      </button>
-                      
-                      <div className="py-1" />
-                      
-                      <button 
-                        className="flex items-center gap-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 text-left"
-                        onClick={() => router.push('/dashboard/settings/privacy')}
-                      >
-                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">✔️</span>
-                        <span className="font-medium text-gray-900 dark:text-white">Privacy Setting</span>
-                      </button>
-                      
-                      <button 
-                        className="flex items-center gap-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 text-left"
-                        onClick={() => router.push('/dashboard/settings')}
-                      >
-                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">⚙️</span>
-                        <span className="font-medium text-gray-900 dark:text-white">General Setting</span>
-                      </button>
-                      
-                      <button 
-                        className="flex items-center gap-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg px-2 text-left"
-                        onClick={() => router.push('/dashboard/invite')}
-                      >
-                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">✉️</span>
-                        <span className="font-medium text-gray-900 dark:text-white">Invite Your Friends</span>
-                      </button>
-                      
-                      <div className="py-1" />
-                      
-                      <div className="flex items-center gap-3 py-2 px-2">
-                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🌙</span>
-                        <span className="font-medium flex-1 text-gray-900 dark:text-white">Night mode</span>
-                        <input 
-                          type="checkbox" 
-                          className="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
-                          onChange={(e) => {
-                            // Toggle dark mode logic here
-                            console.log('Night mode toggled:', e.target.checked);
-                          }}
-                        />
-                      </div>
-                      
-                      <button 
-                        className="flex items-center gap-3 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg px-2 text-left"
-                        onClick={handleLogout}
-                      >
-                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🚪</span>
-                        <span className="font-medium text-red-600 dark:text-red-400">Log Out</span>
-                      </button>
-                    </div>
-
-                    {/* Footer */}
-                    <div className="text-xs text-gray-400 mt-3 flex flex-col items-center gap-1">
-                      <div className="flex items-center gap-2">
-                        <span>© 2025 Jaifriend</span>
-                        <span>•</span>
-                        <button className="underline cursor-pointer hover:text-gray-600">Language</button>
-                      </div>
-                      <div className="flex flex-wrap gap-2 justify-center">
-                        <button className="underline cursor-pointer hover:text-gray-600">About</button>
-                        <button className="underline cursor-pointer hover:text-gray-600">Directory</button>
-                        <button className="underline cursor-pointer hover:text-gray-600">Contact Us</button>
-                        <button className="underline cursor-pointer hover:text-gray-600">Developers</button>
-                        <button className="underline cursor-pointer hover:text-gray-600">Privacy Policy</button>
-                        <button className="underline cursor-pointer hover:text-gray-600">Terms of Use</button>
-                        <button className="underline cursor-pointer hover:text-gray-600">Refund</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -796,16 +717,21 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       <div className="flex">
         {/* Sidebar */}
         {/* Mobile Sidebar Overlay */}
-        {isMobile && sidebarOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-[55]" onClick={() => setSidebarOpen(false)} />
+        {isMobile && (sidebarOpen || profileSidebarOpen) && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-[55]" onClick={() => {
+            setSidebarOpen(false);
+            setProfileSidebarOpen(false);
+          }} />
         )}
 
         {/* Mobile Sidebar - Slide out overlay */}
         {isMobile ? (
-          <aside className={`fixed left-0 top-16 w-64 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 shadow-xl overflow-y-auto overflow-x-hidden flex flex-col z-[60] transform transition-transform duration-300 ${
+          <>
+            {/* Main Sidebar */}
+            <aside className={`fixed left-0 top-0 w-64 h-screen bg-white border-r border-gray-200 shadow-xl overflow-y-auto overflow-x-hidden flex flex-col z-[60] transform transition-transform duration-300 ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}>
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <div className="p-4 border-b border-gray-200 flex items-center justify-between mt-16">
               <h2 className="text-gray-900 font-bold text-lg">
                 {isSettingsPage ? 'Settings' : 'Menu'}
               </h2>
@@ -950,6 +876,155 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               <div className="text-xs text-gray-500">🌐 Language</div>
             </div>
           </aside>
+
+            {/* Profile Sidebar */}
+            <aside className={`fixed left-0 top-0 w-80 h-screen bg-white border-r border-gray-200 shadow-xl overflow-y-auto overflow-x-hidden flex flex-col z-[60] transform transition-transform duration-300 ${
+              profileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}>
+              <div className="p-4 border-b border-gray-200 flex items-center justify-between mt-16">
+                <h2 className="text-gray-900 font-bold text-lg">Profile</h2>
+                <button
+                  onClick={() => setProfileSidebarOpen(false)}
+                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="flex-1 p-4 overflow-y-auto scrollbar-hide">
+                {/* Profile Section */}
+                <div className="flex items-center gap-3 mb-6 p-4 bg-gray-50 rounded-lg">
+                  <img
+                    src={profile.avatar}
+                    alt="avatar"
+                    className="w-16 h-16 rounded-full border border-gray-200 object-cover"
+                  />
+                  <div className="flex flex-col">
+                    <span 
+                      className="font-semibold text-lg text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
+                      onClick={handleMyProfile}
+                    >
+                      My Profile
+                    </span>
+                    <div className="flex gap-2 mt-2">
+                      <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm font-medium text-gray-700 dark:text-gray-300">
+                        💳 {profile.balance}
+                      </span>
+                      <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm font-medium text-gray-700 dark:text-gray-300">
+                        👍 {profile.pokes} Pokes
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Menu Items */}
+                <div className="space-y-2">
+                  <button 
+                    className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
+                    onClick={handleSwitchAccount}
+                  >
+                    <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🔄</span>
+                    <span className="font-medium text-gray-900 dark:text-white">Switch Account</span>
+                  </button>
+                  
+                  <button 
+                    className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
+                    onClick={() => router.push('/dashboard/upgrade')}
+                  >
+                    <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🛠️</span>
+                    <span className="font-medium text-gray-900 dark:text-white">Upgrade To Pro</span>
+                  </button>
+                  
+                  <button 
+                    className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
+                    onClick={() => router.push('/dashboard/advertising')}
+                  >
+                    <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">📢</span>
+                    <span className="font-medium text-gray-900 dark:text-white">Advertising</span>
+                  </button>
+                  
+                  <button 
+                    className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
+                    onClick={() => router.push('/dashboard/subscriptions')}
+                  >
+                    <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">💳</span>
+                    <span className="font-medium text-gray-900 dark:text-white">Subscriptions</span>
+                  </button>
+                  
+                  <div className="border-t border-gray-200 my-4"></div>
+                  
+                  <button 
+                    className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
+                    onClick={() => router.push('/dashboard/settings/privacy')}
+                  >
+                    <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">✔️</span>
+                    <span className="font-medium text-gray-900 dark:text-white">Privacy Setting</span>
+                  </button>
+                  
+                  <button 
+                    className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
+                    onClick={() => router.push('/dashboard/settings')}
+                  >
+                    <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">⚙️</span>
+                    <span className="font-medium text-gray-900 dark:text-white">General Setting</span>
+                  </button>
+                  
+                  <button 
+                    className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
+                    onClick={() => router.push('/dashboard/invite')}
+                  >
+                    <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">✉️</span>
+                    <span className="font-medium text-gray-900 dark:text-white">Invite Your Friends</span>
+                  </button>
+                  
+                  <div className="border-t border-gray-200 my-4"></div>
+                  
+                  <div className="flex items-center gap-3 py-3 px-4">
+                    <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🌙</span>
+                    <span className="font-medium flex-1 text-gray-900 dark:text-white">Night mode</span>
+                    <input 
+                      type="checkbox" 
+                      id="night-mode-toggle-sidebar"
+                      className="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                      onChange={(e) => {
+                        // Toggle dark mode logic here
+                        console.log('Night mode toggled:', e.target.checked);
+                      }}
+                      aria-label="Toggle night mode"
+                    />
+                  </div>
+                  
+                  <button 
+                    className="flex items-center gap-3 py-3 px-4 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-left w-full transition-colors"
+                    onClick={handleLogout}
+                  >
+                    <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🚪</span>
+                    <span className="font-medium text-red-600 dark:text-red-400">Log Out</span>
+                  </button>
+                </div>
+
+                {/* Footer */}
+                <div className="mt-8 p-4 border-t border-gray-200">
+                  <div className="text-xs text-gray-400 flex flex-col items-center gap-2">
+                    <div className="flex items-center gap-2">
+                      <span>© 2025 Jaifriend</span>
+                      <span>•</span>
+                      <button className="underline cursor-pointer hover:text-gray-600">Language</button>
+                    </div>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      <button className="underline cursor-pointer hover:text-gray-600 text-xs">About</button>
+                      <button className="underline cursor-pointer hover:text-gray-600 text-xs">Directory</button>
+                      <button className="underline cursor-pointer hover:text-gray-600 text-xs">Contact Us</button>
+                      <button className="underline cursor-pointer hover:text-gray-600 text-xs">Developers</button>
+                      <button className="underline cursor-pointer hover:text-gray-600 text-xs">Privacy Policy</button>
+                      <button className="underline cursor-pointer hover:text-gray-600 text-xs">Terms of Use</button>
+                      <button className="underline cursor-pointer hover:text-gray-600 text-xs">Refund</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          </>
         ) : (
           <>
             {/* Collapse Toggle Button */}
@@ -960,7 +1035,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               {sidebarCollapsed ? '→' : '←'}
             </button>
 
-            <aside className={`bg-white border-r border-gray-200 overflow-y-auto overflow-x-hidden flex flex-col fixed left-0 top-16 h-[calc(100vh-4rem)] transition-all duration-300 scrollbar-hide ${
+            <aside className={`bg-white border-r border-gray-200 overflow-y-auto overflow-x-hidden flex flex-col fixed left-0 top-0 h-screen transition-all duration-300 scrollbar-hide ${
               sidebarCollapsed ? 'w-16' : 'w-64'
             }`}>
               
@@ -1180,20 +1255,173 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 </div>
               )}
             </aside>
+
+            {/* Desktop Profile Sidebar */}
+            <aside className={`bg-white border-r border-gray-200 overflow-y-auto overflow-x-hidden flex flex-col fixed left-0 top-0 h-screen transition-all duration-300 scrollbar-hide z-[60] ${
+              profileSidebarOpen ? 'w-80' : 'w-0'
+            }`}>
+              {profileSidebarOpen && (
+                <>
+                  <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                    <h2 className="text-gray-900 font-bold text-lg">Profile</h2>
+                    <button
+                      onClick={() => setProfileSidebarOpen(false)}
+                      className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="flex-1 p-4 overflow-y-auto scrollbar-hide">
+                    {/* Profile Section */}
+                    <div className="flex items-center gap-3 mb-6 p-4 bg-gray-50 rounded-lg">
+                      <img
+                        src={profile.avatar}
+                        alt="avatar"
+                        className="w-16 h-16 rounded-full border border-gray-200 object-cover"
+                      />
+                      <div className="flex flex-col">
+                        <span 
+                          className="font-semibold text-lg text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
+                          onClick={handleMyProfile}
+                        >
+                          My Profile
+                        </span>
+                        <div className="flex gap-2 mt-2">
+                          <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm font-medium text-gray-700 dark:text-gray-300">
+                            💳 {profile.balance}
+                          </span>
+                          <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm font-medium text-gray-700 dark:text-gray-300">
+                            👍 {profile.pokes} Pokes
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Menu Items */}
+                    <div className="space-y-2">
+                      <button 
+                        className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
+                        onClick={handleSwitchAccount}
+                      >
+                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🔄</span>
+                        <span className="font-medium text-gray-900 dark:text-white">Switch Account</span>
+                      </button>
+                      
+                      <button 
+                        className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
+                        onClick={() => router.push('/dashboard/upgrade')}
+                      >
+                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🛠️</span>
+                        <span className="font-medium text-gray-900 dark:text-white">Upgrade To Pro</span>
+                      </button>
+                      
+                      <button 
+                        className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
+                        onClick={() => router.push('/dashboard/advertising')}
+                      >
+                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">📢</span>
+                        <span className="font-medium text-gray-900 dark:text-white">Advertising</span>
+                      </button>
+                      
+                      <button 
+                        className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
+                        onClick={() => router.push('/dashboard/subscriptions')}
+                      >
+                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">💳</span>
+                        <span className="font-medium text-gray-900 dark:text-white">Subscriptions</span>
+                      </button>
+                      
+                      <div className="border-t border-gray-200 my-4"></div>
+                      
+                      <button 
+                        className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
+                        onClick={() => router.push('/dashboard/settings/privacy')}
+                      >
+                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">✔️</span>
+                        <span className="font-medium text-gray-900 dark:text-white">Privacy Setting</span>
+                      </button>
+                      
+                      <button 
+                        className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
+                        onClick={() => router.push('/dashboard/settings')}
+                      >
+                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">⚙️</span>
+                        <span className="font-medium text-gray-900 dark:text-white">General Setting</span>
+                      </button>
+                      
+                      <button 
+                        className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
+                        onClick={() => router.push('/dashboard/invite')}
+                      >
+                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">✉️</span>
+                        <span className="font-medium text-gray-900 dark:text-white">Invite Your Friends</span>
+                      </button>
+                      
+                      <div className="border-t border-gray-200 my-4"></div>
+                      
+                      <div className="flex items-center gap-3 py-3 px-4">
+                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🌙</span>
+                        <span className="font-medium flex-1 text-gray-900 dark:text-white">Night mode</span>
+                        <input 
+                          type="checkbox" 
+                          id="night-mode-toggle-desktop"
+                          className="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                          onChange={(e) => {
+                            // Toggle dark mode logic here
+                            console.log('Night mode toggled:', e.target.checked);
+                          }}
+                          aria-label="Toggle night mode"
+                        />
+                      </div>
+                      
+                      <button 
+                        className="flex items-center gap-3 py-3 px-4 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-left w-full transition-colors"
+                        onClick={handleLogout}
+                      >
+                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🚪</span>
+                        <span className="font-medium text-red-600 dark:text-red-400">Log Out</span>
+                      </button>
+                    </div>
+
+                    {/* Footer */}
+                    <div className="mt-8 p-4 border-t border-gray-200">
+                      <div className="text-xs text-gray-400 flex flex-col items-center gap-2">
+                        <div className="flex items-center gap-2">
+                          <span>© 2025 Jaifriend</span>
+                          <span>•</span>
+                          <button className="underline cursor-pointer hover:text-gray-600">Language</button>
+                        </div>
+                        <div className="flex flex-wrap gap-2 justify-center">
+                          <button className="underline cursor-pointer hover:text-gray-600 text-xs">About</button>
+                          <button className="underline cursor-pointer hover:text-gray-600 text-xs">Directory</button>
+                          <button className="underline cursor-pointer hover:text-gray-600 text-xs">Contact Us</button>
+                          <button className="underline cursor-pointer hover:text-gray-600 text-xs">Developers</button>
+                          <button className="underline cursor-pointer hover:text-gray-600 text-xs">Privacy Policy</button>
+                          <button className="underline cursor-pointer hover:text-gray-600 text-xs">Terms of Use</button>
+                          <button className="underline cursor-pointer hover:text-gray-600 text-xs">Refund</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </aside>
           </>
         )}
 
         {/* Main Content Area */}
         <main className={`
-          flex-1 transition-all duration-300 pt-16 min-h-screen overflow-x-hidden
+          flex-1 transition-all duration-300 min-h-screen overflow-x-hidden
           ${isMobile 
             ? 'ml-0 pb-20' 
             : sidebarCollapsed 
               ? 'ml-16' 
               : 'ml-64'
           }
+          ${!isMobile && profileSidebarOpen ? 'ml-80' : ''}
         `}>
-          <div className="w-full h-full overflow-x-hidden">
+          <div className="w-full h-full overflow-x-hidden pt-16">
             {children}
           </div>
         </main>
@@ -1251,21 +1479,28 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               <span className="text-xs font-medium">Notifications</span>
             </Link>
             
-            <Link
-              href="/dashboard/profile"
-              className={`flex flex-col items-center p-2 rounded-lg transition-colors ${
-                pathname === '/dashboard/profile' 
+            <div className="dropdown-container relative z-[60]">
+              <button
+                className={`flex flex-col items-center p-2 rounded-lg transition-colors touch-manipulation ${
+                  profileSidebarOpen 
                   ? 'text-blue-600 dark:text-blue-400' 
                   : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
               }`}
+                onClick={() => handleDropdownClick('profile')}
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  handleDropdownClick('profile');
+                }}
+                style={{ touchAction: 'manipulation' }}
             >
               <img
                 src={profile.avatar}
                 alt="Profile"
-                className="w-6 h-6 rounded-full mb-1 object-cover"
+                  className="w-6 h-6 rounded-full mb-1 object-cover pointer-events-none"
               />
               <span className="text-xs font-medium">Profile</span>
-            </Link>
+              </button>
+            </div>
           </div>
         </nav>
       )}

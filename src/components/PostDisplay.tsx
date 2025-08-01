@@ -58,7 +58,7 @@ export default function PostDisplay({
   const getMediaUrl = (url: string) => {
     if (!url) return '';
     if (url.startsWith('http')) return url;
-    return `http://localhost:5000${url}`;
+    return `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
   };
 
   // Get current user's reaction
@@ -139,35 +139,55 @@ export default function PostDisplay({
     }
   };
 
+  // Get current user ID for save checking
+  const getCurrentUserId = () => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        return user.id || user._id;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const currentUserId = getCurrentUserId();
+  const isSaved = post.savedBy?.includes(currentUserId);
+
   return (
-    <div className="bg-white rounded-xl shadow p-4 mb-6">
+    <div className="bg-white rounded-xl shadow p-3 sm:p-4 mb-4 sm:mb-6">
       <div className="flex items-center gap-2 mb-3">
         <img 
           src={post.user?.avatar || '/avatars/1.png.png'} 
           alt="avatar" 
-          className="w-10 h-10 rounded-full" 
+          className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0" 
         />
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           {post.user?.userId ? (
             <a 
               href={`/dashboard/profile/${String(post.user.userId)}`} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="font-semibold hover:underline cursor-pointer"
+              className="font-semibold hover:underline cursor-pointer text-sm sm:text-base truncate block"
             >
               {post.user?.name || 'Unknown User'}
             </a>
           ) : (
-            <div className="font-semibold">{post.user?.name || 'Unknown User'}</div>
+            <div className="font-semibold text-sm sm:text-base truncate">{post.user?.name || 'Unknown User'}</div>
           )}
           <div className="text-xs text-gray-400">
             {new Date(post.createdAt).toLocaleString()}
+            {post.isShared && (
+              <span className="ml-2 text-blue-600">📤 Shared</span>
+            )}
           </div>
         </div>
       </div>
 
       <div className="mb-3">
-        <p className="text-gray-800">{post.content}</p>
+        <p className="text-gray-800 text-sm sm:text-base">{post.content}</p>
       </div>
 
       {/* Show media if present */}
@@ -177,14 +197,14 @@ export default function PostDisplay({
             <video 
               src={getMediaUrl(post.media.url)} 
               controls 
-              className="w-full h-96 object-cover rounded-lg shadow-lg"
+              className="w-full h-48 sm:h-96 object-cover rounded-lg shadow-lg"
               style={{ maxHeight: '70vh' }}
             />
           ) : (
             <img
               src={getMediaUrl(post.media.url)}
               alt="media"
-              className="w-full h-96 object-cover rounded-lg shadow-lg"
+              className="w-full h-48 sm:h-96 object-cover rounded-lg shadow-lg"
               style={{ maxHeight: '70vh' }}
             />
           )}
@@ -192,20 +212,21 @@ export default function PostDisplay({
       )}
 
       {/* Social Actions */}
-      <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-200">
-        <div className="flex items-center gap-6">
+      <div className="flex items-center justify-between mt-3 sm:mt-4 pt-3 border-t border-gray-200">
+        <div className="flex items-center gap-3 sm:gap-6">
           {/* Reaction Button with Popup */}
           <div className="relative">
             <button 
               onMouseEnter={handleReactionButtonMouseEnter}
               onMouseLeave={handleReactionButtonMouseLeave}
               onClick={() => onLike && onLike(post._id)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+              className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-colors touch-manipulation ${
                 getCurrentReaction() ? 'text-red-500 bg-red-50' : 'text-gray-600 hover:text-red-500 hover:bg-red-50'
               }`}
+              style={{ touchAction: 'manipulation' }}
             >
-              <span className="text-xl">{getMostCommonReactionEmoji()}</span>
-              <span className="text-sm font-medium">
+              <span className="text-lg sm:text-xl">{getMostCommonReactionEmoji()}</span>
+              <span className="text-xs sm:text-sm font-medium">
                 {getReactionCount()}
               </span>
             </button>
@@ -227,42 +248,49 @@ export default function PostDisplay({
           
           <button 
             onClick={() => setShowCommentInput(!showCommentInput)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-600 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-gray-600 hover:text-blue-500 hover:bg-blue-50 transition-colors touch-manipulation"
+            style={{ touchAction: 'manipulation' }}
           >
-            <span className="text-xl">💬</span>
-            <span className="text-sm font-medium">
+            <span className="text-lg sm:text-xl">💬</span>
+            <span className="text-xs sm:text-sm font-medium">
               {post.comments ? post.comments.length : 0}
             </span>
           </button>
           
           {/* Views count */}
-          <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-600">
-            <span className="text-xl">👁️</span>
-            <span className="text-sm font-medium">
+          <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-gray-600">
+            <span className="text-lg sm:text-xl">👁️</span>
+            <span className="text-xs sm:text-sm font-medium">
               {post.views ? (Array.isArray(post.views) ? post.views.length : post.views) : 0}
             </span>
           </div>
           
           <button 
             onClick={() => setShowSharePopup(true)}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-600 hover:text-green-500 hover:bg-green-50 transition-colors"
+            className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-colors touch-manipulation ${
+              Array.isArray(post.shares) && post.shares.length > 0
+                ? 'text-green-500 bg-green-50 border border-green-200'
+                : 'text-gray-600 hover:text-green-500 hover:bg-green-50'
+            }`}
+            style={{ touchAction: 'manipulation' }}
           >
-            <span className="text-xl">📤</span>
-            <span className="text-sm font-medium">
-              {post.shares ? (Array.isArray(post.shares) ? post.shares.length : post.shares) : 0}
+            <span className="text-lg sm:text-xl">📤</span>
+            <span className="text-xs sm:text-sm font-medium">
+              {Array.isArray(post.shares) && post.shares.length > 0 ? post.shares.length : ''}
             </span>
           </button>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <button 
             onClick={() => onSave && onSave(post._id)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-              post.savedBy && post.savedBy.length > 0 ? 'text-blue-500 bg-blue-50' : 'text-gray-600 hover:text-blue-500 hover:bg-blue-50'
+            className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-colors touch-manipulation ${
+              isSaved ? 'text-blue-500 bg-blue-50' : 'text-gray-600 hover:text-blue-500 hover:bg-blue-50'
             }`}
+            style={{ touchAction: 'manipulation' }}
           >
-            <span className="text-xl">{post.savedBy && post.savedBy.length > 0 ? '💾' : '🔖'}</span>
-            <span className="text-sm font-medium">{post.savedBy && post.savedBy.length > 0 ? 'Saved' : 'Save'}</span>
+            <span className="text-lg sm:text-xl">{isSaved ? '💾' : '🔖'}</span>
+            <span className="text-xs sm:text-sm font-medium hidden sm:inline">{isSaved ? 'Saved' : 'Save'}</span>
           </button>
           
           {/* Edit and Delete buttons - only show if showEditDelete is true */}
@@ -270,20 +298,26 @@ export default function PostDisplay({
             <>
               <button 
                 onClick={() => onEdit && onEdit(post)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-600 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-gray-600 hover:text-blue-500 hover:bg-blue-50 transition-colors touch-manipulation"
                 title="Edit post"
+                style={{ touchAction: 'manipulation' }}
               >
-                <span className="text-xl">✏️</span>
-                <span className="text-sm font-medium">Edit</span>
+                <span className="text-lg sm:text-xl">✏️</span>
+                <span className="text-xs sm:text-sm font-medium hidden sm:inline">Edit</span>
               </button>
               
               <button 
-                onClick={() => onDelete && onDelete(post._id)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-600 hover:text-red-500 hover:bg-red-50 transition-colors"
+                onClick={() => {
+                  if (confirm('Are you sure you want to delete this post?')) {
+                    onDelete && onDelete(post._id);
+                  }
+                }}
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-gray-600 hover:text-red-500 hover:bg-red-50 transition-colors touch-manipulation"
                 title="Delete post"
+                style={{ touchAction: 'manipulation' }}
               >
-                <span className="text-xl">🗑️</span>
-                <span className="text-sm font-medium">Delete</span>
+                <span className="text-lg sm:text-xl">🗑️</span>
+                <span className="text-xs sm:text-sm font-medium hidden sm:inline">Delete</span>
               </button>
             </>
           )}
@@ -292,14 +326,14 @@ export default function PostDisplay({
 
       {/* Comment Input */}
       {showCommentInput && (
-        <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+        <div className="mt-3 p-2 sm:p-3 bg-gray-50 rounded-lg">
           <div className="flex gap-2">
             <input
               type="text"
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               placeholder="Write a comment..."
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              className="flex-1 px-2 sm:px-3 py-1 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
             />
             <button
               onClick={() => {
@@ -310,7 +344,8 @@ export default function PostDisplay({
                 }
               }}
               disabled={!commentText.trim()}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              className="px-3 sm:px-4 py-1 sm:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm touch-manipulation"
+              style={{ touchAction: 'manipulation' }}
             >
               Post
             </button>
@@ -326,27 +361,27 @@ export default function PostDisplay({
               <img 
                 src={comment.user?.avatar || '/avatars/1.png.png'} 
                 alt="avatar" 
-                className="w-6 h-6 rounded-full" 
+                className="w-5 h-5 sm:w-6 sm:h-6 rounded-full flex-shrink-0" 
               />
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 {comment.user?.userId ? (
                   <a 
                     href={`/dashboard/profile/${String(comment.user.userId)}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-sm font-medium hover:underline cursor-pointer"
+                    className="text-xs sm:text-sm font-medium hover:underline cursor-pointer truncate block"
                   >
                     {comment.user?.name || 'User'}
                   </a>
                 ) : (
-                  <span className="text-sm font-medium">{comment.user?.name || 'User'}</span>
+                  <span className="text-xs sm:text-sm font-medium truncate">{comment.user?.name || 'User'}</span>
                 )}
-                <span className="text-sm text-gray-600 ml-2">{comment.text}</span>
+                <span className="text-xs sm:text-sm text-gray-600 ml-1 sm:ml-2 break-words">{comment.text}</span>
               </div>
             </div>
           ))}
           {post.comments.length > 3 && (
-            <button className="text-sm text-blue-500 hover:text-blue-700">
+            <button className="text-xs sm:text-sm text-blue-500 hover:text-blue-700">
               View all {post.comments.length} comments
             </button>
           )}

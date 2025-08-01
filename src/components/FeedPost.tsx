@@ -34,7 +34,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
   const getMediaUrl = (url: string) => {
     if (!url) return '';
     if (url.startsWith('http')) return url;
-    return `http://localhost:5000${url}`;
+    return `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
   };
 
   const handleComment = () => {
@@ -71,14 +71,31 @@ const FeedPost: React.FC<FeedPostProps> = ({
     return date.toLocaleDateString();
   };
 
+  // Get current user ID for like checking
+  const getCurrentUserId = () => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        return user.id || user._id;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const currentUserId = getCurrentUserId();
+  const isLiked = post.likes?.includes(currentUserId);
+
   return (
-    <div className="bg-white rounded-lg shadow-sm border mb-6">
+    <div className="bg-white rounded-lg shadow-sm border mb-4 sm:mb-6">
       {/* Post Header */}
-      <div className="p-4 border-b">
+      <div className="p-3 sm:p-4 border-b">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 sm:space-x-3">
             <div 
-              className="w-10 h-10 rounded-full overflow-hidden cursor-pointer hover:opacity-80 transition-opacity"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
               onClick={navigateToProfile}
             >
               <img
@@ -87,15 +104,18 @@ const FeedPost: React.FC<FeedPostProps> = ({
                 className="w-full h-full object-cover"
               />
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <div 
-                className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+                className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors text-sm sm:text-base truncate"
                 onClick={navigateToProfile}
               >
                 {post.user?.name || 'User'}
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-xs sm:text-sm text-gray-500">
                 {formatDate(post.createdAt)}
+                {post.isShared && (
+                  <span className="ml-2 text-blue-600">📤 Shared</span>
+                )}
               </div>
             </div>
           </div>
@@ -104,30 +124,33 @@ const FeedPost: React.FC<FeedPostProps> = ({
             <div className="relative">
               <button
                 onClick={() => setShowOptions(!showOptions)}
-                className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                className="p-1 sm:p-2 rounded-full hover:bg-gray-100 transition-colors touch-manipulation"
+                style={{ touchAction: 'manipulation' }}
               >
-                <MoreVertical className="w-5 h-5 text-gray-500" />
+                <MoreVertical className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
               </button>
               
               {showOptions && (
-                <div className="absolute right-0 top-8 bg-white border rounded-lg shadow-lg z-10 min-w-[120px]">
+                <div className="absolute right-0 top-8 sm:top-10 bg-white border rounded-lg shadow-lg z-10 min-w-[120px] sm:min-w-[140px]">
                   <button
                     onClick={() => {
                       onEdit(post);
                       setShowOptions(false);
                     }}
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors"
+                    className="w-full px-3 sm:px-4 py-2 text-left text-xs sm:text-sm hover:bg-gray-50 transition-colors"
                   >
-                    Edit
+                    ✏️ Edit
                   </button>
                   <button
                     onClick={() => {
-                      onDelete(post._id);
+                      if (confirm('Are you sure you want to delete this post?')) {
+                        onDelete(post._id);
+                      }
                       setShowOptions(false);
                     }}
-                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50 transition-colors"
+                    className="w-full px-3 sm:px-4 py-2 text-left text-xs sm:text-sm text-red-600 hover:bg-gray-50 transition-colors"
                   >
-                    Delete
+                    🗑️ Delete
                   </button>
                 </div>
               )}
@@ -137,25 +160,25 @@ const FeedPost: React.FC<FeedPostProps> = ({
       </div>
 
       {/* Post Content */}
-      <div className="p-4">
-        <p className="text-gray-900 mb-4 whitespace-pre-wrap">{post.content}</p>
+      <div className="p-3 sm:p-4">
+        <p className="text-gray-900 mb-3 sm:mb-4 whitespace-pre-wrap text-sm sm:text-base">{post.content}</p>
         
         {/* Media */}
         {post.media && post.media.length > 0 && (
-          <div className="mb-4">
+          <div className="mb-3 sm:mb-4">
             {post.media.map((media: any, index: number) => (
               <div key={index} className="mb-2">
                 {media.type === 'video' ? (
                   <video
                     src={getMediaUrl(media.url)}
                     controls
-                    className="w-full rounded-lg"
+                    className="w-full rounded-lg max-h-64 sm:max-h-96"
                   />
                 ) : (
                   <img
                     src={getMediaUrl(media.url)}
                     alt="Post media"
-                    className="w-full rounded-lg"
+                    className="w-full rounded-lg max-h-64 sm:max-h-96 object-cover"
                   />
                 )}
               </div>
@@ -165,64 +188,77 @@ const FeedPost: React.FC<FeedPostProps> = ({
       </div>
 
       {/* Post Actions */}
-      <div className="px-4 pb-4">
+      <div className="px-3 sm:px-4 pb-3 sm:pb-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3 sm:space-x-4">
             <button
               onClick={() => onLike(post._id)}
-              className={`flex items-center space-x-1 transition-colors ${
-                post.likes?.includes(post.user?.userId) 
+              className={`flex items-center space-x-1 transition-colors touch-manipulation ${
+                isLiked
                   ? 'text-red-500' 
                   : 'text-gray-500 hover:text-red-500'
               }`}
+              style={{ touchAction: 'manipulation' }}
             >
-              <Heart className={`w-5 h-5 ${post.likes?.includes(post.user?.userId) ? 'fill-current' : ''}`} />
-              <span className="text-sm">{post.likes?.length || 0}</span>
+              <Heart className={`w-4 h-4 sm:w-5 sm:h-5 ${isLiked ? 'fill-current' : ''}`} />
+              <span className="text-xs sm:text-sm">{post.likes?.length || 0}</span>
             </button>
             
             <button
               onClick={() => setShowCommentInput(!showCommentInput)}
-              className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 transition-colors"
+              className="flex items-center space-x-1 text-gray-500 hover:text-blue-500 transition-colors touch-manipulation"
+              style={{ touchAction: 'manipulation' }}
             >
-              <MessageCircle className="w-5 h-5" />
-              <span className="text-sm">{post.comments?.length || 0}</span>
+              <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="text-xs sm:text-sm">{post.comments?.length || 0}</span>
             </button>
             
             <button
               onClick={handleShare}
-              className="flex items-center space-x-1 text-gray-500 hover:text-green-500 transition-colors"
+              className={`flex items-center space-x-1 transition-colors touch-manipulation ${
+                Array.isArray(post.shares) && post.shares.length > 0
+                  ? 'text-green-500 bg-green-50 border border-green-200'
+                  : 'text-gray-500 hover:text-green-500'
+              }`}
+              style={{ touchAction: 'manipulation' }}
             >
-              <Share2 className="w-5 h-5" />
+              <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="text-xs sm:text-sm">
+                {Array.isArray(post.shares) && post.shares.length > 0 ? `(${post.shares.length})` : ''}
+              </span>
             </button>
           </div>
           
           <button
             onClick={() => onSave(post._id)}
-            className={`transition-colors ${
-              post.savedBy?.includes(post.user?.userId) 
+            className={`transition-colors touch-manipulation ${
+              post.savedBy?.includes(currentUserId) 
                 ? 'text-blue-500' 
                 : 'text-gray-500 hover:text-blue-500'
             }`}
+            style={{ touchAction: 'manipulation' }}
           >
-            <Bookmark className={`w-5 h-5 ${post.savedBy?.includes(post.user?.userId) ? 'fill-current' : ''}`} />
+            <Bookmark className={`w-4 h-4 sm:w-5 sm:h-5 ${post.savedBy?.includes(currentUserId) ? 'fill-current' : ''}`} />
           </button>
         </div>
 
         {/* Comment Input */}
         {showCommentInput && (
-          <div className="mt-4">
+          <div className="mt-3 sm:mt-4">
             <div className="flex space-x-2">
               <input
                 type="text"
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 placeholder="Write a comment..."
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 onKeyPress={(e) => e.key === 'Enter' && handleComment()}
               />
               <button
                 onClick={handleComment}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                disabled={!commentText.trim()}
+                className="px-3 sm:px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm touch-manipulation"
+                style={{ touchAction: 'manipulation' }}
               >
                 Post
               </button>
@@ -232,22 +268,22 @@ const FeedPost: React.FC<FeedPostProps> = ({
 
         {/* Comments */}
         {post.comments && post.comments.length > 0 && (
-          <div className="mt-4 space-y-2">
+          <div className="mt-3 sm:mt-4 space-y-2">
             {post.comments.slice(0, 3).map((comment: any, index: number) => (
               <div key={index} className="flex items-start space-x-2">
                 <img
                   src={comment.user?.avatar || '/avatars/1.png.png'}
                   alt={comment.user?.name || 'User'}
-                  className="w-6 h-6 rounded-full"
+                  className="w-5 h-5 sm:w-6 sm:h-6 rounded-full flex-shrink-0"
                 />
-                <div className="flex-1">
-                  <span className="font-semibold text-sm">{comment.user?.name || 'User'}</span>
-                  <span className="text-sm text-gray-700 ml-2">{comment.content}</span>
+                <div className="flex-1 min-w-0">
+                  <span className="font-semibold text-xs sm:text-sm">{comment.user?.name || 'User'}</span>
+                  <span className="text-xs sm:text-sm text-gray-700 ml-1 sm:ml-2 break-words">{comment.content}</span>
                 </div>
               </div>
             ))}
             {post.comments.length > 3 && (
-              <button className="text-sm text-gray-500 hover:text-blue-500">
+              <button className="text-xs sm:text-sm text-gray-500 hover:text-blue-500">
                 View all {post.comments.length} comments
               </button>
             )}

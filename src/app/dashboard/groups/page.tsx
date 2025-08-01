@@ -68,41 +68,57 @@ const GroupsPage: React.FC = () => {
   // Empty groups data - will be populated from API
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [creating, setCreating] = useState(false);
 
   // Fetch groups from API
-  useEffect(() => {
-    const fetchGroups = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        
-        if (!token) {
-          setLoading(false);
-          return;
-        }
-
-        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups`;
-
-        const response = await fetch(apiUrl, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          const groupsData = await response.json();
-          setGroups(groupsData);
-        } else {
-          setGroups([]);
-        }
-      } catch {
-        setGroups([]);
-      } finally {
-        setLoading(false);
+  const fetchGroups = async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
       }
-    };
+      console.log('Fetching groups...');
+      
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        console.log('No token found');
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
 
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups`;
+
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('Groups response status:', response.status);
+
+      if (response.ok) {
+        const groupsData = await response.json();
+        console.log('📊 Groups fetched:', groupsData.length);
+        setGroups(groupsData);
+      } else {
+        console.error('Failed to fetch groups:', response.status);
+        setGroups([]);
+      }
+    } catch (error) {
+      console.error('Error fetching groups:', error);
+      setGroups([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
     fetchGroups();
   }, []);
 
@@ -117,13 +133,17 @@ const GroupsPage: React.FC = () => {
   const handleCreateGroup = async (): Promise<void> => {
     try {
       setCreating(true);
+      console.log('Creating group with data:', formData);
+      
       const token = localStorage.getItem('token');
       if (!token) {
+        console.log('No token found for group creation');
         return;
       }
 
       // Validate required fields
       if (!formData.name.trim()) {
+        console.log('Group name is required');
         return;
       }
 
@@ -138,6 +158,8 @@ const GroupsPage: React.FC = () => {
 
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups`;
 
+      console.log('Sending group creation request to:', apiUrl);
+
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
@@ -146,8 +168,11 @@ const GroupsPage: React.FC = () => {
         body: formDataToSend
       });
 
+      console.log('Group creation response status:', response.status);
+
       if (response.ok) {
         const newGroup = await response.json();
+        console.log('Group created successfully:', newGroup);
         setGroups(prev => [newGroup, ...prev]);
         setShowCreateModal(false);
         setFormData({
@@ -156,9 +181,16 @@ const GroupsPage: React.FC = () => {
           privacy: 'public',
           category: 'general'
         });
+        // Show success message
+        alert('Group created successfully!');
+      } else {
+        console.error('Failed to create group:', response.status);
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Error details:', errorData);
+        alert('Failed to create group. Please try again.');
       }
-    } catch {
-      // Silent error handling
+    } catch (error) {
+      console.error('Error creating group:', error);
     } finally {
       setCreating(false);
     }
@@ -176,8 +208,11 @@ const GroupsPage: React.FC = () => {
 
   const handleJoinGroup = async (groupId: string) => {
     try {
+      console.log('Joining group:', groupId);
+      
       const token = localStorage.getItem('token');
       if (!token) {
+        console.log('No token found for joining group');
         return;
       }
 
@@ -188,7 +223,11 @@ const GroupsPage: React.FC = () => {
         }
       });
 
+      console.log('Join group response status:', response.status);
+
       if (response.ok) {
+        console.log('Successfully joined group');
+        alert('Successfully joined the group!');
         // Refresh groups
         const groupsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups`, {
           headers: {
@@ -199,13 +238,17 @@ const GroupsPage: React.FC = () => {
           const updatedGroups = await groupsResponse.json();
           setGroups(updatedGroups);
         }
+      } else {
+        console.error('Failed to join group:', response.status);
+        alert('Failed to join group. Please try again.');
       }
-    } catch {
-      // Silent error handling
+    } catch (error) {
+      console.error('Error joining group:', error);
     }
   };
 
   const handleEditGroup = (group: Group) => {
+    console.log('Editing group:', group);
     setEditingGroup(group);
     setFormData({
       name: group.name,
@@ -223,8 +266,11 @@ const GroupsPage: React.FC = () => {
     if (!editingGroup) return;
     
     try {
+      console.log('Updating group:', editingGroup._id);
+      
       const token = localStorage.getItem('token');
       if (!token) {
+        console.log('No token found for updating group');
         return;
       }
 
@@ -245,8 +291,11 @@ const GroupsPage: React.FC = () => {
         body: formDataToSend
       });
 
+      console.log('Update group response status:', response.status);
+
       if (response.ok) {
         const updatedGroup = await response.json();
+        console.log('Group updated successfully:', updatedGroup);
         setGroups(prev => prev.map(g => g._id === editingGroup._id ? updatedGroup : g));
         setShowEditModal(false);
         setEditingGroup(null);
@@ -256,9 +305,13 @@ const GroupsPage: React.FC = () => {
           privacy: 'public',
           category: 'general'
         });
+        alert('Group updated successfully!');
+      } else {
+        console.error('Failed to update group:', response.status);
+        alert('Failed to update group. Please try again.');
       }
-    } catch {
-      // Silent error handling
+    } catch (error) {
+      console.error('Error updating group:', error);
     }
   };
 
@@ -266,8 +319,11 @@ const GroupsPage: React.FC = () => {
     if (!confirm('Are you sure you want to delete this group?')) return;
     
     try {
+      console.log('Deleting group:', groupId);
+      
       const token = localStorage.getItem('token');
       if (!token) {
+        console.log('No token found for deleting group');
         return;
       }
 
@@ -278,11 +334,18 @@ const GroupsPage: React.FC = () => {
         }
       });
 
+      console.log('Delete group response status:', response.status);
+
       if (response.ok) {
+        console.log('Group deleted successfully');
         setGroups(prev => prev.filter(g => g._id !== groupId));
+        alert('Group deleted successfully!');
+      } else {
+        console.error('Failed to delete group:', response.status);
+        alert('Failed to delete group. Please try again.');
       }
-    } catch {
-      // Silent error handling
+    } catch (error) {
+      console.error('Error deleting group:', error);
     }
   };
 
@@ -300,21 +363,30 @@ const GroupsPage: React.FC = () => {
       return null;
     })();
     
+    console.log('Filtering groups for tab:', activeTab, 'User ID:', userId);
+    console.log('Total groups:', groups.length);
+    
     switch (activeTab) {
       case 'My Groups':
-        return groups.filter(group => 
+        const myGroups = groups.filter(group => 
           group.creator._id === userId || 
           group.members.some(member => member.user._id === userId && member.role === 'admin')
         );
+        console.log('My Groups count:', myGroups.length);
+        return myGroups;
       case 'Suggested groups':
-        return groups.filter(group => 
+        const suggestedGroups = groups.filter(group => 
           group.privacy === 'public' && 
           !group.members.some(member => member.user._id === userId)
         );
+        console.log('Suggested Groups count:', suggestedGroups.length);
+        return suggestedGroups;
       case 'Joined Groups':
-        return groups.filter(group => 
+        const joinedGroups = groups.filter(group => 
           group.members.some(member => member.user._id === userId)
         );
+        console.log('Joined Groups count:', joinedGroups.length);
+        return joinedGroups;
       default:
         return [];
     }
@@ -375,7 +447,7 @@ const GroupsPage: React.FC = () => {
         <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
           <div className="flex items-center gap-1">
             <Users className="w-4 h-4" />
-              <span>{group.stats.memberCount.toLocaleString()} members</span>
+              <span>{group.stats?.memberCount || 0} members</span>
             </div>
             <span>Created {new Date(group.createdAt).toLocaleDateString()}</span>
         </div>
@@ -439,14 +511,35 @@ const GroupsPage: React.FC = () => {
   );
 
   return (
-    <div className="w-full h-full overflow-y-auto scrollbar-hide">
+    <div className="w-full">
       
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+        <div className="px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Groups</h1>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Groups</h1>
+              {!loading && (
+                <p className="text-sm text-gray-500 mt-1">
+                  {getGroupsForTab().length} group{getGroupsForTab().length !== 1 ? 's' : ''} in {activeTab}
+                </p>
+              )}
+            </div>
             <div className="flex items-center space-x-2 sm:space-x-3">
+              {/* Refresh Button */}
+              <button
+                onClick={() => fetchGroups(true)}
+                disabled={refreshing}
+                className={`p-2 text-gray-400 hover:text-gray-600 transition-colors ${refreshing ? 'opacity-50' : ''}`}
+                title="Refresh groups"
+              >
+                <div className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </div>
+              </button>
+              
               <button className="p-2 text-gray-400 hover:text-gray-600 hidden sm:block">
                 <Search className="w-5 h-5" />
               </button>
@@ -536,8 +629,13 @@ const GroupsPage: React.FC = () => {
       )}
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {getGroupsForTab().length > 0 ? (
+      <div className="px-4 sm:px-6 py-6 sm:py-8">
+        {loading ? (
+          <div className="text-center py-12 sm:py-16">
+            <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-500">Loading groups...</p>
+          </div>
+        ) : getGroupsForTab().length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {getGroupsForTab().map((group) => (
               <GroupCard key={group._id} group={group} />

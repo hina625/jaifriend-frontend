@@ -43,13 +43,20 @@ const MarketplaceSeller: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'My Products') {
       setLoading(true);
-      fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/products')
-        .then(res => res.json())
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/products`)
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+          }
+          return res.json();
+        })
         .then(data => {
+          console.log('Products fetched:', data.length);
           setProducts(data);
           setLoading(false);
         })
-        .catch(() => {
+        .catch((error) => {
+          console.error('Error fetching products:', error);
           setError('Failed to load products');
           setLoading(false);
         });
@@ -91,6 +98,37 @@ const MarketplaceSeller: React.FC = () => {
 
   const handleSubmit = async () => {
     try {
+      const token = localStorage.getItem('token');
+      
+      // Check if token exists and is valid
+      if (!token || token === 'null' || token === 'undefined') {
+        alert('Please log in to create a product');
+        return;
+      }
+
+      // Validate required fields
+      if (!formData.name.trim()) {
+        alert('Product name is required');
+        return;
+      }
+
+      if (!formData.description.trim()) {
+        alert('Product description is required');
+        return;
+      }
+
+      if (!formData.price || parseFloat(formData.price) <= 0) {
+        alert('Valid price is required');
+        return;
+      }
+
+      if (formData.description.length < 10) {
+        alert('Description must be at least 10 characters long');
+        return;
+      }
+
+      console.log('Creating product with data:', formData);
+
       const form = new FormData();
       form.append('name', formData.name);
       form.append('description', formData.description);
@@ -102,21 +140,47 @@ const MarketplaceSeller: React.FC = () => {
       form.append('totalItemUnits', formData.totalItemUnits);
       if (formData.photos[0]) form.append('image', formData.photos[0]);
       
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/products', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/products`, {
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
         body: form
       });
       
+      console.log('Response status:', res.status);
+      
       if (res.ok) {
+        const productData = await res.json();
+        console.log('Product created successfully:', productData);
+        
         alert('Product created successfully!');
         setShowSellModal(false);
         resetForm();
+        
+        // Refresh products list
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/products`)
+          .then(res => res.json())
+          .then(data => {
+            setProducts(data);
+          })
+          .catch(() => {
+            setError('Failed to refresh products');
+          });
       } else {
-        const data = await res.json();
-        alert('Error: ' + data.error);
+        console.error('Server response error:', res.status, res.statusText);
+        try {
+          const data = await res.json();
+          console.error('Server error details:', data);
+          alert('Error: ' + (data.error || data.message || 'Failed to create product'));
+        } catch (parseError) {
+          console.error('Failed to parse error response:', parseError);
+          alert(`Server error: ${res.status} ${res.statusText}`);
+        }
       }
     } catch (err) {
-      alert('Network error');
+      console.error('Network error:', err);
+      alert('Network error occurred. Please check your connection and try again.');
     }
   };
 
@@ -143,9 +207,9 @@ const MarketplaceSeller: React.FC = () => {
   // Product Card Component
   const ProductCard: React.FC<{ product: any }> = ({ product }) => (
     <div className={`bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-all ${viewMode === 'list' ? 'flex items-center p-4 gap-4' : 'flex flex-col'}`}>
-      {product.imageUrl && (
+      {product.image && (
         <img 
-          src={product.imageUrl} 
+          src={product.image} 
           alt={product.name} 
           className={`object-cover ${viewMode === 'list' ? 'w-16 h-16 sm:w-20 sm:h-20 rounded-lg flex-shrink-0' : 'w-full h-32 sm:h-40'}`}
         />
@@ -155,7 +219,10 @@ const MarketplaceSeller: React.FC = () => {
         <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate mb-1">{product.name}</h3>
         <p className="text-gray-600 text-xs sm:text-sm mb-1">{product.category}</p>
         <p className="text-blue-600 font-bold text-sm sm:text-base mb-1">{product.currency} {product.price}</p>
-        <p className="text-xs text-gray-400">{product.type}</p>
+        <p className="text-xs text-gray-400 mb-1">{product.type}</p>
+        {product.sellerName && (
+          <p className="text-xs text-gray-500">by {product.sellerName}</p>
+        )}
         
         {viewMode === 'list' && (
           <div className="flex items-center gap-2 mt-2">

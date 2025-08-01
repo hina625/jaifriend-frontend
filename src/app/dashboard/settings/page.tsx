@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Popup, { PopupState } from '@/components/Popup';
 
 interface UserSettings {
@@ -18,6 +19,7 @@ interface UserSettings {
 }
 
 const GeneralSettings = () => {
+  const router = useRouter();
   const [settings, setSettings] = useState<UserSettings>({
     username: '',
     email: '',
@@ -33,6 +35,7 @@ const GeneralSettings = () => {
     workplace: ''
   });
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [popup, setPopup] = useState<PopupState>({
     isOpen: false,
     type: 'info',
@@ -44,33 +47,63 @@ const GeneralSettings = () => {
     loadUserSettings();
   }, []);
 
-  const loadUserSettings = () => {
+  const loadUserSettings = async () => {
     try {
-      // Load from localStorage
+      const token = localStorage.getItem('token');
+      if (!token) {
+        // Fallback to localStorage if no token
       const savedSettings = localStorage.getItem('userSettings');
       if (savedSettings) {
-        const parsedSettings = JSON.parse(savedSettings);
-        setSettings(parsedSettings);
+          setSettings(JSON.parse(savedSettings));
+        }
+        setInitialLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        
+        // Map backend data to frontend settings
+        const mappedSettings = {
+          username: userData.username || '',
+          email: userData.email || '',
+          fullName: userData.fullName || userData.name || '',
+          name: userData.name || '',
+          birthday: userData.dateOfBirth || '',
+          phone: userData.phone || '',
+          gender: userData.gender || '',
+          country: userData.country || '',
+          bio: userData.bio || '',
+          location: userData.location || '',
+          website: userData.website || '',
+          workplace: userData.workplace || ''
+        };
+
+        setSettings(mappedSettings);
+        // Also save to localStorage as backup
+        localStorage.setItem('userSettings', JSON.stringify(mappedSettings));
       } else {
-        // Set empty default values
-        setSettings({
-          username: '',
-          email: '',
-          fullName: '',
-          name: '',
-          birthday: '',
-          phone: '',
-          gender: '',
-          country: '',
-          bio: '',
-          location: '',
-          website: '',
-          workplace: ''
-        });
+        // Fallback to localStorage if API fails
+        const savedSettings = localStorage.getItem('userSettings');
+        if (savedSettings) {
+          setSettings(JSON.parse(savedSettings));
+        }
       }
     } catch (error) {
-      console.error('Error loading user settings:', error);
-      showPopup('error', 'Error', 'Failed to load user settings. Please try again.');
+      console.error('Error fetching user settings:', error);
+      // Fallback to localStorage if network error
+      const savedSettings = localStorage.getItem('userSettings');
+      if (savedSettings) {
+        setSettings(JSON.parse(savedSettings));
+      }
+    } finally {
+      setInitialLoading(false);
     }
   };
 
@@ -115,10 +148,39 @@ const GeneralSettings = () => {
 
     setLoading(true);
     try {
-      // Save to localStorage
-      localStorage.setItem('userSettings', JSON.stringify(settings));
+      const token = localStorage.getItem('token');
+      if (token) {
+        // Map frontend settings to backend API format
+        const profileData = {
+          username: settings.username,
+          email: settings.email,
+          name: settings.name || settings.fullName,
+          fullName: settings.fullName,
+          dateOfBirth: settings.birthday,
+          phone: settings.phone,
+          gender: settings.gender,
+          country: settings.country,
+          bio: settings.bio,
+          location: settings.location,
+          website: settings.website,
+          workplace: settings.workplace
+        };
 
-      showPopup('success', 'Success', 'Settings saved successfully! Your profile has been updated.');
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/update`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(profileData)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Profile updated successfully:', result);
+          
+          // Save to localStorage as backup
+      localStorage.setItem('userSettings', JSON.stringify(settings));
       
       // Update localStorage with new user info for immediate UI update
       localStorage.setItem('userInfo', JSON.stringify({
@@ -128,6 +190,34 @@ const GeneralSettings = () => {
         name: settings.name
       }));
       
+          showPopup('success', 'Success', 'Settings saved successfully! Your profile has been updated.');
+          
+          // Dispatch event to notify other components
+          window.dispatchEvent(new CustomEvent('profileUpdated'));
+          
+          // Navigate to profile page after successful save
+          setTimeout(() => {
+            router.push('/dashboard/profile/me');
+          }, 1500);
+        } else {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update profile');
+        }
+      } else {
+        // Fallback to localStorage if no token
+        localStorage.setItem('userSettings', JSON.stringify(settings));
+        localStorage.setItem('userInfo', JSON.stringify({
+          username: settings.username,
+          email: settings.email,
+          fullName: settings.fullName,
+          name: settings.name
+        }));
+        
+        showPopup('success', 'Success', 'Settings saved successfully! (Saved locally)');
+        
+        // Dispatch event to notify other components
+        window.dispatchEvent(new CustomEvent('profileUpdated'));
+      }
     } catch (error: any) {
       console.error('Error saving settings:', error);
       const errorMessage = error.message || 'Failed to save settings. Please try again.';
@@ -136,6 +226,19 @@ const GeneralSettings = () => {
       setLoading(false);
     }
   };
+
+  if (initialLoading) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            <span className="ml-3 text-gray-600">Loading settings...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6">

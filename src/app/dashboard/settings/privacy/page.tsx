@@ -1,7 +1,7 @@
 "use client";
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Popup from '@/components/Popup';
 
 interface PrivacySettings {
@@ -25,6 +25,7 @@ interface PopupState {
 }
 
 const PrivacySettingsPage = () => {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [popup, setPopup] = useState<PopupState>({
     isOpen: false,
@@ -59,7 +60,7 @@ const PrivacySettingsPage = () => {
           return;
         }
 
-        const response = await fetch(`${API_URL}/api/settings/privacy/settings`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/privacy/settings`, { 
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -117,7 +118,7 @@ const PrivacySettingsPage = () => {
       
       if (token) {
         // Try backend API first
-        const response = await fetch(`${API_URL}/api/settings/privacy/settings`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/privacy/settings`, { 
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -135,6 +136,14 @@ const PrivacySettingsPage = () => {
           localStorage.setItem('privacySettings', JSON.stringify(result.data));
           
           showPopup('success', 'Success', 'Privacy settings saved successfully!');
+          
+          // Dispatch event to notify other components
+          window.dispatchEvent(new CustomEvent('privacySettingsUpdated'));
+          
+          // Navigate to profile page after successful save
+          setTimeout(() => {
+            router.push('/dashboard/profile/me');
+          }, 1500);
         } else {
           // Fallback to localStorage if API fails
           throw new Error('API failed, using localStorage');

@@ -8,6 +8,7 @@ export default function PopularPostsPage() {
   const [posts, setPosts] = useState<any[]>([]);
   const [albums, setAlbums] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [showSearch, setShowSearch] = useState(false);
@@ -20,17 +21,35 @@ export default function PopularPostsPage() {
     { id: 'trending', label: 'Trending', icon: TrendingUp },
   ];
 
-  const fetchPopularContent = async () => {
+  const fetchPopularContent = async (isRefresh = false) => {
     try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      console.log('Fetching popular content...');
+      
       const [postsResponse, albumsResponse] = await Promise.all([
-        fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts'),
-        fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/albums')
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums`)
       ]);
+      
+      if (!postsResponse.ok) {
+        throw new Error(`Posts API error: ${postsResponse.status}`);
+      }
+      
+      if (!albumsResponse.ok) {
+        throw new Error(`Albums API error: ${albumsResponse.status}`);
+      }
       
       const [postsData, albumsData] = await Promise.all([
         postsResponse.json(),
         albumsResponse.json()
       ]);
+      
+      console.log('📊 Popular posts fetched:', postsData.length);
+      console.log('📊 Popular albums fetched:', albumsData.length);
       
       setPosts(postsData);
       setAlbums(albumsData);
@@ -38,6 +57,7 @@ export default function PopularPostsPage() {
       console.error('Error fetching popular content:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -45,21 +65,38 @@ export default function PopularPostsPage() {
     fetchPopularContent();
   }, []);
 
-  // Listen for album creation events to refresh content
+  // Listen for content creation events to refresh content
   useEffect(() => {
     const handleAlbumCreated = () => {
-      fetchPopularContent();
+      console.log('Album created event received, refreshing popular content...');
+      fetchPopularContent(true);
     };
 
     const handleAlbumDeleted = () => {
-      fetchPopularContent();
+      console.log('Album deleted event received, refreshing popular content...');
+      fetchPopularContent(true);
+    };
+
+    const handlePostCreated = () => {
+      console.log('Post created event received, refreshing popular content...');
+      fetchPopularContent(true);
+    };
+
+    const handlePostDeleted = () => {
+      console.log('Post deleted event received, refreshing popular content...');
+      fetchPopularContent(true);
     };
 
     window.addEventListener('albumCreated', handleAlbumCreated);
     window.addEventListener('albumDeleted', handleAlbumDeleted);
+    window.addEventListener('postCreated', handlePostCreated);
+    window.addEventListener('postDeleted', handlePostDeleted);
+    
     return () => {
       window.removeEventListener('albumCreated', handleAlbumCreated);
       window.removeEventListener('albumDeleted', handleAlbumDeleted);
+      window.removeEventListener('postCreated', handlePostCreated);
+      window.removeEventListener('postDeleted', handlePostDeleted);
     };
   }, []);
 
@@ -70,10 +107,11 @@ export default function PopularPostsPage() {
     if (searchQuery) {
       filteredPosts = posts.filter(post => 
         post.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.content?.toLowerCase().includes(searchQuery.toLowerCase())
+        post.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        post.hashtag?.toLowerCase().includes(searchQuery.toLowerCase())
       );
       filteredAlbums = albums.filter(album => 
-        album.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        album.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         album.description?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
@@ -84,13 +122,29 @@ export default function PopularPostsPage() {
       case 'albums':
         return { posts: [], albums: filteredAlbums };
       case 'trending':
-        // Sort by engagement or date for trending
-        return { 
-          posts: filteredPosts.slice(0, 5), 
-          albums: filteredAlbums.slice(0, 3) 
-        };
+        // Sort by engagement (likes + comments + shares) for trending
+        const trendingPosts = [...filteredPosts].sort((a, b) => {
+          const aEngagement = (a.likes?.length || 0) + (a.comments?.length || 0) + (a.shares?.length || 0);
+          const bEngagement = (b.likes?.length || 0) + (b.comments?.length || 0) + (b.shares?.length || 0);
+          return bEngagement - aEngagement;
+        }).slice(0, 10);
+        
+        const trendingAlbums = [...filteredAlbums].sort((a, b) => {
+          const aEngagement = (a.likes?.length || 0) + (a.comments?.length || 0) + (a.shares?.length || 0);
+          const bEngagement = (b.likes?.length || 0) + (b.comments?.length || 0) + (b.shares?.length || 0);
+          return bEngagement - aEngagement;
+        }).slice(0, 5);
+        
+        return { posts: trendingPosts, albums: trendingAlbums };
       default:
-        return { posts: filteredPosts, albums: filteredAlbums };
+        // Sort by creation date for "all" filter
+        const sortedPosts = [...filteredPosts].sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        const sortedAlbums = [...filteredAlbums].sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        return { posts: sortedPosts, albums: sortedAlbums };
     }
   };
 
@@ -99,7 +153,7 @@ export default function PopularPostsPage() {
   const handlePostShare = async (postId: string, shareOptions?: any) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/${postId}/share', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/share`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -122,7 +176,7 @@ export default function PopularPostsPage() {
   const handlePostView = async (postId: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/${postId}/view', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/view`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -141,7 +195,7 @@ export default function PopularPostsPage() {
 
   const handleLike = async (postId: string) => {
     const token = localStorage.getItem('token');
-    const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/${postId}/like', { 
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/like`, { 
       method: 'POST',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -157,7 +211,7 @@ export default function PopularPostsPage() {
 
   const handleReaction = async (postId: string, reactionType: string) => {
     const token = localStorage.getItem('token');
-    const res = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/posts/${postId}/reaction', { 
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/reaction`, { 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -184,6 +238,39 @@ export default function PopularPostsPage() {
     );
   }
 
+  if (refreshing) {
+    return (
+      <div className="w-full">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 z-30">
+          <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button className="lg:hidden p-2 hover:bg-gray-100 rounded-full transition-colors">
+                  <ArrowLeft className="w-5 h-5 text-gray-600" />
+                </button>
+                <div>
+                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Popular Feed</h1>
+                  <p className="text-sm text-gray-500 hidden sm:block">
+                    Refreshing content...
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Loading Overlay */}
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="w-6 h-6 border-3 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+            <p className="text-gray-600 text-sm">Refreshing popular content...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
       {/* Header */}
@@ -199,10 +286,29 @@ export default function PopularPostsPage() {
                 <p className="text-sm text-gray-500 hidden sm:block">
                   Discover trending posts and albums
                 </p>
+                {!loading && (
+                  <p className="text-xs text-gray-400 sm:hidden">
+                    {posts.length + albums.length} items
+                  </p>
+                )}
               </div>
             </div>
             
             <div className="flex items-center gap-2">
+              {/* Refresh Button */}
+              <button
+                onClick={() => fetchPopularContent(true)}
+                disabled={refreshing}
+                className={`p-2 rounded-lg transition-colors ${refreshing ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'}`}
+                title="Refresh content"
+              >
+                <div className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </div>
+              </button>
+              
               {/* Search Toggle */}
               <button
                 onClick={() => setShowSearch(!showSearch)}

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Edit, Trash2, MoreVertical, Search, Filter, Camera, Video, Music, FileText, Plus, Heart, MessageCircle, Share2, Bookmark, Settings, Camera as CameraIcon, UserPlus, UserCheck, MapPin, Globe, Calendar, Phone, ArrowLeft, BarChart3, Users, Clock, Link as LinkIcon, Gift, Menu } from 'lucide-react';
+import { Edit, Trash2, MoreVertical, Search, Filter, Camera, Video, Music, FileText, Plus, Heart, MessageCircle, Share2, Bookmark, Settings, Camera as CameraIcon, UserPlus, UserCheck, MapPin, Globe, Calendar, Phone, BarChart3, Users, Clock, Link as LinkIcon, Gift } from 'lucide-react';
 import PostDisplay from '@/components/PostDisplay';
 import AlbumDisplay from '@/components/AlbumDisplay';
 import Popup, { PopupState } from '@/components/Popup';
@@ -88,7 +88,10 @@ export default function UserProfile() {
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [editContent, setEditContent] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [newAvatar, setNewAvatar] = useState<File | null>(null);
+  const [newCoverPhoto, setNewCoverPhoto] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>('');
+  const [coverPreview, setCoverPreview] = useState<string>('');
   const [popup, setPopup] = useState<PopupState>({
     isOpen: false,
     type: 'success',
@@ -125,6 +128,48 @@ export default function UserProfile() {
       fetchUserContent();
     }
   }, [actualUserId]);
+
+  // Listen for image updates from settings page
+  useEffect(() => {
+    const handleImagesUpdated = () => {
+      console.log('Images updated event received, refreshing profile...');
+      fetchUserProfile();
+    };
+
+    const handlePrivacySettingsUpdated = () => {
+      console.log('Privacy settings updated event received, refreshing profile...');
+      fetchUserProfile();
+    };
+
+    const handlePasswordChanged = () => {
+      console.log('Password changed event received, refreshing profile...');
+      fetchUserProfile();
+    };
+
+    window.addEventListener('imagesUpdated', handleImagesUpdated);
+    window.addEventListener('privacySettingsUpdated', handlePrivacySettingsUpdated);
+    window.addEventListener('passwordChanged', handlePasswordChanged);
+
+    return () => {
+      window.removeEventListener('imagesUpdated', handleImagesUpdated);
+      window.removeEventListener('privacySettingsUpdated', handlePrivacySettingsUpdated);
+      window.removeEventListener('passwordChanged', handlePasswordChanged);
+    };
+  }, []);
+
+  // Listen for profile updates from settings pages
+  useEffect(() => {
+    const handleProfileUpdated = () => {
+      console.log('Profile updated event received in dynamic profile page, refreshing profile...');
+      fetchUserProfile();
+    };
+
+    window.addEventListener('profileUpdated', handleProfileUpdated);
+
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdated);
+    };
+  }, []);
 
   const fetchUserProfile = async () => {
     try {
@@ -289,6 +334,110 @@ export default function UserProfile() {
     setEditingPost(post);
     setEditContent(post.content);
     setShowEditModal(true);
+  };
+
+  const handleEditProfile = () => {
+    if (user) {
+      router.push(`/dashboard/settings/profile`);
+    }
+  };
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNewAvatar(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setAvatarPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCoverPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNewCoverPhoto(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setCoverPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveAvatar = async () => {
+    if (!newAvatar) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const formData = new FormData();
+      formData.append('profilePhoto', newAvatar);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/upload/profile-photo`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        showPopup('success', 'Success', 'Profile picture updated successfully');
+        setNewAvatar(null);
+        setAvatarPreview('');
+        fetchUserProfile(); // Refresh user data
+        
+        // Dispatch event to notify other components
+        window.dispatchEvent(new CustomEvent('imagesUpdated'));
+      } else {
+        const errorData = await response.json();
+        showPopup('error', 'Error', errorData.error || 'Failed to update profile picture');
+      }
+    } catch (error) {
+      console.error('Error updating profile picture:', error);
+      showPopup('error', 'Error', 'Failed to update profile picture');
+    }
+  };
+
+  const handleSaveCoverPhoto = async () => {
+    if (!newCoverPhoto) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const formData = new FormData();
+      formData.append('coverPhoto', newCoverPhoto);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/upload/cover-photo`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        showPopup('success', 'Success', 'Cover photo updated successfully');
+        setNewCoverPhoto(null);
+        setCoverPreview('');
+        fetchUserProfile(); // Refresh user data
+        
+        // Dispatch event to notify other components
+        window.dispatchEvent(new CustomEvent('imagesUpdated'));
+      } else {
+        const errorData = await response.json();
+        showPopup('error', 'Error', errorData.error || 'Failed to update cover photo');
+      }
+    } catch (error) {
+      console.error('Error updating cover photo:', error);
+      showPopup('error', 'Error', 'Failed to update cover photo');
+    }
   };
 
   const handleDeletePost = async (postId: string) => {
@@ -463,71 +612,37 @@ export default function UserProfile() {
 
   return (
     <div className="w-full min-h-screen bg-gray-50 overflow-x-hidden max-w-full">
-      {/* Header with Back Button and More Options */}
-      <div className="bg-white shadow-sm border-b sticky top-0 z-30">
-        <div className="w-full px-3 py-3">
-          <div className="flex items-center justify-between">
-            <button 
-              onClick={() => router.back()}
-              className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-              <span className="text-sm sm:text-base">Back</span>
-            </button>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => setShowMobileMenu(!showMobileMenu)}
-                className="sm:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <Menu className="w-5 h-5" />
-              </button>
-              <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-                <MoreVertical className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Menu Dropdown */}
-      {showMobileMenu && (
-        <div className="sm:hidden bg-white border-b shadow-sm z-35">
-          <div className="px-3 py-2 space-y-2">
-            {!isCurrentUser ? (
-              <>
-                <button 
-                  onClick={handleMessage}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  Message
-                </button>
-                <button 
-                  onClick={handleFollow}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-left text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  {isFollowing ? 'Unfollow' : 'Follow'}
-                </button>
-              </>
-            ) : (
-              <button className="w-full flex items-center gap-2 px-3 py-2 text-left text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm">
-                <Edit className="w-4 h-4" />
-                Edit Profile
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Cover Photo Section */}
       <div className="relative h-32 sm:h-48 md:h-64 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-800 overflow-hidden">
-        {user.coverPhoto && (
-          <img
-            src={getMediaUrl(user.coverPhoto)}
-            alt="Cover"
-            className="w-full h-full object-cover"
-          />
+        <img
+          src={coverPreview || getMediaUrl(user.coverPhoto || '')}
+          alt="Cover"
+          className="w-full h-full object-cover"
+        />
+        {isCurrentUser && (
+          <>
+            <label className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center cursor-pointer hover:bg-opacity-50 transition-colors">
+              <div className="text-white text-center">
+                <CameraIcon className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2" />
+                <span className="text-sm sm:text-base font-medium">Click to Change Cover Photo</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCoverPhotoUpload}
+                  className="hidden"
+                />
+              </div>
+            </label>
+            {newCoverPhoto && (
+              <button
+                onClick={handleSaveCoverPhoto}
+                className="absolute top-4 right-4 w-8 h-8 sm:w-10 sm:h-10 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600 transition-colors shadow-lg"
+                title="Save cover photo"
+              >
+                ✓
+              </button>
+            )}
+          </>
         )}
         {/* Particle effect overlay */}
         <div className="absolute inset-0" style={{
@@ -546,13 +661,32 @@ export default function UserProfile() {
               {/* Profile Picture */}
               <div className="relative">
                 <img
-                  src={getMediaUrl(user.avatar)}
+                  src={avatarPreview || getMediaUrl(user.avatar)}
                   alt={user.name}
                   className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white shadow-xl object-cover bg-gray-200"
                 />
-                <button className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 w-6 h-6 sm:w-8 sm:h-8 bg-gray-600 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-gray-700 transition-colors">
-                  <CameraIcon className="w-3 h-3 sm:w-4 sm:h-4" />
-                </button>
+                {isCurrentUser && (
+                  <>
+                    <label className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 w-6 h-6 sm:w-8 sm:h-8 bg-blue-500 text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-600 transition-colors shadow-lg">
+                      <CameraIcon className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    {newAvatar && (
+                      <button
+                        onClick={handleSaveAvatar}
+                        className="absolute top-1 right-1 w-6 h-6 sm:w-8 sm:h-8 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600 transition-colors shadow-lg text-xs"
+                        title="Save profile picture"
+                      >
+                        ✓
+                      </button>
+                    )}
+                  </>
+                )}
                 {user.isOnline && (
                   <div className="absolute bottom-3 right-3 sm:bottom-5 sm:right-5 w-3 h-3 sm:w-5 sm:h-5 bg-green-500 border-2 border-white rounded-full"></div>
                 )}
@@ -603,14 +737,19 @@ export default function UserProfile() {
                   <button className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition-colors">
                     <BarChart3 className="w-4 h-4" />
                   </button>
-                  <button className="flex items-center gap-1 px-3 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors text-sm">
-                    <Edit className="w-4 h-4" />
-                    <span>Edit</span>
-                  </button>
                   <button className="flex items-center gap-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm">
                     <FileText className="w-4 h-4" />
                     <span>Activities</span>
                   </button>
+                  {isCurrentUser && (
+                    <button 
+                      onClick={handleEditProfile}
+                      className="flex items-center gap-1 px-3 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors text-sm"
+                    >
+                      <Edit className="w-4 h-4" />
+                      <span>Edit Profile</span>
+                    </button>
+                  )}
                 </>
               )}
             </div>
@@ -638,12 +777,7 @@ export default function UserProfile() {
                     {isFollowing ? 'Following' : 'Follow'}
                   </button>
                 </>
-              ) : (
-                <button className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors text-sm">
-                  <Edit className="w-4 h-4" />
-                  Edit Profile
-                </button>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
@@ -881,12 +1015,7 @@ export default function UserProfile() {
       </div>
 
       {/* Floating Action Button */}
-      <button
-        onClick={() => router.push('/dashboard')}
-        className="fixed bottom-20 right-4 w-12 h-12 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center transition-colors z-50"
-      >
-        <Plus className="w-5 h-5" />
-      </button>
+      {/* Removed floating action button */}
 
       {/* Edit Post Modal */}
       {showEditModal && editingPost && (
@@ -920,6 +1049,9 @@ export default function UserProfile() {
           </div>
         </div>
       )}
+
+      {/* Edit Profile Modal */}
+      {/* Removed Edit Profile Modal */}
 
       {/* Popup */}
       <Popup popup={popup} onClose={closePopup} />

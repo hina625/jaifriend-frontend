@@ -1,5 +1,7 @@
 {
-  "/dashboard/albums/page": "app/dashboard/albums/page.js",
-  "/dashboard/settings/page": "app/dashboard/settings/page.js",
-  "/dashboard/page": "app/dashboard/page.js"
+  "/dashboard/settings/invitations/page": "app/dashboard/settings/invitations/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/dashboard/settings/privacy/page": "app/dashboard/settings/privacy/page.js",
+  "/dashboard/settings/notifications/page": "app/dashboard/settings/notifications/page.js",
+  "/dashboard/profile/[userId]/page": "app/dashboard/profile/[userId]/page.js"
 }

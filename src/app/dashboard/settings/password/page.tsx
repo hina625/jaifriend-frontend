@@ -1,6 +1,6 @@
 "use client";
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Popup, { PopupState } from '@/components/Popup';
 
 interface PasswordForm {
@@ -29,6 +29,8 @@ const ChangePasswordPage = () => {
     title: '',
     message: ''
   });
+
+  const router = useRouter();
 
   // Get token from localStorage
   const getToken = () => {
@@ -115,7 +117,7 @@ const ChangePasswordPage = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/api/settings/password/change`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/password/change`, { 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -135,6 +137,14 @@ const ChangePasswordPage = () => {
       }
       
       showPopup('success', 'Success', 'Password changed successfully! Please log in with your new password.');
+      
+      // Dispatch event to notify other components
+      window.dispatchEvent(new CustomEvent('passwordChanged'));
+      
+      // Navigate to profile page after successful password change
+      setTimeout(() => {
+        router.push('/dashboard/profile/me');
+      }, 2000);
       
       // Reset form
       setPasswordForm({
