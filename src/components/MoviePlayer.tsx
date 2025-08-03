@@ -17,6 +17,19 @@ const MoviePlayer: React.FC<MoviePlayerProps> = ({ movie, isOpen, onClose }) => 
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [showControls, setShowControls] = useState(true);
+
+  // Function to ensure video URL is HTTPS
+  const getSecureVideoUrl = (url: string) => {
+    if (!url) return '';
+    if (url.startsWith('http')) {
+      // Force HTTPS for any HTTP URLs
+      return url.replace('http://', 'https://');
+    }
+    // If it's a relative path, prefix with API URL
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+    const secureUrl = apiUrl.replace('http://', 'https://');
+    return `${secureUrl}${url}`;
+  };
   const videoRef = useRef<HTMLVideoElement>(null);
 
   if (!isOpen) return null;
@@ -103,7 +116,7 @@ const MoviePlayer: React.FC<MoviePlayerProps> = ({ movie, isOpen, onClose }) => 
           onPause={() => setIsPlaying(false)}
           onEnded={() => setIsPlaying(false)}
         >
-          <source src={movie.videoUrl} type="video/mp4" />
+          <source src={getSecureVideoUrl(movie.videoUrl)} type="video/mp4" />
           Your browser does not support the video tag.
         </video>
 
