@@ -39,6 +39,8 @@ const MarketplaceSeller: React.FC = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showDeletePopup, setShowDeletePopup] = useState(false);
+  const [deleteMessage, setDeleteMessage] = useState('');
 
   useEffect(() => {
     if (activeTab === 'My Products') {
@@ -52,6 +54,16 @@ const MarketplaceSeller: React.FC = () => {
         })
         .then(data => {
           console.log('Products fetched:', data.length);
+          console.log('Products data:', data);
+          // Log image information for each product
+          data.forEach((product: any, index: number) => {
+            console.log(`Product ${index + 1}:`, {
+              name: product.name,
+              image: product.image,
+              hasImage: !!product.image,
+              imageType: typeof product.image
+            });
+          });
           setProducts(data);
           setLoading(false);
         })
@@ -244,15 +256,79 @@ const MarketplaceSeller: React.FC = () => {
     resetForm();
   };
 
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/products/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        console.log('Product deleted successfully');
+        // Remove the product from the local state
+        setProducts(prevProducts => prevProducts.filter(product => product._id !== productId));
+        
+        // Show success popup
+        setDeleteMessage('Product deleted successfully!');
+        setShowDeletePopup(true);
+        
+        // Auto-hide popup after 3 seconds
+        setTimeout(() => {
+          setShowDeletePopup(false);
+          setDeleteMessage('');
+        }, 3000);
+      } else {
+        console.error('Failed to delete product:', response.status);
+        // Show error popup
+        setDeleteMessage('Failed to delete product. Please try again.');
+        setShowDeletePopup(true);
+        
+        // Auto-hide popup after 3 seconds
+        setTimeout(() => {
+          setShowDeletePopup(false);
+          setDeleteMessage('');
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      // Show error popup
+      setDeleteMessage('Error deleting product. Please try again.');
+      setShowDeletePopup(true);
+      
+      // Auto-hide popup after 3 seconds
+      setTimeout(() => {
+        setShowDeletePopup(false);
+        setDeleteMessage('');
+      }, 3000);
+    }
+  };
+
   // Product Card Component
   const ProductCard: React.FC<{ product: any }> = ({ product }) => (
     <div className={`bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-all ${viewMode === 'list' ? 'flex items-center p-4 gap-4' : 'flex flex-col'}`}>
-      {product.image && (
+      {product.image ? (
         <img 
           src={product.image} 
           alt={product.name} 
           className={`object-cover ${viewMode === 'list' ? 'w-16 h-16 sm:w-20 sm:h-20 rounded-lg flex-shrink-0' : 'w-full h-32 sm:h-40'}`}
+          onError={(e) => {
+            console.error('Image failed to load:', product.image);
+            e.currentTarget.style.display = 'none';
+          }}
         />
+      ) : (
+        <div className={`bg-gray-100 flex items-center justify-center ${viewMode === 'list' ? 'w-16 h-16 sm:w-20 sm:h-20 rounded-lg flex-shrink-0' : 'w-full h-32 sm:h-40'}`}>
+          <Package className="w-8 h-8 text-gray-400" />
+        </div>
       )}
       
       <div className={`${viewMode === 'list' ? 'flex-1 min-w-0' : 'p-3 sm:p-4'} flex flex-col`}>
@@ -272,7 +348,10 @@ const MarketplaceSeller: React.FC = () => {
             <button className="p-1.5 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded transition-colors">
               <Edit className="w-4 h-4" />
             </button>
-            <button className="p-1.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors">
+            <button 
+              onClick={() => handleDeleteProduct(product._id)}
+              className="p-1.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+            >
               <Trash2 className="w-4 h-4" />
             </button>
           </div>
@@ -292,6 +371,12 @@ const MarketplaceSeller: React.FC = () => {
               </button>
               <button className="p-1.5 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded transition-colors">
                 <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
+              </button>
+              <button 
+                onClick={() => handleDeleteProduct(product._id)}
+                className="p-1.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+              >
+                <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
               </button>
             </div>
           </div>
@@ -722,6 +807,36 @@ const MarketplaceSeller: React.FC = () => {
 
       {/* Mobile Bottom Safe Area */}
       <div className="sm:hidden h-safe-area-inset-bottom"></div>
+
+      {/* Delete Success/Error Popup */}
+      {showDeletePopup && (
+        <div className="fixed top-4 right-4 z-50 animate-in slide-in-from-top-2 duration-300">
+          <div className={`px-4 py-3 rounded-lg shadow-lg max-w-sm ${
+            deleteMessage.includes('successfully') 
+              ? 'bg-green-500 text-white' 
+              : 'bg-red-500 text-white'
+          }`}>
+            <div className="flex items-center gap-2">
+              <div className="flex-shrink-0">
+                {deleteMessage.includes('successfully') ? (
+                  <div className="w-5 h-5 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                  </div>
+                ) : (
+                  <X className="w-4 h-4" />
+                )}
+              </div>
+              <p className="text-sm font-medium">{deleteMessage}</p>
+              <button
+                onClick={() => setShowDeletePopup(false)}
+                className="ml-auto flex-shrink-0 text-white hover:text-gray-200 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
