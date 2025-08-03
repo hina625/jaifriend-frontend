@@ -310,6 +310,12 @@ const EventManagement: React.FC = () => {
         }
       }
       
+      // Additional debugging for location
+      console.log('=== Location Debug ===');
+      console.log('formData.location:', formData.location);
+      console.log('formData.location type:', typeof formData.location);
+      console.log('formData.location trimmed:', formData.location ? formData.location.trim() : 'null');
+      
       // Additional debugging for date validation
       console.log('=== Date Validation Debug ===');
       console.log('Start date string:', formData.startDate + 'T' + formData.startTime);
