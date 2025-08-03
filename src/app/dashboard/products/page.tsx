@@ -344,8 +344,21 @@ const MarketplaceSeller: React.FC = () => {
       productName: product.name,
       originalImage: product.image,
       processedImageUrl: imageUrl,
-      hasImage: !!product.image
+      hasImage: !!product.image,
+      imageType: typeof product.image,
+      imageLength: product.image ? product.image.length : 0
     });
+    
+    // Test if the image URL is accessible
+    if (imageUrl) {
+      fetch(imageUrl, { method: 'HEAD' })
+        .then(response => {
+          console.log(`✅ Image accessible: ${imageUrl} - Status: ${response.status}`);
+        })
+        .catch(error => {
+          console.error(`❌ Image not accessible: ${imageUrl} - Error:`, error);
+        });
+    }
     
     return (
       <div className={`bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-all ${viewMode === 'list' ? 'flex items-center p-4 gap-4' : 'flex flex-col'}`}>
