@@ -325,12 +325,16 @@ const MarketplaceSeller: React.FC = () => {
       }
       
       // If it's a relative path (local uploads), prefix with API URL
+      // Always use HTTPS to avoid mixed content errors
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
       
       // Remove leading slash if present to avoid double slashes
       const cleanPath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
       
-      return `${apiUrl}/${cleanPath}`;
+      // Ensure we're using HTTPS
+      const secureUrl = apiUrl.replace('http://', 'https://');
+      
+      return `${secureUrl}/${cleanPath}`;
     };
 
     const imageUrl = getImageUrl(product.image);
