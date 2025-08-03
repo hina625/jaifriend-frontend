@@ -328,13 +328,13 @@ const MarketplaceSeller: React.FC = () => {
       // Always use HTTPS to avoid mixed content errors
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
       
-      // Remove leading slash if present to avoid double slashes
-      const cleanPath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
-      
       // Ensure we're using HTTPS
       const secureUrl = apiUrl.replace('http://', 'https://');
       
-      return `${secureUrl}/${cleanPath}`;
+      // Ensure proper URL construction with forward slash
+      const cleanPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+      
+      return `${secureUrl}${cleanPath}`;
     };
 
     const imageUrl = getImageUrl(product.image);
