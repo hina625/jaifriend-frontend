@@ -372,9 +372,9 @@ export default function PostDisplay({
                 className="w-5 h-5 sm:w-6 sm:h-6 rounded-full flex-shrink-0" 
               />
               <div className="flex-1 min-w-0">
-                {comment.user?.userId ? (
+                {comment.user?.userId || comment.user?._id ? (
                   <a 
-                    href={`/dashboard/profile/${String(comment.user.userId)}`} 
+                    href={`/dashboard/profile/${String(comment.user.userId || comment.user._id)}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-xs sm:text-sm font-medium hover:underline cursor-pointer truncate block"

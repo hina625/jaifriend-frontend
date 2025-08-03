@@ -55,8 +55,9 @@ const FeedPost: React.FC<FeedPostProps> = ({
   };
 
   const navigateToProfile = () => {
-    if (post.user?.userId) {
-      router.push(`/dashboard/profile/${post.user.userId}`);
+    const userId = post.user?.userId || post.user?._id;
+    if (userId) {
+      router.push(`/dashboard/profile/${userId}`);
     }
   };
 
