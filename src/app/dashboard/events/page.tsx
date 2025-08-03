@@ -309,6 +309,16 @@ const EventManagement: React.FC = () => {
           console.log(`${key}: ${value}`);
         }
       }
+      
+      // Additional debugging for date validation
+      console.log('=== Date Validation Debug ===');
+      console.log('Start date string:', formData.startDate + 'T' + formData.startTime);
+      console.log('End date string:', formData.endDate + 'T' + formData.endTime);
+      console.log('Start date ISO:', startDateTime.toISOString());
+      console.log('End date ISO:', endDateTime.toISOString());
+      console.log('Current time:', now.toISOString());
+      console.log('Start date valid:', !isNaN(startDateTime.getTime()));
+      console.log('End date valid:', !isNaN(endDateTime.getTime()));
 
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`;
       console.log('Making request to:', apiUrl);
@@ -369,6 +379,7 @@ const EventManagement: React.FC = () => {
         try {
           const data = await res.json();
           console.error('Server error details:', data);
+          console.error('Full error response:', JSON.stringify(data, null, 2));
           errorMessage = data.error || data.message || data.details || errorMessage;
         } catch (parseError) {
           console.error('Failed to parse error response:', parseError);
