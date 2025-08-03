@@ -203,7 +203,7 @@ const GroupsPage: React.FC = () => {
         
         try {
           const errorData = await response.json();
-          console.error('Error details:', errorData);
+        console.error('Error details:', errorData);
           errorMessage = errorData.error || errorData.message || errorMessage;
         } catch (parseError) {
           console.error('Failed to parse error response:', parseError);
@@ -422,7 +422,7 @@ const GroupsPage: React.FC = () => {
     }
     
     switch (activeTab) {
-              case 'My Groups':
+      case 'My Groups':
           const myGroups = groups.filter(group => {
             const creatorId = typeof group.creator === 'object' ? group.creator?._id : group.creator;
             const isCreator = creatorId === userId;
@@ -433,10 +433,10 @@ const GroupsPage: React.FC = () => {
             console.log(`Group ${group.name}: creator=${isCreator}, admin=${isAdmin}`);
             return isCreator || isAdmin;
           });
-          console.log('My Groups count:', myGroups.length);
-          return myGroups;
+        console.log('My Groups count:', myGroups.length);
+        return myGroups;
           
-        case 'Suggested groups':
+      case 'Suggested groups':
           const suggestedGroups = groups.filter(group => {
             const isPublic = group.privacy === 'public';
             const isNotMember = !group.members?.some(member => {
@@ -447,10 +447,10 @@ const GroupsPage: React.FC = () => {
             const isNotCreator = creatorId !== userId;
             return isPublic && isNotMember && isNotCreator;
           });
-          console.log('Suggested Groups count:', suggestedGroups.length);
-          return suggestedGroups;
+        console.log('Suggested Groups count:', suggestedGroups.length);
+        return suggestedGroups;
           
-        case 'Joined Groups':
+      case 'Joined Groups':
           const joinedGroups = groups.filter(group => {
             const isMember = group.members?.some(member => {
               const memberId = typeof member.user === 'object' ? member.user?._id : member.user;
@@ -460,8 +460,8 @@ const GroupsPage: React.FC = () => {
             const isCreator = creatorId === userId;
             return isMember || isCreator;
           });
-          console.log('Joined Groups count:', joinedGroups.length);
-          return joinedGroups;
+        console.log('Joined Groups count:', joinedGroups.length);
+        return joinedGroups;
         
       default:
         return [];
