@@ -313,23 +313,58 @@ const MarketplaceSeller: React.FC = () => {
   };
 
   // Product Card Component
-  const ProductCard: React.FC<{ product: any }> = ({ product }) => (
-    <div className={`bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-all ${viewMode === 'list' ? 'flex items-center p-4 gap-4' : 'flex flex-col'}`}>
-      {product.image ? (
-        <img 
-          src={product.image} 
-          alt={product.name} 
-          className={`object-cover ${viewMode === 'list' ? 'w-16 h-16 sm:w-20 sm:h-20 rounded-lg flex-shrink-0' : 'w-full h-32 sm:h-40'}`}
-          onError={(e) => {
-            console.error('Image failed to load:', product.image);
-            e.currentTarget.style.display = 'none';
-          }}
-        />
-      ) : (
-        <div className={`bg-gray-100 flex items-center justify-center ${viewMode === 'list' ? 'w-16 h-16 sm:w-20 sm:h-20 rounded-lg flex-shrink-0' : 'w-full h-32 sm:h-40'}`}>
-          <Package className="w-8 h-8 text-gray-400" />
-        </div>
-      )}
+  const ProductCard: React.FC<{ product: any }> = ({ product }) => {
+    // Helper function to get the correct image URL
+    const getImageUrl = (imagePath: string): string | undefined => {
+      if (!imagePath) return undefined;
+      
+      // If it's already a full URL (starts with http/https), return as is
+      // This handles Cloudinary URLs and other external URLs
+      if (imagePath.startsWith('http')) {
+        return imagePath;
+      }
+      
+      // If it's a relative path (local uploads), prefix with API URL
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+      
+      // Remove leading slash if present to avoid double slashes
+      const cleanPath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
+      
+      return `${apiUrl}/${cleanPath}`;
+    };
+
+    const imageUrl = getImageUrl(product.image);
+    
+    // Debug logging
+    console.log('Product image debug:', {
+      productName: product.name,
+      originalImage: product.image,
+      processedImageUrl: imageUrl,
+      hasImage: !!product.image
+    });
+    
+    return (
+      <div className={`bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-all ${viewMode === 'list' ? 'flex items-center p-4 gap-4' : 'flex flex-col'}`}>
+        {imageUrl ? (
+          <img 
+            src={imageUrl} 
+            alt={product.name} 
+            className={`object-cover ${viewMode === 'list' ? 'w-16 h-16 sm:w-20 sm:h-20 rounded-lg flex-shrink-0' : 'w-full h-32 sm:h-40'}`}
+            onError={(e) => {
+              console.error('❌ Image failed to load:', {
+                imageUrl,
+                originalPath: product.image,
+                productName: product.name,
+                productId: product._id
+              });
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        ) : (
+          <div className={`bg-gray-100 flex items-center justify-center ${viewMode === 'list' ? 'w-16 h-16 sm:w-20 sm:h-20 rounded-lg flex-shrink-0' : 'w-full h-32 sm:h-40'}`}>
+            <Package className="w-8 h-8 text-gray-400" />
+          </div>
+        )}
       
       <div className={`${viewMode === 'list' ? 'flex-1 min-w-0' : 'p-3 sm:p-4'} flex flex-col`}>
         <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate mb-1">{product.name}</h3>
@@ -384,6 +419,7 @@ const MarketplaceSeller: React.FC = () => {
       )}
     </div>
   );
+  };
 
   // My Products Page
   const MyProductsPage: React.FC = () => (
