@@ -17,6 +17,48 @@ function getUserAvatar() {
   }
 }
 
+function getUserId(user: any): string {
+  if (!user) return '';
+  
+  console.log('Getting user ID for user:', user);
+  
+  // Handle different possible user ID formats
+  if (typeof user._id === 'string') {
+    console.log('Using string _id:', user._id);
+    return user._id;
+  }
+  if (typeof user.id === 'string') {
+    console.log('Using string id:', user.id);
+    return user.id;
+  }
+  if (typeof user.userId === 'string') {
+    console.log('Using string userId:', user.userId);
+    return user.userId;
+  }
+  
+  // Handle object IDs (MongoDB ObjectId)
+  if (user._id && typeof user._id === 'object' && user._id.toString) {
+    const id = user._id.toString();
+    console.log('Using object _id.toString():', id);
+    return id;
+  }
+  if (user.id && typeof user.id === 'object' && user.id.toString) {
+    const id = user.id.toString();
+    console.log('Using object id.toString():', id);
+    return id;
+  }
+  if (user.userId && typeof user.userId === 'object' && user.userId.toString) {
+    const id = user.userId.toString();
+    console.log('Using object userId.toString():', id);
+    return id;
+  }
+  
+  // Fallback
+  const fallbackId = String(user._id || user.id || user.userId || '');
+  console.log('Using fallback ID:', fallbackId);
+  return fallbackId;
+}
+
 export default function Dashboard() {
   const [posts, setPosts] = useState<any[]>([]);
   const [albums, setAlbums] = useState<any[]>([]);
@@ -1010,7 +1052,7 @@ export default function Dashboard() {
                             <div className="flex items-center flex-1">
                               {item.user ? (
                                 <a 
-                                  href={`/dashboard/profile/${String(item.user._id || item.user.id || item.user.userId || '')}`}
+                                  href={`/dashboard/profile/${getUserId(item.user)}`}
                                   target="_blank" 
                                   rel="noopener noreferrer"
                                 >
@@ -1030,7 +1072,7 @@ export default function Dashboard() {
                               <div className="flex-1 min-w-0">
                                 {item.user ? (
                                   <a 
-                                    href={`/dashboard/profile/${String(item.user._id || item.user.id || item.user.userId || '')}`} 
+                                    href={`/dashboard/profile/${getUserId(item.user)}`} 
                                     target="_blank" 
                                     rel="noopener noreferrer"
                                     className="font-semibold text-sm sm:text-base hover:underline cursor-pointer truncate block"
