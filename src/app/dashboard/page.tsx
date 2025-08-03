@@ -1494,9 +1494,9 @@ export default function Dashboard() {
                                     <img src={comment.user?.avatar || '/avatars/1.png.png'} alt="avatar" className="w-6 h-6 rounded-full flex-shrink-0" />
                                     <div className="flex-1 min-w-0">
                                       <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
-                                        {comment.user?.userId ? (
+                                        {comment.user?.userId || comment.user?._id ? (
                                           <a 
-                                            href={`/dashboard/profile/${String(comment.user.userId)}`} 
+                                            href={`/dashboard/profile/${String(comment.user.userId || comment.user._id)}`} 
                                             target="_blank" 
                                             rel="noopener noreferrer"
                                             className="font-medium text-xs sm:text-sm hover:underline cursor-pointer"
