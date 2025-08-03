@@ -64,7 +64,12 @@ function extractYoutubeId(url: string) {
 function getMediaUrl(url: string) {
   if (!url) return '';
   if (url.startsWith('http')) return url;
-  return `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
+  
+  // Always use HTTPS to avoid mixed content errors
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+  const secureUrl = apiUrl.replace('http://', 'https://');
+  
+  return `${secureUrl}${url}`;
 }
 
 const WatchPage: React.FC = () => {
