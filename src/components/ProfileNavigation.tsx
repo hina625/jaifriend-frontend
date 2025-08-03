@@ -8,7 +8,8 @@ interface ProfileNavigationProps {
 }
 
 interface User {
-  id: string;
+  id?: string;
+  _id?: string;
   name: string;
   username: string;
   avatar: string;
@@ -36,6 +37,7 @@ export default function ProfileNavigation({ className = '' }: ProfileNavigationP
 
       if (response.ok) {
         const userData = await response.json();
+        console.log('User data received from API:', userData);
         setUser(userData);
       }
     } catch (error) {
@@ -50,7 +52,18 @@ export default function ProfileNavigation({ className = '' }: ProfileNavigationP
 
   const navigateToProfile = () => {
     if (user) {
-      window.open(`/dashboard/profile/${user.id}`, '_blank');
+      // Get user ID from either id or _id field
+      const userId = user.id || user._id;
+      
+      console.log('Navigating to profile with user ID:', userId);
+      console.log('User object:', user);
+      
+      if (userId) {
+        window.open(`/dashboard/profile/${userId}`, '_blank');
+      } else {
+        console.error('No valid user ID found:', user);
+        alert('Unable to navigate to profile - user ID not found');
+      }
     }
   };
 
