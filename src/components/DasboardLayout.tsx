@@ -1027,13 +1027,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           </>
         ) : (
           <>
-            {/* Collapse Toggle Button */}
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="fixed left-2 top-20 z-30 w-8 h-8 bg-[#022e8a] text-white rounded-full flex items-center justify-center shadow-lg hover:bg-[#034bb3] transition-colors"
-            >
-              {sidebarCollapsed ? '→' : '←'}
-            </button>
+            {/* Collapse Toggle Button - REMOVED */}
 
             <aside className={`bg-white border-r border-gray-200 overflow-y-auto overflow-x-hidden flex flex-col fixed left-0 top-0 h-screen transition-all duration-300 scrollbar-hide ${
               sidebarCollapsed ? 'w-16' : 'w-64'
@@ -1188,60 +1182,48 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   <>
                     {/* ME Section */}
                     <div className="mb-4">
-                      {!sidebarCollapsed && (
-                        <button 
-                          onClick={() => setMeOpen(!meOpen)} 
-                          className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
-                        >
-                          <h3 className="text-[#022e8a] font-bold text-sm">ME</h3>
-                          <span className={`text-[#022e8a] transition-transform duration-200 ${meOpen ? 'rotate-180' : ''}`}>▼</span>
-                        </button>
-                      )}
-                      {(meOpen || sidebarCollapsed) && (
-                        <div className={sidebarCollapsed ? '' : 'pl-2'}>
-                          {renderMenuItems(menuSections.me, sidebarCollapsed)}
-                        </div>
-                      )}
+                      <button 
+                        onClick={() => setMeOpen(!meOpen)} 
+                        className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                      >
+                        <h3 className="text-[#022e8a] font-bold text-sm">ME</h3>
+                        <span className={`text-[#022e8a] transition-transform duration-200 ${meOpen ? 'rotate-180' : ''}`}>▼</span>
+                      </button>
+                      <div className="pl-2">
+                        {renderMenuItems(menuSections.me, sidebarCollapsed)}
+                      </div>
                     </div>
 
                     {sidebarCollapsed && <div className="border-t border-gray-200 my-2"></div>}
 
                     {/* COMMUNITY Section */}
                     <div className="mb-4">
-                      {!sidebarCollapsed && (
-                        <button 
-                          onClick={() => setCommunityOpen(!communityOpen)} 
-                          className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
-                        >
-                          <h3 className="text-[#022e8a] font-bold text-sm">COMMUNITY</h3>
-                          <span className={`text-[#022e8a] transition-transform duration-200 ${communityOpen ? 'rotate-180' : ''}`}>▼</span>
-                        </button>
-                      )}
-                      {(communityOpen || sidebarCollapsed) && (
-                        <div className={sidebarCollapsed ? '' : 'pl-2'}>
-                          {renderMenuItems(menuSections.community, sidebarCollapsed)}
-                        </div>
-                      )}
+                      <button 
+                        onClick={() => setCommunityOpen(!communityOpen)} 
+                        className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                      >
+                        <h3 className="text-[#022e8a] font-bold text-sm">COMMUNITY</h3>
+                        <span className={`text-[#022e8a] transition-transform duration-200 ${communityOpen ? 'rotate-180' : ''}`}>▼</span>
+                      </button>
+                      <div className="pl-2">
+                        {renderMenuItems(menuSections.community, sidebarCollapsed)}
+                      </div>
                     </div>
 
                     {sidebarCollapsed && <div className="border-t border-gray-200 my-2"></div>}
 
                     {/* EXPLORE Section */}
                     <div className="mb-4">
-                      {!sidebarCollapsed && (
-                        <button 
-                          onClick={() => setExploreOpen(!exploreOpen)} 
-                          className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
-                        >
-                          <h3 className="text-[#022e8a] font-bold text-sm">EXPLORE</h3>
-                          <span className={`text-[#022e8a] transition-transform duration-200 ${exploreOpen ? 'rotate-180' : ''}`}>▼</span>
-                        </button>
-                      )}
-                      {(exploreOpen || sidebarCollapsed) && (
-                        <div className={sidebarCollapsed ? '' : 'pl-2'}>
-                          {renderMenuItems(menuSections.explore, sidebarCollapsed)}
-                        </div>
-                      )}
+                      <button 
+                        onClick={() => setExploreOpen(!exploreOpen)} 
+                        className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                      >
+                        <h3 className="text-[#022e8a] font-bold text-sm">EXPLORE</h3>
+                        <span className={`text-[#022e8a] transition-transform duration-200 ${exploreOpen ? 'rotate-180' : ''}`}>▼</span>
+                      </button>
+                      <div className="pl-2">
+                        {renderMenuItems(menuSections.explore, sidebarCollapsed)}
+                      </div>
                     </div>
                   </>
                 )}
