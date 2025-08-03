@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Users, Plus, Search, Upload, ArrowLeft, Menu, X } from 'lucide-react';
 import Popup, { PopupState } from '../../../components/Popup';
+import { useRouter } from 'next/navigation';
+import { isAuthenticated, getToken } from '../../../utils/auth';
 
 interface FormData {
   eventName: string;
@@ -23,6 +25,7 @@ interface OtherEventsPageProps {
 }
 
 const EventManagement: React.FC = () => {
+  const router = useRouter();
   const [currentRoute, setCurrentRoute] = useState<string>('/events');
   const [routeHistory, setRouteHistory] = useState<string[]>(['/events']);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
@@ -49,33 +52,69 @@ const EventManagement: React.FC = () => {
 
   useEffect(() => {
     if (currentRoute === '/events') {
-      const token = localStorage.getItem('token');
-      
-      if (!token || token === 'null' || token === 'undefined') {
-        console.error('No valid token found');
+      // Check if user is authenticated using the auth utility
+      if (!isAuthenticated()) {
+        console.error('❌ User not authenticated');
         setEvents([]);
+        handleAuthenticationError();
         return;
       }
 
-      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`, {
+      const token = getToken();
+      console.log('🔐 Checking authentication for events...');
+      console.log('🔐 Token exists:', !!token);
+      console.log('🔐 Token value:', token ? token.substring(0, 20) + '...' : 'null');
+      
+      if (!token || token === 'null' || token === 'undefined') {
+        console.error('❌ No valid token found');
+        setEvents([]);
+        handleAuthenticationError();
+        return;
+      }
+
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`;
+      console.log('🔐 Making request to:', apiUrl);
+      console.log('🔐 Authorization header:', `Bearer ${token.substring(0, 20)}...`);
+
+      fetch(apiUrl, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       })
-        .then(res => res.json())
+        .then(res => {
+          console.log('🔐 Response status:', res.status);
+          console.log('🔐 Response headers:', Object.fromEntries(res.headers.entries()));
+          
+          if (!res.ok) {
+            if (res.status === 401) {
+              console.error('❌ Authentication failed - token may be invalid');
+              handleAuthenticationError();
+              return Promise.reject(new Error('Authentication failed'));
+            }
+            return res.json().then(errorData => {
+              console.error('❌ API error:', errorData);
+              throw new Error(errorData.message || `HTTP ${res.status}`);
+            });
+          }
+          return res.json();
+        })
         .then(data => {
+          console.log('✅ Events data received:', data);
           // Ensure data is an array before setting it
           if (Array.isArray(data)) {
             setEvents(data);
           } else {
-            console.error('API returned non-array data:', data);
+            console.error('❌ API returned non-array data:', data);
             setEvents([]);
           }
         })
         .catch((error) => {
-          console.error('Error fetching events:', error);
+          console.error('❌ Error fetching events:', error);
           setEvents([]);
+          if (error.message !== 'Authentication failed') {
+            showPopup('error', 'Error', 'Failed to load events. Please try again.');
+          }
         });
     }
   }, [currentRoute]);
@@ -131,6 +170,14 @@ const EventManagement: React.FC = () => {
     setPopup({ isOpen: false, type: 'success', title: '', message: '' });
   };
 
+  const handleAuthenticationError = () => {
+    console.log('🔐 Handling authentication error - redirecting to login');
+    showPopup('error', 'Session Expired', 'Your session has expired. Please log in again.');
+    setTimeout(() => {
+      router.push('/');
+    }, 2000);
+  };
+
   const openCreateModal = () => {
     setShowCreateModal(true);
     // Reset form data
@@ -171,11 +218,17 @@ const EventManagement: React.FC = () => {
 
   const handleSubmit = async () => {
     try {
-      const token = localStorage.getItem('token');
+      // Check if user is authenticated
+      if (!isAuthenticated()) {
+        handleAuthenticationError();
+        return;
+      }
+
+      const token = getToken();
       
       // Check if token exists and is valid
       if (!token || token === 'null' || token === 'undefined') {
-        showPopup('error', 'Authentication Error', 'Please log in again');
+        handleAuthenticationError();
         return;
       }
 
@@ -200,6 +253,17 @@ const EventManagement: React.FC = () => {
       const endDateTime = new Date(formData.endDate + 'T' + formData.endTime);
       const now = new Date();
 
+      // Check if dates are valid
+      if (isNaN(startDateTime.getTime())) {
+        showPopup('error', 'Validation Error', 'Invalid start date or time format');
+        return;
+      }
+
+      if (isNaN(endDateTime.getTime())) {
+        showPopup('error', 'Validation Error', 'Invalid end date or time format');
+        return;
+      }
+
       if (startDateTime < now) {
         showPopup('error', 'Validation Error', 'Start date and time must be in the future');
         return;
@@ -219,12 +283,18 @@ const EventManagement: React.FC = () => {
       const form = new FormData();
       form.append('title', formData.eventName.trim());
       form.append('description', formData.eventDescription || '');
-      form.append('location[address]', formData.location || '');
-      form.append('location[coordinates]', '');
-      form.append('startDate', formData.startDate + 'T' + formData.startTime);
-      form.append('endDate', formData.endDate + 'T' + formData.endTime);
+      
+      // Handle location properly
+      if (formData.location && formData.location.trim()) {
+        form.append('location[address]', formData.location.trim());
+      }
+      
+      // Use the already validated dates
+      form.append('startDate', startDateTime.toISOString());
+      form.append('endDate', endDateTime.toISOString());
       form.append('category', 'social'); // Valid category from enum
       form.append('privacy', 'public');
+      
       if (image) {
         form.append('coverImage', image);
         console.log('Image file attached:', image.name, image.size, image.type);
@@ -332,11 +402,17 @@ const EventManagement: React.FC = () => {
     }
     
     try {
-      const token = localStorage.getItem('token');
+      // Check if user is authenticated
+      if (!isAuthenticated()) {
+        handleAuthenticationError();
+        return;
+      }
+
+      const token = getToken();
       
       // Check if token exists and is valid
       if (!token || token === 'null' || token === 'undefined') {
-        showPopup('error', 'Authentication Error', 'Please log in again');
+        handleAuthenticationError();
         return;
       }
 
@@ -416,11 +492,17 @@ const EventManagement: React.FC = () => {
     if (!editingEvent) return;
     
     try {
-      const token = localStorage.getItem('token');
+      // Check if user is authenticated
+      if (!isAuthenticated()) {
+        handleAuthenticationError();
+        return;
+      }
+
+      const token = getToken();
       
       // Check if token exists and is valid
       if (!token || token === 'null' || token === 'undefined') {
-        showPopup('error', 'Authentication Error', 'Please log in again');
+        handleAuthenticationError();
         return;
       }
 
@@ -444,6 +526,17 @@ const EventManagement: React.FC = () => {
       const startDateTime = new Date(formData.startDate + 'T' + formData.startTime);
       const endDateTime = new Date(formData.endDate + 'T' + formData.endTime);
 
+      // Check if dates are valid
+      if (isNaN(startDateTime.getTime())) {
+        showPopup('error', 'Validation Error', 'Invalid start date or time format');
+        return;
+      }
+
+      if (isNaN(endDateTime.getTime())) {
+        showPopup('error', 'Validation Error', 'Invalid end date or time format');
+        return;
+      }
+
       if (endDateTime <= startDateTime) {
         showPopup('error', 'Validation Error', 'End date and time must be after start date and time');
         return;
@@ -458,12 +551,18 @@ const EventManagement: React.FC = () => {
       const form = new FormData();
       form.append('title', formData.eventName.trim());
       form.append('description', formData.eventDescription || '');
-      form.append('location[address]', formData.location || '');
-      form.append('location[coordinates]', '');
-      form.append('startDate', formData.startDate + 'T' + formData.startTime);
-      form.append('endDate', formData.endDate + 'T' + formData.endTime);
+      
+      // Handle location properly
+      if (formData.location && formData.location.trim()) {
+        form.append('location[address]', formData.location.trim());
+      }
+      
+      // Use the already validated dates
+      form.append('startDate', startDateTime.toISOString());
+      form.append('endDate', endDateTime.toISOString());
       form.append('category', 'social'); // Valid category from enum
       form.append('privacy', 'public');
+      
       if (image) {
         form.append('coverImage', image);
         console.log('Image file attached:', image.name, image.size, image.type);
@@ -708,71 +807,71 @@ const EventManagement: React.FC = () => {
 
       {/* Create Event Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-sm sm:max-w-md lg:max-w-lg max-h-[85vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-4 sm:p-6 border-b sticky top-0 bg-white">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Create New Event</h2>
+            <div className="flex items-center justify-between p-3 sm:p-4 border-b sticky top-0 bg-white">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">Create New Event</h2>
               <button
                 onClick={closeCreateModal}
-                className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="text-gray-400 hover:text-gray-600 p-1.5 hover:bg-gray-100 rounded-full transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Modal Content */}
-            <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
+            <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
               {/* Event Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Event Name *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Event Name *</label>
                 <input
                   type="text"
                   name="eventName"
                   value={formData.eventName}
                   onChange={handleInputChange}
                   placeholder="Enter event name"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                   required
                 />
               </div>
 
               {/* Event Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
                 <textarea
                   name="eventDescription"
                   value={formData.eventDescription}
                   onChange={handleInputChange}
                   placeholder="Describe your event"
-                  rows={3}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm sm:text-base"
+                  rows={2}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
                 />
               </div>
 
               {/* Location */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Location</label>
                 <input
                   type="text"
                   name="location"
                   value={formData.location}
                   onChange={handleInputChange}
                   placeholder="Event location"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 />
               </div>
 
               {/* Start Date & Time */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Start Date & Time *</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Start Date & Time *</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <input
                     type="date"
                     name="startDate"
                     value={formData.startDate}
                     onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     required
                   />
                   <input
@@ -780,7 +879,7 @@ const EventManagement: React.FC = () => {
                     name="startTime"
                     value={formData.startTime}
                     onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     required
                   />
                 </div>
@@ -788,14 +887,14 @@ const EventManagement: React.FC = () => {
 
               {/* End Date & Time */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">End Date & Time *</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">End Date & Time *</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <input
                     type="date"
                     name="endDate"
                     value={formData.endDate}
                     onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     required
                   />
                   <input
@@ -803,7 +902,7 @@ const EventManagement: React.FC = () => {
                     name="endTime"
                     value={formData.endTime}
                     onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     required
                   />
                 </div>
@@ -811,8 +910,8 @@ const EventManagement: React.FC = () => {
 
               {/* Image Upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Event Image</label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Event Image</label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-gray-400 transition-colors">
                   <input 
                     type="file" 
                     accept="image/*" 
@@ -821,8 +920,8 @@ const EventManagement: React.FC = () => {
                     id="event-image-upload"
                   />
                   <label htmlFor="event-image-upload" className="cursor-pointer">
-                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600">Click to upload image</p>
+                    <Upload className="w-6 h-6 text-gray-400 mx-auto mb-1" />
+                    <p className="text-xs text-gray-600">Click to upload image</p>
                     {image && (
                       <p className="text-xs text-green-600 mt-1">Selected: {image.name}</p>
                     )}
@@ -832,17 +931,17 @@ const EventManagement: React.FC = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="flex flex-col sm:flex-row justify-end gap-3 p-4 sm:p-6 border-t bg-gray-50 sticky bottom-0">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 p-3 sm:p-4 border-t bg-gray-50 sticky bottom-0">
               <button
                 onClick={closeCreateModal}
-                className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base"
+                className="w-full sm:w-auto px-3 sm:px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={!formData.eventName.trim() || !formData.startDate || !formData.startTime || !formData.endDate || !formData.endTime}
-                className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium text-sm sm:text-base"
+                className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium text-sm"
               >
                 Create Event
               </button>
@@ -853,71 +952,71 @@ const EventManagement: React.FC = () => {
 
       {/* Edit Event Modal */}
       {showEditModal && editingEvent && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-sm sm:max-w-md lg:max-w-lg max-h-[85vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-4 sm:p-6 border-b sticky top-0 bg-white">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Edit Event</h2>
+            <div className="flex items-center justify-between p-3 sm:p-4 border-b sticky top-0 bg-white">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">Edit Event</h2>
               <button
                 onClick={closeEditModal}
-                className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="text-gray-400 hover:text-gray-600 p-1.5 hover:bg-gray-100 rounded-full transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Modal Content */}
-            <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
+            <div className="p-3 sm:p-4 space-y-3 sm:space-y-4">
               {/* Event Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Event Name *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Event Name *</label>
                 <input
                   type="text"
                   name="eventName"
                   value={formData.eventName}
                   onChange={handleInputChange}
                   placeholder="Enter event name"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                   required
                 />
               </div>
 
               {/* Event Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
                 <textarea
                   name="eventDescription"
                   value={formData.eventDescription}
                   onChange={handleInputChange}
                   placeholder="Describe your event"
-                  rows={3}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm sm:text-base"
+                  rows={2}
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
                 />
               </div>
 
               {/* Location */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Location</label>
                 <input
                   type="text"
                   name="location"
                   value={formData.location}
                   onChange={handleInputChange}
                   placeholder="Event location"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                 />
               </div>
 
               {/* Start Date & Time */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Start Date & Time *</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Start Date & Time *</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <input
                     type="date"
                     name="startDate"
                     value={formData.startDate}
                     onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     required
                   />
                   <input
@@ -925,7 +1024,7 @@ const EventManagement: React.FC = () => {
                     name="startTime"
                     value={formData.startTime}
                     onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     required
                   />
                 </div>
@@ -933,14 +1032,14 @@ const EventManagement: React.FC = () => {
 
               {/* End Date & Time */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">End Date & Time *</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">End Date & Time *</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <input
                     type="date"
                     name="endDate"
                     value={formData.endDate}
                     onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     required
                   />
                   <input
@@ -948,7 +1047,7 @@ const EventManagement: React.FC = () => {
                     name="endTime"
                     value={formData.endTime}
                     onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     required
                   />
                 </div>
@@ -956,8 +1055,8 @@ const EventManagement: React.FC = () => {
 
               {/* Image Upload */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Event Image</label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-gray-400 transition-colors">
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Event Image</label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-3 text-center hover:border-gray-400 transition-colors">
                   <input 
                     type="file" 
                     accept="image/*" 
@@ -966,8 +1065,8 @@ const EventManagement: React.FC = () => {
                     id="edit-event-image-upload"
                   />
                   <label htmlFor="edit-event-image-upload" className="cursor-pointer">
-                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600">Click to upload image</p>
+                    <Upload className="w-6 h-6 text-gray-400 mx-auto mb-1" />
+                    <p className="text-xs text-gray-600">Click to upload image</p>
                     {image && (
                       <p className="text-xs text-green-600 mt-1">Selected: {image.name}</p>
                     )}
@@ -977,17 +1076,17 @@ const EventManagement: React.FC = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="flex flex-col sm:flex-row justify-end gap-3 p-4 sm:p-6 border-t bg-gray-50 sticky bottom-0">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 p-3 sm:p-4 border-t bg-gray-50 sticky bottom-0">
               <button
                 onClick={closeEditModal}
-                className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm sm:text-base"
+                className="w-full sm:w-auto px-3 sm:px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm"
               >
                 Cancel
               </button>
               <button
                 onClick={handleUpdate}
                 disabled={!formData.eventName.trim() || !formData.startDate || !formData.startTime || !formData.endDate || !formData.endTime}
-                className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium text-sm sm:text-base"
+                className="w-full sm:w-auto px-3 sm:px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium text-sm"
               >
                 Update Event
               </button>
