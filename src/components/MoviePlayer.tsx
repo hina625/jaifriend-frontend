@@ -28,7 +28,11 @@ const MoviePlayer: React.FC<MoviePlayerProps> = ({ movie, isOpen, onClose }) => 
     // If it's a relative path, prefix with API URL
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
     const secureUrl = apiUrl.replace('http://', 'https://');
-    return `${secureUrl}${url}`;
+    
+    // Ensure proper URL construction with forward slash
+    const cleanPath = url.startsWith('/') ? url : `/${url}`;
+    
+    return `${secureUrl}${cleanPath}`;
   };
   const videoRef = useRef<HTMLVideoElement>(null);
 
