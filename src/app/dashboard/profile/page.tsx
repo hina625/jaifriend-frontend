@@ -827,6 +827,60 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleSaveCover(file);
+    }
+  };
+
+  const handleSaveCover = async (file: File) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showPopup('error', 'Authentication Error', 'Please log in again');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('cover', file);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/userimages/cover`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Cover uploaded successfully:', data);
+        
+        // Update local state
+        setUserImages(prev => ({
+          ...prev,
+          cover: data.cover
+        }));
+        
+        // Show success message
+        showPopup('success', 'Cover Updated!', 'Your cover photo has been updated successfully!');
+        
+        // Trigger profile update event to refresh navbar
+        window.dispatchEvent(new CustomEvent('profileUpdated'));
+        
+        // Refresh user images
+        fetchUserImages();
+      } else {
+        const errorData = await response.json();
+        showPopup('error', 'Upload Failed', errorData.error || 'Failed to upload cover photo');
+      }
+    } catch (error) {
+      console.error('Error uploading cover:', error);
+      showPopup('error', 'Upload Failed', 'Failed to upload cover photo. Please try again.');
+    }
+  };
+
   const handleSaveAvatar = async () => {
     if (!newAvatar) return;
     
@@ -928,10 +982,16 @@ const ProfilePage: React.FC = () => {
       
         {/* Cover actions */}
         <div className="absolute top-2 sm:top-4 right-2 sm:right-4 flex gap-1 sm:gap-2">
-          <button className="px-2 py-1 sm:px-3 sm:py-2 bg-black bg-opacity-20 text-white rounded-lg backdrop-blur-sm hover:bg-opacity-30 transition-all flex items-center gap-1 text-xs sm:text-sm">
+          <label className="px-2 py-1 sm:px-3 sm:py-2 bg-black bg-opacity-20 text-white rounded-lg backdrop-blur-sm hover:bg-opacity-30 transition-all flex items-center gap-1 text-xs sm:text-sm cursor-pointer">
             <CameraIcon className="w-3 h-3 sm:w-4 sm:h-4" />
             <span className="hidden xs:inline">Cover</span>
-          </button>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleCoverUpload}
+              className="hidden"
+            />
+          </label>
           <button className="p-1 sm:p-2 bg-black bg-opacity-20 text-white rounded-lg backdrop-blur-sm hover:bg-opacity-30 transition-all">
             <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
           </button>
@@ -946,7 +1006,7 @@ const ProfilePage: React.FC = () => {
             {/* Profile Picture */}
             <div className="relative">
               <img
-                src={avatarPreview || (userImages.avatar ? getMediaUrl(userImages.avatar) : getMediaUrl(user.avatar))}
+                src={avatarPreview || (userImages.avatar ? getMediaUrl(userImages.avatar) : (user.avatar && user.avatar !== '/avatars/1.png.png' ? getMediaUrl(user.avatar) : '/avatars/1.png.png'))}
                 alt={user.name}
                 className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white shadow-xl object-cover bg-gray-200"
               />
