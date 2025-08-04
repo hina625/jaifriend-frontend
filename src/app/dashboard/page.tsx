@@ -900,12 +900,12 @@ export default function Dashboard() {
           {/* Main content */}
           <div className="w-full xl:flex-1 max-w-none xl:max-w-2xl xl:mx-0 scrollbar-hide">
             {/* Post Creation */}
-            <div className="bg-white rounded-lg sm:rounded-xl shadow p-3 sm:p-4 mb-3 sm:mb-4">
+            <div className="bg-white dark:bg-dark-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 mb-3 sm:mb-4 transition-colors duration-200">
               <div className="flex items-center gap-2 mb-2 sm:mb-3">
                 <input
                   type="text"
                   placeholder="What's going on? #Hashtag.. @Mention.. Link.."
-                  className="flex-1 border rounded-full px-3 py-2 text-sm"
+                  className="flex-1 border border-gray-300 dark:border-dark-600 rounded-full px-3 py-2 text-sm bg-white dark:bg-dark-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   value={newPost}
                   onChange={e => setNewPost(e.target.value)}
                   disabled={posting}
@@ -947,7 +947,7 @@ export default function Dashboard() {
                   }}
                 />
                 <button
-                  className="bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-full text-xs sm:text-sm transition-colors"
+                  className="bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 px-3 py-2 rounded-full text-xs sm:text-sm transition-colors text-gray-700 dark:text-gray-300"
                   onClick={() => fileInputRef.current && fileInputRef.current.click()}
                   disabled={posting}
                   title="Add photos or videos"
@@ -955,7 +955,7 @@ export default function Dashboard() {
                   📷/🎥
                 </button>
                 <button
-                  className="bg-blue-500 text-white px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm"
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={handlePost}
                   disabled={posting || (!newPost.trim() && !mediaFiles.length)}
                 >
@@ -964,17 +964,17 @@ export default function Dashboard() {
               </div>
               {mediaFiles.length > 0 && (
                 <div className="mt-2">
-                  <div className="text-xs text-gray-600 mb-2">Selected files ({mediaFiles.length}):</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">Selected files ({mediaFiles.length}):</div>
                   <div className="flex flex-wrap gap-2">
                     {mediaFiles.map((file, index) => (
-                      <div key={index} className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-lg text-xs">
+                      <div key={index} className="flex items-center gap-2 bg-gray-100 dark:bg-dark-700 px-3 py-2 rounded-lg text-xs">
                         <div className="flex items-center gap-1">
                           <span className="text-lg">
                             {file.type.startsWith('image/') ? '🖼️' : '🎥'}
                           </span>
                           <div className="flex flex-col">
                             <span className="font-medium truncate max-w-[120px]">{file.name}</span>
-                            <span className="text-gray-500">{(file.size / 1024 / 1024).toFixed(1)}MB</span>
+                            <span className="text-gray-500 dark:text-gray-400">{(file.size / 1024 / 1024).toFixed(1)}MB</span>
                           </div>
                         </div>
                         <button
@@ -1015,8 +1015,8 @@ export default function Dashboard() {
             ) : (
               <>
                 {/* Feed Stats */}
-                <div className="bg-white rounded-lg sm:rounded-xl shadow p-3 sm:p-4 mb-3 sm:mb-4">
-                  <div className="flex items-center justify-between text-sm text-gray-600">
+                <div className="bg-white dark:bg-dark-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 mb-3 sm:mb-4 transition-colors duration-200">
+                                      <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
                     <div className="flex items-center gap-3 sm:gap-4">
                       <span className="flex items-center gap-1">
                         📝 <span className="font-medium">{posts.length}</span> posts
@@ -1064,7 +1064,7 @@ export default function Dashboard() {
                       );
                     } else {
                       return (
-                        <div key={item._id || item.id} className="bg-white rounded-lg sm:rounded-xl shadow p-3 sm:p-4 mb-3 sm:mb-4">
+                        <div key={item._id || item.id} className="bg-white dark:bg-dark-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 mb-3 sm:mb-4 transition-colors duration-200">
                           <div className="flex items-center gap-2 mb-2 sm:mb-3">
                             <div className="flex items-center flex-1">
                               {item.user ? (

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
+import DarkModeToggle from './DarkModeToggle';
 
 interface PopupState {
   isOpen: boolean;
@@ -550,7 +551,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       )}
 
       {/* Navbar */}
-      <nav className="w-full flex justify-center items-center px-4 py-2 z-50 fixed top-0 left-0 shadow-md border-b bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <nav className="w-full flex justify-center items-center px-4 py-2 z-50 fixed top-0 left-0 shadow-md border-b bg-white dark:bg-dark-800 border-gray-200 dark:border-dark-700 transition-colors duration-200">
         <div className="flex items-center gap-2 w-full max-w-7xl justify-between mx-auto">
           
           {/* Left Side - Mobile Menu + Logo */}
@@ -687,6 +688,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               </>
             )}
 
+            {/* Dark Mode Toggle */}
+            <DarkModeToggle size="sm" variant="icon" className="mr-2" />
+
             {/* Profile Avatar */}
             <div className="dropdown-container relative">
               <button
@@ -728,16 +732,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         {isMobile ? (
           <>
             {/* Main Sidebar */}
-            <aside className={`fixed left-0 top-0 w-64 h-screen bg-white border-r border-gray-200 shadow-xl overflow-y-auto overflow-x-hidden flex flex-col z-[60] transform transition-transform duration-300 ${
+            <aside className={`fixed left-0 top-0 w-64 h-screen bg-white dark:bg-dark-800 border-r border-gray-200 dark:border-dark-700 shadow-xl overflow-y-auto overflow-x-hidden flex flex-col z-[60] transform transition-transform duration-300 ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}>
-              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-gray-900 font-bold text-lg">
+              <div className="p-4 border-b border-gray-200 dark:border-dark-700 flex items-center justify-between">
+              <h2 className="text-gray-900 dark:text-white font-bold text-lg">
                 {isSettingsPage ? 'Settings' : 'Menu'}
               </h2>
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                className="w-8 h-8 rounded-full bg-gray-100 dark:bg-dark-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-dark-600 transition-colors text-gray-700 dark:text-gray-300"
               >
                 ✕
               </button>
@@ -1394,7 +1398,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
         {/* Main Content Area */}
         <main className={`
-          flex-1 transition-all duration-300 min-h-screen overflow-x-hidden
+          flex-1 transition-all duration-300 min-h-screen overflow-x-hidden bg-gray-50 dark:bg-dark-900
           ${isMobile 
             ? 'ml-0 pb-20' 
             : sidebarCollapsed 
@@ -1411,7 +1415,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
       {/* Mobile Bottom Navigation */}
       {isMobile && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50 overflow-x-hidden">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-dark-800 border-t border-gray-200 dark:border-dark-700 z-50 overflow-x-hidden transition-colors duration-200">
           <div className="flex justify-around items-center py-2 w-full max-w-full">
             <Link
               href="/dashboard"
