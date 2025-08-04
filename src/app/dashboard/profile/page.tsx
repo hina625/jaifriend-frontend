@@ -816,14 +816,19 @@ const ProfilePage: React.FC = () => {
 
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    console.log('🖼️ Avatar upload triggered:', file);
     if (file) {
+      console.log('📁 File selected:', file.name, file.size, file.type);
       setNewAvatar(file);
       const reader = new FileReader();
       reader.onload = (e) => {
+        console.log('🖼️ Preview generated');
         setAvatarPreview(e.target?.result as string);
       };
       reader.readAsDataURL(file);
       handleSaveAvatar();
+    } else {
+      console.log('❌ No file selected');
     }
   };
 
@@ -882,11 +887,16 @@ const ProfilePage: React.FC = () => {
   };
 
   const handleSaveAvatar = async () => {
-    if (!newAvatar) return;
+    console.log('💾 Starting avatar save process');
+    if (!newAvatar) {
+      console.log('❌ No avatar file to save');
+      return;
+    }
     
     try {
       setUploadingAvatar(true);
       const token = localStorage.getItem('token');
+      console.log('🔑 Token available:', !!token);
       if (!token) {
         showPopup('error', 'Authentication Error', 'Please log in again');
         return;
@@ -894,18 +904,25 @@ const ProfilePage: React.FC = () => {
 
       const formData = new FormData();
       formData.append('avatar', newAvatar);
+      console.log('📤 FormData created with file:', newAvatar.name);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/userimages/avatar`, {
+      const uploadUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/userimages/avatar`;
+      console.log('🌐 Upload URL:', uploadUrl);
+
+      const response = await fetch(uploadUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
         },
         body: formData
       });
+      
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response ok:', response.ok);
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Avatar uploaded successfully:', data);
+        console.log('✅ Avatar uploaded successfully:', data);
         
         // Update local state
         setUserImages(prev => ({
@@ -927,22 +944,24 @@ const ProfilePage: React.FC = () => {
         fetchUserImages();
       } else {
         const errorData = await response.json();
+        console.log('❌ Upload failed:', errorData);
         showPopup('error', 'Upload Failed', errorData.error || 'Failed to upload avatar');
       }
     } catch (error) {
-      console.error('Error uploading avatar:', error);
+      console.error('❌ Error uploading avatar:', error);
       showPopup('error', 'Upload Failed', 'Failed to upload avatar. Please try again.');
     } finally {
       setUploadingAvatar(false);
+      console.log('🏁 Avatar upload process completed');
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50 dark:bg-dark-900 flex items-center justify-center p-4 transition-colors duration-200">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-3 sm:mt-4 text-gray-600 text-sm sm:text-base">Loading profile...</p>
+          <p className="mt-3 sm:mt-4 text-gray-600 dark:text-gray-400 text-sm sm:text-base">Loading profile...</p>
         </div>
       </div>
     );
@@ -950,9 +969,9 @@ const ProfilePage: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50 dark:bg-dark-900 flex items-center justify-center p-4 transition-colors duration-200">
         <div className="text-center">
-          <p className="text-gray-600 text-sm sm:text-base">User not found</p>
+          <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">User not found</p>
         </div>
       </div>
     );
@@ -961,7 +980,7 @@ const ProfilePage: React.FC = () => {
   const filteredPosts = getFilteredPosts();
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 overflow-x-hidden max-w-full">
+    <div className="w-full min-h-screen bg-gray-50 dark:bg-dark-900 overflow-x-hidden max-w-full transition-colors duration-200">
       {/* Cover Photo Section */}
       <div className="relative h-32 sm:h-48 md:h-64 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-800 overflow-hidden">
         {userImages.cover ? (
@@ -983,7 +1002,7 @@ const ProfilePage: React.FC = () => {
         {/* Cover actions */}
         <div className="absolute top-2 sm:top-4 right-2 sm:right-4 flex gap-1 sm:gap-2">
           <label className="px-2 py-1 sm:px-3 sm:py-2 bg-black bg-opacity-20 text-white rounded-lg backdrop-blur-sm hover:bg-opacity-30 transition-all flex items-center gap-1 text-xs sm:text-sm cursor-pointer">
-            <CameraIcon className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="text-sm">📷</span>
             <span className="hidden xs:inline">Cover</span>
             <input
               type="file"
@@ -993,7 +1012,7 @@ const ProfilePage: React.FC = () => {
             />
           </label>
           <button className="p-1 sm:p-2 bg-black bg-opacity-20 text-white rounded-lg backdrop-blur-sm hover:bg-opacity-30 transition-all">
-            <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+            <span className="text-sm">➕</span>
           </button>
         </div>
       </div>
@@ -1014,7 +1033,7 @@ const ProfilePage: React.FC = () => {
                 {uploadingAvatar ? (
                   <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 ) : (
-                  <CameraIcon className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <span className="text-sm">📷</span>
                 )}
                 <input
                   type="file"
@@ -1031,8 +1050,8 @@ const ProfilePage: React.FC = () => {
 
             {/* User Info */}
             <div className="text-center">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 break-words">{user.name}</h1>
-              <p className="text-gray-600 text-sm sm:text-base mb-2">@{user.username}</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-1 break-words">{user.name}</h1>
+              <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base mb-2">@{user.username}</p>
             </div>
 
             {/* Action Buttons */}
