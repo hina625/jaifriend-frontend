@@ -170,7 +170,7 @@ export default function PostDisplay({
     <div className="bg-white rounded-xl shadow p-3 sm:p-4 mb-4 sm:mb-6">
       <div className="flex items-center gap-2 mb-3">
         <img 
-          src={post.user?.avatar || '/avatars/1.png.png'} 
+          src={post.user?.avatar ? getMediaUrl(post.user.avatar) : '/avatars/1.png.png'} 
           alt="avatar" 
           className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0" 
         />
@@ -373,7 +373,7 @@ export default function PostDisplay({
           {post.comments.slice(0, 3).map((comment: any, index: number) => (
             <div key={index} className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
               <img 
-                src={comment.user?.avatar || '/avatars/1.png.png'} 
+                src={comment.user?.avatar ? getMediaUrl(comment.user.avatar) : '/avatars/1.png.png'} 
                 alt="avatar" 
                 className="w-5 h-5 sm:w-6 sm:h-6 rounded-full flex-shrink-0" 
               />
