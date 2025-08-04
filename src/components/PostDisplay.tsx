@@ -175,9 +175,15 @@ export default function PostDisplay({
           className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0" 
         />
         <div className="flex-1 min-w-0">
-          {post.user?.userId || post.user?._id ? (
+          {post.user ? (
             <a 
-              href={`/dashboard/profile/${String(post.user.userId || post.user._id)}`} 
+              href={`/dashboard/profile/${(() => {
+                // Handle populated user object (when userId is the full user object)
+                if (post.user.userId && typeof post.user.userId === 'object' && post.user.userId._id) {
+                  return post.user.userId._id;
+                }
+                return String(post.user.userId || post.user._id || post.user.id || 'unknown');
+              })()}`} 
               className="font-semibold hover:underline cursor-pointer text-sm sm:text-base truncate block text-blue-600"
             >
               {post.user?.name || 'Unknown User'}
@@ -372,9 +378,15 @@ export default function PostDisplay({
                 className="w-5 h-5 sm:w-6 sm:h-6 rounded-full flex-shrink-0" 
               />
               <div className="flex-1 min-w-0">
-                {comment.user?.userId || comment.user?._id ? (
+                {comment.user ? (
                   <a 
-                    href={`/dashboard/profile/${String(comment.user.userId || comment.user._id)}`} 
+                    href={`/dashboard/profile/${(() => {
+                      // Handle populated user object (when userId is the full user object)
+                      if (comment.user.userId && typeof comment.user.userId === 'object' && comment.user.userId._id) {
+                        return comment.user.userId._id;
+                      }
+                      return String(comment.user.userId || comment.user._id || comment.user.id || 'unknown');
+                    })()}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-xs sm:text-sm font-medium hover:underline cursor-pointer truncate block"

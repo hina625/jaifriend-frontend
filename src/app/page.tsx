@@ -7,10 +7,10 @@ import { setToken } from '../utils/auth';
 import AuthGuard from '../components/AuthGuard';
 
 interface FormData {
-  username: string;
+  email: string;
   password: string;
   rememberDevice: boolean;
-  email?: string;
+  username?: string;
   confirmPassword?: string;
 }
 
@@ -136,10 +136,10 @@ export default function Home(): React.ReactElement {
   const router = useRouter();
   const [loginType, setLoginType] = useState<'username' | 'social'>('username');
   const [formData, setFormData] = useState<FormData>({
-    username: '',
+    email: '',
     password: '',
     rememberDevice: false,
-    email: '',
+    username: '',
     confirmPassword: ''
   });
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -202,8 +202,8 @@ export default function Home(): React.ReactElement {
 
   const handleSubmit = async (): Promise<void> => {
     // Validate form fields before API call
-    if (!formData.username.trim()) {
-      showPopup('error', 'Validation Error', 'Please enter your username.');
+    if (!formData.email.trim()) {
+      showPopup('error', 'Validation Error', 'Please enter your email.');
       return;
     }
     
@@ -217,14 +217,14 @@ export default function Home(): React.ReactElement {
     try {
       // Use actual API call instead of simulation
       const response = await loginApi({
-        username: formData.username.trim(),
+        email: formData.email.trim(),
         password: formData.password.trim()
       });
       
       if (response?.token) {
         // Store token using auth utility
         setToken(response.token);
-        localStorage.setItem('userEmail', formData.username.trim());
+        localStorage.setItem('userEmail', formData.email.trim());
         
         showPopup('success', 'Login Successful!', 'Welcome back! You will be redirected to your dashboard.');
         setTimeout(() => {
@@ -528,7 +528,7 @@ export default function Home(): React.ReactElement {
                 }`}
                 onClick={() => setLoginType('username')}
               >
-                Username Login
+                Email Login
               </button>
               <button
                 className={`flex-1 py-3 px-4 text-center font-medium transition-all duration-300 relative ${
@@ -547,10 +547,10 @@ export default function Home(): React.ReactElement {
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 xl:gap-6 xl:items-end">
                   <div className="xl:col-span-1">
                     <input
-                      type="text"
-                      name="username"
-                      placeholder="Username"
-                      value={formData.username}
+                      type="email"
+                      name="email"
+                      placeholder="Email"
+                      value={formData.email}
                       onChange={handleInputChange}
                       className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-300 text-gray-700 placeholder-gray-400 text-base"
                       required
@@ -580,7 +580,7 @@ export default function Home(): React.ReactElement {
                   <div className="xl:col-span-1">
                     <button
                       onClick={handleSubmit}
-                      disabled={isLoading || !formData.username.trim() || !formData.password.trim()}
+                      disabled={isLoading || !formData.email.trim() || !formData.password.trim()}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none shadow-lg hover:shadow-xl text-base"
                     >
                       {isLoading ? (
@@ -790,10 +790,10 @@ export default function Home(): React.ReactElement {
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Login</h2>
             <input
-              type="text"
-              name="username"
-              placeholder="Username"
-              value={formData.username}
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={formData.email}
               onChange={handleInputChange}
               className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-300 text-gray-700 placeholder-gray-400 text-base"
               required
@@ -810,8 +810,8 @@ export default function Home(): React.ReactElement {
             <button
               onClick={() => {
                 // Validate form fields before API call
-                if (!formData.username.trim()) {
-                  setModalMessage({ text: 'Please enter your username.', type: 'error' });
+                if (!formData.email.trim()) {
+                  setModalMessage({ text: 'Please enter your email.', type: 'error' });
                   return;
                 }
                 
@@ -825,13 +825,13 @@ export default function Home(): React.ReactElement {
                 
                 // Use actual API call for modal login
                 loginApi({
-                  username: formData.username.trim(),
+                  email: formData.email.trim(),
                   password: formData.password.trim()
                 })
                 .then(response => {
                   if (response?.token) {
                     setToken(response.token);
-                    localStorage.setItem('userEmail', formData.username.trim());
+                    localStorage.setItem('userEmail', formData.email.trim());
                     
                     setModalMessage({ text: 'Login successful! Redirecting...', type: 'success' });
                     setTimeout(() => {
@@ -854,7 +854,7 @@ export default function Home(): React.ReactElement {
                   setIsLoading(false);
                 });
               }}
-              disabled={isLoading || !formData.username.trim() || !formData.password.trim()}
+              disabled={isLoading || !formData.email.trim() || !formData.password.trim()}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none shadow-lg hover:shadow-xl text-base"
             >
               {isLoading ? (
