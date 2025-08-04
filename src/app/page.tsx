@@ -65,7 +65,7 @@ const Modal: React.FC<{
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-100 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-dark-800 rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-100 max-h-[90vh] overflow-y-auto">
         {message && (
           <div className="p-6">
             <div className="flex items-center justify-center mb-4">
@@ -91,11 +91,11 @@ const Modal: React.FC<{
             </div>
             
             <div className="text-center">
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
                 {message.type === 'success' ? 'Success!' : 
                  message.type === 'error' ? 'Error!' : 'Information'}
               </h3>
-              <p className="text-gray-600 mb-6 text-base">{message.text}</p>
+              <p className="text-gray-600 dark:text-gray-300 mb-6 text-base">{message.text}</p>
               
               <button
                 onClick={onClose}
@@ -518,7 +518,7 @@ export default function Home(): React.ReactElement {
           </div>
 
           {/* Login Form */}
-          <div className="w-full bg-white rounded-2xl shadow-2xl p-6 sm:p-8 lg:p-10 mb-12 lg:mb-16 border border-gray-100">
+          <div className="w-full bg-white dark:bg-dark-800 rounded-2xl shadow-2xl p-6 sm:p-8 lg:p-10 mb-12 lg:mb-16 border border-gray-100 dark:border-dark-700 transition-colors duration-200">
             <div className="flex mb-8 w-full max-w-md mx-auto">
               <button
                 className={`flex-1 py-3 px-4 text-center font-medium transition-all duration-300 relative ${
@@ -552,7 +552,7 @@ export default function Home(): React.ReactElement {
                       placeholder="Email"
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-300 text-gray-700 placeholder-gray-400 text-base"
+                      className="w-full px-4 py-4 bg-gray-50 dark:bg-dark-700 border border-gray-200 dark:border-dark-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white dark:focus:bg-dark-600 transition-all duration-300 text-gray-700 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-base"
                       required
                     />
                   </div>
@@ -564,7 +564,7 @@ export default function Home(): React.ReactElement {
                       placeholder="Password"
                       value={formData.password}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white pr-12 transition-all duration-300 text-gray-700 placeholder-gray-400 text-base"
+                      className="w-full px-4 py-4 bg-gray-50 dark:bg-dark-700 border border-gray-200 dark:border-dark-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white dark:focus:bg-dark-600 pr-12 transition-all duration-300 text-gray-700 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-base"
                       required
                     />
                     <button
