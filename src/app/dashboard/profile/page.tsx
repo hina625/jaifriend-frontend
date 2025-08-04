@@ -376,7 +376,8 @@ const ProfilePage: React.FC = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/userimages`, {
+      console.log('🖼️ Fetching user images...');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/userimages`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -384,7 +385,10 @@ const ProfilePage: React.FC = () => {
 
       if (response.ok) {
         const imagesData = await response.json();
+        console.log('🖼️ User images data:', imagesData);
         setUserImages(imagesData);
+      } else {
+        console.error('❌ Failed to fetch user images:', response.status);
       }
     } catch (error) {
       console.error('Error fetching user images:', error);
@@ -739,7 +743,9 @@ const ProfilePage: React.FC = () => {
   const getMediaUrl = (url: string) => {
     if (!url) return '/default-avatar.png';
     if (url.startsWith('http')) return url;
-    return `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
+    const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
+    console.log('🔗 getMediaUrl:', { original: url, full: fullUrl });
+    return fullUrl;
   };
 
   const getCompletionPercentage = () => {
@@ -1025,7 +1031,16 @@ const ProfilePage: React.FC = () => {
             {/* Profile Picture */}
             <div className="relative">
               <img
-                src={avatarPreview || (userImages.avatar ? getMediaUrl(userImages.avatar) : (user.avatar && user.avatar !== '/avatars/1.png.png' ? getMediaUrl(user.avatar) : '/avatars/1.png.png'))}
+                src={(() => {
+                  const finalSrc = avatarPreview || (userImages.avatar ? getMediaUrl(userImages.avatar) : (user.avatar && user.avatar !== '/avatars/1.png.png' ? getMediaUrl(user.avatar) : '/avatars/1.png.png'));
+                  console.log('🖼️ Profile picture src:', { 
+                    avatarPreview, 
+                    userImagesAvatar: userImages.avatar, 
+                    userAvatar: user.avatar, 
+                    finalSrc 
+                  });
+                  return finalSrc;
+                })()}
                 alt={user.name}
                 className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white shadow-xl object-cover bg-gray-200"
               />
