@@ -55,7 +55,15 @@ const FeedPost: React.FC<FeedPostProps> = ({
   };
 
   const navigateToProfile = () => {
-    const userId = post.user?.userId || post.user?._id;
+    let userId = '';
+    
+    // Handle populated user object (when userId is the full user object)
+    if (post.user?.userId && typeof post.user.userId === 'object' && post.user.userId._id) {
+      userId = post.user.userId._id;
+    } else {
+      userId = post.user?.userId || post.user?._id || post.user?.id;
+    }
+    
     if (userId) {
       router.push(`/dashboard/profile/${userId}`);
     }

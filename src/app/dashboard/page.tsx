@@ -18,44 +18,61 @@ function getUserAvatar() {
 }
 
 function getUserId(user: any): string {
-  if (!user) return '';
+  if (!user) {
+    console.log('❌ No user object provided');
+    return '';
+  }
   
-  console.log('Getting user ID for user:', user);
+  console.log('🔍 Getting user ID for user:', user);
+  console.log('🔍 User type:', typeof user);
+  console.log('🔍 User keys:', Object.keys(user));
+  
+  // Handle populated user object (when userId is the full user object)
+  if (user.userId && typeof user.userId === 'object' && user.userId._id) {
+    console.log('✅ Using populated userId._id:', user.userId._id);
+    return user.userId._id;
+  }
   
   // Handle different possible user ID formats
   if (typeof user._id === 'string') {
-    console.log('Using string _id:', user._id);
+    console.log('✅ Using string _id:', user._id);
     return user._id;
   }
   if (typeof user.id === 'string') {
-    console.log('Using string id:', user.id);
+    console.log('✅ Using string id:', user.id);
     return user.id;
   }
   if (typeof user.userId === 'string') {
-    console.log('Using string userId:', user.userId);
+    console.log('✅ Using string userId:', user.userId);
     return user.userId;
   }
   
   // Handle object IDs (MongoDB ObjectId)
   if (user._id && typeof user._id === 'object' && user._id.toString) {
     const id = user._id.toString();
-    console.log('Using object _id.toString():', id);
+    console.log('✅ Using object _id.toString():', id);
     return id;
   }
   if (user.id && typeof user.id === 'object' && user.id.toString) {
     const id = user.id.toString();
-    console.log('Using object id.toString():', id);
+    console.log('✅ Using object id.toString():', id);
     return id;
   }
   if (user.userId && typeof user.userId === 'object' && user.userId.toString) {
     const id = user.userId.toString();
-    console.log('Using object userId.toString():', id);
+    console.log('✅ Using object userId.toString():', id);
     return id;
   }
   
-  // Fallback
+  // Fallback - but with better error handling
   const fallbackId = String(user._id || user.id || user.userId || '');
-  console.log('Using fallback ID:', fallbackId);
+  console.log('⚠️ Using fallback ID:', fallbackId);
+  
+  if (!fallbackId || fallbackId === 'undefined' || fallbackId === 'null') {
+    console.error('❌ No valid user ID found in user object:', user);
+    return '';
+  }
+  
   return fallbackId;
 }
 
@@ -1052,7 +1069,7 @@ export default function Dashboard() {
                             <div className="flex items-center flex-1">
                               {item.user ? (
                                 <a 
-                                  href={`/dashboard/profile/${getUserId(item.user)}`}
+                                  href={`/dashboard/profile/${getUserId(item.user) || 'unknown'}`}
                                   target="_blank" 
                                   rel="noopener noreferrer"
                                 >
@@ -1072,7 +1089,7 @@ export default function Dashboard() {
                               <div className="flex-1 min-w-0">
                                 {item.user ? (
                                   <a 
-                                    href={`/dashboard/profile/${getUserId(item.user)}`} 
+                                    href={`/dashboard/profile/${getUserId(item.user) || 'unknown'}`} 
                                     target="_blank" 
                                     rel="noopener noreferrer"
                                     className="font-semibold text-sm sm:text-base hover:underline cursor-pointer truncate block"
@@ -1494,9 +1511,9 @@ export default function Dashboard() {
                                     <img src={comment.user?.avatar || '/avatars/1.png.png'} alt="avatar" className="w-6 h-6 rounded-full flex-shrink-0" />
                                     <div className="flex-1 min-w-0">
                                       <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
-                                        {comment.user?.userId || comment.user?._id ? (
+                                        {comment.user ? (
                                           <a 
-                                            href={`/dashboard/profile/${String(comment.user.userId || comment.user._id)}`} 
+                                            href={`/dashboard/profile/${getUserId(comment.user) || 'unknown'}`} 
                                             target="_blank" 
                                             rel="noopener noreferrer"
                                             className="font-medium text-xs sm:text-sm hover:underline cursor-pointer"

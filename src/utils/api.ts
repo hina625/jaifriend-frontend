@@ -4,7 +4,7 @@ import { config, getApiUrl } from './config';
 // Use centralized configuration
 const API_URL = config.API_URL;
 
-export const loginApi = async (data: { username: string; password: string }) => {
+export const loginApi = async (data: { email: string; password: string }) => {
   console.log('🔐 Login attempt with:', data);
   const res = await axios.post(`${API_URL}/api/auth/login`, data);
   console.log('✅ Login response:', res.data);
