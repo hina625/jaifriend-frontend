@@ -82,9 +82,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   });
 
   // Sidebar States - Default to closed for dropdown behavior
-  const [communityOpen, setCommunityOpen] = useState<boolean>(false);
-  const [exploreOpen, setExploreOpen] = useState<boolean>(false);
-  const [meOpen, setMeOpen] = useState<boolean>(false);
+  // Removed section toggle states since we're showing all items directly
   
   // Settings Sidebar States
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
@@ -417,16 +415,40 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           <Link
             key={item.name}
             href={item.href}
-            className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 group ${
+            className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-300 group ${
               pathname === item.href 
-                ? 'bg-blue-50 text-blue-600' 
-                : 'hover:bg-gray-50 text-gray-700'
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' 
+                : 'text-gray-700 hover:text-white'
             }`}
+            style={{
+              background: pathname === item.href 
+                ? 'linear-gradient(45deg, #022e8a, #5d97fe)' 
+                : '#ffffff',
+              borderRadius: '8px',
+              boxShadow: '4px 4px 8px rgba(0, 0, 0, 0.1), -4px -4px 8px rgba(255, 255, 255, 0.9)',
+              padding: '8px 12px'
+            }}
+            onMouseEnter={(e) => {
+              if (pathname !== item.href) {
+                e.currentTarget.style.background = 'linear-gradient(45deg, #022e8a, #5d97fe)';
+                e.currentTarget.style.transform = 'translateX(8px)';
+                e.currentTarget.style.boxShadow = '0 4px 15px rgba(93, 151, 254, 0.4)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (pathname !== item.href) {
+                e.currentTarget.style.background = '#ffffff';
+                e.currentTarget.style.transform = 'translateX(0)';
+                e.currentTarget.style.boxShadow = '6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.9)';
+              }
+            }}
           >
-            <div className={`w-10 h-10 rounded-lg ${item.color} flex items-center justify-center text-lg group-hover:scale-110 transition-transform leading-none`}>
+            <div className={`w-8 h-8 rounded-md flex items-center justify-center text-base group-hover:scale-110 transition-transform leading-none ${
+              pathname === item.href ? 'bg-white/20' : 'bg-gray-100'
+            }`}>
               {item.icon}
             </div>
-            <span className="text-sm font-medium">
+            <span className="text-xs font-medium">
               {item.name}
             </span>
           </Link>
@@ -732,22 +754,35 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         {isMobile ? (
           <>
             {/* Main Sidebar */}
-            <aside className={`fixed left-0 top-0 w-64 h-screen bg-white dark:bg-dark-800 border-r border-gray-200 dark:border-dark-700 shadow-xl overflow-y-auto overflow-x-hidden flex flex-col z-[60] transform transition-transform duration-300 ${
+            <aside className={`fixed left-0 top-0 w-64 h-screen flex flex-col z-[60] transform transition-transform duration-300 ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          }`}>
-              <div className="p-4 border-b border-gray-200 dark:border-dark-700 flex items-center justify-between">
-              <h2 className="text-gray-900 dark:text-white font-bold text-lg">
+          }`} style={{
+            background: '#ffffff',
+            boxShadow: '6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.9)',
+            height: '100vh',
+            padding: '16px',
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#022e8a #f4f4f9',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}>
+              <div className="flex items-center justify-between mb-4">
+              <h2 className="text-gray-900 font-bold text-lg">
                 {isSettingsPage ? 'Settings' : 'Menu'}
               </h2>
               <button
                 onClick={() => setSidebarOpen(false)}
-                className="w-8 h-8 rounded-full bg-gray-100 dark:bg-dark-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-dark-600 transition-colors text-gray-700 dark:text-gray-300"
+                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors text-gray-700"
+                style={{
+                  boxShadow: '6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.9)'
+                }}
               >
                 ✕
               </button>
             </div>
 
-            <div className="flex-1 p-4 overflow-y-auto scrollbar-hide">
+            <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingTop: '80px' }}>
               {isSettingsPage ? (
                 <>
                   {/* Back to Dashboard */}
@@ -817,68 +852,48 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 </>
               ) : (
                 <>
-                  {/* ME Section */}
-                  <div className="mb-4">
-                    <button 
-                      onClick={() => setMeOpen(!meOpen)} 
-                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none"
-                    >
-                      <h3 className="text-gray-900 font-semibold text-sm">ME</h3>
-                      {!isMobile && (
-                      <span className={`text-gray-500 transition-transform duration-200 ${meOpen ? 'rotate-180' : ''}`}>▼</span>
-                      )}
-                    </button>
-                    {(meOpen || isMobile) && (
-                      <div className="pl-2">
-                        {renderMenuItems(menuSections.me)}
-                      </div>
-                    )}
+                  {/* All Menu Items */}
+                  <div className="space-y-3">
+                    {renderMenuItems([...menuSections.me, ...menuSections.community, ...menuSections.explore])}
                   </div>
-
-                  {/* COMMUNITY Section */}
-                  <div className="mb-4">
-                    <button 
-                      onClick={() => setCommunityOpen(!communityOpen)} 
-                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none"
-                    >
-                      <h3 className="text-gray-900 font-semibold text-sm">COMMUNITY</h3>
-                      {!isMobile && (
-                      <span className={`text-gray-500 transition-transform duration-200 ${communityOpen ? 'rotate-180' : ''}`}>▼</span>
-                      )}
-                    </button>
-                    {(communityOpen || isMobile) && (
-                      <div className="pl-2">
-                        {renderMenuItems(menuSections.community)}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* EXPLORE Section */}
-                  <div className="mb-4">
-                    <button 
-                      onClick={() => setExploreOpen(!exploreOpen)} 
-                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none"
-                    >
-                      <h3 className="text-gray-900 font-semibold text-sm">EXPLORE</h3>
-                      {!isMobile && (
-                      <span className={`text-gray-500 transition-transform duration-200 ${exploreOpen ? 'rotate-180' : ''}`}>▼</span>
-                      )}
-                    </button>
-                    {(exploreOpen || isMobile) && (
-                      <div className="pl-2">
-                        {renderMenuItems(menuSections.explore)}
-                      </div>
-                    )}
+                  
+                  {/* Footer */}
+                  <div className="mt-8 p-3" style={{
+                    background: '#ffffff',
+                    borderRadius: '8px',
+                    boxShadow: '4px 4px 8px rgba(0, 0, 0, 0.1), -4px -4px 8px rgba(255, 255, 255, 0.9)',
+                    color: '#2d2d2d',
+                    fontSize: '12px',
+                    width: '100%'
+                  }}>
+                    <div className="flex justify-between items-center mb-3">
+                      <span>© 2025 Jaifriend</span>
+                      <button className="px-3 py-1 rounded-md text-white text-sm transition-all duration-300" style={{
+                        background: '#022e8a'
+                      }} onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#5d97fe';
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = '0 4px 8px rgba(93, 151, 254, 0.3)';
+                      }} onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#022e8a';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}>
+                        Language
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">Privacy</a>
+                      <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">Terms</a>
+                      <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">About</a>
+                      <span className="text-gray-700 text-xs">Jaifriend</span>
+                    </div>
                   </div>
                 </>
               )}
             </div>
 
-            {/* Footer */}
-            <div className="p-4 border-t border-gray-200">
-              <div className="text-xs text-gray-500 mb-2">© 2025 Jaifriend</div>
-              <div className="text-xs text-gray-500">🌐 Language</div>
-            </div>
+
           </aside>
 
             {/* Profile Sidebar */}
@@ -1033,11 +1048,21 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           <>
             {/* Collapse Toggle Button - REMOVED */}
 
-            <aside className={`bg-white border-r border-gray-200 overflow-y-auto overflow-x-hidden flex flex-col fixed left-0 top-0 h-screen transition-all duration-300 scrollbar-hide ${
+            <aside className={`flex flex-col fixed left-0 top-0 h-screen transition-all duration-300 scrollbar-hide ${
               sidebarCollapsed ? 'w-16' : 'w-64'
-            }`}>
+            }`} style={{
+              background: '#ffffff',
+              boxShadow: '6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.9)',
+              height: '100vh',
+              padding: '16px',
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#022e8a #f4f4f9',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}>
               
-              <div className="flex-1 p-4 overflow-y-auto scrollbar-hide">
+              <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingTop: '80px' }}>
                 {isSettingsPage ? (
                   <>
                     {!sidebarCollapsed && (
@@ -1182,64 +1207,52 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       )}
                     </div>
                   </>
-                ) : (
-                  <>
-                    {/* ME Section */}
-                    <div className="mb-4">
-                      <button 
-                        onClick={() => setMeOpen(!meOpen)} 
-                        className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
-                      >
-                        <h3 className="text-[#022e8a] font-bold text-sm">ME</h3>
-                        <span className={`text-[#022e8a] transition-transform duration-200 ${meOpen ? 'rotate-180' : ''}`}>▼</span>
-                      </button>
-                      <div className="pl-2">
-                        {renderMenuItems(menuSections.me, sidebarCollapsed)}
+                                  ) : (
+                    <>
+                      {/* All Menu Items */}
+                      <div className="space-y-3">
+                        {renderMenuItems([...menuSections.me, ...menuSections.community, ...menuSections.explore], sidebarCollapsed)}
                       </div>
-                    </div>
-
-                    {sidebarCollapsed && <div className="border-t border-gray-200 my-2"></div>}
-
-                    {/* COMMUNITY Section */}
-                    <div className="mb-4">
-                      <button 
-                        onClick={() => setCommunityOpen(!communityOpen)} 
-                        className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
-                      >
-                        <h3 className="text-[#022e8a] font-bold text-sm">COMMUNITY</h3>
-                        <span className={`text-[#022e8a] transition-transform duration-200 ${communityOpen ? 'rotate-180' : ''}`}>▼</span>
-                      </button>
-                      <div className="pl-2">
-                        {renderMenuItems(menuSections.community, sidebarCollapsed)}
-                      </div>
-                    </div>
-
-                    {sidebarCollapsed && <div className="border-t border-gray-200 my-2"></div>}
-
-                    {/* EXPLORE Section */}
-                    <div className="mb-4">
-                      <button 
-                        onClick={() => setExploreOpen(!exploreOpen)} 
-                        className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
-                      >
-                        <h3 className="text-[#022e8a] font-bold text-sm">EXPLORE</h3>
-                        <span className={`text-[#022e8a] transition-transform duration-200 ${exploreOpen ? 'rotate-180' : ''}`}>▼</span>
-                      </button>
-                      <div className="pl-2">
-                        {renderMenuItems(menuSections.explore, sidebarCollapsed)}
-                      </div>
-                    </div>
-                  </>
-                )}
+                      
+                      {/* Footer */}
+                      {!sidebarCollapsed && (
+                        <div className="mt-8 p-3" style={{
+                          background: '#ffffff',
+                          borderRadius: '8px',
+                          boxShadow: '4px 4px 8px rgba(0, 0, 0, 0.1), -4px -4px 8px rgba(255, 255, 255, 0.9)',
+                          color: '#2d2d2d',
+                          fontSize: '12px',
+                          width: '100%'
+                        }}>
+                          <div className="flex justify-between items-center mb-3">
+                            <span>© 2025 Jaifriend</span>
+                            <button className="px-3 py-1 rounded-md text-white text-sm transition-all duration-300" style={{
+                              background: '#022e8a'
+                            }} onMouseEnter={(e) => {
+                              e.currentTarget.style.background = '#5d97fe';
+                              e.currentTarget.style.transform = 'translateY(-2px)';
+                              e.currentTarget.style.boxShadow = '0 4px 8px rgba(93, 151, 254, 0.3)';
+                            }} onMouseLeave={(e) => {
+                              e.currentTarget.style.background = '#022e8a';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                            }}>
+                              Language
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-3">
+                            <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">Privacy</a>
+                            <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">Terms</a>
+                            <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">About</a>
+                            <span className="text-gray-700 text-xs">Jaifriend</span>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
               </div>
 
-              {/* Footer */}
-              {!sidebarCollapsed && (
-                <div className="p-4 border-t border-gray-200">
-                  <div className="text-xs text-gray-500 mb-2">© 2025 Jaifriend</div>
-                  <div className="text-xs text-gray-500">🌐 Language</div>
-                </div>
-              )}
+
             </aside>
 
             {/* Desktop Profile Sidebar */}
@@ -1406,7 +1419,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               : 'ml-64'
           }
           ${!isMobile && profileSidebarOpen ? 'ml-80' : ''}
-        `}>
+        `} style={{ paddingLeft: '0', paddingRight: '0' }}>
           <div className="w-full h-full overflow-x-hidden pt-16">
             {children}
           </div>
@@ -1500,6 +1513,20 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           display: none;
         }
         
+        /* Custom scrollbar styling for sidebar */
+        aside::-webkit-scrollbar {
+          width: 8px;
+        }
+        
+        aside::-webkit-scrollbar-track {
+          background: #f4f4f9;
+        }
+        
+        aside::-webkit-scrollbar-thumb {
+          background: #022e8a;
+          border-radius: 10px;
+        }
+        
         /* Hide scrollbars for sidebar specifically */
         aside .scrollbar-hide {
           -ms-overflow-style: none;
@@ -1560,6 +1587,25 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             margin-top: 0.5rem;
             z-index: 50;
           }
+        }
+        
+        /* Gradient pulse animation for hover effects */
+        @keyframes gradientPulse {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        
+        /* Custom sidebar styling */
+        .custom-sidebar-style {
+          background: #ffffff;
+          border-radius: 24px;
+          box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.9);
+          margin: 20px;
+          height: calc(100vh - 40px);
+          padding: 24px;
+          scrollbar-width: thin;
+          scrollbar-color: #022e8a #f4f4f9;
         }
       `}</style>
     </div>
