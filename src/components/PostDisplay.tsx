@@ -205,23 +205,30 @@ export default function PostDisplay({
       </div>
 
       {/* Show media if present */}
-      {post.media && post.media.url && (
+      {post.media && post.media.length > 0 && (
         <div className="mb-3">
-          {post.media.type === 'video' ? (
-            <video 
-              src={getMediaUrl(post.media.url)} 
-              controls 
-              className="w-full h-48 sm:h-96 object-cover rounded-lg shadow-lg"
-              style={{ maxHeight: '70vh' }}
-            />
-          ) : (
-            <img
-              src={getMediaUrl(post.media.url)}
-              alt="media"
-              className="w-full h-48 sm:h-96 object-cover rounded-lg shadow-lg"
-              style={{ maxHeight: '70vh' }}
-            />
-          )}
+          {(() => {
+            console.log('📸 PostDisplay media:', post.media);
+            return post.media.map((media: any, index: number) => (
+              <div key={index} className="mb-2">
+                {media.type === 'video' ? (
+                  <video 
+                    src={getMediaUrl(media.url)} 
+                    controls 
+                    className="w-full h-48 sm:h-96 object-cover rounded-lg shadow-lg"
+                    style={{ maxHeight: '70vh' }}
+                  />
+                ) : (
+                  <img
+                    src={getMediaUrl(media.url)}
+                    alt="media"
+                    className="w-full h-48 sm:h-96 object-cover rounded-lg shadow-lg"
+                    style={{ maxHeight: '70vh' }}
+                  />
+                )}
+              </div>
+            ));
+          })()}
         </div>
       )}
 
