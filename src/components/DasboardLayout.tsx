@@ -81,9 +81,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     isOpen: false
   });
 
-  // Sidebar States - Default to closed for dropdown behavior
-  // Removed section toggle states since we're showing all items directly
-  
   // Settings Sidebar States
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   const [profileSettingsOpen, setProfileSettingsOpen] = useState<boolean>(false);
@@ -92,21 +89,35 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   // Profile Sidebar State
   const [profileSidebarOpen, setProfileSidebarOpen] = useState<boolean>(false);
 
+  // Admin Sidebar States
+  const [adminSettingsOpen, setAdminSettingsOpen] = useState<boolean>(true);
+  const [adminManageFeaturesOpen, setAdminManageFeaturesOpen] = useState<boolean>(false);
+  const [adminLanguagesOpen, setAdminLanguagesOpen] = useState<boolean>(false);
+  const [adminUsersOpen, setAdminUsersOpen] = useState<boolean>(false);
+  const [adminPaymentsOpen, setAdminPaymentsOpen] = useState<boolean>(false);
+  const [adminProSystemOpen, setAdminProSystemOpen] = useState<boolean>(false);
+  const [adminDesignOpen, setAdminDesignOpen] = useState<boolean>(false);
+  const [adminToolsOpen, setAdminToolsOpen] = useState<boolean>(false);
+  const [adminPagesOpen, setAdminPagesOpen] = useState<boolean>(false);
+  const [adminReportsOpen, setAdminReportsOpen] = useState<boolean>(false);
+  const [adminApiSettingsOpen, setAdminApiSettingsOpen] = useState<boolean>(false);
+
   // Check if current route is settings
   const isSettingsPage = pathname.startsWith('/dashboard/settings');
+  
+  // Check if current route is admin
+  const isAdminPage = pathname.startsWith('/dashboard/admin');
 
   // Handle screen size changes
   useEffect(() => {
     const handleResize = (): void => {
       const width = window.innerWidth;
-      setIsMobile(width < 1024); // Changed to 1024 to include tablets in mobile layout
+      setIsMobile(width < 1024);
       
-      // For mobile and tablet, start with sidebar closed
       if (width < 1024) {
         setSidebarOpen(false);
         setSidebarCollapsed(false);
       } else {
-        // Desktop behavior
         setSidebarCollapsed(false);
       }
     };
@@ -153,7 +164,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-              fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
@@ -165,7 +176,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   // Listen for image updates from settings page
   useEffect(() => {
     const handleImagesUpdated = () => {
-      console.log('Images updated event received in DasboardLayout, refreshing profile...');
+      console.log('Images updated event received in DashboardLayout, refreshing profile...');
       const token = localStorage.getItem('token');
       if (token) {
         fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
@@ -178,7 +189,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     };
 
     const handlePrivacySettingsUpdated = () => {
-      console.log('Privacy settings updated event received in DasboardLayout, refreshing profile...');
+      console.log('Privacy settings updated event received in DashboardLayout, refreshing profile...');
       const token = localStorage.getItem('token');
       if (token) {
         fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
@@ -191,7 +202,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     };
 
     const handlePasswordChanged = () => {
-      console.log('Password changed event received in DasboardLayout, refreshing profile...');
+      console.log('Password changed event received in DashboardLayout, refreshing profile...');
       const token = localStorage.getItem('token');
       if (token) {
         fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
@@ -217,7 +228,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   // Listen for profile updates from settings pages
   useEffect(() => {
     const handleProfileUpdated = () => {
-      console.log('Profile updated event received in DasboardLayout, refreshing profile...');
+      console.log('Profile updated event received in DashboardLayout, refreshing profile...');
       const token = localStorage.getItem('token');
       if (token) {
         fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
@@ -239,28 +250,114 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   // Menu sections for sidebar
   const menuSections: MenuSections = {
     me: [
-      { name: "News Feed", icon: "📰", color: "bg-orange-100", href: "/dashboard" },
-      { name: "Albums", icon: "📸", color: "bg-green-100", href: "/dashboard/albums" },
-      { name: "Saved Posts", icon: "🔖", color: "bg-pink-100", href: "/dashboard/saved" },
+      { name: "Profile", icon: "👤", color: "bg-blue-100", href: "/dashboard/profile" },
+      { name: "Saved", icon: "💾", color: "bg-green-100", href: "/dashboard/saved" },
+      { name: "Settings", icon: "⚙️", color: "bg-gray-100", href: "/dashboard/settings" },
+      { name: "Upgrade", icon: "⭐", color: "bg-yellow-100", href: "/dashboard/upgrade" },
+      { name: "Subscription", icon: "💳", color: "bg-purple-100", href: "/dashboard/subscription" },
     ],
     community: [
-      { name: "Watch", icon: "👁️", color: "bg-green-100", href: "/dashboard/watch" },
-      { name: "Events", icon: "📅", color: "bg-red-100", href: "/dashboard/events" },
-      { name: "Market", icon: "🛒", color: "bg-blue-100", href: "/dashboard/market" },
-      { name: "Forum", icon: "💭", color: "bg-purple-100", href: "/dashboard/forum" },
-      { name: "My Products", icon: "📦", color: "bg-cyan-100", href: "/dashboard/products" },
-      { name: "My Groups", icon: "👨‍👩‍👧‍👦", color: "bg-blue-100", href: "/dashboard/groups" },
-      { name: "My Pages", icon: "📄", color: "bg-orange-100", href: "/dashboard/pages" },
+      { name: "Find Friends", icon: "👥", color: "bg-blue-100", href: "/dashboard/find-friends" },
+      { name: "Groups", icon: "👨‍👩‍👧‍👦", color: "bg-green-100", href: "/dashboard/groups" },
+      { name: "Events", icon: "📅", color: "bg-orange-100", href: "/dashboard/events" },
+      { name: "Forum", icon: "💬", color: "bg-purple-100", href: "/dashboard/forum" },
+      { name: "Pages", icon: "📄", color: "bg-gray-100", href: "/dashboard/pages" },
     ],
     explore: [
-      { name: "Explore", icon: "🔍", color: "bg-purple-100", href: "/dashboard/explore" },
-      { name: "Popular Posts", icon: "📈", color: "bg-yellow-100", href: "/dashboard/popular" },
+      { name: "Explore", icon: "🔍", color: "bg-blue-100", href: "/dashboard/explore" },
+      { name: "Popular", icon: "🔥", color: "bg-red-100", href: "/dashboard/popular" },
+      { name: "Watch", icon: "📺", color: "bg-purple-100", href: "/dashboard/watch" },
+      { name: "Market", icon: "🛒", color: "bg-green-100", href: "/dashboard/market" },
+      { name: "Products", icon: "📦", color: "bg-orange-100", href: "/dashboard/products" },
+      { name: "Advertising", icon: "📢", color: "bg-yellow-100", href: "/dashboard/advertising" },
+      { name: "Funding", icon: "💰", color: "bg-green-100", href: "/dashboard/funding" },
       { name: "Games", icon: "🎮", color: "bg-gray-100", href: "/dashboard/games" },
       { name: "Movies", icon: "🎬", color: "bg-gray-100", href: "/dashboard/movies" },
       { name: "Jobs", icon: "💼", color: "bg-yellow-100", href: "/dashboard/jobs" },
       { name: "Offers", icon: "🎁", color: "bg-green-100", href: "/dashboard/offers" },
+      { name: "Admin Dashboard", icon: "👑", color: "bg-red-100", href: "/dashboard/admin" },
     ]
   };
+
+  const adminMenuItems = [
+    { name: "Dashboard", icon: "⬜", active: false, hasPlus: false, href: "/dashboard/admin" },
+    { name: "Settings", icon: "⚙️", active: true, hasPlus: true, section: "settings", href: "/dashboard/admin/settings" },
+    { name: "Website Mode", icon: "🌐", active: true, hasPlus: false, isSubItem: true, section: "settings", href: "/dashboard/admin/settings/website-mode" },
+    { name: "General Configuration", icon: "⚙️", active: false, hasPlus: false, isSubItem: true, section: "settings", href: "/dashboard/admin/settings/general" },
+    { name: "Website Information", icon: "ℹ️", active: false, hasPlus: false, isSubItem: true, section: "settings", href: "/dashboard/admin/settings/info" },
+    { name: "File Upload Configuration", icon: "📁", active: false, hasPlus: false, isSubItem: true, section: "settings", href: "/dashboard/admin/settings/upload" },
+    { name: "E-mail & SMS Setup", icon: "📧", active: false, hasPlus: false, isSubItem: true, section: "settings", href: "/dashboard/admin/settings/email" },
+    { name: "Chat & Video/Audio", icon: "💬", active: false, hasPlus: false, isSubItem: true, section: "settings", href: "/dashboard/admin/settings/chat" },
+    { name: "Social Login Settings", icon: "🔗", active: false, hasPlus: false, isSubItem: true, section: "settings", href: "/dashboard/admin/settings/social" },
+    { name: "NodeJS Settings", icon: "🟢", active: false, hasPlus: false, isSubItem: true, section: "settings", href: "/dashboard/admin/settings/nodejs" },
+    { name: "CronJob Settings", icon: "⏰", active: false, hasPlus: false, isSubItem: true, section: "settings", href: "/dashboard/admin/settings/cronjob" },
+    { name: "AI Settings", icon: "🤖", active: false, hasPlus: false, isSubItem: true, section: "settings", href: "/dashboard/admin/settings/ai" },
+    { name: "Manage Features", icon: "☰", active: false, hasPlus: true, section: "manageFeatures", href: "/dashboard/admin/manage-features" },
+    { name: "Enable / Disable Features", icon: "🔧", active: false, hasPlus: false, isSubItem: true, section: "manageFeatures", href: "/dashboard/admin/manage-features/enable-disable" },
+    { name: "Applications", icon: "📱", active: false, hasPlus: false, isSubItem: true, section: "manageFeatures", href: "/dashboard/admin/manage-features/applications" },
+    { name: "Pages", icon: "📄", active: false, hasPlus: false, isSubItem: true, section: "manageFeatures", href: "/dashboard/admin/manage-features/pages" },
+    { name: "Groups", icon: "👥", active: false, hasPlus: false, isSubItem: true, section: "manageFeatures", href: "/dashboard/admin/manage-features/groups" },
+    { name: "Posts", icon: "📝", active: false, hasPlus: false, isSubItem: true, section: "manageFeatures", href: "/dashboard/admin/manage-features/posts" },
+    { name: "Fundings", icon: "💰", active: false, hasPlus: false, isSubItem: true, section: "manageFeatures", href: "/dashboard/admin/manage-features/fundings" },
+    { name: "Jobs", icon: "💼", active: false, hasPlus: false, isSubItem: true, section: "manageFeatures", href: "/dashboard/admin/manage-features/jobs" },
+    { name: "Offers", icon: "🎁", active: false, hasPlus: false, isSubItem: true, section: "manageFeatures", href: "/dashboard/admin/manage-features/offers" },
+    { name: "Articles (Blog)", icon: "📰", active: false, hasPlus: false, isSubItem: true, section: "manageFeatures", href: "/dashboard/admin/manage-features/articles" },
+    { name: "Events", icon: "📅", active: false, hasPlus: false, isSubItem: true, section: "manageFeatures", href: "/dashboard/admin/manage-features/events" },
+    { name: "Content Monetization", icon: "💳", active: false, hasPlus: false, isSubItem: true, section: "manageFeatures", href: "/dashboard/admin/manage-features/monetization" },
+    { name: "Languages", icon: "🌐", active: false, hasPlus: true, section: "languages", href: "/dashboard/admin/languages" },
+    { name: "Add New Language & Keys", icon: "➕", active: false, hasPlus: false, isSubItem: true, section: "languages", href: "/dashboard/admin/languages/add" },
+    { name: "Manage Languages", icon: "🔧", active: false, hasPlus: false, isSubItem: true, section: "languages", href: "/dashboard/admin/languages/manage" },
+    { name: "Users", icon: "👤", active: false, hasPlus: true, section: "users", href: "/dashboard/admin/users" },
+    { name: "Manage Users", icon: "👥", active: false, hasPlus: false, isSubItem: true, section: "users", href: "/dashboard/admin/users/manage" },
+    { name: "Online Users", icon: "🟢", active: false, hasPlus: false, isSubItem: true, section: "users", href: "/dashboard/admin/users/online" },
+    { name: "Manage User Stories / Status", icon: "📖", active: false, hasPlus: false, isSubItem: true, section: "users", href: "/dashboard/admin/users/stories" },
+    { name: "Manage Verification Requests", icon: "✅", active: false, hasPlus: false, isSubItem: true, section: "users", href: "/dashboard/admin/users/verification" },
+    { name: "Payments & Ads", icon: "💰", active: false, hasPlus: true, section: "payments", href: "/dashboard/admin/payments" },
+    { name: "Payment Configuration", icon: "⚙️", active: false, hasPlus: false, isSubItem: true, section: "payments", href: "/dashboard/admin/payments/config" },
+    { name: "Advertisement Settings", icon: "📢", active: false, hasPlus: false, isSubItem: true, section: "payments", href: "/dashboard/admin/payments/ads" },
+    { name: "Manage Currencies", icon: "💱", active: false, hasPlus: false, isSubItem: true, section: "payments", href: "/dashboard/admin/payments/currencies" },
+    { name: "Manage Site Advertisements", icon: "🏢", active: false, hasPlus: false, isSubItem: true, section: "payments", href: "/dashboard/admin/payments/site-ads" },
+    { name: "Manage User Advertisements", icon: "👤", active: false, hasPlus: false, isSubItem: true, section: "payments", href: "/dashboard/admin/payments/user-ads" },
+    { name: "Manage Bank Receipts", icon: "🏦", active: false, hasPlus: false, isSubItem: true, section: "payments", href: "/dashboard/admin/payments/receipts" },
+    { name: "Pro System", icon: "⭐", active: false, hasPlus: true, section: "proSystem", href: "/dashboard/admin/pro-system" },
+    { name: "Pro System Settings", icon: "⚙️", active: false, hasPlus: false, isSubItem: true, section: "proSystem", href: "/dashboard/admin/pro-system/settings" },
+    { name: "Manage Payments", icon: "💳", active: false, hasPlus: false, isSubItem: true, section: "proSystem", href: "/dashboard/admin/pro-system/payments" },
+    { name: "Manage Members", icon: "👥", active: false, hasPlus: false, isSubItem: true, section: "proSystem", href: "/dashboard/admin/pro-system/members" },
+    { name: "Manage Refund Requests", icon: "↩️", active: false, hasPlus: false, isSubItem: true, section: "proSystem", href: "/dashboard/admin/pro-system/refunds" },
+    { name: "Design", icon: "🎨", active: false, hasPlus: true, section: "design", href: "/dashboard/admin/design" },
+    { name: "Themes", icon: "🎭", active: false, hasPlus: false, isSubItem: true, section: "design", href: "/dashboard/admin/design/themes" },
+    { name: "Change Site Design", icon: "🎨", active: false, hasPlus: false, isSubItem: true, section: "design", href: "/dashboard/admin/design/site" },
+    { name: "Custom JS / CSS", icon: "💻", active: false, hasPlus: false, isSubItem: true, section: "design", href: "/dashboard/admin/design/custom" },
+    { name: "Tools", icon: "🔧", active: false, hasPlus: true, section: "tools", href: "/dashboard/admin/tools" },
+    { name: "Manage Emails", icon: "📧", active: true, hasPlus: false, isSubItem: true, section: "tools", href: "/dashboard/admin/tools/emails" },
+    { name: "Users Invitation", icon: "📨", active: false, hasPlus: false, isSubItem: true, section: "tools", href: "/dashboard/admin/tools/invitations" },
+    { name: "Send E-mail", icon: "📤", active: false, hasPlus: false, isSubItem: true, section: "tools", href: "/dashboard/admin/tools/send-email" },
+    { name: "Announcements", icon: "📢", active: false, hasPlus: false, isSubItem: true, section: "tools", href: "/dashboard/admin/tools/announcements" },
+    { name: "Auto Delete Data", icon: "🗑️", active: false, hasPlus: false, isSubItem: true, section: "tools", href: "/dashboard/admin/tools/auto-delete" },
+    { name: "Auto Friend", icon: "🤝", active: false, hasPlus: false, isSubItem: true, section: "tools", href: "/dashboard/admin/tools/auto-friend" },
+    { name: "Auto Page Like", icon: "👍", active: false, hasPlus: false, isSubItem: true, section: "tools", href: "/dashboard/admin/tools/auto-like" },
+    { name: "Auto Group Join", icon: "👥", active: false, hasPlus: false, isSubItem: true, section: "tools", href: "/dashboard/admin/tools/auto-join" },
+    { name: "Fake User Generator", icon: "👤", active: false, hasPlus: false, isSubItem: true, section: "tools", href: "/dashboard/admin/tools/fake-users" },
+    { name: "Mass Notifications", icon: "📢", active: false, hasPlus: false, isSubItem: true, section: "tools", href: "/dashboard/admin/tools/notifications" },
+    { name: "BlackList", icon: "🚫", active: false, hasPlus: false, isSubItem: true, section: "tools", href: "/dashboard/admin/tools/blacklist" },
+    { name: "Generate SiteMap", icon: "🗺️", active: false, hasPlus: false, isSubItem: true, section: "tools", href: "/dashboard/admin/tools/sitemap" },
+    { name: "Invitation Codes", icon: "🎫", active: false, hasPlus: false, isSubItem: true, section: "tools", href: "/dashboard/admin/tools/codes" },
+    { name: "Backup SQL & Files", icon: "💾", active: false, hasPlus: false, isSubItem: true, section: "tools", href: "/dashboard/admin/tools/backup" },
+    { name: "Pages", icon: "📄", active: false, hasPlus: true, section: "pages", href: "/dashboard/admin/pages" },
+    { name: "Manage Custom Pages", icon: "📝", active: false, hasPlus: false, isSubItem: true, section: "pages", href: "/dashboard/admin/pages/custom" },
+    { name: "Manage Terms Pages", icon: "📋", active: false, hasPlus: false, isSubItem: true, section: "pages", href: "/dashboard/admin/pages/terms" },
+    { name: "Reports", icon: "⚠️", active: false, hasPlus: true, section: "reports", href: "/dashboard/admin/reports" },
+    { name: "Manage Reports", icon: "📊", active: false, hasPlus: false, isSubItem: true, section: "reports", href: "/dashboard/admin/reports/manage" },
+    { name: "Manage Users Reports", icon: "👥", active: false, hasPlus: false, isSubItem: true, section: "reports", href: "/dashboard/admin/reports/users" },
+    { name: "API Settings", icon: "↔️", active: false, hasPlus: true, section: "apiSettings", href: "/dashboard/admin/api-settings" },
+    { name: "Manage API Server Key", icon: "🔑", active: false, hasPlus: false, isSubItem: true, section: "apiSettings", href: "/dashboard/admin/api-settings/keys" },
+    { name: "Push Notifications Settings", icon: "🔔", active: true, hasPlus: false, isSubItem: true, section: "apiSettings", href: "/dashboard/admin/api-settings/push" },
+    { name: "Verify Applications", icon: "✅", active: false, hasPlus: false, isSubItem: true, section: "apiSettings", href: "/dashboard/admin/api-settings/verify" },
+    { name: "3rd Party Scripts", icon: "📜", active: false, hasPlus: false, isSubItem: true, section: "apiSettings", href: "/dashboard/admin/api-settings/scripts" },
+    { name: "System Status", icon: "ℹ️", active: false, hasPlus: false, href: "/dashboard/admin/system-status" },
+    { name: "Changelogs", icon: "🕐", active: false, hasPlus: false, href: "/dashboard/admin/changelogs" },
+    { name: "FAQs", icon: "⋮", active: false, hasPlus: false, href: "/dashboard/admin/faqs" }
+  ];
 
   // Settings sections for settings sidebar
   const settingsSections: SettingsSections = {
@@ -306,7 +403,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       router.push('/dashboard/notifications');
       setOpenDropdown(null);
     } else {
-    setOpenDropdown(openDropdown === dropdownType ? null : dropdownType);
+      setOpenDropdown(openDropdown === dropdownType ? null : dropdownType);
     }
   };
 
@@ -367,18 +464,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         router.push('/');
       }, 1500);
     }, 1000);
-  };
-
-  const handleNotificationSound = (): void => {
-    const currentSetting = localStorage.getItem('notificationSound') !== 'false';
-    const newSetting = !currentSetting;
-    localStorage.setItem('notificationSound', newSetting.toString());
-    
-    if (newSetting) {
-      showPopup('success', 'Sound Enabled', 'Notification sounds have been turned on.');
-    } else {
-      showPopup('success', 'Sound Disabled', 'Notification sounds have been turned off.');
-    }
   };
 
   // Sidebar Functions
@@ -476,6 +561,107 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     </div>
   );
 
+  const renderAdminMenuItems = (): React.ReactElement => {
+    const getSectionState = (section: string) => {
+      switch (section) {
+        case 'settings': return adminSettingsOpen;
+        case 'manageFeatures': return adminManageFeaturesOpen;
+        case 'languages': return adminLanguagesOpen;
+        case 'users': return adminUsersOpen;
+        case 'payments': return adminPaymentsOpen;
+        case 'proSystem': return adminProSystemOpen;
+        case 'design': return adminDesignOpen;
+        case 'tools': return adminToolsOpen;
+        case 'pages': return adminPagesOpen;
+        case 'reports': return adminReportsOpen;
+        case 'apiSettings': return adminApiSettingsOpen;
+        default: return false;
+      }
+    };
+
+    const toggleSection = (section: string) => {
+      switch (section) {
+        case 'settings': setAdminSettingsOpen(!adminSettingsOpen); break;
+        case 'manageFeatures': setAdminManageFeaturesOpen(!adminManageFeaturesOpen); break;
+        case 'languages': setAdminLanguagesOpen(!adminLanguagesOpen); break;
+        case 'users': setAdminUsersOpen(!adminUsersOpen); break;
+        case 'payments': setAdminPaymentsOpen(!adminPaymentsOpen); break;
+        case 'proSystem': setAdminProSystemOpen(!adminProSystemOpen); break;
+        case 'design': setAdminDesignOpen(!adminDesignOpen); break;
+        case 'tools': setAdminToolsOpen(!adminToolsOpen); break;
+        case 'pages': setAdminPagesOpen(!adminPagesOpen); break;
+        case 'reports': setAdminReportsOpen(!adminReportsOpen); break;
+        case 'apiSettings': setAdminApiSettingsOpen(!adminApiSettingsOpen); break;
+      }
+    };
+
+    return (
+      <div className="space-y-1">
+        {adminMenuItems.map((item, index) => {
+          const isSectionOpen = item.section ? getSectionState(item.section) : false;
+          const shouldShow = !item.section || isSectionOpen || !item.isSubItem;
+
+          if (!shouldShow) return null;
+
+          const menuItemContent = (
+            <div className="flex items-center justify-between px-3 py-2 rounded-md cursor-pointer transition-colors">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-sm flex-shrink-0">{item.icon}</span>
+                <span className="font-medium text-xs truncate">{item.name}</span>
+              </div>
+              {item.hasPlus && (
+                <span className={`text-gray-400 transition-transform duration-200 text-xs flex-shrink-0 ${
+                  isSectionOpen ? 'rotate-45' : ''
+                }`}>
+                  {isSectionOpen ? '−' : '+'}
+                </span>
+              )}
+            </div>
+          );
+
+          return (
+            <div key={index} className={`${item.isSubItem ? 'ml-3' : ''}`}>
+              {item.href ? (
+                <Link
+                  href={item.href}
+                  className={`block ${
+                    item.active 
+                      ? 'bg-gray-700 text-white' 
+                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                  }`}
+                  onClick={(e) => {
+                    if (item.hasPlus && item.section) {
+                      e.preventDefault();
+                      toggleSection(item.section);
+                    }
+                  }}
+                >
+                  {menuItemContent}
+                </Link>
+              ) : (
+                <div
+                  className={`${
+                    item.active 
+                      ? 'bg-gray-700 text-white' 
+                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                  }`}
+                  onClick={() => {
+                    if (item.hasPlus && item.section) {
+                      toggleSection(item.section);
+                    }
+                  }}
+                >
+                  {menuItemContent}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // Main component return
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
       {/* Popup Modals */}
@@ -499,7 +685,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 ) : (
                   <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
                     <svg className="w-8 h-8 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0 1 18 0z"></path>
                     </svg>
                   </div>
                 )}
@@ -544,7 +730,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               <div className="text-center pt-4">
                 <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4 mx-auto">
                   <svg className="w-8 h-8 text-blue-500 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-1a5 5 0 11-11 0 5 5 0 0111 0z"></path>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 1 1 0 5.292M15 21H3v-1a6 6 0 0 1 12 0v1zm0 0h6v-1a6 6 0 0 0-9-5.197m13.5-1a5 5 0 1 1-11 0 5 5 0 0 1 11 0z"></path>
                   </svg>
                 </div>
                 
@@ -573,7 +759,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       )}
 
       {/* Navbar */}
-      <nav className="w-full flex justify-center items-center px-4 py-2 z-50 fixed top-0 left-0 shadow-md border-b bg-white dark:bg-dark-800 border-gray-200 dark:border-dark-700 transition-colors duration-200">
+      <nav className={`w-full flex justify-center items-center px-4 py-2 z-50 fixed top-0 left-0 shadow-md border-b transition-colors duration-200 ${
+        isAdminPage 
+          ? 'bg-gray-800 border-gray-700' 
+          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+      }`}>
         <div className="flex items-center gap-2 w-full max-w-7xl justify-between mx-auto">
           
           {/* Left Side - Mobile Menu + Logo */}
@@ -595,24 +785,32 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             )}
             
             {/* Logo */}
-            <div className="flex items-center gap-2">
+            <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <div className="bg-blue-600 dark:bg-blue-500 rounded-lg w-8 h-8 flex items-center justify-center shadow-sm">
                 <span className="text-white text-lg font-bold">J</span>
               </div>
               <span className="text-xl font-bold text-blue-600 dark:text-blue-400 tracking-wide hidden sm:block">
                 jaifriend
               </span>
-            </div>
+            </Link>
           </div>
 
           {/* Center - Search Bar (Hidden on mobile and tablet) */}
           <div className="hidden lg:flex flex-1 justify-center max-w-lg mx-4">
-            <div className="rounded-full px-4 py-2 w-full flex items-center gap-2 focus-within:ring-2 focus-within:ring-blue-400 transition-all bg-gray-100 dark:bg-gray-700 focus-within:bg-white dark:focus-within:bg-gray-600">
-              <span className="text-sm text-gray-500 dark:text-gray-400">🔍</span>
+            <div className={`rounded-full px-4 py-2 w-full flex items-center gap-2 focus-within:ring-2 focus-within:ring-blue-400 transition-all ${
+              isAdminPage 
+                ? 'bg-gray-700 focus-within:bg-gray-600' 
+                : 'bg-gray-100 dark:bg-gray-700 focus-within:bg-white dark:focus-within:bg-gray-600'
+            }`}>
+              <span className={`text-sm ${isAdminPage ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>🔍</span>
               <input
                 type="text"
                 placeholder="Search for people, pages, groups and #hashtags"
-                className="bg-transparent outline-none border-none flex-1 text-sm placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-white"
+                className={`bg-transparent outline-none border-none flex-1 text-sm ${
+                  isAdminPage 
+                    ? 'placeholder-gray-400 text-white' 
+                    : 'placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-white'
+                }`}
               />
             </div>
           </div>
@@ -621,7 +819,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           <div className="flex items-center gap-1 relative">
             {/* Mobile Search Icon */}
             {isMobile && (
-              <button className="w-8 h-8 rounded-full flex items-center justify-center text-lg transition-all bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300">
+              <button className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-all ${
+                isAdminPage 
+                  ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                  : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300'
+              }`}>
                 🔍
               </button>
             )}
@@ -634,8 +836,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   <button
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-all touch-manipulation ${
                       openDropdown === 'people' 
-                        ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' 
-                        : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300'
+                        ? isAdminPage 
+                          ? 'bg-blue-900/50 text-blue-400' 
+                          : 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400'
+                        : isAdminPage 
+                          ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                          : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300'
                     }`}
                     onClick={() => handleDropdownClick('people')}
                     onTouchStart={(e) => {
@@ -666,8 +872,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   <button
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-all touch-manipulation ${
                       openDropdown === 'messages' 
-                        ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400' 
-                        : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300'
+                        ? isAdminPage 
+                          ? 'bg-blue-900/50 text-blue-400' 
+                          : 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400'
+                        : isAdminPage 
+                          ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                          : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300'
                     }`}
                     onClick={() => handleDropdownClick('messages')}
                     onTouchStart={(e) => {
@@ -696,7 +906,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 {/* Notifications Icon */}
                 <div className="relative">
                   <button
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-lg transition-all touch-manipulation bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300"
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-all touch-manipulation ${
+                      isAdminPage 
+                        ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                        : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300'
+                    }`}
                     onClick={() => router.push('/dashboard/notifications')}
                     onTouchStart={(e) => {
                       e.preventDefault();
@@ -705,7 +919,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     style={{ touchAction: 'manipulation' }}
                   >
                     🔔
-                        </button>
+                  </button>
                 </div>
               </>
             )}
@@ -741,7 +955,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
       {/* Layout Container */}
       <div className="flex">
-        {/* Sidebar */}
         {/* Mobile Sidebar Overlay */}
         {isMobile && (sidebarOpen || profileSidebarOpen) && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-[55]" onClick={() => {
@@ -750,313 +963,175 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           }} />
         )}
 
-        {/* Mobile Sidebar - Slide out overlay */}
+        {/* Sidebar */}
         {isMobile ? (
           <>
             {/* Main Sidebar */}
-            <aside className={`fixed left-0 top-0 w-64 h-screen flex flex-col z-[60] transform transition-transform duration-300 ${
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          }`} style={{
-            background: '#ffffff',
-            boxShadow: '6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.9)',
-            height: '100vh',
-            padding: '16px',
-            scrollbarWidth: 'thin',
-            scrollbarColor: '#022e8a #f4f4f9',
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden'
-          }}>
+            <aside className={`fixed left-0 top-0 ${isAdminPage ? 'w-48' : 'w-64'} h-screen flex flex-col z-[60] transform transition-transform duration-300 ${
+              isMobile 
+                ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full')
+                : 'translate-x-0'
+            }`} style={{
+              background: isAdminPage ? '#2C2C2C' : '#ffffff',
+              boxShadow: isAdminPage ? 'none' : '6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.9)',
+              height: '100vh',
+              padding: isAdminPage ? '12px' : '16px',
+              scrollbarWidth: 'thin',
+              scrollbarColor: isAdminPage ? '#4A4A4A #2C2C2C' : '#022e8a #f4f4f9',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}>
               <div className="flex items-center justify-between mb-4">
-              <h2 className="text-gray-900 font-bold text-lg">
-                {isSettingsPage ? 'Settings' : 'Menu'}
-              </h2>
-              <button
-                onClick={() => setSidebarOpen(false)}
-                className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors text-gray-700"
-                style={{
-                  boxShadow: '6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.9)'
-                }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingTop: '80px' }}>
-              {isSettingsPage ? (
-                <>
-                  {/* Back to Dashboard */}
-                  <div className="mb-4">
-                                            <Link
-                          href="/dashboard"
-                          className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium"
-                        >
-                          <span>←</span>
-                          <span>Back to Dashboard</span>
-                        </Link>
-                  </div>
-
-                  {/* SETTINGS Section */}
-                  <div className="mb-4">
-                    <button 
-                      onClick={() => setSettingsOpen(!settingsOpen)} 
-                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
-                    >
-                      <h3 className="text-[#022e8a] font-bold text-sm">SETTINGS</h3>
-                      {!isMobile && (
-                      <span className={`text-[#022e8a] transition-transform duration-200 ${settingsOpen ? 'rotate-180' : ''}`}>▼</span>
-                      )}
-                    </button>
-                    {(settingsOpen || isMobile) && (
-                      <div className="pl-2">
-                        {renderSettingsMenuItems(settingsSections.settings)}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* PROFILE Section */}
-                  <div className="mb-4">
-                    <button 
-                      onClick={() => setProfileSettingsOpen(!profileSettingsOpen)} 
-                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
-                    >
-                      <h3 className="text-[#022e8a] font-bold text-sm">PROFILE</h3>
-                      {!isMobile && (
-                      <span className={`text-[#022e8a] transition-transform duration-200 ${profileSettingsOpen ? 'rotate-180' : ''}`}>▼</span>
-                      )}
-                    </button>
-                    {(profileSettingsOpen || isMobile) && (
-                      <div className="pl-2">
-                        {renderSettingsMenuItems(settingsSections.profile)}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* SECURITY Section */}
-                  <div className="mb-4">
-                    <button 
-                      onClick={() => setSecuritySettingsOpen(!securitySettingsOpen)} 
-                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
-                    >
-                      <h3 className="text-[#022e8a] font-bold text-sm">SECURITY</h3>
-                      {!isMobile && (
-                      <span className={`text-[#022e8a] transition-transform duration-200 ${securitySettingsOpen ? 'rotate-180' : ''}`}>▼</span>
-                      )}
-                    </button>
-                    {(securitySettingsOpen || isMobile) && (
-                      <div className="pl-2">
-                        {renderSettingsMenuItems(settingsSections.security)}
-                      </div>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <>
-                  {/* All Menu Items */}
-                  <div className="space-y-3">
-                    {renderMenuItems([...menuSections.me, ...menuSections.community, ...menuSections.explore])}
-                  </div>
-                  
-                  {/* Footer */}
-                  <div className="mt-8 p-3" style={{
-                    background: '#ffffff',
-                    borderRadius: '8px',
-                    boxShadow: '4px 4px 8px rgba(0, 0, 0, 0.1), -4px -4px 8px rgba(255, 255, 255, 0.9)',
-                    color: '#2d2d2d',
-                    fontSize: '12px',
-                    width: '100%'
-                  }}>
-                    <div className="flex justify-between items-center mb-3">
-                      <span>© 2025 Jaifriend</span>
-                      <button className="px-3 py-1 rounded-md text-white text-sm transition-all duration-300" style={{
-                        background: '#022e8a'
-                      }} onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#5d97fe';
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 4px 8px rgba(93, 151, 254, 0.3)';
-                      }} onMouseLeave={(e) => {
-                        e.currentTarget.style.background = '#022e8a';
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = 'none';
-                      }}>
-                        Language
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap gap-3">
-                      <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">Privacy</a>
-                      <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">Terms</a>
-                      <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">About</a>
-                      <span className="text-gray-700 text-xs">Jaifriend</span>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-
-          </aside>
-
-            {/* Profile Sidebar */}
-            <aside className={`fixed left-0 top-0 w-80 h-screen bg-white border-r border-gray-200 shadow-xl overflow-y-auto overflow-x-hidden flex flex-col z-[60] transform transition-transform duration-300 ${
-              profileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-            }`}>
-              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-                <h2 className="text-gray-900 font-bold text-lg">Profile</h2>
+                <h2 className={`font-bold text-lg ${isAdminPage ? 'text-white' : 'text-gray-900'}`}>
+                  {isSettingsPage ? 'Settings' : isAdminPage ? 'Admin' : 'Menu'}
+                </h2>
                 <button
-                  onClick={() => setProfileSidebarOpen(false)}
-                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                  onClick={() => setSidebarOpen(false)}
+                  className={`w-8 h-8 rounded-full flex items-center justify-center hover:transition-colors ${
+                    isAdminPage 
+                      ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                  }`}
+                  style={!isAdminPage ? {
+                    boxShadow: '6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.9)'
+                  } : {}}
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="flex-1 p-4 overflow-y-auto scrollbar-hide">
-                {/* Profile Section */}
-                <div className="flex items-center gap-3 mb-6 p-4 bg-gray-50 rounded-lg">
-                  <img
-                    src={profile.avatar}
-                    alt="avatar"
-                    className="w-16 h-16 rounded-full border border-gray-200 object-cover"
-                  />
-                  <div className="flex flex-col">
-                    <span 
-                      className="font-semibold text-lg text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
-                      onClick={handleMyProfile}
-                    >
-                      My Profile
-                    </span>
-                    <div className="flex gap-2 mt-2">
-                      <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm font-medium text-gray-700 dark:text-gray-300">
-                        💳 {profile.balance}
-                      </span>
-                      <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm font-medium text-gray-700 dark:text-gray-300">
-                        👍 {profile.pokes} Pokes
-                      </span>
+              <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingTop: '80px' }}>
+                {isSettingsPage ? (
+                  <>
+                    {/* Back to Dashboard */}
+                    <div className="mb-4">
+                      <Link
+                        href="/dashboard"
+                        className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium"
+                      >
+                        <span>←</span>
+                        <span>Back to Dashboard</span>
+                      </Link>
                     </div>
-                  </div>
-                </div>
 
-                {/* Menu Items */}
-                <div className="space-y-2">
-                  <button 
-                    className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
-                    onClick={handleSwitchAccount}
-                  >
-                    <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🔄</span>
-                    <span className="font-medium text-gray-900 dark:text-white">Switch Account</span>
-                  </button>
-                  
-                  <button 
-                    className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
-                    onClick={() => router.push('/dashboard/upgrade')}
-                  >
-                    <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🛠️</span>
-                    <span className="font-medium text-gray-900 dark:text-white">Upgrade To Pro</span>
-                  </button>
-                  
-                  <button 
-                    className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
-                    onClick={() => router.push('/dashboard/advertising')}
-                  >
-                    <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">📢</span>
-                    <span className="font-medium text-gray-900 dark:text-white">Advertising</span>
-                  </button>
-                  
-                  <button 
-                    className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
-                    onClick={() => router.push('/dashboard/subscriptions')}
-                  >
-                    <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">💳</span>
-                    <span className="font-medium text-gray-900 dark:text-white">Subscriptions</span>
-                  </button>
-                  
-                  <div className="border-t border-gray-200 my-4"></div>
-                  
-                  <button 
-                    className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
-                    onClick={() => router.push('/dashboard/settings/privacy')}
-                  >
-                    <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">✔️</span>
-                    <span className="font-medium text-gray-900 dark:text-white">Privacy Setting</span>
-                  </button>
-                  
-                  <button 
-                    className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
-                    onClick={() => router.push('/dashboard/settings')}
-                  >
-                    <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">⚙️</span>
-                    <span className="font-medium text-gray-900 dark:text-white">General Setting</span>
-                  </button>
-                  
-                  <button 
-                    className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
-                    onClick={() => router.push('/dashboard/invite')}
-                  >
-                    <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">✉️</span>
-                    <span className="font-medium text-gray-900 dark:text-white">Invite Your Friends</span>
-                  </button>
-                  
-                  <div className="border-t border-gray-200 my-4"></div>
-                  
-                  <div className="flex items-center gap-3 py-3 px-4">
-                    <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🌙</span>
-                    <span className="font-medium flex-1 text-gray-900 dark:text-white">Night mode</span>
-                    <input 
-                      type="checkbox" 
-                      id="night-mode-toggle-sidebar"
-                      className="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
-                      onChange={(e) => {
-                        // Toggle dark mode logic here
-                        console.log('Night mode toggled:', e.target.checked);
-                      }}
-                      aria-label="Toggle night mode"
-                    />
-                  </div>
-                  
-                  <button 
-                    className="flex items-center gap-3 py-3 px-4 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-left w-full transition-colors"
-                    onClick={handleLogout}
-                  >
-                    <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🚪</span>
-                    <span className="font-medium text-red-600 dark:text-red-400">Log Out</span>
-                  </button>
-                </div>
+                    {/* SETTINGS Section */}
+                    <div className="mb-4">
+                      <button 
+                        onClick={() => setSettingsOpen(!settingsOpen)} 
+                        className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                      >
+                        <h3 className="text-[#022e8a] font-bold text-sm">SETTINGS</h3>
+                        {!isMobile && (
+                          <span className={`text-[#022e8a] transition-transform duration-200 ${settingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                        )}
+                      </button>
+                      {(settingsOpen || isMobile) && (
+                        <div className="pl-2">
+                          {renderSettingsMenuItems(settingsSections.settings)}
+                        </div>
+                      )}
+                    </div>
 
-                {/* Footer */}
-                <div className="mt-8 p-4 border-t border-gray-200">
-                  <div className="text-xs text-gray-400 flex flex-col items-center gap-2">
-                    <div className="flex items-center gap-2">
-                      <span>© 2025 Jaifriend</span>
-                      <span>•</span>
-                      <button className="underline cursor-pointer hover:text-gray-600">Language</button>
+                    {/* PROFILE Section */}
+                    <div className="mb-4">
+                      <button 
+                        onClick={() => setProfileSettingsOpen(!profileSettingsOpen)} 
+                        className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                      >
+                        <h3 className="text-[#022e8a] font-bold text-sm">PROFILE</h3>
+                        {!isMobile && (
+                          <span className={`text-[#022e8a] transition-transform duration-200 ${profileSettingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                        )}
+                      </button>
+                      {(profileSettingsOpen || isMobile) && (
+                        <div className="pl-2">
+                          {renderSettingsMenuItems(settingsSections.profile)}
+                        </div>
+                      )}
                     </div>
-                    <div className="flex flex-wrap gap-2 justify-center">
-                      <button className="underline cursor-pointer hover:text-gray-600 text-xs">About</button>
-                      <button className="underline cursor-pointer hover:text-gray-600 text-xs">Directory</button>
-                      <button className="underline cursor-pointer hover:text-gray-600 text-xs">Contact Us</button>
-                      <button className="underline cursor-pointer hover:text-gray-600 text-xs">Developers</button>
-                      <button className="underline cursor-pointer hover:text-gray-600 text-xs">Privacy Policy</button>
-                      <button className="underline cursor-pointer hover:text-gray-600 text-xs">Terms of Use</button>
-                      <button className="underline cursor-pointer hover:text-gray-600 text-xs">Refund</button>
+
+                    {/* SECURITY Section */}
+                    <div className="mb-4">
+                      <button 
+                        onClick={() => setSecuritySettingsOpen(!securitySettingsOpen)} 
+                        className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                      >
+                        <h3 className="text-[#022e8a] font-bold text-sm">SECURITY</h3>
+                        {!isMobile && (
+                          <span className={`text-[#022e8a] transition-transform duration-200 ${securitySettingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                        )}
+                      </button>
+                      {(securitySettingsOpen || isMobile) && (
+                        <div className="pl-2">
+                          {renderSettingsMenuItems(settingsSections.security)}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </div>
+                  </>
+                ) : isAdminPage ? (
+                  <>
+                    {/* Admin Sidebar */}
+                    <div className="space-y-1">
+                      {renderAdminMenuItems()}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* All Menu Items */}
+                    <div className="space-y-3">
+                      {renderMenuItems([...menuSections.me, ...menuSections.community, ...menuSections.explore])}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="mt-8 p-3" style={{
+                      background: '#ffffff',
+                      borderRadius: '8px',
+                      boxShadow: '4px 4px 8px rgba(0, 0, 0, 0.1), -4px -4px 8px rgba(255, 255, 255, 0.9)',
+                      color: '#2d2d2d',
+                      fontSize: '12px',
+                      width: '100%'
+                    }}>
+                      <div className="flex justify-between items-center mb-3">
+                        <span>© 2025 Jaifriend</span>
+                        <button className="px-3 py-1 rounded-md text-white text-sm transition-all duration-300" style={{
+                          background: '#022e8a'
+                        }} onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#5d97fe';
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                          e.currentTarget.style.boxShadow = '0 4px 8px rgba(93, 151, 254, 0.3)';
+                        }} onMouseLeave={(e) => {
+                          e.currentTarget.style.background = '#022e8a';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }}>
+                          Language
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-3">
+                        <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">Privacy</a>
+                        <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">Terms</a>
+                        <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">About</a>
+                        <span className="text-gray-700 text-xs">Jaifriend</span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </aside>
           </>
         ) : (
           <>
-            {/* Collapse Toggle Button - REMOVED */}
-
+            {/* Desktop Main Sidebar */}
             <aside className={`flex flex-col fixed left-0 top-0 h-screen transition-all duration-300 scrollbar-hide ${
-              sidebarCollapsed ? 'w-16' : 'w-64'
+              sidebarCollapsed ? 'w-16' : isAdminPage ? 'w-48' : 'w-64'
             }`} style={{
-              background: '#ffffff',
-              boxShadow: '6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.9)',
+              background: isAdminPage ? '#2C2C2C' : '#ffffff',
+              boxShadow: isAdminPage ? 'none' : '6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.9)',
               height: '100vh',
               padding: '16px',
               scrollbarWidth: 'thin',
-              scrollbarColor: '#022e8a #f4f4f9',
+              scrollbarColor: isAdminPage ? '#4A4A4A #2C2C2C' : '#022e8a #f4f4f9',
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden'
@@ -1207,52 +1282,57 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       )}
                     </div>
                   </>
-                                  ) : (
-                    <>
-                      {/* All Menu Items */}
-                      <div className="space-y-3">
-                        {renderMenuItems([...menuSections.me, ...menuSections.community, ...menuSections.explore], sidebarCollapsed)}
-                      </div>
-                      
-                      {/* Footer */}
-                      {!sidebarCollapsed && (
-                        <div className="mt-8 p-3" style={{
-                          background: '#ffffff',
-                          borderRadius: '8px',
-                          boxShadow: '4px 4px 8px rgba(0, 0, 0, 0.1), -4px -4px 8px rgba(255, 255, 255, 0.9)',
-                          color: '#2d2d2d',
-                          fontSize: '12px',
-                          width: '100%'
-                        }}>
-                          <div className="flex justify-between items-center mb-3">
-                            <span>© 2025 Jaifriend</span>
-                            <button className="px-3 py-1 rounded-md text-white text-sm transition-all duration-300" style={{
-                              background: '#022e8a'
-                            }} onMouseEnter={(e) => {
-                              e.currentTarget.style.background = '#5d97fe';
-                              e.currentTarget.style.transform = 'translateY(-2px)';
-                              e.currentTarget.style.boxShadow = '0 4px 8px rgba(93, 151, 254, 0.3)';
-                            }} onMouseLeave={(e) => {
-                              e.currentTarget.style.background = '#022e8a';
-                              e.currentTarget.style.transform = 'translateY(0)';
-                              e.currentTarget.style.boxShadow = 'none';
-                            }}>
-                              Language
-                            </button>
-                          </div>
-                          <div className="flex flex-wrap gap-3">
-                            <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">Privacy</a>
-                            <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">Terms</a>
-                            <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">About</a>
-                            <span className="text-gray-700 text-xs">Jaifriend</span>
-                          </div>
+                ) : isAdminPage ? (
+                  <>
+                    {/* Admin Sidebar */}
+                    <div className="space-y-1">
+                      {renderAdminMenuItems()}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* All Menu Items */}
+                    <div className="space-y-3">
+                      {renderMenuItems([...menuSections.me, ...menuSections.community, ...menuSections.explore], sidebarCollapsed)}
+                    </div>
+
+                    {/* Footer */}
+                    {!sidebarCollapsed && (
+                      <div className="mt-8 p-3" style={{
+                        background: '#ffffff',
+                        borderRadius: '8px',
+                        boxShadow: '4px 4px 8px rgba(0, 0, 0, 0.1), -4px -4px 8px rgba(255, 255, 255, 0.9)',
+                        color: '#2d2d2d',
+                        fontSize: '12px',
+                        width: '100%'
+                      }}>
+                        <div className="flex justify-between items-center mb-3">
+                          <span>© 2025 Jaifriend</span>
+                          <button className="px-3 py-1 rounded-md text-white text-sm transition-all duration-300" style={{
+                            background: '#022e8a'
+                          }} onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#5d97fe';
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 4px 8px rgba(93, 151, 254, 0.3)';
+                          }} onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#022e8a';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}>
+                            Language
+                          </button>
                         </div>
-                      )}
-                    </>
-                  )}
+                        <div className="flex flex-wrap gap-3">
+                          <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">Privacy</a>
+                          <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">Terms</a>
+                          <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">About</a>
+                          <span className="text-gray-700 text-xs">Jaifriend</span>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
-
-
             </aside>
 
             {/* Desktop Profile Sidebar */}
@@ -1411,15 +1491,20 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
         {/* Main Content Area */}
         <main className={`
-          flex-1 transition-all duration-300 min-h-screen overflow-x-hidden bg-gray-50 dark:bg-dark-900
+          flex-1 transition-all duration-300 min-h-screen overflow-x-hidden bg-gray-50 dark:bg-gray-900
           ${isMobile 
             ? 'ml-0 pb-20' 
             : sidebarCollapsed 
               ? 'ml-16' 
-              : 'ml-64'
+              : isAdminPage 
+                ? 'ml-48' 
+                : 'ml-64'
           }
           ${!isMobile && profileSidebarOpen ? 'ml-80' : ''}
-        `} style={{ paddingLeft: '0', paddingRight: '0' }}>
+        `} style={{ 
+          paddingLeft: '0', 
+          paddingRight: '0'
+        }}>
           <div className="w-full h-full overflow-x-hidden pt-16">
             {children}
           </div>
@@ -1428,7 +1513,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
       {/* Mobile Bottom Navigation */}
       {isMobile && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-dark-800 border-t border-gray-200 dark:border-dark-700 z-50 overflow-x-hidden transition-colors duration-200">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50 overflow-x-hidden transition-colors duration-200">
           <div className="flex justify-around items-center py-2 w-full max-w-full">
             <Link
               href="/dashboard"
@@ -1482,22 +1567,22 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               <button
                 className={`flex flex-col items-center p-2 rounded-lg transition-colors touch-manipulation ${
                   profileSidebarOpen 
-                  ? 'text-blue-600 dark:text-blue-400' 
-                  : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
-              }`}
+                    ? 'text-blue-600 dark:text-blue-400' 
+                    : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                }`}
                 onClick={() => handleDropdownClick('profile')}
                 onTouchStart={(e) => {
                   e.preventDefault();
                   handleDropdownClick('profile');
                 }}
                 style={{ touchAction: 'manipulation' }}
-            >
-              <img
-                src={profile.avatar}
-                alt="Profile"
+              >
+                <img
+                  src={profile.avatar}
+                  alt="Profile"
                   className="w-6 h-6 rounded-full mb-1 object-cover pointer-events-none"
-              />
-              <span className="text-xs font-medium">Profile</span>
+                />
+                <span className="text-xs font-medium">Profile</span>
               </button>
             </div>
           </div>
