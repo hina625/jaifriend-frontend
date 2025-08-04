@@ -108,7 +108,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
               onClick={navigateToProfile}
             >
               <img
-                src={post.user?.avatar || '/avatars/1.png.png'}
+                src={post.user?.avatar ? getMediaUrl(post.user.avatar) : '/avatars/1.png.png'}
                 alt={post.user?.name || 'User'}
                 className="w-full h-full object-cover"
               />
@@ -281,7 +281,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
             {post.comments.slice(0, 3).map((comment: any, index: number) => (
               <div key={index} className="flex items-start space-x-2">
                 <img
-                  src={comment.user?.avatar || '/avatars/1.png.png'}
+                  src={comment.user?.avatar ? getMediaUrl(comment.user.avatar) : '/avatars/1.png.png'}
                   alt={comment.user?.name || 'User'}
                   className="w-5 h-5 sm:w-6 sm:h-6 rounded-full flex-shrink-0"
                 />

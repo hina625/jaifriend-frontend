@@ -171,7 +171,7 @@ export default function AlbumDisplay({
     <div className="bg-white rounded-xl shadow p-3 sm:p-4 mb-4 sm:mb-6">
       <div className="flex items-center gap-2 mb-3">
         <img 
-          src={album.user?.avatar || '/avatars/1.png.png'} 
+          src={album.user?.avatar ? (album.user.avatar.startsWith('http') ? album.user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${album.user.avatar}`) : '/avatars/1.png.png'} 
           alt="avatar" 
           className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" 
         />
@@ -367,7 +367,7 @@ export default function AlbumDisplay({
           {album.comments.slice(0, 3).map((comment: any, index: number) => (
             <div key={index} className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
               <img 
-                src={comment.user?.avatar || '/avatars/1.png.png'} 
+                src={comment.user?.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${comment.user.avatar}`) : '/avatars/1.png.png'} 
                 alt="avatar" 
                 className="w-6 h-6 rounded-full" 
               />

@@ -11,7 +11,15 @@ function getUserAvatar() {
   // Try to get avatar from localStorage (if you store it there after login), otherwise use default
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
-    return user.avatar || '/avatars/1.png.png';
+    if (user.avatar) {
+      // Use getMediaUrl function to construct proper URL
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+      if (user.avatar.startsWith('http')) {
+        return user.avatar;
+      }
+      return `${baseUrl}${user.avatar}`;
+    }
+    return '/avatars/1.png.png';
   } catch {
     return '/avatars/1.png.png';
   }
@@ -843,7 +851,7 @@ export default function Dashboard() {
         </h1>
         {user && (
           <div className="flex items-center gap-2 mb-3 sm:mb-4">
-            <img src={user.avatar || '/avatars/1.png.png'} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-blue-500" />
+            <img src={user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${user.avatar}`) : '/avatars/1.png.png'} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-blue-500" />
             <span className="font-bold text-blue-700 text-xs sm:text-sm md:text-base">ID: {user._id || user.id}</span>
           </div>
         )}
@@ -1074,7 +1082,7 @@ export default function Dashboard() {
                                   rel="noopener noreferrer"
                                 >
                                   <img
-                                    src={item.user.avatar || '/avatars/1.png.png'}
+                                    src={item.user.avatar ? (item.user.avatar.startsWith('http') ? item.user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${item.user.avatar}`) : '/avatars/1.png.png'}
                                     className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-blue-400 mr-2 cursor-pointer"
                                     alt={item.user.name || 'User'}
                                   />
@@ -1508,7 +1516,7 @@ export default function Dashboard() {
                               <div className="space-y-2 mb-3">
                                 {item.comments.map((comment: any, idx: number) => (
                                   <div key={idx} className="flex items-start gap-2">
-                                    <img src={comment.user?.avatar || '/avatars/1.png.png'} alt="avatar" className="w-6 h-6 rounded-full flex-shrink-0" />
+                                    <img src={comment.user?.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${comment.user.avatar}`) : '/avatars/1.png.png'} alt="avatar" className="w-6 h-6 rounded-full flex-shrink-0" />
                                     <div className="flex-1 min-w-0">
                                       <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
                                         {comment.user ? (
