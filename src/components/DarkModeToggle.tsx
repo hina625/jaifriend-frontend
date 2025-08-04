@@ -1,7 +1,6 @@
 'use client';
 import React from 'react';
 import { useDarkMode } from '../contexts/DarkModeContext';
-import { Moon, Sun } from 'lucide-react';
 
 interface DarkModeToggleProps {
   className?: string;
@@ -15,6 +14,8 @@ const DarkModeToggle: React.FC<DarkModeToggleProps> = ({
   variant = 'icon' 
 }) => {
   const { isDarkMode, toggleDarkMode } = useDarkMode();
+  
+  console.log('🌙 Dark mode state:', isDarkMode);
 
   const sizeClasses = {
     sm: 'w-6 h-6',
@@ -40,9 +41,9 @@ const DarkModeToggle: React.FC<DarkModeToggleProps> = ({
         aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
       >
         {isDarkMode ? (
-          <Sun className={iconSizes[size]} />
+          <span className="text-lg">☀️</span>
         ) : (
-          <Moon className={iconSizes[size]} />
+          <span className="text-lg">🌙</span>
         )}
       </button>
     );
@@ -61,12 +62,12 @@ const DarkModeToggle: React.FC<DarkModeToggleProps> = ({
       >
         {isDarkMode ? (
           <>
-            <Sun className={iconSizes[size]} />
+            <span className="text-lg">☀️</span>
             <span className="text-sm font-medium">Light</span>
           </>
         ) : (
           <>
-            <Moon className={iconSizes[size]} />
+            <span className="text-lg">🌙</span>
             <span className="text-sm font-medium">Dark</span>
           </>
         )}
@@ -86,9 +87,9 @@ const DarkModeToggle: React.FC<DarkModeToggleProps> = ({
       aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
     >
       {isDarkMode ? (
-        <Sun className={iconSizes[size]} />
+        <span className="text-lg">☀️</span>
       ) : (
-        <Moon className={iconSizes[size]} />
+        <span className="text-lg">🌙</span>
       )}
     </button>
   );
