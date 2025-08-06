@@ -1,55 +1,97 @@
 "use client";
 import React from 'react';
+import Link from 'next/link';
+import { Settings, Mail, Users, Upload, Globe, MessageCircle, Info, Shield } from 'lucide-react';
 
-const AdminSettings = () => {
-  const settingsItems = [
-    { name: "Website Mode", icon: "🌐", description: "Configure website mode settings" },
-    { name: "General Configuration", icon: "⚙️", description: "Manage general system configuration" },
-    { name: "Website Information", icon: "ℹ️", description: "Update website information and details" },
-    { name: "File Upload Configuration", icon: "📁", description: "Configure file upload settings" },
-    { name: "E-mail & SMS Setup", icon: "📧", description: "Setup email and SMS configurations" },
-    { name: "Chat & Video/Audio", icon: "💬", description: "Manage chat and media settings" },
-    { name: "Social Login Settings", icon: "🔗", description: "Configure social login providers" },
-    { name: "NodeJS Settings", icon: "🟢", description: "Manage NodeJS server settings" },
-    { name: "CronJob Settings", icon: "⏰", description: "Configure automated tasks" },
-    { name: "AI Settings", icon: "🤖", description: "Manage AI integration settings" }
+const AdminSettingsPage = () => {
+  const settingsCategories = [
+    {
+      title: 'General Settings',
+      description: 'Configure basic website settings and preferences',
+      icon: Settings,
+      href: '/dashboard/admin/settings/general',
+      color: 'bg-blue-500'
+    },
+    {
+      title: 'Email & SMS Setup',
+      description: 'Configure email server and SMS provider settings',
+      icon: Mail,
+      href: '/dashboard/admin/settings/email',
+      color: 'bg-green-500'
+    },
+    {
+      title: 'Social Settings',
+      description: 'Manage social media integration and sharing',
+      icon: Users,
+      href: '/dashboard/admin/settings/social',
+      color: 'bg-purple-500'
+    },
+    {
+      title: 'Chat Settings',
+      description: 'Configure chat system and messaging features',
+      icon: MessageCircle,
+      href: '/dashboard/admin/settings/chat',
+      color: 'bg-orange-500'
+    },
+    {
+      title: 'Upload Settings',
+      description: 'Manage file upload configurations and limits',
+      icon: Upload,
+      href: '/dashboard/admin/settings/upload',
+      color: 'bg-red-500'
+    },
+    {
+      title: 'Website Mode',
+      description: 'Configure website display mode and themes',
+      icon: Globe,
+      href: '/dashboard/admin/settings/website-mode',
+      color: 'bg-indigo-500'
+    },
+    {
+      title: 'Info Settings',
+      description: 'Manage website information and metadata',
+      icon: Info,
+      href: '/dashboard/admin/settings/info',
+      color: 'bg-teal-500'
+    }
   ];
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gray-50 p-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          Settings Management
-        </h1>
-        <div className="text-sm text-gray-600">
-          Home {'>'} Admin {'>'} <span className="text-red-500 font-semibold">SETTINGS</span>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Settings</h1>
+        <div className="text-sm text-gray-600 flex items-center space-x-2">
+          <span className="text-red-500">🏠</span>
+          <span>Home</span>
+          <span>&gt;</span>
+          <span className="text-red-500">Settings</span>
         </div>
       </div>
 
       {/* Settings Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {settingsItems.map((item, index) => (
-          <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center text-2xl">
-                {item.icon}
+        {settingsCategories.map((category, index) => {
+          const IconComponent = category.icon;
+          return (
+            <Link 
+              key={index} 
+              href={category.href}
+              className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-200"
+            >
+              <div className="flex items-center mb-4">
+                <div className={`${category.color} p-3 rounded-lg mr-4`}>
+                  <IconComponent className="w-6 h-6 text-white" />
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800">{item.name}</h3>
-                <p className="text-sm text-gray-600">{item.description}</p>
+                <h3 className="text-lg font-semibold text-gray-900">{category.title}</h3>
               </div>
-            </div>
-            <div className="flex justify-end">
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                Configure
-              </button>
-            </div>
-          </div>
-        ))}
+              <p className="text-gray-600 text-sm">{category.description}</p>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
 };
 
-export default AdminSettings; 
+export default AdminSettingsPage; 
