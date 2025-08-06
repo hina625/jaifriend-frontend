@@ -1,9 +1,8 @@
 "use client";
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Edit, Trash2, MoreVertical, Search, Filter, Camera, Video, Music, FileText, Plus, Heart, MessageCircle, Share2, Bookmark, Settings, Camera as CameraIcon, UserPlus, UserCheck, MapPin, Globe, Calendar, Phone, BarChart3, Users, Clock, Link as LinkIcon, Gift } from 'lucide-react';
+import { Edit, Trash2, MoreVertical, Search, Filter, Camera, Video, Music, FileText, Plus, Heart, MessageCircle, Share2, Bookmark, Settings, Camera as CameraIcon, MapPin, Globe, Calendar, Users, Eye, ThumbsUp, X, ShoppingBag, UserPlus, UserCheck, Phone, BarChart3, Clock, Link as LinkIcon, Gift } from 'lucide-react';
 import PostDisplay from '@/components/PostDisplay';
-import AlbumDisplay from '@/components/AlbumDisplay';
 import Popup, { PopupState } from '@/components/Popup';
 
 interface User {
@@ -11,31 +10,29 @@ interface User {
   name: string;
   username: string;
   avatar: string;
-  coverPhoto?: string;
   email: string;
+  followers: string[];
+  following: string[];
   bio?: string;
   location?: string;
   website?: string;
-  phone?: string;
-  dateOfBirth?: string;
-  gender?: string;
   workplace?: string;
-  country?: string;
   address?: string;
-  followers: number;
-  following: number;
-  posts: number;
-  albums: number;
-  photos: number;
-  videos: number;
-  followersList: string[];
-  followingList: string[];
-  isPrivate?: boolean;
+  country?: string;
   isOnline?: boolean;
-  lastSeen?: string;
+  joinedDate?: string;
   isFollowing?: boolean;
   isBlocked?: boolean;
   isVerified?: boolean;
+  lastSeen?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  gender?: string;
+}
+
+interface UserImages {
+  avatar: string | null;
+  cover: string | null;
 }
 
 interface Post {
@@ -57,26 +54,82 @@ interface Post {
 interface Album {
   _id: string;
   name: string;
-  description?: string;
   media: any[];
-  likes: string[];
-  comments: any[];
-  shares: string[];
-  savedBy: string[];
   createdAt: string;
+  user: string;
+}
+
+interface Group {
+  _id: string;
+  name: string;
+  description: string;
+  category: string;
+  privacy: 'public' | 'private' | 'secret';
+  avatar?: string;
+  coverPhoto?: string;
+  creator: {
+    _id: string;
+    name: string;
+    username?: string;
+    avatar?: string;
+  };
+  members: Array<{
   user: {
     _id: string;
     name: string;
-    avatar: string;
+      username?: string;
+      avatar?: string;
+    };
+    role: 'member' | 'moderator' | 'admin';
+    joinedAt: string;
+    isActive: boolean;
+  }>;
+  stats: {
+    memberCount: number;
+    postCount: number;
+    eventCount: number;
   };
+  isActive: boolean;
+  website?: string;
+  email?: string;
+  phone?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export default function UserProfile() {
+interface Product {
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
+  type: string;
+  category: string;
+  location: string;
+  imageUrl?: string;
+  totalItemUnits: number;
+  seller: {
+    _id: string;
+    name: string;
+    username?: string;
+    avatar?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+const UserProfile: React.FC = () => {
   const { userId } = useParams();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [userImages, setUserImages] = useState<UserImages>({
+    avatar: null,
+    cover: null
+  });
   const [posts, setPosts] = useState<Post[]>([]);
   const [albums, setAlbums] = useState<Album[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('timeline');
@@ -92,6 +145,14 @@ export default function UserProfile() {
   const [newCoverPhoto, setNewCoverPhoto] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>('');
   const [coverPreview, setCoverPreview] = useState<string>('');
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
+  const [showPostModal, setShowPostModal] = useState(false);
+  const [postContent, setPostContent] = useState('');
+  const [postMedia, setPostMedia] = useState<File[]>([]);
+  const [postMediaUrls, setPostMediaUrls] = useState<string[]>([]);
+  const [creatingPost, setCreatingPost] = useState(false);
   const [popup, setPopup] = useState<PopupState>({
     isOpen: false,
     type: 'success',
@@ -99,50 +160,47 @@ export default function UserProfile() {
     message: ''
   });
 
+  // Tabs configuration
+  const tabs = [
+    { id: 'timeline', label: 'Timeline', count: posts.length },
+    { id: 'albums', label: 'Albums', count: albums.length },
+    { id: 'groups', label: 'Groups', count: groups.length },
+    { id: 'products', label: 'Products', count: products.length }
+  ];
+
+  // Filters configuration
+  const filters = [
+    { id: 'all', label: 'All Posts', icon: <FileText className="w-4 h-4" /> },
+    { id: 'photos', label: 'Photos', icon: <Camera className="w-4 h-4" /> },
+    { id: 'videos', label: 'Videos', icon: <Video className="w-4 h-4" /> },
+    { id: 'text', label: 'Text Only', icon: <FileText className="w-4 h-4" /> }
+  ];
+
   // Get the actual userId string
   const actualUserId = Array.isArray(userId) ? userId[0] : userId;
-
-  const tabs = [
-    { id: 'timeline', label: 'Timeline', icon: '📝' },
-    { id: 'groups', label: 'Groups', icon: '👥' },
-    { id: 'likes', label: 'Likes', icon: '❤️' },
-    { id: 'following', label: 'Following', count: user?.following || 0 },
-    { id: 'followers', label: 'Followers', count: user?.followers || 0 },
-    { id: 'photos', label: 'Photos', icon: '📷' },
-    { id: 'videos', label: 'Videos', icon: '🎥' },
-    { id: 'reels', label: 'Reels', icon: '🎬' },
-    { id: 'products', label: 'Products', icon: '🛍️' }
-  ];
-
-  const filters = [
-    { id: 'all', label: 'All', icon: <Filter className="w-3 h-3 sm:w-4 sm:h-4" /> },
-    { id: 'text', label: 'Text', icon: <FileText className="w-3 h-3 sm:w-4 sm:h-4" /> },
-    { id: 'photos', label: 'Photos', icon: <CameraIcon className="w-3 h-3 sm:w-4 sm:h-4" /> },
-    { id: 'videos', label: 'Videos', icon: <Video className="w-3 h-3 sm:w-4 sm:h-4" /> },
-    { id: 'sounds', label: 'Sounds', icon: <Music className="w-3 h-3 sm:w-4 sm:h-4" /> }
-  ];
 
   useEffect(() => {
     if (actualUserId) {
       fetchUserProfile();
+      fetchUserImages();
       fetchUserContent();
+      fetchUserAlbums();
+      fetchUserGroups();
+      fetchUserProducts();
     }
   }, [actualUserId]);
 
-  // Listen for image updates from settings page
+  // Event listeners for updates
   useEffect(() => {
     const handleImagesUpdated = () => {
-      console.log('Images updated event received, refreshing profile...');
-      fetchUserProfile();
+      fetchUserImages();
     };
 
     const handlePrivacySettingsUpdated = () => {
-      console.log('Privacy settings updated event received, refreshing profile...');
       fetchUserProfile();
     };
 
     const handlePasswordChanged = () => {
-      console.log('Password changed event received, refreshing profile...');
       fetchUserProfile();
     };
 
@@ -160,7 +218,6 @@ export default function UserProfile() {
   // Listen for profile updates from settings pages
   useEffect(() => {
     const handleProfileUpdated = () => {
-      console.log('Profile updated event received in dynamic profile page, refreshing profile...');
       fetchUserProfile();
     };
 
@@ -171,6 +228,55 @@ export default function UserProfile() {
     };
   }, []);
 
+  // Add missing event handlers
+  const handlePostCreated = () => {
+    fetchUserContent();
+  };
+
+  const handlePostDeleted = () => {
+    fetchUserContent();
+  };
+
+  const handlePostUpdated = () => {
+    fetchUserContent();
+  };
+
+  const handleAlbumCreated = () => {
+    fetchUserAlbums();
+  };
+
+  const handleAlbumUpdated = () => {
+    fetchUserAlbums();
+  };
+
+  const handleAlbumDeleted = () => {
+    fetchUserAlbums();
+  };
+
+  const handleGroupCreated = () => {
+    fetchUserGroups();
+  };
+
+  const handleGroupUpdated = () => {
+    fetchUserGroups();
+  };
+
+  const handleGroupDeleted = () => {
+    fetchUserGroups();
+  };
+
+  const handleProductCreated = () => {
+    fetchUserProducts();
+  };
+
+  const handleProductUpdated = () => {
+    fetchUserProducts();
+  };
+
+  const handleProductDeleted = () => {
+    fetchUserProducts();
+  };
+
   const fetchUserProfile = async () => {
     try {
       setLoading(true);
@@ -180,8 +286,6 @@ export default function UserProfile() {
         router.push('/register');
         return;
       }
-
-      console.log('Fetching profile for userId:', actualUserId);
 
       // Handle "me" case - get current user's ID first
       let targetUserId = actualUserId;
@@ -219,18 +323,10 @@ export default function UserProfile() {
       });
 
       if (response.ok) {
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
           const userData = await response.json();
-          console.log('User data received:', userData);
           setUser(userData);
           setIsFollowing(userData.isFollowing);
           setIsBlocked(userData.isBlocked);
-        } else {
-          console.error('Response is not JSON:', await response.text());
-          setError('Invalid response format from server');
-          showPopup('error', 'Error', 'Invalid response format from server');
-        }
         
         // Check if this is the current user's profile
         const currentUserResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, { 
@@ -240,25 +336,13 @@ export default function UserProfile() {
         });
         
         if (currentUserResponse.ok) {
-          const contentType = currentUserResponse.headers.get('content-type');
-          if (contentType && contentType.includes('application/json')) {
             const currentUser = await currentUserResponse.json();
             setIsCurrentUser(currentUser.id === actualUserId);
-          }
         }
       } else {
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
           const errorData = await response.json();
-          console.error('Profile fetch error:', errorData);
-          setError(errorData.error || 'User not found');
-          showPopup('error', 'Error', errorData.error || 'User not found');
-        } else {
-          const errorText = await response.text();
-          console.error('Profile fetch error (non-JSON):', errorText);
-          setError('User not found');
-          showPopup('error', 'Error', 'User not found');
-        }
+        setError(errorData.error || 'Failed to load user profile');
+        showPopup('error', 'Error', errorData.error || 'Failed to load user profile');
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -266,6 +350,26 @@ export default function UserProfile() {
       showPopup('error', 'Error', 'Failed to load user profile');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserImages = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/userimages/${actualUserId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUserImages(data);
+      }
+    } catch (error) {
+      console.error('Error fetching user images:', error);
     }
   };
 
@@ -285,29 +389,71 @@ export default function UserProfile() {
       });
 
       if (postsResponse.ok) {
-        const contentType = postsResponse.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
           const postsData = await postsResponse.json();
           setPosts(postsData);
         }
-      }
+    } catch (error) {
+      console.error('Error fetching user content:', error);
+    }
+  };
 
-      // Fetch albums
-      const albumsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${actualUserId}/albums`, { 
+  const fetchUserAlbums = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/user/${actualUserId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      if (albumsResponse.ok) {
-        const contentType = albumsResponse.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const albumsData = await albumsResponse.json();
-          setAlbums(albumsData);
-        }
+      if (response.ok) {
+        const data = await response.json();
+        setAlbums(data);
       }
     } catch (error) {
-      console.error('Error fetching user content:', error);
+      console.error('Error fetching user albums:', error);
+    }
+  };
+
+  const fetchUserGroups = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups/user/${actualUserId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setGroups(data);
+      }
+    } catch (error) {
+      console.error('Error fetching user groups:', error);
+    }
+  };
+
+  const fetchUserProducts = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/products/user/${actualUserId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setProducts(data);
+      }
+    } catch (error) {
+      console.error('Error fetching user products:', error);
     }
   };
 
@@ -326,8 +472,6 @@ export default function UserProfile() {
       if (response.ok) {
         setIsFollowing(!isFollowing);
         showPopup('success', 'Success', isFollowing ? 'Unfollowed successfully' : 'Followed successfully');
-        
-        // Refresh user data to update follower count
         fetchUserProfile();
       }
     } catch (error) {
@@ -351,6 +495,7 @@ export default function UserProfile() {
       if (response.ok) {
         setIsBlocked(!isBlocked);
         showPopup('success', 'Success', isBlocked ? 'Unblocked successfully' : 'Blocked successfully');
+        fetchUserProfile();
       }
     } catch (error) {
       console.error('Error blocking/unblocking user:', error);
@@ -359,7 +504,8 @@ export default function UserProfile() {
   };
 
   const handleMessage = () => {
-    showPopup('info', 'Message', 'Message feature coming soon!');
+    // Navigate to messages or open chat
+    router.push(`/dashboard/messages/${user?.id}`);
   };
 
   const handleEditPost = (post: Post) => {
@@ -369,20 +515,14 @@ export default function UserProfile() {
   };
 
   const handleEditProfile = () => {
-    if (user) {
-      router.push(`/dashboard/settings/profile`);
-    }
+    router.push('/dashboard/settings/profile');
   };
 
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setNewAvatar(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setAvatarPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      setAvatarPreview(URL.createObjectURL(file));
     }
   };
 
@@ -390,11 +530,7 @@ export default function UserProfile() {
     const file = e.target.files?.[0];
     if (file) {
       setNewCoverPhoto(file);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setCoverPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      setCoverPreview(URL.createObjectURL(file));
     }
   };
 
@@ -402,13 +538,17 @@ export default function UserProfile() {
     if (!newAvatar) return;
     
     try {
+      setUploadingAvatar(true);
       const token = localStorage.getItem('token');
-      if (!token) return;
+      if (!token) {
+        showPopup('error', 'Authentication Error', 'Please log in again');
+        return;
+      }
 
       const formData = new FormData();
-      formData.append('profilePhoto', newAvatar);
+      formData.append('avatar', newAvatar);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/upload/profile-photo`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/userimages/avatar`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -418,20 +558,24 @@ export default function UserProfile() {
 
       if (response.ok) {
         const data = await response.json();
-        showPopup('success', 'Success', 'Profile picture updated successfully');
+        setUserImages(prev => ({
+          ...prev,
+          avatar: data.avatar
+        }));
         setNewAvatar(null);
         setAvatarPreview('');
-        fetchUserProfile(); // Refresh user data
-        
-        // Dispatch event to notify other components
-        window.dispatchEvent(new CustomEvent('imagesUpdated'));
+        showPopup('success', 'Avatar Updated!', 'Your profile picture has been updated successfully!');
+        window.dispatchEvent(new CustomEvent('profileUpdated'));
+        fetchUserImages();
       } else {
         const errorData = await response.json();
-        showPopup('error', 'Error', errorData.error || 'Failed to update profile picture');
+        showPopup('error', 'Upload Failed', errorData.error || 'Failed to upload avatar');
       }
     } catch (error) {
-      console.error('Error updating profile picture:', error);
-      showPopup('error', 'Error', 'Failed to update profile picture');
+      console.error('Error uploading avatar:', error);
+      showPopup('error', 'Upload Failed', 'Failed to upload avatar. Please try again.');
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -439,13 +583,17 @@ export default function UserProfile() {
     if (!newCoverPhoto) return;
     
     try {
+      setUploadingCover(true);
       const token = localStorage.getItem('token');
-      if (!token) return;
+      if (!token) {
+        showPopup('error', 'Authentication Error', 'Please log in again');
+        return;
+      }
 
       const formData = new FormData();
-      formData.append('coverPhoto', newCoverPhoto);
+      formData.append('cover', newCoverPhoto);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/upload/cover-photo`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/userimages/cover`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -455,20 +603,23 @@ export default function UserProfile() {
 
       if (response.ok) {
         const data = await response.json();
-        showPopup('success', 'Success', 'Cover photo updated successfully');
+        setUserImages(prev => ({
+          ...prev,
+          cover: data.cover
+        }));
         setNewCoverPhoto(null);
         setCoverPreview('');
-        fetchUserProfile(); // Refresh user data
-        
-        // Dispatch event to notify other components
-        window.dispatchEvent(new CustomEvent('imagesUpdated'));
+        showPopup('success', 'Cover Updated!', 'Your cover photo has been updated successfully!');
+        fetchUserImages();
       } else {
         const errorData = await response.json();
-        showPopup('error', 'Error', errorData.error || 'Failed to update cover photo');
+        showPopup('error', 'Upload Failed', errorData.error || 'Failed to upload cover photo');
       }
     } catch (error) {
-      console.error('Error updating cover photo:', error);
-      showPopup('error', 'Error', 'Failed to update cover photo');
+      console.error('Error uploading cover photo:', error);
+      showPopup('error', 'Upload Failed', 'Failed to upload cover photo. Please try again.');
+    } finally {
+      setUploadingCover(false);
     }
   };
 
@@ -485,12 +636,14 @@ export default function UserProfile() {
       });
 
       if (response.ok) {
-        setPosts(posts.filter(post => post._id !== postId));
-        showPopup('success', 'Success', 'Post deleted successfully');
+        showPopup('success', 'Post Deleted', 'Post has been deleted successfully');
+        fetchUserContent();
+      } else {
+        showPopup('error', 'Delete Failed', 'Failed to delete post');
       }
     } catch (error) {
       console.error('Error deleting post:', error);
-      showPopup('error', 'Error', 'Failed to delete post');
+      showPopup('error', 'Delete Failed', 'Failed to delete post');
     }
   };
 
@@ -511,19 +664,17 @@ export default function UserProfile() {
       });
 
       if (response.ok) {
-        setPosts(posts.map(post => 
-          post._id === editingPost._id 
-            ? { ...post, content: editContent }
-            : post
-        ));
+        showPopup('success', 'Post Updated', 'Post has been updated successfully');
         setShowEditModal(false);
         setEditingPost(null);
         setEditContent('');
-        showPopup('success', 'Success', 'Post updated successfully');
+        fetchUserContent();
+      } else {
+        showPopup('error', 'Update Failed', 'Failed to update post');
       }
     } catch (error) {
       console.error('Error updating post:', error);
-      showPopup('error', 'Error', 'Failed to update post');
+      showPopup('error', 'Update Failed', 'Failed to update post');
     }
   };
 
@@ -543,24 +694,28 @@ export default function UserProfile() {
   const getFilteredPosts = () => {
     let filtered = posts;
 
+    // Apply search filter
     if (searchQuery) {
       filtered = filtered.filter(post => 
         post.content.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
+    // Apply content type filter
     switch (activeFilter) {
-      case 'text':
-        filtered = filtered.filter(post => !post.media || post.media.length === 0);
-        break;
       case 'photos':
         filtered = filtered.filter(post => 
-          post.media && post.media.some(media => media.type === 'image' || media.includes('unsplash'))
+          post.media && post.media.some(media => media.type?.startsWith('image/'))
         );
         break;
       case 'videos':
         filtered = filtered.filter(post => 
-          post.media && post.media.some(media => media.type === 'video')
+          post.media && post.media.some(media => media.type?.startsWith('video/'))
+        );
+        break;
+      case 'text':
+        filtered = filtered.filter(post => 
+          !post.media || post.media.length === 0
         );
         break;
     }
@@ -569,9 +724,9 @@ export default function UserProfile() {
   };
 
   const getMediaUrl = (url: string) => {
-    if (!url) return '/default-avatar.png';
+    if (!url) return '';
     if (url.startsWith('http')) return url;
-    return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${url}`;
+    return `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
   };
 
   const formatDate = (dateString: string) => {
@@ -581,177 +736,197 @@ export default function UserProfile() {
     
     if (diffInHours < 1) return 'Just now';
     if (diffInHours < 24) return `${diffInHours}h ago`;
-    if (diffInHours < 48) return 'Yesterday';
+    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
     return date.toLocaleDateString();
   };
 
   const getLastSeenText = (lastSeen?: string) => {
-    if (!lastSeen) return '21 hrs';
-    const date = new Date(lastSeen);
-    const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    if (!lastSeen) return 'Online';
     
-    if (diffInHours < 1) return 'Just now';
-    if (diffInHours < 24) return `${diffInHours} hrs`;
-    return `${Math.floor(diffInHours / 24)} days`;
+    const lastSeenDate = new Date(lastSeen);
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - lastSeenDate.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)} hours ago`;
+    return `${Math.floor(diffInMinutes / 1440)} days ago`;
+  };
+
+  const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const newMedia = [...postMedia, ...files];
+    setPostMedia(newMedia);
+
+    // Create preview URLs
+    const newUrls = files.map(file => URL.createObjectURL(file));
+    setPostMediaUrls(prev => [...prev, ...newUrls]);
+  };
+
+  const removeMedia = (index: number) => {
+    setPostMedia(prev => prev.filter((_, i) => i !== index));
+    setPostMediaUrls(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const createPost = async () => {
+    if ((!postContent.trim() && postMedia.length === 0) || creatingPost) return;
+
+    try {
+      setCreatingPost(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showPopup('error', 'Authentication Error', 'Please log in again');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('content', postContent);
+      
+      postMedia.forEach((file, index) => {
+        formData.append('media', file);
+      });
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        showPopup('success', 'Post Created!', 'Your post has been created successfully!');
+        resetPostForm();
+        fetchUserContent();
+      } else {
+        const errorData = await response.json();
+        showPopup('error', 'Post Failed', errorData.error || 'Failed to create post');
+      }
+    } catch (error) {
+      console.error('Error creating post:', error);
+      showPopup('error', 'Post Failed', 'Failed to create post. Please try again.');
+    } finally {
+      setCreatingPost(false);
+    }
+  };
+
+  const resetPostForm = () => {
+    setPostContent('');
+    setPostMedia([]);
+    setPostMediaUrls([]);
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50 dark:bg-dark-900 flex items-center justify-center p-4 transition-colors duration-200">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 sm:h-20 sm:w-20 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Loading Profile...</h2>
-          <p className="text-gray-600 text-sm sm:text-base">Fetching user data and posts</p>
+          <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-3 sm:mt-4 text-gray-600 dark:text-gray-400 text-sm sm:text-base">Loading profile...</p>
         </div>
       </div>
     );
   }
 
-  if (error || !user) {
+  if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="text-center max-w-md mx-auto">
-          <div className="w-20 h-20 sm:w-24 sm:h-24 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-10 h-10 sm:w-12 sm:h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          </div>
-          <h2 className="text-lg sm:text-2xl font-bold text-gray-900 mb-4">
-            {error ? 'Error Loading Profile' : 'User Not Found'}
-          </h2>
-          <p className="text-gray-600 mb-6 text-sm sm:text-base">
-            {error || "The user profile you're looking for doesn't exist."}
-          </p>
-          <div className="space-y-3">
-            <button 
-              onClick={() => window.location.href = '/dashboard/profile/users'}
-              className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm sm:text-base"
-            >
-              Browse All Users
-            </button>
-            <button 
-              onClick={() => window.history.back()}
-              className="w-full bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors text-sm sm:text-base"
-            >
-              Go Back
-            </button>
-          </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-dark-900 flex items-center justify-center p-4 transition-colors duration-200">
+        <div className="text-center">
+          <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">User not found</p>
         </div>
       </div>
     );
   }
+
+  const filteredPosts = getFilteredPosts();
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 overflow-x-hidden max-w-full">
+    <div className="w-full min-h-screen bg-gray-50 dark:bg-dark-900 overflow-x-hidden max-w-full transition-colors duration-200">
       {/* Cover Photo Section */}
       <div className="relative h-32 sm:h-48 md:h-64 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-800 overflow-hidden">
+        {userImages.cover ? (
         <img
-          src={coverPreview || getMediaUrl(user.coverPhoto || '')}
+            src={getMediaUrl(userImages.cover)} 
           alt="Cover"
           className="w-full h-full object-cover"
         />
+        ) : (
+          /* Particle effect overlay */
+          <div className="absolute inset-0" style={{
+            backgroundImage: `radial-gradient(circle at 20% 20%, rgba(255,255,255,0.1) 1px, transparent 1px),
+                             radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 1px, transparent 1px),
+                             radial-gradient(circle at 40% 40%, rgba(255,255,255,0.05) 1px, transparent 1px)`,
+            backgroundSize: '100px 100px, 80px 80px, 60px 60px'
+          }}></div>
+        )}
+      
+        {/* Cover actions - only show for current user */}
         {isCurrentUser && (
-          <>
-            <label className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center cursor-pointer hover:bg-opacity-50 transition-colors">
-              <div className="text-white text-center">
-                <CameraIcon className="w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2" />
-                <span className="text-sm sm:text-base font-medium">Click to Change Cover Photo</span>
+          <div className="absolute top-2 sm:top-4 right-2 sm:right-4 flex gap-1 sm:gap-2">
+            <label className="px-2 py-1 sm:px-3 sm:py-2 bg-black bg-opacity-20 text-white rounded-lg backdrop-blur-sm hover:bg-opacity-30 transition-all flex items-center gap-1 text-xs sm:text-sm cursor-pointer">
+              <span className="text-sm">📷</span>
+              <span className="hidden xs:inline">Cover</span>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleCoverPhotoUpload}
                   className="hidden"
                 />
-              </div>
             </label>
-            {newCoverPhoto && (
-              <button
-                onClick={handleSaveCoverPhoto}
-                className="absolute top-4 right-4 w-8 h-8 sm:w-10 sm:h-10 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600 transition-colors shadow-lg"
-                title="Save cover photo"
-              >
-                ✓
+            <button className="p-1 sm:p-2 bg-black bg-opacity-20 text-white rounded-lg backdrop-blur-sm hover:bg-opacity-30 transition-all">
+              <span className="text-sm">➕</span>
               </button>
-            )}
-          </>
+          </div>
         )}
-        {/* Particle effect overlay */}
-        <div className="absolute inset-0" style={{
-          backgroundImage: `radial-gradient(circle at 20% 20%, rgba(255,255,255,0.1) 1px, transparent 1px),
-                           radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 1px, transparent 1px),
-                           radial-gradient(circle at 40% 40%, rgba(255,255,255,0.05) 1px, transparent 1px)`,
-          backgroundSize: '100px 100px, 80px 80px, 60px 60px'
-        }}></div>
       </div>
 
       {/* Profile Header */}
       <div className="relative px-3 pb-4 -mt-12 sm:-mt-20">
-        <div className="w-full">
+        <div className="w-full max-w-full">
+          {/* Profile Picture and Actions */}
           <div className="flex flex-col items-center gap-3 mb-4">
-            <div className="flex flex-col items-center gap-3 w-full">
               {/* Profile Picture */}
               <div className="relative">
                 <img
-                  src={avatarPreview || getMediaUrl(user.avatar)}
+                src={(() => {
+                  const finalSrc = avatarPreview || (userImages.avatar ? getMediaUrl(userImages.avatar) : (user.avatar && user.avatar !== '/avatars/1.png.png' ? getMediaUrl(user.avatar) : '/avatars/1.png.png'));
+                  return finalSrc;
+                })()}
                   alt={user.name}
                   className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white shadow-xl object-cover bg-gray-200"
                 />
                 {isCurrentUser && (
-                  <>
-                    <label className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 w-6 h-6 sm:w-8 sm:h-8 bg-blue-500 text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-600 transition-colors shadow-lg">
-                      <CameraIcon className="w-3 h-3 sm:w-4 sm:h-4" />
+                <label className="absolute bottom-1 right-1 w-6 h-6 sm:w-8 sm:h-8 bg-blue-500 text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-600 transition-colors shadow-lg">
+                  {uploadingAvatar ? (
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <span className="text-sm">📷</span>
+                  )}
                       <input
                         type="file"
                         accept="image/*"
                         onChange={handleAvatarUpload}
                         className="hidden"
+                    disabled={uploadingAvatar}
                       />
                     </label>
-                    {newAvatar && (
-                      <button
-                        onClick={handleSaveAvatar}
-                        className="absolute top-1 right-1 w-6 h-6 sm:w-8 sm:h-8 bg-green-500 text-white rounded-full flex items-center justify-center hover:bg-green-600 transition-colors shadow-lg text-xs"
-                        title="Save profile picture"
-                      >
-                        ✓
-                      </button>
-                    )}
-                  </>
                 )}
                 {user.isOnline && (
-                  <div className="absolute bottom-3 right-3 sm:bottom-5 sm:right-5 w-3 h-3 sm:w-5 sm:h-5 bg-green-500 border-2 border-white rounded-full"></div>
+                <div className="absolute bottom-3 right-3 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
                 )}
               </div>
 
               {/* User Info */}
               <div className="text-center">
-                <div className="flex items-center justify-center gap-2 mb-1">
-                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900 break-words">{user.name}</h1>
-                  {user.isVerified && (
-                    <div className="bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-medium">
-                      PRO
-                    </div>
-                  )}
-                </div>
-                <p className="text-gray-600 text-sm sm:text-base mb-2">@{user.username}</p>
-              </div>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-1 break-words">{user.name}</h1>
+              <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base mb-2">@{user.username}</p>
             </div>
 
             {/* Action Buttons */}
             <div className="flex gap-1 flex-wrap justify-center">
-              {!isCurrentUser ? (
+              {!isCurrentUser && (
                 <>
-                  <button className="flex items-center gap-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm">
-                    <Heart className="w-4 h-4" />
-                  </button>
-                  <button 
-                    onClick={handleMessage}
-                    className="flex items-center gap-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    <span>Message</span>
-                  </button>
                   <button 
                     onClick={handleFollow}
                     className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-colors text-sm ${
@@ -760,78 +935,98 @@ export default function UserProfile() {
                         : 'bg-blue-500 text-white hover:bg-blue-600'
                     }`}
                   >
-                    <UserPlus className="w-4 h-4" />
-                    {isFollowing ? 'Following' : 'Follow'}
+                    {isFollowing ? <UserCheck className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+                    <span>{isFollowing ? 'Following' : 'Follow'}</span>
+                  </button>
+                  <button 
+                    onClick={handleMessage}
+                    className="flex items-center gap-1 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    <span>Message</span>
+                  </button>
+                  <button 
+                    onClick={handleBlock}
+                    className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-colors text-sm ${
+                      isBlocked 
+                        ? 'bg-red-200 text-red-700 hover:bg-red-300' 
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    <span>{isBlocked ? 'Unblock' : 'Block'}</span>
                   </button>
                 </>
-              ) : (
+              )}
+              {isCurrentUser && (
                 <>
                   <button className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition-colors">
-                    <BarChart3 className="w-4 h-4" />
+                    <MoreVertical className="w-4 h-4" />
                   </button>
-                  <button className="flex items-center gap-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm">
-                    <FileText className="w-4 h-4" />
-                    <span>Activities</span>
-                  </button>
-                  {isCurrentUser && (
                     <button 
                       onClick={handleEditProfile}
                       className="flex items-center gap-1 px-3 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors text-sm"
                     >
                       <Edit className="w-4 h-4" />
-                      <span>Edit Profile</span>
+                    <span>Edit</span>
                     </button>
-                  )}
+                  <button className="flex items-center gap-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm">
+                    <Eye className="w-4 h-4" />
+                    <span>Activities</span>
+                  </button>
                 </>
               )}
             </div>
+            </div>
 
-            {/* Mobile Action Buttons */}
-            <div className="flex sm:hidden gap-2 w-full max-w-xs">
-              {!isCurrentUser ? (
-                <>
-                  <button 
-                    onClick={handleMessage}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    Message
-                  </button>
-                  <button 
-                    onClick={handleFollow}
-                    className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm ${
-                      isFollowing 
-                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
-                        : 'bg-blue-500 text-white hover:bg-blue-600'
-                    }`}
-                  >
-                    <UserPlus className="w-4 h-4" />
-                    {isFollowing ? 'Following' : 'Follow'}
-                  </button>
-                </>
-              ) : null}
+          {/* User Details */}
+          <div className="mb-4 text-center">
+            {user.bio && (
+              <p className="text-gray-700 mb-3 text-sm sm:text-base max-w-full mx-auto px-2">{user.bio}</p>
+            )}
+
+            <div className="flex flex-wrap gap-1 text-xs sm:text-sm text-gray-600 mb-3 justify-center px-2">
+              {user.location && (
+                <div className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3 flex-shrink-0" />
+                  <span className="truncate">{user.location}</span>
+            </div>
+              )}
+              {user.website && (
+                <div className="flex items-center gap-1">
+                  <Globe className="w-3 h-3 flex-shrink-0" />
+                  <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate">
+                    {user.website}
+                  </a>
+          </div>
+              )}
+              {user.joinedDate && (
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-3 h-3 flex-shrink-0" />
+                  <span>Joined {new Date(user.joinedDate).toLocaleDateString()}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="bg-white border-b sticky top-12 sm:top-16 z-40">
+      <div className="bg-white border-b sticky top-0 z-30">
         <div className="w-full px-3">
           <div className="flex overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1 sm:gap-2 py-3 px-3 sm:px-4 border-b-2 transition-colors whitespace-nowrap min-w-fit ${
+                className={`flex items-center gap-2 py-3 px-4 border-b-2 transition-colors whitespace-nowrap min-w-fit ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600 font-medium'
                     : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
                 }`}
               >
-                <span className="text-xs sm:text-sm font-medium">{tab.label}</span>
+                <span className="text-sm font-medium">{tab.label}</span>
                 {tab.count !== undefined && (
-                  <span className="bg-gray-200 text-gray-600 px-1 sm:px-2 py-0.5 rounded-full text-xs">
+                  <span className="bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs">
                     {tab.count}
                   </span>
                 )}
@@ -844,6 +1039,8 @@ export default function UserProfile() {
       {/* Main Content */}
       <div className="w-full px-3 py-4">
         {activeTab === 'timeline' && (
+          <div className="space-y-4">
+            {/* Content Layout */}
           <div className="space-y-4">
             {/* Search and Stats */}
             <div className="bg-white rounded-xl shadow-sm p-4 space-y-3">
@@ -859,66 +1056,127 @@ export default function UserProfile() {
                   />
                 </div>
 
-                {/* User Stats */}
+                {/* Stats */}
                 <div className="grid grid-cols-1 gap-3 text-sm">
                   <div className="flex items-center gap-2 text-gray-600">
-                    <Clock className="w-4 h-4 flex-shrink-0" />
-                    <span>{getLastSeenText(user.lastSeen)}</span>
+                    <Users className="w-4 h-4 flex-shrink-0" />
+                    <span>{user.following?.length || 0} Following</span>
                   </div>
                   <div className="flex items-center gap-2 text-gray-600">
                     <Users className="w-4 h-4 flex-shrink-0" />
-                    <span>{user.following || 0} Following</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Users className="w-4 h-4 flex-shrink-0" />
-                    <span>{user.followers || 0} Followers</span>
+                    <span>{user.followers?.length || 0} Followers</span>
                   </div>
                   <div className="flex items-center gap-2 text-gray-600">
                     <FileText className="w-4 h-4 flex-shrink-0" />
                     <span>{posts.length} posts</span>
                   </div>
-                  {user.website && (
-                    <div className="flex items-center gap-2 text-blue-600">
-                      <LinkIcon className="w-4 h-4 flex-shrink-0" />
-                      <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-sm hover:underline truncate">
-                        {user.website.replace('https://', '').replace('http://', '')}
-                      </a>
-                    </div>
-                  )}
-                  {user.gender && (
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <span>👤</span>
-                      <span>{user.gender}</span>
-                    </div>
-                  )}
-                  {user.location && (
                     <div className="flex items-center gap-2 text-gray-600">
                       <MapPin className="w-4 h-4 flex-shrink-0" />
-                      <span className="truncate">Living in {user.location}</span>
+                    <span className="truncate">{user.location || 'Unknown'}</span>
                     </div>
-                  )}
+                </div>
                 </div>
 
-                {/* Profile Picture */}
-                <div className="pt-4 border-t">
+              {/* Main Content */}
+              <div className="space-y-4">
+                {/* Post Creation - only show for current user */}
+                {isCurrentUser && (
+                  <div className="bg-white rounded-xl shadow-sm p-4">
+                    <div className="flex items-center gap-3">
                   <img
                     src={getMediaUrl(user.avatar)}
                     alt={user.name}
-                    className="w-full h-32 sm:h-40 lg:h-48 object-cover rounded-lg"
+                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <input
+                          type="text"
+                          placeholder="What's going on? #Hashtag.. @Mention.. Link.."
+                          value={postContent}
+                          onChange={(e) => setPostContent(e.target.value)}
+                          className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm transition-colors"
                   />
                 </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+                          <button 
+                            onClick={() => document.getElementById('photo-upload')?.click()}
+                            className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                            title="Add photo"
+                          >
+                            <CameraIcon className="w-4 h-4" />
+                          </button>
+                          <div className="w-px bg-gray-300"></div>
+                          <button 
+                            onClick={() => document.getElementById('video-upload')?.click()}
+                            className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Add video"
+                          >
+                            <Video className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <button
+                          onClick={createPost}
+                          disabled={(!postContent.trim() && postMedia.length === 0) || creatingPost}
+                          className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm font-medium flex items-center justify-center"
+                        >
+                          {creatingPost ? 'Posting...' : 'Post'}
+                        </button>
+                      </div>
               </div>
+                    
+                    {/* Hidden file inputs */}
+                    <input
+                      id="photo-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleMediaUpload}
+                      className="hidden"
+                      multiple
+                    />
+                    <input
+                      id="video-upload"
+                      type="file"
+                      accept="video/*"
+                      onChange={handleMediaUpload}
+                      className="hidden"
+                      multiple
+                    />
+                    
+                    {/* Media Preview */}
+                    {postMediaUrls.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-gray-100">
+                        <div className="grid grid-cols-2 gap-2">
+                          {postMediaUrls.map((url, index) => (
+                            <div key={index} className="relative">
+                              <img
+                                src={url}
+                                alt={`Preview ${index + 1}`}
+                                className="w-full h-20 object-cover rounded-lg"
+                              />
+                              <button
+                                onClick={() => removeMedia(index)}
+                                className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
             {/* Filter Tabs */}
-            <div className="bg-white rounded-xl shadow-sm p-3">
-              <div className="flex border-b -mb-3 overflow-x-auto scrollbar-hide">
+                <div className="flex mt-3 border-b overflow-x-auto scrollbar-hide">
                 {filters.map((filter) => (
                   <button
                     key={filter.id}
                     onClick={() => setActiveFilter(filter.id)}
                     className={`flex items-center gap-1 px-3 py-2 text-sm transition-colors whitespace-nowrap ${
                       activeFilter === filter.id
-                        ? 'text-blue-600 border-b-2 border-blue-500 -mb-px'
+                          ? 'text-blue-600 border-b-2 border-blue-500'
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                   >
@@ -926,51 +1184,30 @@ export default function UserProfile() {
                     <span>{filter.label}</span>
                   </button>
                 ))}
-              </div>
             </div>
 
-            {/* User Bio Card */}
-            {user.bio && (
-              <div className="bg-white rounded-xl shadow-sm p-4">
-                <div className="flex items-start gap-3">
-                  <img
-                    src={getMediaUrl(user.avatar)}
-                    alt={user.name}
-                    className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-gray-900 text-sm truncate">{user.name}</h3>
-                      {user.isVerified && (
-                        <div className="bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-medium flex-shrink-0">
-                          PRO
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-600 mb-2">1 w</p>
-                    <p className="text-gray-800 text-sm">{user.bio}</p>
-                  </div>
-                  <button className="p-1 text-gray-400 hover:text-gray-600 flex-shrink-0">
-                    <MoreVertical className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-
             {/* Posts */}
-            {getFilteredPosts().length === 0 ? (
+                {filteredPosts.length === 0 ? (
               <div className="bg-white rounded-xl shadow-sm p-6 text-center">
                 <div className="text-gray-400 mb-3">
                   <FileText className="w-16 h-16 mx-auto" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No posts found</h3>
                 <p className="text-gray-600 mb-4 text-sm">
-                  {searchQuery ? 'Try adjusting your search terms' : 'No posts to display.'}
-                </p>
+                      {searchQuery ? 'Try adjusting your search terms' : 'No posts yet'}
+                    </p>
+                    {isCurrentUser && (
+                      <button
+                        onClick={() => setShowPostModal(true)}
+                        className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                      >
+                        Create Post
+                      </button>
+                    )}
               </div>
             ) : (
               <div className="space-y-4">
-                {getFilteredPosts().map((post) => (
+                    {filteredPosts.map((post) => (
                   <div key={post._id} className="bg-white rounded-xl shadow-sm overflow-hidden">
                     <PostDisplay
                       post={post}
@@ -994,60 +1231,179 @@ export default function UserProfile() {
                 ))}
               </div>
             )}
-          </div>
-        )}
-
-        {/* Other tabs content */}
-        {activeTab === 'photos' && (
-          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-            <h2 className="text-lg sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Photos</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4">
-              {posts.filter(post => post.media && post.media.length > 0).map((post, index) => (
-                <div key={index} className="aspect-square rounded-lg overflow-hidden">
-                  <img
-                    src={getMediaUrl(post.media[0])}
-                    alt="Post media"
-                    className="w-full h-full object-cover hover:scale-105 transition-transform"
-                  />
-                </div>
-              ))}
+              </div>
             </div>
           </div>
         )}
 
-        {activeTab === 'videos' && (
-          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-            <h2 className="text-lg sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Videos</h2>
-            <p className="text-gray-600 text-sm sm:text-base">No videos yet.</p>
+        {/* Other Tabs */}
+        {activeTab !== 'timeline' && (
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            {activeTab === 'albums' ? (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold">Albums</h3>
+                  {isCurrentUser && (
+                    <button
+                      onClick={() => router.push('/dashboard/albums')}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Create Album
+                    </button>
+                  )}
+                </div>
+                
+                {albums.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {albums.map((album) => (
+                      <div key={album._id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <h4 className="font-semibold text-gray-900 mb-2">{album.name}</h4>
+                        <div className="grid grid-cols-3 gap-1 mb-2">
+                          {album.media && album.media.length > 0 ? (
+                            album.media.slice(0, 6).map((media: any, index: number) => (
+                              <img
+                                key={index}
+                                src={getMediaUrl(media.url)}
+                                alt="album media"
+                                className="w-full aspect-square object-cover rounded"
+                              />
+                            ))
+                          ) : (
+                            <div className="col-span-3 text-xs text-gray-400 py-4 text-center">No media</div>
+                          )}
+                          {album.media && album.media.length > 6 && (
+                            <div className="aspect-square bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">
+                              +{album.media.length - 6}
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          Created: {new Date(album.createdAt).toLocaleDateString()}
+                        </p>
+                </div>
+              ))}
+            </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Camera className="w-8 h-8 text-gray-400" />
+          </div>
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">No albums yet</h4>
+                    <p className="text-gray-600 mb-4">No albums to display</p>
+                    {isCurrentUser && (
+                      <button
+                        onClick={() => router.push('/dashboard/albums')}
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                      >
+                        Create Album
+                      </button>
+                    )}
           </div>
         )}
-
-        {activeTab === 'following' && (
-          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-            <h2 className="text-lg sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Following ({user.following || 0})</h2>
-            <p className="text-gray-600 text-sm sm:text-base">Following list coming soon!</p>
           </div>
-        )}
-
-        {activeTab === 'followers' && (
-          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-            <h2 className="text-lg sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">Followers ({user.followers || 0})</h2>
-            <p className="text-gray-600 text-sm sm:text-base">Followers list coming soon!</p>
+            ) : activeTab === 'groups' ? (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold">Groups</h3>
+                  {isCurrentUser && (
+                    <button
+                      onClick={() => router.push('/dashboard/groups')}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Create Group
+                    </button>
+                  )}
+                </div>
+                
+                {groups.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {groups.map((group) => (
+                      <div key={group._id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <h4 className="font-semibold text-gray-900 mb-2">{group.name}</h4>
+                        <p className="text-sm text-gray-600 mb-2">{group.description}</p>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <Users className="w-3 h-3" />
+                          <span>{group.stats.memberCount} members</span>
           </div>
-        )}
-
-        {activeTab !== 'timeline' && activeTab !== 'photos' && activeTab !== 'videos' && activeTab !== 'following' && activeTab !== 'followers' && (
-          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-            <h2 className="text-lg sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Users className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">No groups yet</h4>
+                    <p className="text-gray-600 mb-4">No groups to display</p>
+                    {isCurrentUser && (
+                      <button
+                        onClick={() => router.push('/dashboard/groups')}
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                      >
+                        Create Group
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : activeTab === 'products' ? (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold">Products</h3>
+                  {isCurrentUser && (
+                    <button
+                      onClick={() => router.push('/dashboard/products')}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Add Product
+                    </button>
+                  )}
+                </div>
+                
+                {products.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {products.map((product) => (
+                      <div key={product._id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <h4 className="font-semibold text-gray-900 mb-2">{product.name}</h4>
+                        <p className="text-sm text-gray-600 mb-2">{product.description}</p>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-medium text-green-600">
+                            {product.currency} {product.price}
+                          </span>
+                          <span className="text-gray-500">{product.category}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <ShoppingBag className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">No products yet</h4>
+                    <p className="text-gray-600 mb-4">No products to display</p>
+                    {isCurrentUser && (
+                      <button
+                        onClick={() => router.push('/dashboard/products')}
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                      >
+                        Add Product
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
               {tabs.find(tab => tab.id === activeTab)?.label}
-            </h2>
-            <p className="text-gray-600 text-sm sm:text-base">This section is coming soon!</p>
+                </h3>
+                <p className="text-gray-600">This section is coming soon!</p>
+              </div>
+            )}
           </div>
         )}
       </div>
-
-      {/* Floating Action Button */}
-      {/* Removed floating action button */}
 
       {/* Edit Post Modal */}
       {showEditModal && editingPost && (
@@ -1082,13 +1438,10 @@ export default function UserProfile() {
         </div>
       )}
 
-      {/* Edit Profile Modal */}
-      {/* Removed Edit Profile Modal */}
-
       {/* Popup */}
       <Popup popup={popup} onClose={closePopup} />
-
-
     </div>
   );
-}
+};
+
+export default UserProfile;

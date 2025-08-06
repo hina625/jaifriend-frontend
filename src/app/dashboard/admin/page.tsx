@@ -1,72 +1,147 @@
 "use client";
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { adminApi } from '../../../utils/adminApi';
 
 const AdminDashboard = () => {
-  const stats = [
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalPosts: 0,
+    totalPages: 0,
+    totalGroups: 0,
+    totalGames: 0,
+    totalMessages: 0,
+    onlineUsers: 0,
+    totalComments: 0
+  });
+  const [chartData, setChartData] = useState<Array<{month: number, posts: number, users: number}>>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
+
+  const fetchDashboardStats = async () => {
+    try {
+      setLoading(true);
+      const data = await adminApi.getDashboardStats();
+      
+      if (data.success) {
+        setStats(data.stats);
+        setChartData(data.chartData);
+      } else {
+        throw new Error(data.message || 'Failed to fetch statistics');
+      }
+    } catch (err) {
+      console.error('Error fetching dashboard stats:', err);
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const statsCards = [
     {
       title: "TOTAL USERS",
-      value: "5,339",
+      value: stats.totalUsers.toLocaleString(),
       icon: "👥",
       color: "bg-blue-500",
       textColor: "text-blue-600"
     },
     {
       title: "TOTAL POSTS",
-      value: "14,648",
+      value: stats.totalPosts.toLocaleString(),
       icon: "📝",
       color: "bg-sky-500",
       textColor: "text-sky-600"
     },
     {
       title: "TOTAL PAGES",
-      value: "14",
+      value: stats.totalPages.toLocaleString(),
       icon: "🏷️",
       color: "bg-yellow-500",
       textColor: "text-yellow-600"
     },
     {
       title: "TOTAL GROUPS",
-      value: "0",
+      value: stats.totalGroups.toLocaleString(),
       icon: "👨‍👩‍👧‍👦",
       color: "bg-pink-500",
       textColor: "text-pink-600"
     },
     {
       title: "ONLINE USERS",
-      value: "2",
+      value: stats.onlineUsers.toLocaleString(),
       icon: "🟢",
       color: "bg-green-500",
       textColor: "text-green-600"
     },
     {
       title: "TOTAL COMMENTS",
-      value: "9",
+      value: stats.totalComments.toLocaleString(),
       icon: "💬",
       color: "bg-purple-500",
       textColor: "text-purple-600"
     },
     {
       title: "TOTAL GAMES",
-      value: "0",
+      value: stats.totalGames.toLocaleString(),
       icon: "🎮",
       color: "bg-sky-500",
       textColor: "text-sky-600"
     },
     {
       title: "TOTAL MESSAGES",
-      value: "42",
+      value: stats.totalMessages.toLocaleString(),
       icon: "💬",
       color: "bg-yellow-500",
       textColor: "text-yellow-600"
     }
   ];
 
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  const getMaxValue = () => {
+    const maxPosts = Math.max(...chartData.map(item => item.posts));
+    const maxUsers = Math.max(...chartData.map(item => item.users));
+    return Math.max(maxPosts, maxUsers, 5000); // Minimum 5000 for better visualization
+  };
+
+  const getBarHeight = (value: number, maxValue: number) => {
+    return (value / maxValue) * 240; // Max height 240px
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-100 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center gap-2">
+            <span className="text-red-500 text-lg">⚠️</span>
+            <span className="text-red-700 font-medium">
+              Error: {error}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6">
       {/* Welcome Message */}
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          Welcome back, Vicky bedardi yadav
+          Welcome back, Admin
         </h1>
         <div className="text-sm text-gray-600">
           Home {'>'} <span className="text-red-500 font-semibold">DASHBOARD</span>
@@ -85,7 +160,7 @@ const AdminDashboard = () => {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, index) => (
+        {statsCards.map((stat, index) => (
           <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
               <div className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center text-white text-xl`}>
@@ -117,99 +192,35 @@ const AdminDashboard = () => {
           {/* Y-axis labels */}
           <div className="flex h-full">
             <div className="flex flex-col justify-between text-xs text-gray-500 mr-2 w-8">
-              <span>5000</span>
-              <span>4000</span>
-              <span>3000</span>
-              <span>2000</span>
-              <span>1000</span>
+              <span>{getMaxValue().toLocaleString()}</span>
+              <span>{Math.round(getMaxValue() * 0.8).toLocaleString()}</span>
+              <span>{Math.round(getMaxValue() * 0.6).toLocaleString()}</span>
+              <span>{Math.round(getMaxValue() * 0.4).toLocaleString()}</span>
+              <span>{Math.round(getMaxValue() * 0.2).toLocaleString()}</span>
               <span>0</span>
             </div>
             
             {/* Chart bars */}
             <div className="flex-1 flex items-end justify-between gap-1">
-              {/* January */}
-              <div className="flex flex-col items-center gap-1">
-                <div className="w-8 bg-gray-200 rounded-t" style={{height: '0px'}}></div>
-                <div className="w-8 bg-gray-200 rounded-t" style={{height: '0px'}}></div>
-                <span className="text-xs text-gray-600">Jan</span>
-              </div>
-              
-              {/* February */}
-              <div className="flex flex-col items-center gap-1">
-                <div className="w-8 bg-gray-200 rounded-t" style={{height: '0px'}}></div>
-                <div className="w-8 bg-gray-200 rounded-t" style={{height: '0px'}}></div>
-                <span className="text-xs text-gray-600">Feb</span>
-              </div>
-              
-              {/* March */}
-              <div className="flex flex-col items-center gap-1">
-                <div className="w-8 bg-green-500 rounded-t" style={{height: '10px'}}></div>
-                <div className="w-8 bg-red-500 rounded-t" style={{height: '50px'}}></div>
-                <span className="text-xs text-gray-600">Mar</span>
-              </div>
-              
-              {/* April */}
-              <div className="flex flex-col items-center gap-1">
-                <div className="w-8 bg-green-500 rounded-t" style={{height: '50px'}}></div>
-                <div className="w-8 bg-red-500 rounded-t" style={{height: '240px'}}></div>
-                <span className="text-xs text-gray-600">Apr</span>
-              </div>
-              
-              {/* May */}
-              <div className="flex flex-col items-center gap-1">
-                <div className="w-8 bg-green-500 rounded-t" style={{height: '120px'}}></div>
-                <div className="w-8 bg-red-500 rounded-t" style={{height: '480px'}}></div>
-                <span className="text-xs text-gray-600">May</span>
-              </div>
-              
-              {/* June */}
-              <div className="flex flex-col items-center gap-1">
-                <div className="w-8 bg-green-500 rounded-t" style={{height: '140px'}}></div>
-                <div className="w-8 bg-red-500 rounded-t" style={{height: '450px'}}></div>
-                <span className="text-xs text-gray-600">Jun</span>
-              </div>
-              
-              {/* July */}
-              <div className="flex flex-col items-center gap-1">
-                <div className="w-8 bg-green-500 rounded-t" style={{height: '130px'}}></div>
-                <div className="w-8 bg-red-500 rounded-t" style={{height: '200px'}}></div>
-                <span className="text-xs text-gray-600">Jul</span>
-              </div>
-              
-              {/* August */}
-              <div className="flex flex-col items-center gap-1">
-                <div className="w-8 bg-green-500 rounded-t" style={{height: '5px'}}></div>
-                <div className="w-8 bg-red-500 rounded-t" style={{height: '5px'}}></div>
-                <span className="text-xs text-gray-600">Aug</span>
-              </div>
-              
-              {/* September */}
-              <div className="flex flex-col items-center gap-1">
-                <div className="w-8 bg-gray-200 rounded-t" style={{height: '0px'}}></div>
-                <div className="w-8 bg-gray-200 rounded-t" style={{height: '0px'}}></div>
-                <span className="text-xs text-gray-600">Sep</span>
-              </div>
-              
-              {/* October */}
-              <div className="flex flex-col items-center gap-1">
-                <div className="w-8 bg-gray-200 rounded-t" style={{height: '0px'}}></div>
-                <div className="w-8 bg-gray-200 rounded-t" style={{height: '0px'}}></div>
-                <span className="text-xs text-gray-600">Oct</span>
-              </div>
-              
-              {/* November */}
-              <div className="flex flex-col items-center gap-1">
-                <div className="w-8 bg-gray-200 rounded-t" style={{height: '0px'}}></div>
-                <div className="w-8 bg-gray-200 rounded-t" style={{height: '0px'}}></div>
-                <span className="text-xs text-gray-600">Nov</span>
-              </div>
-              
-              {/* December */}
-              <div className="flex flex-col items-center gap-1">
-                <div className="w-8 bg-gray-200 rounded-t" style={{height: '0px'}}></div>
-                <div className="w-8 bg-red-500 rounded-t" style={{height: '0px'}}></div>
-                <span className="text-xs text-gray-600">Dec</span>
-              </div>
+              {chartData.map((monthData, index) => {
+                const maxValue = getMaxValue();
+                const usersHeight = getBarHeight(monthData.users, maxValue);
+                const postsHeight = getBarHeight(monthData.posts, maxValue);
+                
+                return (
+                  <div key={index} className="flex flex-col items-center gap-1">
+                    <div 
+                      className="w-8 bg-green-500 rounded-t" 
+                      style={{height: `${usersHeight}px`}}
+                    ></div>
+                    <div 
+                      className="w-8 bg-red-500 rounded-t" 
+                      style={{height: `${postsHeight}px`}}
+                    ></div>
+                    <span className="text-xs text-gray-600">{monthNames[index]}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
           

@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import DarkModeToggle from './DarkModeToggle';
+import FloatingActionButton from './FloatingActionButton';
+import FollowersSidebar from './FollowersSidebar';
 
 interface PopupState {
   isOpen: boolean;
@@ -164,7 +166,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+              fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
@@ -249,33 +251,22 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   // Menu sections for sidebar
   const menuSections: MenuSections = {
-    me: [
-      { name: "Profile", icon: "👤", color: "bg-blue-100", href: "/dashboard/profile" },
-      { name: "Saved", icon: "💾", color: "bg-green-100", href: "/dashboard/saved" },
-      { name: "Settings", icon: "⚙️", color: "bg-gray-100", href: "/dashboard/settings" },
-      { name: "Upgrade", icon: "⭐", color: "bg-yellow-100", href: "/dashboard/upgrade" },
-      { name: "Subscription", icon: "💳", color: "bg-purple-100", href: "/dashboard/subscription" },
-    ],
-    community: [
-      { name: "Find Friends", icon: "👥", color: "bg-blue-100", href: "/dashboard/find-friends" },
-      { name: "Groups", icon: "👨‍👩‍👧‍👦", color: "bg-green-100", href: "/dashboard/groups" },
-      { name: "Events", icon: "📅", color: "bg-orange-100", href: "/dashboard/events" },
-      { name: "Forum", icon: "💬", color: "bg-purple-100", href: "/dashboard/forum" },
-      { name: "Pages", icon: "📄", color: "bg-gray-100", href: "/dashboard/pages" },
-    ],
+    me: [],
+    community: [],
     explore: [
-      { name: "Explore", icon: "🔍", color: "bg-blue-100", href: "/dashboard/explore" },
-      { name: "Popular", icon: "🔥", color: "bg-red-100", href: "/dashboard/popular" },
-      { name: "Watch", icon: "📺", color: "bg-purple-100", href: "/dashboard/watch" },
+      { name: "News Feed", icon: "📰", color: "bg-blue-100", href: "/dashboard" },
+      { name: "Albums", icon: "📸", color: "bg-green-100", href: "/dashboard/albums" },
+      { name: "Saved Posts", icon: "💾", color: "bg-purple-100", href: "/dashboard/saved" },
+      { name: "Watch", icon: "📺", color: "bg-red-100", href: "/dashboard/watch" },
+      { name: "Reels", icon: "🎬", color: "bg-orange-100", href: "/dashboard/reels" },
+      { name: "Explore  ", icon: "📸", color: "bg-green-100", href: "/dashboard/explore" },
       { name: "Market", icon: "🛒", color: "bg-green-100", href: "/dashboard/market" },
-      { name: "Products", icon: "📦", color: "bg-orange-100", href: "/dashboard/products" },
-      { name: "Advertising", icon: "📢", color: "bg-yellow-100", href: "/dashboard/advertising" },
-      { name: "Funding", icon: "💰", color: "bg-green-100", href: "/dashboard/funding" },
-      { name: "Games", icon: "🎮", color: "bg-gray-100", href: "/dashboard/games" },
-      { name: "Movies", icon: "🎬", color: "bg-gray-100", href: "/dashboard/movies" },
+      { name: "Forum", icon: "💬", color: "bg-blue-100", href: "/dashboard/forum" },
+      { name: "My Products", icon: "📦", color: "bg-yellow-100", href: "/dashboard/products" },
+      { name: "My Groups", icon: "👥", color: "bg-purple-100", href: "/dashboard/groups" },
+      { name: "My Pages", icon: "📄", color: "bg-gray-100", href: "/dashboard/pages" },
+      { name: "Popular Posts", icon: "🔥", color: "bg-red-100", href: "/dashboard/popular" },
       { name: "Jobs", icon: "💼", color: "bg-yellow-100", href: "/dashboard/jobs" },
-      { name: "Offers", icon: "🎁", color: "bg-green-100", href: "/dashboard/offers" },
-      { name: "Admin Dashboard", icon: "👑", color: "bg-red-100", href: "/dashboard/admin" },
     ]
   };
 
@@ -403,7 +394,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       router.push('/dashboard/notifications');
       setOpenDropdown(null);
     } else {
-      setOpenDropdown(openDropdown === dropdownType ? null : dropdownType);
+    setOpenDropdown(openDropdown === dropdownType ? null : dropdownType);
     }
   };
 
@@ -543,18 +534,18 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   };
 
   const renderSettingsMenuItems = (items: SettingsMenuItem[]): React.ReactElement => (
-    <div className="space-y-1">
+    <div className="space-y-0.5">
       {items.map((item) => (
         <Link
           key={item.name}
           href={item.href}
-          className={`w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-colors ${
+          className={`w-full flex items-center px-2 py-1.5 text-xs font-medium rounded-md transition-colors ${
             pathname === item.href
               ? 'bg-blue-100 text-blue-700'
               : 'text-gray-700 hover:bg-gray-100'
           }`}
         >
-          <span className="text-lg mr-3 leading-none flex items-center justify-center w-6">{item.icon}</span>
+          <span className="text-sm mr-2 leading-none flex items-center justify-center w-4">{item.icon}</span>
           {item.name}
         </Link>
       ))}
@@ -841,7 +832,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                           : 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400'
                         : isAdminPage 
                           ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
-                          : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300'
+                        : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300'
                     }`}
                     onClick={() => handleDropdownClick('people')}
                     onTouchStart={(e) => {
@@ -877,7 +868,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                           : 'bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400'
                         : isAdminPage 
                           ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
-                          : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300'
+                        : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300'
                     }`}
                     onClick={() => handleDropdownClick('messages')}
                     onTouchStart={(e) => {
@@ -919,7 +910,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     style={{ touchAction: 'manipulation' }}
                   >
                     🔔
-                  </button>
+                        </button>
                 </div>
               </>
             )}
@@ -955,6 +946,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
       {/* Layout Container */}
       <div className="flex">
+        {/* Followers Sidebar */}
+        <FollowersSidebar isAdminPage={isAdminPage} />
+        
         {/* Mobile Sidebar Overlay */}
         {isMobile && (sidebarOpen || profileSidebarOpen) && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-[55]" onClick={() => {
@@ -985,9 +979,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               <div className="flex items-center justify-between mb-4">
                 <h2 className={`font-bold text-lg ${isAdminPage ? 'text-white' : 'text-gray-900'}`}>
                   {isSettingsPage ? 'Settings' : isAdminPage ? 'Admin' : 'Menu'}
-                </h2>
-                <button
-                  onClick={() => setSidebarOpen(false)}
+              </h2>
+              <button
+                onClick={() => setSidebarOpen(false)}
                   className={`w-8 h-8 rounded-full flex items-center justify-center hover:transition-colors ${
                     isAdminPage 
                       ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
@@ -996,79 +990,79 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   style={!isAdminPage ? {
                     boxShadow: '6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.9)'
                   } : {}}
-                >
-                  ✕
-                </button>
-              </div>
+              >
+                ✕
+              </button>
+            </div>
 
               <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingTop: '80px' }}>
-                {isSettingsPage ? (
-                  <>
-                    {/* Back to Dashboard */}
-                    <div className="mb-4">
-                      <Link
-                        href="/dashboard"
-                        className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium"
-                      >
-                        <span>←</span>
-                        <span>Back to Dashboard</span>
-                      </Link>
-                    </div>
+              {isSettingsPage ? (
+                <>
+                  {/* Back to Dashboard */}
+                  <div className="mb-2">
+                                            <Link
+                          href="/dashboard"
+                          className="flex items-center gap-1.5 p-1.5 rounded-md hover:bg-gray-50 transition-colors text-gray-700 font-medium text-xs"
+                        >
+                          <span>←</span>
+                          <span>Back to Dashboard</span>
+                        </Link>
+                  </div>
 
-                    {/* SETTINGS Section */}
-                    <div className="mb-4">
-                      <button 
-                        onClick={() => setSettingsOpen(!settingsOpen)} 
-                        className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
-                      >
-                        <h3 className="text-[#022e8a] font-bold text-sm">SETTINGS</h3>
-                        {!isMobile && (
-                          <span className={`text-[#022e8a] transition-transform duration-200 ${settingsOpen ? 'rotate-180' : ''}`}>▼</span>
-                        )}
-                      </button>
-                      {(settingsOpen || isMobile) && (
-                        <div className="pl-2">
-                          {renderSettingsMenuItems(settingsSections.settings)}
-                        </div>
+                  {/* SETTINGS Section */}
+                  <div className="mb-4">
+                    <button 
+                      onClick={() => setSettingsOpen(!settingsOpen)} 
+                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                    >
+                      <h3 className="text-[#022e8a] font-bold text-sm">SETTINGS</h3>
+                      {!isMobile && (
+                      <span className={`text-[#022e8a] transition-transform duration-200 ${settingsOpen ? 'rotate-180' : ''}`}>▼</span>
                       )}
-                    </div>
+                    </button>
+                    {(settingsOpen || isMobile) && (
+                      <div className="pl-2">
+                        {renderSettingsMenuItems(settingsSections.settings)}
+                      </div>
+                    )}
+                  </div>
 
-                    {/* PROFILE Section */}
-                    <div className="mb-4">
-                      <button 
-                        onClick={() => setProfileSettingsOpen(!profileSettingsOpen)} 
-                        className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
-                      >
-                        <h3 className="text-[#022e8a] font-bold text-sm">PROFILE</h3>
-                        {!isMobile && (
-                          <span className={`text-[#022e8a] transition-transform duration-200 ${profileSettingsOpen ? 'rotate-180' : ''}`}>▼</span>
-                        )}
-                      </button>
-                      {(profileSettingsOpen || isMobile) && (
-                        <div className="pl-2">
-                          {renderSettingsMenuItems(settingsSections.profile)}
-                        </div>
+                  {/* PROFILE Section */}
+                  <div className="mb-4">
+                    <button 
+                      onClick={() => setProfileSettingsOpen(!profileSettingsOpen)} 
+                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                    >
+                      <h3 className="text-[#022e8a] font-bold text-sm">PROFILE</h3>
+                      {!isMobile && (
+                      <span className={`text-[#022e8a] transition-transform duration-200 ${profileSettingsOpen ? 'rotate-180' : ''}`}>▼</span>
                       )}
-                    </div>
+                    </button>
+                    {(profileSettingsOpen || isMobile) && (
+                      <div className="pl-2">
+                        {renderSettingsMenuItems(settingsSections.profile)}
+                      </div>
+                    )}
+                  </div>
 
-                    {/* SECURITY Section */}
-                    <div className="mb-4">
-                      <button 
-                        onClick={() => setSecuritySettingsOpen(!securitySettingsOpen)} 
-                        className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
-                      >
-                        <h3 className="text-[#022e8a] font-bold text-sm">SECURITY</h3>
-                        {!isMobile && (
-                          <span className={`text-[#022e8a] transition-transform duration-200 ${securitySettingsOpen ? 'rotate-180' : ''}`}>▼</span>
-                        )}
-                      </button>
-                      {(securitySettingsOpen || isMobile) && (
-                        <div className="pl-2">
-                          {renderSettingsMenuItems(settingsSections.security)}
-                        </div>
+                  {/* SECURITY Section */}
+                  <div className="mb-4">
+                    <button 
+                      onClick={() => setSecuritySettingsOpen(!securitySettingsOpen)} 
+                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                    >
+                      <h3 className="text-[#022e8a] font-bold text-sm">SECURITY</h3>
+                      {!isMobile && (
+                      <span className={`text-[#022e8a] transition-transform duration-200 ${securitySettingsOpen ? 'rotate-180' : ''}`}>▼</span>
                       )}
-                    </div>
-                  </>
+                    </button>
+                    {(securitySettingsOpen || isMobile) && (
+                      <div className="pl-2">
+                        {renderSettingsMenuItems(settingsSections.security)}
+                      </div>
+                    )}
+                  </div>
+                </>
                 ) : isAdminPage ? (
                   <>
                     {/* Admin Sidebar */}
@@ -1076,12 +1070,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       {renderAdminMenuItems()}
                     </div>
                   </>
-                ) : (
-                  <>
+              ) : (
+                <>
                     {/* All Menu Items */}
                     <div className="space-y-3">
                       {renderMenuItems([...menuSections.me, ...menuSections.community, ...menuSections.explore])}
-                    </div>
+                  </div>
 
                     {/* Footer */}
                     <div className="mt-8 p-3" style={{
@@ -1106,17 +1100,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                           e.currentTarget.style.boxShadow = 'none';
                         }}>
                           Language
-                        </button>
+                    </button>
                       </div>
                       <div className="flex flex-wrap gap-3">
                         <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">Privacy</a>
                         <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">Terms</a>
                         <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">About</a>
                         <span className="text-gray-700 text-xs">Jaifriend</span>
-                      </div>
-                    </div>
-                  </>
-                )}
+                  </div>
+                  </div>
+                </>
+              )}
               </div>
             </aside>
           </>
@@ -1141,10 +1135,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 {isSettingsPage ? (
                   <>
                     {!sidebarCollapsed && (
-                      <div className="mb-4">
+                      <div className="mb-2">
                         <Link
                           href="/dashboard"
-                          className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium"
+                          className="flex items-center gap-1.5 p-1.5 rounded-md hover:bg-gray-50 transition-colors text-gray-700 font-medium text-xs"
                         >
                           <span>←</span>
                           <span>Back to Dashboard</span>
@@ -1153,14 +1147,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     )}
 
                     {/* SETTINGS Section */}
-                    <div className="mb-4">
+                    <div className="mb-2">
                       {!sidebarCollapsed && (
                         <button 
                           onClick={() => setSettingsOpen(!settingsOpen)} 
-                          className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none"
+                          className="flex items-center justify-between w-full mb-1 p-1.5 rounded-md hover:bg-gray-50 transition-colors focus:outline-none"
                         >
-                          <h3 className="text-gray-900 font-semibold text-sm">SETTINGS</h3>
-                          <span className={`text-gray-500 transition-transform duration-200 ${settingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                          <h3 className="text-gray-900 font-semibold text-xs">SETTINGS</h3>
+                          <span className={`text-gray-500 transition-transform duration-200 text-xs ${settingsOpen ? 'rotate-180' : ''}`}>▼</span>
                         </button>
                       )}
                       {(settingsOpen || sidebarCollapsed) && (
@@ -1197,14 +1191,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     {sidebarCollapsed && <div className="border-t border-gray-200 my-2"></div>}
 
                     {/* PROFILE Section */}
-                    <div className="mb-4">
+                    <div className="mb-2">
                       {!sidebarCollapsed && (
                         <button 
                           onClick={() => setProfileSettingsOpen(!profileSettingsOpen)} 
-                          className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none"
+                          className="flex items-center justify-between w-full mb-1 p-1.5 rounded-md hover:bg-gray-50 transition-colors focus:outline-none"
                         >
-                          <h3 className="text-gray-900 font-semibold text-sm">PROFILE</h3>
-                          <span className={`text-gray-500 transition-transform duration-200 ${profileSettingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                          <h3 className="text-gray-900 font-semibold text-xs">PROFILE</h3>
+                          <span className={`text-gray-500 transition-transform duration-200 text-xs ${profileSettingsOpen ? 'rotate-180' : ''}`}>▼</span>
                         </button>
                       )}
                       {(profileSettingsOpen || sidebarCollapsed) && (
@@ -1241,14 +1235,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     {sidebarCollapsed && <div className="border-t border-gray-200 my-2"></div>}
 
                     {/* SECURITY Section */}
-                    <div className="mb-4">
+                    <div className="mb-2">
                       {!sidebarCollapsed && (
                         <button 
                           onClick={() => setSecuritySettingsOpen(!securitySettingsOpen)} 
-                          className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-gray-50 transition-colors focus:outline-none"
+                          className="flex items-center justify-between w-full mb-1 p-1.5 rounded-md hover:bg-gray-50 transition-colors focus:outline-none"
                         >
-                          <h3 className="text-gray-900 font-semibold text-sm">SECURITY</h3>
-                          <span className={`text-gray-500 transition-transform duration-200 ${securitySettingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                          <h3 className="text-gray-900 font-semibold text-xs">SECURITY</h3>
+                          <span className={`text-gray-500 transition-transform duration-200 text-xs ${securitySettingsOpen ? 'rotate-180' : ''}`}>▼</span>
                         </button>
                       )}
                       {(securitySettingsOpen || sidebarCollapsed) && (
@@ -1320,14 +1314,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                             e.currentTarget.style.boxShadow = 'none';
                           }}>
                             Language
-                          </button>
-                        </div>
+                      </button>
+                      </div>
                         <div className="flex flex-wrap gap-3">
                           <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">Privacy</a>
                           <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">Terms</a>
                           <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">About</a>
                           <span className="text-gray-700 text-xs">Jaifriend</span>
-                        </div>
+                    </div>
                       </div>
                     )}
                   </>
@@ -1337,7 +1331,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
             {/* Desktop Profile Sidebar */}
             <aside className={`bg-white border-r border-gray-200 overflow-y-auto overflow-x-hidden flex flex-col fixed left-0 top-0 h-screen transition-all duration-300 scrollbar-hide z-[60] ${
-              profileSidebarOpen ? 'w-80' : 'w-0'
+              profileSidebarOpen ? 'w-64' : 'w-0'
             }`}>
               {profileSidebarOpen && (
                 <>
@@ -1353,24 +1347,24 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
                   <div className="flex-1 p-4 overflow-y-auto scrollbar-hide">
                     {/* Profile Section */}
-                    <div className="flex items-center gap-3 mb-6 p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
                       <img
                         src={profile.avatar}
                         alt="avatar"
-                        className="w-16 h-16 rounded-full border border-gray-200 object-cover"
+                        className="w-12 h-12 rounded-full border border-gray-200 object-cover"
                       />
                       <div className="flex flex-col">
                         <span 
-                          className="font-semibold text-lg text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
+                          className="font-semibold text-sm text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
                           onClick={handleMyProfile}
                         >
                           My Profile
                         </span>
-                        <div className="flex gap-2 mt-2">
-                          <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <div className="flex gap-1 mt-1">
+                          <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs font-medium text-gray-700 dark:text-gray-300">
                             💳 {profile.balance}
                           </span>
-                          <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm font-medium text-gray-700 dark:text-gray-300">
+                          <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs font-medium text-gray-700 dark:text-gray-300">
                             👍 {profile.pokes} Pokes
                           </span>
                         </div>
@@ -1378,66 +1372,93 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     </div>
 
                     {/* Menu Items */}
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <button 
-                        className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
+                        className="flex items-center gap-2 py-2 px-3 rounded-md text-left w-full transition-all duration-200"
                         onClick={handleSwitchAccount}
+                        style={{
+                          background: '#ffffff',
+                          borderRadius: '8px',
+                          boxShadow: '2px 2px 4px rgba(0, 0, 0, 0.1), -2px -2px 4px rgba(255, 255, 255, 0.9)',
+                          border: '1px solid #e5e7eb'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#f8fafc';
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                          e.currentTarget.style.boxShadow = '3px 3px 6px rgba(0, 0, 0, 0.15), -3px -3px 6px rgba(255, 255, 255, 1)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = '#ffffff';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = '2px 2px 4px rgba(0, 0, 0, 0.1), -2px -2px 4px rgba(255, 255, 255, 0.9)';
+                        }}
                       >
-                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🔄</span>
-                        <span className="font-medium text-gray-900 dark:text-white">Switch Account</span>
+                        <span className="p-1.5 rounded-full text-sm" style={{
+                          background: '#f1f5f9',
+                          boxShadow: 'inset 1px 1px 2px rgba(0, 0, 0, 0.1), inset -1px -1px 2px rgba(255, 255, 255, 0.9)'
+                        }}>🔄</span>
+                        <span className="font-medium text-gray-900 text-sm">Switch Account</span>
                       </button>
                       
                       <button 
-                        className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
+                        className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
                         onClick={() => router.push('/dashboard/upgrade')}
                       >
-                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🛠️</span>
-                        <span className="font-medium text-gray-900 dark:text-white">Upgrade To Pro</span>
+                        <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">🛠️</span>
+                        <span className="font-medium text-gray-900 dark:text-white text-sm">Upgrade To Pro</span>
                       </button>
                       
                       <button 
-                        className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
+                        className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
                         onClick={() => router.push('/dashboard/advertising')}
                       >
-                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">📢</span>
-                        <span className="font-medium text-gray-900 dark:text-white">Advertising</span>
+                        <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">📢</span>
+                        <span className="font-medium text-gray-900 dark:text-white text-sm">Advertising</span>
                       </button>
                       
                       <button 
-                        className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
+                        className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
                         onClick={() => router.push('/dashboard/subscriptions')}
                       >
-                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">💳</span>
-                        <span className="font-medium text-gray-900 dark:text-white">Subscriptions</span>
+                        <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">💳</span>
+                        <span className="font-medium text-gray-900 dark:text-white text-sm">Subscriptions</span>
                       </button>
                       
-                      <div className="border-t border-gray-200 my-4"></div>
+                      <div className="border-t border-gray-200 my-2"></div>
                       
                       <button 
-                        className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
+                        className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
                         onClick={() => router.push('/dashboard/settings/privacy')}
                       >
-                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">✔️</span>
-                        <span className="font-medium text-gray-900 dark:text-white">Privacy Setting</span>
+                        <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">✔️</span>
+                        <span className="font-medium text-gray-900 dark:text-white text-sm">Privacy Setting</span>
                       </button>
                       
                       <button 
-                        className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
+                        className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
                         onClick={() => router.push('/dashboard/settings')}
                       >
-                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">⚙️</span>
-                        <span className="font-medium text-gray-900 dark:text-white">General Setting</span>
+                        <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">⚙️</span>
+                        <span className="font-medium text-gray-900 dark:text-white text-sm">General Setting</span>
                       </button>
                       
                       <button 
-                        className="flex items-center gap-3 py-3 px-4 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-left w-full transition-colors"
+                        className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
                         onClick={() => router.push('/dashboard/invite')}
                       >
-                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">✉️</span>
-                        <span className="font-medium text-gray-900 dark:text-white">Invite Your Friends</span>
+                        <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">✉️</span>
+                        <span className="font-medium text-gray-900 dark:text-white text-sm">Invite Your Friends</span>
                       </button>
                       
-                      <div className="border-t border-gray-200 my-4"></div>
+                      <button 
+                        className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
+                        onClick={() => router.push('/dashboard/admin')}
+                      >
+                        <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">👑</span>
+                        <span className="font-medium text-gray-900 dark:text-white text-sm">Admin Dashboard</span>
+                      </button>
+                      
+                      <div className="border-t border-gray-200 my-2"></div>
                       
                       <div className="flex items-center gap-3 py-3 px-4">
                         <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🌙</span>
@@ -1493,14 +1514,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         <main className={`
           flex-1 transition-all duration-300 min-h-screen overflow-x-hidden bg-gray-50 dark:bg-gray-900
           ${isMobile 
-            ? 'ml-0 pb-20' 
+            ? 'mr-16 pb-20' 
             : sidebarCollapsed 
               ? 'ml-16' 
               : isAdminPage 
                 ? 'ml-48' 
-                : 'ml-64'
+              : 'ml-64'
           }
-          ${!isMobile && profileSidebarOpen ? 'ml-80' : ''}
+          ${!isMobile ? 'mr-16' : ''}
+          ${!isMobile && profileSidebarOpen ? 'ml-96' : ''}
         `} style={{ 
           paddingLeft: '0', 
           paddingRight: '0'
@@ -1567,27 +1589,30 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               <button
                 className={`flex flex-col items-center p-2 rounded-lg transition-colors touch-manipulation ${
                   profileSidebarOpen 
-                    ? 'text-blue-600 dark:text-blue-400' 
-                    : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
-                }`}
+                  ? 'text-blue-600 dark:text-blue-400' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+              }`}
                 onClick={() => handleDropdownClick('profile')}
                 onTouchStart={(e) => {
                   e.preventDefault();
                   handleDropdownClick('profile');
                 }}
                 style={{ touchAction: 'manipulation' }}
-              >
-                <img
-                  src={profile.avatar}
-                  alt="Profile"
+            >
+              <img
+                src={profile.avatar}
+                alt="Profile"
                   className="w-6 h-6 rounded-full mb-1 object-cover pointer-events-none"
-                />
-                <span className="text-xs font-medium">Profile</span>
+              />
+              <span className="text-xs font-medium">Profile</span>
               </button>
             </div>
           </div>
         </nav>
       )}
+
+      {/* Floating Action Button */}
+      <FloatingActionButton isAdminPage={isAdminPage} />
 
       <style jsx>{`
         .scrollbar-hide {
