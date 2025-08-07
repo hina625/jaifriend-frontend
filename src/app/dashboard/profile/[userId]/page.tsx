@@ -402,7 +402,7 @@ const UserProfile: React.FC = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/user/${actualUserId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${actualUserId}/albums`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -442,7 +442,7 @@ const UserProfile: React.FC = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/products/user/${actualUserId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${actualUserId}/products`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
