@@ -202,8 +202,8 @@ const FollowersSidebar: React.FC<FollowersSidebarProps> = ({ isAdminPage = false
 
   return (
     <>
-      {/* Followers Sidebar */}
-      <div className="fixed right-0 top-0 h-full w-16 bg-gray-100 dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 z-40 flex flex-col items-center py-4">
+      {/* Followers Sidebar - Hidden on mobile */}
+      <div className="fixed right-0 top-0 h-full w-16 bg-gray-100 dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 z-40 flex flex-col items-center py-4 hidden md:flex">
         {/* Settings Icon */}
         <div className="relative mb-4">
           <button

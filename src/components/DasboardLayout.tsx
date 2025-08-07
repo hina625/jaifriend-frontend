@@ -750,7 +750,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       )}
 
       {/* Navbar */}
-      <nav className={`w-full flex justify-center items-center px-4 py-2 z-50 fixed top-0 left-0 shadow-md border-b transition-colors duration-200 ${
+      <nav className={`w-full flex justify-center items-center px-4 py-2 z-[70] fixed top-0 left-0 shadow-md border-b transition-colors duration-200 ${
         isAdminPage 
           ? 'bg-gray-800 border-gray-700' 
           : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
@@ -957,6 +957,181 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           }} />
         )}
 
+        {/* Mobile Profile Sidebar */}
+        {isMobile && profileSidebarOpen && (
+          <aside className="fixed right-0 top-0 h-screen w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 z-[60] transform transition-transform duration-300" style={{ top: '64px', height: 'calc(100vh - 64px)' }}>
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h2 className="text-gray-900 dark:text-white font-bold text-lg">Profile</h2>
+              <button
+                onClick={() => setProfileSidebarOpen(false)}
+                className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex-1 p-4 overflow-y-auto">
+              {/* Profile Section */}
+              <div className="flex items-center gap-2 mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <img
+                  src={profile.avatar}
+                  alt="avatar"
+                  className="w-12 h-12 rounded-full border border-gray-200 dark:border-gray-600 object-cover"
+                />
+                <div className="flex flex-col">
+                  <span 
+                    className="font-semibold text-sm text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
+                    onClick={handleMyProfile}
+                  >
+                    My Profile
+                  </span>
+                  <div className="flex gap-1 mt-1">
+                    <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-600 px-1.5 py-0.5 rounded text-xs font-medium text-gray-700 dark:text-gray-300">
+                      💳 {profile.balance}
+                    </span>
+                    <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-600 px-1.5 py-0.5 rounded text-xs font-medium text-gray-700 dark:text-gray-300">
+                      👍 {profile.pokes} Pokes
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Menu Items */}
+              <div className="space-y-1">
+                <button 
+                  className="flex items-center gap-2 py-2 px-3 rounded-md text-left w-full transition-all duration-200"
+                  onClick={handleSwitchAccount}
+                  style={{
+                    background: '#ffffff',
+                    borderRadius: '8px',
+                    boxShadow: '2px 2px 4px rgba(0, 0, 0, 0.1), -2px -2px 4px rgba(255, 255, 255, 0.9)',
+                    border: '1px solid #e5e7eb'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#f8fafc';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '3px 3px 6px rgba(0, 0, 0, 0.15), -3px -3px 6px rgba(255, 255, 255, 1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#ffffff';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '2px 2px 4px rgba(0, 0, 0, 0.1), -2px -2px 4px rgba(255, 255, 255, 0.9)';
+                  }}
+                >
+                  <span className="p-1.5 rounded-full text-sm" style={{
+                    background: '#f1f5f9',
+                    boxShadow: 'inset 1px 1px 2px rgba(0, 0, 0, 0.1), inset -1px -1px 2px rgba(255, 255, 255, 0.9)'
+                  }}>🔄</span>
+                  <span className="font-medium text-gray-900 text-sm">Switch Account</span>
+                </button>
+                
+                <button 
+                  className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
+                  onClick={() => router.push('/dashboard/upgrade')}
+                >
+                  <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">🛠️</span>
+                  <span className="font-medium text-gray-900 dark:text-white text-sm">Upgrade To Pro</span>
+                </button>
+                
+                <button 
+                  className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
+                  onClick={() => router.push('/dashboard/advertising')}
+                >
+                  <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">📢</span>
+                  <span className="font-medium text-gray-900 dark:text-white text-sm">Advertising</span>
+                </button>
+                
+                <button 
+                  className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
+                  onClick={() => router.push('/dashboard/subscriptions')}
+                >
+                  <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">💳</span>
+                  <span className="font-medium text-gray-900 dark:text-white text-sm">Subscriptions</span>
+                </button>
+                
+                <div className="border-t border-gray-200 dark:border-gray-600 my-2"></div>
+                
+                <button 
+                  className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
+                  onClick={() => router.push('/dashboard/settings/privacy')}
+                >
+                  <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">✔️</span>
+                  <span className="font-medium text-gray-900 dark:text-white text-sm">Privacy Setting</span>
+                </button>
+                
+                <button 
+                  className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
+                  onClick={() => router.push('/dashboard/settings')}
+                >
+                  <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">⚙️</span>
+                  <span className="font-medium text-gray-900 dark:text-white text-sm">General Setting</span>
+                </button>
+                
+                <button 
+                  className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
+                  onClick={() => router.push('/dashboard/invite')}
+                >
+                  <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">✉️</span>
+                  <span className="font-medium text-gray-900 dark:text-white text-sm">Invite Your Friends</span>
+                </button>
+                
+                <button 
+                  className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
+                  onClick={() => router.push('/dashboard/admin')}
+                >
+                  <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">👑</span>
+                  <span className="font-medium text-gray-900 dark:text-white text-sm">Admin Dashboard</span>
+                </button>
+                
+                <div className="border-t border-gray-200 dark:border-gray-600 my-2"></div>
+                
+                <div className="flex items-center gap-3 py-3 px-4">
+                  <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🌙</span>
+                  <span className="font-medium flex-1 text-gray-900 dark:text-white">Night mode</span>
+                  <input 
+                    type="checkbox" 
+                    id="night-mode-toggle-mobile"
+                    className="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                    onChange={(e) => {
+                      // Toggle dark mode logic here
+                      console.log('Night mode toggled:', e.target.checked);
+                    }}
+                    aria-label="Toggle night mode"
+                  />
+                </div>
+                
+                <button 
+                  className="flex items-center gap-3 py-3 px-4 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-left w-full transition-colors"
+                  onClick={handleLogout}
+                >
+                  <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🚪</span>
+                  <span className="font-medium text-red-600 dark:text-red-400">Log Out</span>
+                </button>
+              </div>
+
+              {/* Footer */}
+              <div className="mt-8 p-4 border-t border-gray-200 dark:border-gray-600">
+                <div className="text-xs text-gray-400 flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <span>© 2025 Jaifriend</span>
+                    <span>•</span>
+                    <button className="underline cursor-pointer hover:text-gray-600">Language</button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    <button className="underline cursor-pointer hover:text-gray-600 text-xs">About</button>
+                    <button className="underline cursor-pointer hover:text-gray-600 text-xs">Directory</button>
+                    <button className="underline cursor-pointer hover:text-gray-600 text-xs">Contact Us</button>
+                    <button className="underline cursor-pointer hover:text-gray-600 text-xs">Developers</button>
+                    <button className="underline cursor-pointer hover:text-gray-600 text-xs">Privacy Policy</button>
+                    <button className="underline cursor-pointer hover:text-gray-600 text-xs">Terms of Use</button>
+                    <button className="underline cursor-pointer hover:text-gray-600 text-xs">Refund</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </aside>
+        )}
+
         {/* Sidebar */}
         {isMobile ? (
           <>
@@ -968,7 +1143,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             }`} style={{
               background: isAdminPage ? '#2C2C2C' : '#ffffff',
               boxShadow: isAdminPage ? 'none' : '6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.9)',
-              height: '100vh',
+              height: 'calc(100vh - 64px)',
+              top: '64px',
               padding: isAdminPage ? '12px' : '16px',
               scrollbarWidth: 'thin',
               scrollbarColor: isAdminPage ? '#4A4A4A #2C2C2C' : '#022e8a #f4f4f9',
@@ -976,9 +1152,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               flexDirection: 'column',
               overflow: 'hidden'
             }}>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className={`font-bold text-lg ${isAdminPage ? 'text-white' : 'text-gray-900'}`}>
-                  {isSettingsPage ? 'Settings' : isAdminPage ? 'Admin' : 'Menu'}
+                          <div className="flex items-center justify-between mb-4">
+              <h2 className={`font-bold text-lg ${isAdminPage ? 'text-white' : 'text-gray-900'}`}>
+                {isSettingsPage ? 'Settings' : isAdminPage ? 'Admin' : 'Menu'}
               </h2>
               <button
                 onClick={() => setSidebarOpen(false)}
@@ -995,7 +1171,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               </button>
             </div>
 
-              <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingTop: '80px' }}>
+              <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {isSettingsPage ? (
                 <>
                   {/* Back to Dashboard */}
@@ -1122,7 +1298,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             }`} style={{
               background: isAdminPage ? '#2C2C2C' : '#ffffff',
               boxShadow: isAdminPage ? 'none' : '6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.9)',
-              height: '100vh',
+              height: 'calc(100vh - 64px)',
+              top: '64px',
               padding: '16px',
               scrollbarWidth: 'thin',
               scrollbarColor: isAdminPage ? '#4A4A4A #2C2C2C' : '#022e8a #f4f4f9',
@@ -1131,7 +1308,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               overflow: 'hidden'
             }}>
               
-              <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ display: 'flex', flexDirection: 'column', gap: '12px', paddingTop: '80px' }}>
+              <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {isSettingsPage ? (
                   <>
                     {!sidebarCollapsed && (
@@ -1514,7 +1691,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         <main className={`
           flex-1 transition-all duration-300 min-h-screen overflow-x-hidden bg-gray-50 dark:bg-gray-900
           ${isMobile 
-            ? 'mr-16 pb-20' 
+            ? 'ml-0 mr-0 pb-4' 
             : sidebarCollapsed 
               ? 'ml-16' 
               : isAdminPage 
@@ -1535,7 +1712,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
       {/* Mobile Bottom Navigation */}
       {isMobile && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-50 overflow-x-hidden transition-colors duration-200">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-[65] overflow-x-hidden transition-colors duration-200">
           <div className="flex justify-around items-center py-2 w-full max-w-full">
             <Link
               href="/dashboard"
@@ -1585,28 +1762,21 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               <span className="text-xs font-medium">Notifications</span>
             </Link>
             
-            <div className="dropdown-container relative z-[60]">
-              <button
-                className={`flex flex-col items-center p-2 rounded-lg transition-colors touch-manipulation ${
-                  profileSidebarOpen 
+            <Link
+              href="/dashboard/profile"
+              className={`flex flex-col items-center p-2 rounded-lg transition-colors ${
+                pathname === '/dashboard/profile' 
                   ? 'text-blue-600 dark:text-blue-400' 
                   : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
               }`}
-                onClick={() => handleDropdownClick('profile')}
-                onTouchStart={(e) => {
-                  e.preventDefault();
-                  handleDropdownClick('profile');
-                }}
-                style={{ touchAction: 'manipulation' }}
             >
               <img
                 src={profile.avatar}
                 alt="Profile"
-                  className="w-6 h-6 rounded-full mb-1 object-cover pointer-events-none"
+                className="w-6 h-6 rounded-full mb-1 object-cover"
               />
               <span className="text-xs font-medium">Profile</span>
-              </button>
-            </div>
+            </Link>
           </div>
         </nav>
       )}

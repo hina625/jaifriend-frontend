@@ -724,8 +724,22 @@ const UserProfile: React.FC = () => {
   };
 
   const getMediaUrl = (url: string) => {
-    if (!url) return '';
+    if (!url) return '/default-avatar.svg';
     if (url.startsWith('http')) return url;
+    
+    // Handle localhost URLs that might be stored incorrectly
+    if (url.includes('localhost:3000')) {
+      const correctedUrl = url.replace('http://localhost:3000', 'https://jaifriend-backend-production.up.railway.app');
+      console.log('🔗 getMediaUrl - Fixed localhost URL:', { original: url, corrected: correctedUrl });
+      return correctedUrl;
+    }
+    
+    // Handle hardcoded placeholder avatars that don't exist
+    if (url.includes('/avatars/') || url.includes('/covers/')) {
+      console.log('🔗 getMediaUrl - Placeholder avatar detected:', url);
+      return '/default-avatar.svg';
+    }
+    
     return `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
   };
 
@@ -842,7 +856,7 @@ const UserProfile: React.FC = () => {
   const filteredPosts = getFilteredPosts();
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 dark:bg-dark-900 overflow-x-hidden max-w-full transition-colors duration-200">
+    <div className="w-full min-h-screen bg-gray-50 dark:bg-dark-900 overflow-x-hidden max-w-full transition-colors duration-200 pb-4 sm:pb-6">
       {/* Cover Photo Section */}
       <div className="relative h-32 sm:h-48 md:h-64 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-800 overflow-hidden">
         {userImages.cover ? (

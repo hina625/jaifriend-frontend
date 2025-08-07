@@ -10,8 +10,10 @@ interface AlbumDisplayProps {
   onLike?: (albumId: string) => void;
   onReaction?: (albumId: string, reactionType: ReactionType) => void;
   onComment?: (albumId: string, comment: string) => void;
+  onDeleteComment?: (albumId: string, commentId: string) => void;
   onSave?: (albumId: string) => void;
   onShare?: (albumId: string, shareOptions?: ShareOptions) => void;
+  deletingComments?: {[key: string]: boolean};
 }
 
 export default function AlbumDisplay({ 
@@ -21,8 +23,10 @@ export default function AlbumDisplay({
   onLike,
   onReaction,
   onComment,
+  onDeleteComment,
   onSave,
-  onShare
+  onShare,
+  deletingComments = {}
 }: AlbumDisplayProps) {
   const [showAllPhotos, setShowAllPhotos] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -334,14 +338,14 @@ export default function AlbumDisplay({
 
       {/* Comment Input */}
       {showCommentInput && (
-        <div className="mt-3 p-2 sm:p-3 bg-gray-50 rounded-lg">
+        <div className="mt-3 p-2 sm:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg transition-colors duration-200">
           <div className="flex gap-2">
             <input
               type="text"
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               placeholder="Write a comment..."
-              className="flex-1 px-2 sm:px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base"
+              className="flex-1 px-2 sm:px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-200"
             />
             <button
               onClick={() => {
@@ -352,7 +356,7 @@ export default function AlbumDisplay({
                 }
               }}
               disabled={!commentText.trim()}
-              className="px-3 sm:px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm sm:text-base touch-manipulation"
+              className="px-3 sm:px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors text-sm sm:text-base touch-manipulation"
               style={{ touchAction: 'manipulation' }}
             >
               Post
@@ -364,32 +368,60 @@ export default function AlbumDisplay({
       {/* Comments Display */}
       {album.comments && album.comments.length > 0 && (
         <div className="mt-3 space-y-2">
-          {album.comments.slice(0, 3).map((comment: any, index: number) => (
-            <div key={index} className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
-              <img 
-                src={comment.user?.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${comment.user.avatar}`) : '/avatars/1.png.png'} 
-                alt="avatar" 
-                className="w-6 h-6 rounded-full" 
-              />
-              <div className="flex-1">
-                {comment.user?._id ? (
-                  <a 
-                    href={`/dashboard/profile/${String(comment.user._id)}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-sm font-medium hover:underline cursor-pointer"
-                  >
-                    {comment.user?.name || 'User'}
-                  </a>
-                ) : (
-                  <span className="text-sm font-medium">{comment.user?.name || 'User'}</span>
-                )}
-                <span className="text-sm text-gray-600 ml-2">{comment.text}</span>
+          {album.comments.slice(0, 3).map((comment: any, index: number) => {
+            // Check if current user is the comment author
+            const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+            const isCommentAuthor = comment.user && (
+              comment.user._id === currentUser._id || 
+              comment.user.id === currentUser.id || 
+              comment.user.userId === currentUser.id
+            );
+            
+            return (
+              <div key={index} className="flex items-start gap-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg group transition-colors duration-200">
+                <img 
+                  src={comment.user?.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${comment.user.avatar}`) : '/avatars/1.png.png'} 
+                  alt="avatar" 
+                  className="w-6 h-6 rounded-full" 
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    {comment.user?._id ? (
+                      <a 
+                        href={`/dashboard/profile/${String(comment.user._id)}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm font-medium hover:underline cursor-pointer text-gray-900 dark:text-white transition-colors duration-200"
+                      >
+                        {comment.user?.name || 'User'}
+                      </a>
+                    ) : (
+                      <span className="text-sm font-medium text-gray-900 dark:text-white transition-colors duration-200">{comment.user?.name || 'User'}</span>
+                    )}
+                    
+                    {/* Delete button for comment author */}
+                    {isCommentAuthor && onDeleteComment && (
+                      <button
+                        onClick={() => onDeleteComment(album._id, comment._id || comment.id)}
+                        disabled={deletingComments[`album-${album._id}-${comment._id || comment.id}`]}
+                        className={`opacity-0 group-hover:opacity-100 ml-auto p-1 rounded transition-all duration-200 text-xs ${
+                          deletingComments[`album-${album._id}-${comment._id || comment.id}`]
+                            ? 'text-gray-400 cursor-not-allowed'
+                            : 'text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20'
+                        }`}
+                        title={deletingComments[`album-${album._id}-${comment._id || comment.id}`] ? 'Deleting...' : 'Delete comment'}
+                      >
+                        {deletingComments[`album-${album._id}-${comment._id || comment.id}`] ? '⏳' : '🗑️'}
+                      </button>
+                    )}
+                  </div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400 transition-colors duration-200">{comment.text}</span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {album.comments.length > 3 && (
-            <button className="text-sm text-blue-500 hover:text-blue-700">
+            <button className="text-sm text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors duration-200">
               View all {album.comments.length} comments
             </button>
           )}

@@ -14,8 +14,6 @@ const DarkModeToggle: React.FC<DarkModeToggleProps> = ({
   variant = 'icon' 
 }) => {
   const { isDarkMode, toggleDarkMode } = useDarkMode();
-  
-  console.log('🌙 Dark mode state:', isDarkMode);
 
   const sizeClasses = {
     sm: 'w-6 h-6',
@@ -35,7 +33,7 @@ const DarkModeToggle: React.FC<DarkModeToggleProps> = ({
         onClick={toggleDarkMode}
         className={`relative inline-flex items-center justify-center ${sizeClasses[size]} rounded-full transition-all duration-200 ${className} ${
           isDarkMode 
-            ? 'bg-dark-700 text-yellow-400 hover:bg-dark-600' 
+            ? 'bg-gray-700 text-yellow-400 hover:bg-gray-600' 
             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
         }`}
         aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -55,7 +53,7 @@ const DarkModeToggle: React.FC<DarkModeToggleProps> = ({
         onClick={toggleDarkMode}
         className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 ${className} ${
           isDarkMode 
-            ? 'bg-dark-700 text-white hover:bg-dark-600' 
+            ? 'bg-gray-700 text-white hover:bg-gray-600' 
             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
         }`}
         aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -81,7 +79,7 @@ const DarkModeToggle: React.FC<DarkModeToggleProps> = ({
       onClick={toggleDarkMode}
       className={`flex items-center justify-center ${sizeClasses[size]} rounded-full transition-all duration-200 ${className} ${
         isDarkMode 
-          ? 'bg-dark-700 text-yellow-400 hover:bg-dark-600' 
+          ? 'bg-gray-700 text-yellow-400 hover:bg-gray-600' 
           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
       }`}
       aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}

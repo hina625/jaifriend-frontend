@@ -3,19 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Popup from '@/components/Popup';
-
-interface PrivacySettings {
-  status: string;
-  whoCanFollowMe: string;
-  whoCanMessageMe: string;
-  whoCanSeeMyFriends: string;
-  whoCanPostOnMyTimeline: string;
-  whoCanSeeMyBirthday: string;
-  confirmRequestWhenSomeoneFollowsYou: string;
-  showMyActivities: string;
-  shareMyLocationWithPublic: string;
-  allowSearchEnginesToIndex: string;
-}
+import { usePrivacy } from '@/contexts/PrivacyContext';
+import { PrivacySettings, calculatePrivacyLevel, getPrivacyLevelText } from '@/utils/privacyUtils';
 
 interface PopupState {
   isOpen: boolean;
@@ -26,6 +15,7 @@ interface PopupState {
 
 const PrivacySettingsPage = () => {
   const router = useRouter();
+  const { privacySettings, updatePrivacySettings, loading: contextLoading } = usePrivacy();
   const [loading, setLoading] = useState(false);
   const [popup, setPopup] = useState<PopupState>({
     isOpen: false,
@@ -33,7 +23,7 @@ const PrivacySettingsPage = () => {
     title: '',
     message: ''
   });
-  const [privacySettings, setPrivacySettings] = useState<PrivacySettings>({
+  const [localSettings, setLocalSettings] = useState<PrivacySettings>({
     status: 'Online',
     whoCanFollowMe: 'Everyone',
     whoCanMessageMe: 'Everyone',
@@ -47,49 +37,11 @@ const PrivacySettingsPage = () => {
   });
 
   useEffect(() => {
-    // Load privacy settings from backend API
-    const loadSettings = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          // Fallback to localStorage if no token
-          const savedSettings = localStorage.getItem('privacySettings');
-          if (savedSettings) {
-            setPrivacySettings(JSON.parse(savedSettings));
-          }
-          return;
-        }
-
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/privacy/settings`, { 
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          setPrivacySettings(result.data);
-          // Also save to localStorage as backup
-          localStorage.setItem('privacySettings', JSON.stringify(result.data));
-        } else {
-          // Fallback to localStorage if API fails
-          const savedSettings = localStorage.getItem('privacySettings');
-          if (savedSettings) {
-            setPrivacySettings(JSON.parse(savedSettings));
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching privacy settings:', error);
-        // Fallback to localStorage if network error
-        const savedSettings = localStorage.getItem('privacySettings');
-        if (savedSettings) {
-          setPrivacySettings(JSON.parse(savedSettings));
-        }
-      }
-    };
-    
-    loadSettings();
-  }, []);
+    // Update local settings when context settings change
+    if (privacySettings) {
+      setLocalSettings(privacySettings);
+    }
+  }, [privacySettings]);
 
   const showPopup = (type: 'success' | 'error' | 'info', title: string, message: string) => {
     setPopup({
@@ -105,7 +57,7 @@ const PrivacySettingsPage = () => {
   };
 
   const handleSettingChange = (setting: keyof PrivacySettings, value: string) => {
-    setPrivacySettings(prev => ({
+    setLocalSettings(prev => ({
       ...prev,
       [setting]: value
     }));
@@ -114,83 +66,45 @@ const PrivacySettingsPage = () => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      await updatePrivacySettings(localSettings);
+      showPopup('success', 'Success', 'Privacy settings saved successfully!');
       
-      if (token) {
-        // Try backend API first
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/privacy/settings`, { 
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(privacySettings)
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          console.log('Privacy settings saved:', result);
-          
-          // Update settings with backend data
-          setPrivacySettings(result.data);
-          localStorage.setItem('privacySettings', JSON.stringify(result.data));
-          
-          showPopup('success', 'Success', 'Privacy settings saved successfully!');
-          
-          // Dispatch event to notify other components
-          window.dispatchEvent(new CustomEvent('privacySettingsUpdated'));
-          
-          // Get current user ID and navigate to profile page
-          try {
-            const currentUserResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
-            });
-
-            if (currentUserResponse.ok) {
-              const currentUser = await currentUserResponse.json();
-              setTimeout(() => {
-                router.push(`/dashboard/profile/${currentUser.id}`);
-              }, 1500);
-            } else {
-              // Fallback to "me" if we can't get the user ID
-              setTimeout(() => {
-                router.push('/dashboard/profile/me');
-              }, 1500);
+      // Get current user ID and navigate to profile page
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const currentUserResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
             }
-          } catch (error) {
-            console.error('Error getting current user ID:', error);
-            // Fallback to "me" if there's an error
+          });
+
+          if (currentUserResponse.ok) {
+            const currentUser = await currentUserResponse.json();
+            setTimeout(() => {
+              router.push(`/dashboard/profile/${currentUser.id}`);
+            }, 1500);
+          } else {
+            // Fallback to "me" if we can't get the user ID
             setTimeout(() => {
               router.push('/dashboard/profile/me');
             }, 1500);
           }
         } else {
-          // Fallback to localStorage if API fails
-          throw new Error('API failed, using localStorage');
+          setTimeout(() => {
+            router.push('/dashboard/profile/me');
+          }, 1500);
         }
-      } else {
-        // Fallback to localStorage if no token
-        throw new Error('No token, using localStorage');
+      } catch (error) {
+        console.error('Error getting current user ID:', error);
+        // Fallback to "me" if there's an error
+        setTimeout(() => {
+          router.push('/dashboard/profile/me');
+        }, 1500);
       }
     } catch (error) {
       console.error('Error saving privacy settings:', error);
-      
-      // Fallback to localStorage
-      try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Save to localStorage (replace with actual API call)
-        localStorage.setItem('privacySettings', JSON.stringify(privacySettings));
-        
-        console.log('Privacy settings saved (local):', privacySettings);
-        showPopup('success', 'Success', 'Privacy settings saved successfully! (Saved locally)');
-      } catch (localError) {
-        console.error('Error in local save:', localError);
-        showPopup('error', 'Error', 'Failed to save privacy settings. Please try again.');
-      }
+      showPopup('error', 'Error', 'Failed to save privacy settings. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -254,6 +168,27 @@ const PrivacySettingsPage = () => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
         <h1 className="text-2xl font-semibold text-gray-900 mb-8">Privacy Setting</h1>
         
+        {/* Privacy Level Indicator */}
+        {localSettings && (
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-medium text-blue-900">Privacy Level</h3>
+              <span className="text-sm font-medium text-blue-700">
+                {getPrivacyLevelText(calculatePrivacyLevel(localSettings))}
+              </span>
+            </div>
+            <div className="w-full bg-blue-200 rounded-full h-2 mb-2">
+              <div 
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${calculatePrivacyLevel(localSettings)}%` }}
+              ></div>
+            </div>
+            <p className="text-sm text-blue-700">
+              {calculatePrivacyLevel(localSettings)}% - Your profile is {getPrivacyLevelText(calculatePrivacyLevel(localSettings)).toLowerCase()}
+            </p>
+          </div>
+        )}
+        
         <div className="space-y-6">
           {privacyOptions.map((option, index) => (
             <div key={option.key} className="border-b border-gray-200 pb-4">
@@ -262,7 +197,7 @@ const PrivacySettingsPage = () => {
                   {option.question}
                 </label>
                 <select
-                  value={privacySettings[option.key as keyof PrivacySettings]}
+                  value={localSettings[option.key as keyof PrivacySettings]}
                   onChange={(e) => handleSettingChange(option.key as keyof PrivacySettings, e.target.value)}
                   className="w-full max-w-xs px-3 py-2 text-gray-900 bg-transparent border-none focus:outline-none font-medium text-base appearance-none cursor-pointer hover:bg-gray-50 rounded"
                 >

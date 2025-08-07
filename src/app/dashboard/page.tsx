@@ -19,6 +19,12 @@ function getUserAvatar() {
         return correctedUrl;
       }
       
+      // Handle hardcoded placeholder avatars that don't exist
+      if (user.avatar.includes('/avatars/') || user.avatar.includes('/covers/')) {
+        console.log('🔗 getUserAvatar - Placeholder avatar detected:', user.avatar);
+        return '/default-avatar.svg';
+      }
+      
       // Use getMediaUrl function to construct proper URL
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
       if (user.avatar.startsWith('http')) {
@@ -96,6 +102,7 @@ export default function Dashboard() {
   const [albums, setAlbums] = useState<any[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [loadingAlbums, setLoadingAlbums] = useState(true);
+  const [deletingComments, setDeletingComments] = useState<{[key: string]: boolean}>({});
   const [newPost, setNewPost] = useState('');
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [posting, setPosting] = useState(false);
@@ -168,17 +175,90 @@ export default function Dashboard() {
   // Delete a comment
   const handleDeleteComment = async (postId: string, commentId: string) => {
     const token = localStorage.getItem('token');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/comment/${commentId}`, {
-      method: 'DELETE',
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
+    const commentKey = `${postId}-${commentId}`;
+    
+    console.log('🗑️ Frontend: Deleting comment:', { postId, commentId, commentKey });
+    console.log('🔑 Token present:', !!token);
+    
+    // Set loading state
+    setDeletingComments(prev => ({ ...prev, [commentKey]: true }));
+    
+    try {
+      const url = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/comment/${commentId}`;
+      console.log('🌐 Making request to:', url);
+      
+      const res = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
+      
+      console.log('📡 Response status:', res.status, res.statusText);
+      
+      if (res.ok) {
+        const data = await res.json();
+        console.log('✅ Response data:', data);
+        setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? data.post : p));
+        console.log('✅ Comment deleted successfully');
+        showPopup('success', 'Success', 'Comment deleted successfully');
+      } else {
+        const errorText = await res.text();
+        console.error('❌ Failed to delete comment:', res.status, res.statusText, errorText);
+        showPopup('error', 'Error', `Failed to delete comment (${res.status}). Please try again.`);
       }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? data.post : p));
-    } else {
-      console.error('Failed to delete comment');
+    } catch (error) {
+      console.error('❌ Error deleting comment:', error);
+      showPopup('error', 'Error', 'Network error. Please check your connection and try again.');
+    } finally {
+      // Clear loading state
+      setDeletingComments(prev => ({ ...prev, [commentKey]: false }));
+    }
+  };
+
+  // Delete an album comment
+  const handleDeleteAlbumComment = async (albumId: string, commentId: string) => {
+    const token = localStorage.getItem('token');
+    const commentKey = `album-${albumId}-${commentId}`;
+    
+    console.log('🗑️ Frontend: Deleting album comment:', { albumId, commentId, commentKey });
+    console.log('🔑 Token present:', !!token);
+    
+    // Set loading state
+    setDeletingComments(prev => ({ ...prev, [commentKey]: true }));
+    
+    try {
+      const url = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/comment/${commentId}`;
+      console.log('🌐 Making request to:', url);
+      
+      const res = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
+      
+      console.log('📡 Response status:', res.status, res.statusText);
+      
+      if (res.ok) {
+        const data = await res.json();
+        console.log('✅ Response data:', data);
+        setAlbums(albums => albums.map(a => a._id === albumId ? data.album : a));
+        console.log('✅ Album comment deleted successfully');
+        showPopup('success', 'Success', 'Comment deleted successfully');
+      } else {
+        const errorText = await res.text();
+        console.error('❌ Failed to delete album comment:', res.status, res.statusText, errorText);
+        showPopup('error', 'Error', `Failed to delete comment (${res.status}). Please try again.`);
+      }
+    } catch (error) {
+      console.error('❌ Error deleting album comment:', error);
+      showPopup('error', 'Error', 'Network error. Please check your connection and try again.');
+    } finally {
+      // Clear loading state
+      setDeletingComments(prev => ({ ...prev, [commentKey]: false }));
     }
   };
 
@@ -583,7 +663,7 @@ export default function Dashboard() {
   const handleShare = async (postId: string, shareOptions?: ShareOptions) => {
     const token = localStorage.getItem('token');
     try {
-      console.log('Sharing post:', postId, 'with options:', shareOptions);
+      console.log('📤 Sharing post:', postId, 'with options:', shareOptions);
       
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/share`, {
         method: 'POST',
@@ -596,31 +676,37 @@ export default function Dashboard() {
           shareTo: shareOptions?.shareTo || 'friends',
           shareOnTimeline: shareOptions?.shareOnTimeline || false,
           shareToPage: shareOptions?.shareToPage || false,
-          shareToGroup: shareOptions?.shareToGroup || false
+          shareToGroup: shareOptions?.shareToGroup || false,
+          socialPlatforms: shareOptions?.socialPlatforms || []
         })
       });
       
       if (res.ok) {
         const data = await res.json();
-        console.log('Post shared successfully:', data);
+        console.log('✅ Post shared successfully:', data);
         
         // Update post shares count
         setPosts(posts => posts.map(p => 
           (p._id === postId || p.id === postId) ? { ...p, shares: data.shares, shared: data.shared } : p
         ));
         
-        // Show success message
-        showPopup('success', 'Post Shared!', 'Your post has been shared successfully!');
+        // Show success message with details
+        const shareResults = data.shareResults || [];
+        const successMessage = shareResults.length > 0 
+          ? `Post shared successfully to: ${shareResults.join(', ')}`
+          : 'Your post has been shared successfully!';
+        
+        showPopup('success', 'Post Shared!', successMessage);
         
         // Refresh feed to show the shared post
         fetchFeedData();
       } else {
         const errorData = await res.json();
-        console.error('Post share error:', errorData);
+        console.error('❌ Post share error:', errorData);
         showPopup('error', 'Share Failed', errorData.message || 'Failed to share post');
       }
     } catch (error) {
-      console.error('Error sharing post:', error);
+      console.error('❌ Error sharing post:', error);
       showPopup('error', 'Network Error', 'Failed to share post. Please try again.');
     }
   };
@@ -798,8 +884,15 @@ export default function Dashboard() {
 
   // Helper to get full media URL
   const getMediaUrl = (url: string) => {
-    if (!url) return '';
+    if (!url) return '/default-avatar.svg';
     if (url.startsWith('http')) return url;
+    
+    // Handle hardcoded placeholder avatars that don't exist
+    if (url.includes('/avatars/') || url.includes('/covers/')) {
+      console.log('🔗 getMediaUrl - Placeholder avatar detected:', url);
+      return '/default-avatar.svg';
+    }
+    
     return `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
   };
 
@@ -851,9 +944,9 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="bg-[#f4f7fb] min-h-screen pt-2 sm:pt-4 pb-6 w-full scrollbar-hide">
-      <div className="px-3 sm:px-4 lg:px-6">
-        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4">
+    <div className="bg-[#f4f7fb] dark:bg-gray-900 min-h-screen pt-2 sm:pt-4 pb-6 w-full scrollbar-hide overflow-x-hidden transition-colors duration-200">
+      <div className="px-2 sm:px-4 lg:px-6 w-full">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 text-gray-900 dark:text-white transition-colors duration-200">
           {userEmail ? `Hello, ${userEmail}! 👋` : "Hello!"}
         </h1>
         {user && (
@@ -866,7 +959,7 @@ export default function Dashboard() {
                 e.currentTarget.src = '/default-avatar.svg';
               }}
             />
-            <span className="font-bold text-blue-700 text-xs sm:text-sm md:text-base">ID: {user._id || user.id}</span>
+            <span className="font-bold text-blue-700 dark:text-blue-400 text-xs sm:text-sm md:text-base transition-colors duration-200">ID: {user._id || user.id}</span>
           </div>
         )}
 
@@ -896,7 +989,7 @@ export default function Dashboard() {
                   alt="Your Story"
                 />
               )}
-              <span className="text-xs sm:text-sm text-[#022e8a] font-semibold">Your Story</span>
+              <span className="text-xs sm:text-sm text-[#022e8a] dark:text-blue-400 font-semibold transition-colors duration-200">Your Story</span>
               <input
                 type="file"
                 accept="image/*,video/*"
@@ -924,7 +1017,7 @@ export default function Dashboard() {
                     }}
                   />
                 </div>
-                <span className="text-xs sm:text-sm text-[#34495e] group-hover:text-[#022e8a] font-medium">User {i}</span>
+                <span className="text-xs sm:text-sm text-[#34495e] dark:text-gray-300 group-hover:text-[#022e8a] dark:group-hover:text-blue-400 font-medium transition-colors duration-200">User {i}</span>
               </div>
             ))}
           </div>
@@ -935,12 +1028,12 @@ export default function Dashboard() {
           {/* Main content */}
           <div className="w-full xl:flex-1 max-w-none xl:max-w-2xl xl:mx-0 scrollbar-hide">
             {/* Post Creation */}
-            <div className="bg-white dark:bg-dark-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 mb-3 sm:mb-4 transition-colors duration-200">
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 mb-3 sm:mb-4 transition-colors duration-200">
               <div className="flex items-center gap-2 mb-2 sm:mb-3">
                 <input
                   type="text"
                   placeholder="What's going on? #Hashtag.. @Mention.. Link.."
-                  className="flex-1 border border-gray-300 dark:border-dark-600 rounded-full px-3 py-2 text-sm bg-white dark:bg-dark-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="flex-1 border border-gray-300 dark:border-gray-600 rounded-full px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
                   value={newPost}
                   onChange={e => setNewPost(e.target.value)}
                   disabled={posting}
@@ -982,7 +1075,7 @@ export default function Dashboard() {
                   }}
                 />
                 <button
-                  className="bg-gray-100 dark:bg-dark-700 hover:bg-gray-200 dark:hover:bg-dark-600 px-3 py-2 rounded-full text-xs sm:text-sm transition-colors text-gray-700 dark:text-gray-300"
+                  className="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 px-3 py-2 rounded-full text-xs sm:text-sm transition-colors text-gray-700 dark:text-gray-300"
                   onClick={() => fileInputRef.current && fileInputRef.current.click()}
                   disabled={posting}
                   title="Add photos or videos"
@@ -999,10 +1092,10 @@ export default function Dashboard() {
               </div>
               {mediaFiles.length > 0 && (
                 <div className="mt-2">
-                  <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">Selected files ({mediaFiles.length}):</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mb-2 transition-colors duration-200">Selected files ({mediaFiles.length}):</div>
                   <div className="flex flex-wrap gap-2">
                     {mediaFiles.map((file, index) => (
-                      <div key={index} className="flex items-center gap-2 bg-gray-100 dark:bg-dark-700 px-3 py-2 rounded-lg text-xs">
+                      <div key={index} className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-lg text-xs transition-colors duration-200">
                         <div className="flex items-center gap-1">
                           <span className="text-lg">
                             {file.type.startsWith('image/') ? '🖼️' : '🎥'}
@@ -1044,14 +1137,14 @@ export default function Dashboard() {
             ) : posts.length === 0 && albums.length === 0 ? (
               <div className="text-center py-8">
                 <div className="text-4xl mb-3">📱</div>
-                <h3 className="text-lg font-semibold text-gray-700 mb-2">No posts yet</h3>
-                <p className="text-gray-500 text-sm">Be the first to share something amazing!</p>
+                <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-200">No posts yet</h3>
+                <p className="text-gray-500 dark:text-gray-400 text-sm transition-colors duration-200">Be the first to share something amazing!</p>
               </div>
             ) : (
               <>
                 {/* Feed Stats */}
-                <div className="bg-white dark:bg-dark-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 mb-3 sm:mb-4 transition-colors duration-200">
-                                      <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
+                <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 mb-3 sm:mb-4 transition-colors duration-200">
+                                      <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 transition-colors duration-200">
                     <div className="flex items-center gap-3 sm:gap-4">
                       <span className="flex items-center gap-1">
                         📝 <span className="font-medium">{posts.length}</span> posts
@@ -1093,13 +1186,15 @@ export default function Dashboard() {
                           onLike={handleAlbumLike}
                           onReaction={handleAlbumReaction}
                           onComment={handleAlbumComment}
+                          onDeleteComment={handleDeleteAlbumComment}
                           onSave={handleAlbumSave}
                           onShare={handleAlbumShare}
+                          deletingComments={deletingComments}
                         />
                       );
                     } else {
                       return (
-                        <div key={item._id || item.id} className="bg-white dark:bg-dark-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 mb-3 sm:mb-4 transition-colors duration-200">
+                        <div key={item._id || item.id} className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 mb-3 sm:mb-4 transition-colors duration-200">
                           <div className="flex items-center gap-2 mb-2 sm:mb-3">
                             <div className="flex items-center flex-1">
                               {item.user ? (
@@ -1123,37 +1218,37 @@ export default function Dashboard() {
                               )}
                               <div className="flex-1 min-w-0">
                                 {item.user ? (
-                                  <a 
-                                    href={`/dashboard/profile/${getUserId(item.user) || 'unknown'}`} 
+                                                                    <a 
+                                    href={`/dashboard/profile/${getUserId(item.user) || 'unknown'}`}
                                     target="_blank" 
                                     rel="noopener noreferrer"
-                                    className="font-semibold text-sm sm:text-base hover:underline cursor-pointer truncate block"
+                                    className="font-semibold text-sm sm:text-base hover:underline cursor-pointer truncate block text-gray-900 dark:text-white transition-colors duration-200"
                                   >
                                     {item.user.name || 'Anonymous'}
                                   </a>
                                 ) : (
-                                  <div className="font-semibold text-sm sm:text-base truncate">Anonymous</div>
+                                  <div className="font-semibold text-sm sm:text-base truncate text-gray-900 dark:text-white transition-colors duration-200">Anonymous</div>
                                 )}
-                                <div className="text-xs text-gray-400">
-                                  {new Date(item.createdAt).toLocaleString()}
-                                  {item.isShared && (
-                                    <span className="ml-2 text-blue-600">📤 Shared</span>
-                                  )}
-                                </div>
+                                                                  <div className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-200">
+                                    {new Date(item.createdAt).toLocaleString()}
+                                    {item.isShared && (
+                                      <span className="ml-2 text-blue-600 dark:text-blue-400">📤 Shared</span>
+                                    )}
+                                  </div>
                               </div>
                             </div>
                             
                             {/* Post Actions Menu */}
-                            <div className="flex items-center gap-2">
-                              {/* Media indicator */}
-                              {item.media && item.media.length > 0 && (
-                                <div className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-                                  {item.media.some((m: any) => m.type === 'video') && <span>🎥</span>}
-                                  {item.media.some((m: any) => m.type === 'image') && <span>📷</span>}
-                                  <span className="hidden sm:inline">{item.media.length} media</span>
-                                  <span className="sm:hidden">{item.media.length}</span>
-                                </div>
-                              )}
+                                                          <div className="flex items-center gap-2">
+                                {/* Media indicator */}
+                                {item.media && item.media.length > 0 && (
+                                  <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded-full transition-colors duration-200">
+                                    {item.media.some((m: any) => m.type === 'video') && <span>🎥</span>}
+                                    {item.media.some((m: any) => m.type === 'image') && <span>📷</span>}
+                                    <span className="hidden sm:inline">{item.media.length} media</span>
+                                    <span className="sm:hidden">{item.media.length}</span>
+                                  </div>
+                                )}
                               
                               {/* Edit/Delete Menu for own posts */}
                               {(() => {
@@ -1167,20 +1262,20 @@ export default function Dashboard() {
                                 if (isOwnPost) {
                                   return (
                                     <div className="relative group">
-                                      <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
-                                        <span className="text-gray-500 hover:text-gray-700">⋮</span>
+                                      <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
+                                        <span className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">⋮</span>
                                       </button>
-                                      <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto min-w-[120px]">
+                                      <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto min-w-[120px] transition-colors duration-200">
                                         <button
                                           onClick={() => startEditPost(item)}
-                                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
+                                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-900 dark:text-white transition-colors duration-200"
                                         >
                                           <span>✏️</span>
                                           <span>Edit</span>
                                         </button>
                                         <button
                                           onClick={() => handleDelete(item._id || item.id)}
-                                          className="w-full text-left px-3 py-2 text-sm hover:bg-red-50 text-red-600 flex items-center gap-2"
+                                          className="w-full text-left px-3 py-2 text-sm hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 flex items-center gap-2 transition-colors duration-200"
                                         >
                                           <span>🗑️</span>
                                           <span>Delete</span>
@@ -1253,28 +1348,28 @@ export default function Dashboard() {
                               </div>
                             </div>
                           ) : (
-                            <div className="mb-2 sm:mb-3 text-sm sm:text-base">
+                            <div className="mb-2 sm:mb-3 text-sm sm:text-base text-gray-900 dark:text-white transition-colors duration-200">
                               {/* Show shared post indicator */}
                               {item.isShared && item.sharedFrom && (
-                                <div className="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 transition-colors duration-200">
                                   <div className="flex items-center gap-2 mb-2">
-                                    <span className="text-blue-600">🔄</span>
-                                    <span className="text-sm text-gray-600">
+                                    <span className="text-blue-600 dark:text-blue-400">🔄</span>
+                                    <span className="text-sm text-gray-600 dark:text-gray-400 transition-colors duration-200">
                                       {item.sharedFrom.userName} shared this
                                     </span>
                                   </div>
                                   {item.shareMessage && (
-                                    <div className="text-sm mb-2">{item.shareMessage}</div>
+                                    <div className="text-sm mb-2 text-gray-900 dark:text-white transition-colors duration-200">{item.shareMessage}</div>
                                   )}
                                   {/* Show original post content */}
                                   {item.sharedFrom.postId && (
-                                    <div className="text-sm text-gray-700 italic">
+                                    <div className="text-sm text-gray-700 dark:text-gray-300 italic transition-colors duration-200">
                                       "{item.content}"
                                     </div>
                                   )}
                                   {/* Show shared album */}
                                   {item.sharedFrom.albumId && (
-                                    <div className="text-sm text-gray-700 italic">
+                                    <div className="text-sm text-gray-700 dark:text-gray-300 italic transition-colors duration-200">
                                       Album: {item.sharedFrom.albumName}
                                       {item.sharedFrom.albumMedia && item.sharedFrom.albumMedia.length > 0 && (
                                         <div className="mt-2 flex gap-2 overflow-x-auto">
@@ -1287,7 +1382,7 @@ export default function Dashboard() {
                                             />
                                           ))}
                                           {item.sharedFrom.albumMedia.length > 3 && (
-                                            <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center text-xs">
+                                            <div className="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center text-xs text-gray-500 dark:text-gray-400 transition-colors duration-200">
                                               +{item.sharedFrom.albumMedia.length - 3}
                                             </div>
                                           )}
@@ -1298,7 +1393,11 @@ export default function Dashboard() {
                                 </div>
                               )}
                               {/* Show regular post content */}
-                              {(!item.isShared || !item.sharedFrom) && item.content}
+                              {(!item.isShared || !item.sharedFrom) && (
+                                <div className="text-gray-900 dark:text-white transition-colors duration-200">
+                                  {item.content}
+                                </div>
+                              )}
                             </div>
                           )}
 
@@ -1491,14 +1590,14 @@ export default function Dashboard() {
                                 {Array.isArray(item.shares) && item.shares.length > 0 ? `(${item.shares.length})` : ''}
                               </span>
                             </button>
-                            <span className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 text-gray-400 text-xs sm:text-sm">
+                            <span className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 text-gray-400 dark:text-gray-500 text-xs sm:text-sm transition-colors duration-200">
                               <span>💬</span>
                               <span className="font-medium">
                                 {Array.isArray(item.comments) ? item.comments.length : 0}
                                 <span className="hidden sm:inline"> comments</span>
                               </span>
                             </span>
-                            <span className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 text-gray-400 text-xs sm:text-sm">
+                            <span className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 text-gray-400 dark:text-gray-500 text-xs sm:text-sm transition-colors duration-200">
                               <span>👁️</span>
                               <span className="font-medium">
                                 {Array.isArray(item.views) ? item.views.length : 0}
@@ -1532,41 +1631,67 @@ export default function Dashboard() {
                           </div>
 
                           {/* Comments Section */}
-                          <div className="mt-3 border-t pt-3">
-                            <div className="font-semibold mb-2 text-sm flex items-center gap-2">
+                          <div className="mt-3 border-t border-gray-200 dark:border-gray-700 pt-3 transition-colors duration-200">
+                            <div className="font-semibold mb-2 text-sm flex items-center gap-2 text-gray-900 dark:text-white transition-colors duration-200">
                               <span>Comments</span>
                               {item.comments && item.comments.length > 0 && (
-                                <span className="text-xs text-gray-500">({item.comments.length})</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">({item.comments.length})</span>
                               )}
                             </div>
                             {item.comments && item.comments.length > 0 ? (
                               <div className="space-y-2 mb-3">
-                                {item.comments.map((comment: any, idx: number) => (
-                                  <div key={idx} className="flex items-start gap-2">
-                                    <img src={comment.user?.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${comment.user.avatar}`) : '/avatars/1.png.png'} alt="avatar" className="w-6 h-6 rounded-full flex-shrink-0" />
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
-                                        {comment.user ? (
-                                          <a 
-                                            href={`/dashboard/profile/${getUserId(comment.user) || 'unknown'}`} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            className="font-medium text-xs sm:text-sm hover:underline cursor-pointer"
-                                          >
-                                            {comment.user?.name || 'Anonymous'}
-                                          </a>
-                                        ) : (
-                                          <span className="font-medium text-xs sm:text-sm">{comment.user?.name || 'Anonymous'}</span>
-                                        )}
-                                        <span className="text-xs text-gray-400">{comment.createdAt ? new Date(comment.createdAt).toLocaleString() : ''}</span>
+                                {item.comments.map((comment: any, idx: number) => {
+                                  // Check if current user is the comment author
+                                  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+                                  const isCommentAuthor = comment.user && (
+                                    comment.user._id === currentUser._id || 
+                                    comment.user.id === currentUser.id || 
+                                    comment.user.userId === currentUser.id
+                                  );
+                                  
+                                  return (
+                                    <div key={idx} className="flex items-start gap-2 group">
+                                      <img src={comment.user?.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${comment.user.avatar}`) : '/avatars/1.png.png'} alt="avatar" className="w-6 h-6 rounded-full flex-shrink-0" />
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
+                                          {comment.user ? (
+                                            <a 
+                                              href={`/dashboard/profile/${getUserId(comment.user) || 'unknown'}`} 
+                                              target="_blank" 
+                                              rel="noopener noreferrer"
+                                              className="font-medium text-xs sm:text-sm hover:underline cursor-pointer text-gray-900 dark:text-white transition-colors duration-200"
+                                            >
+                                              {comment.user?.name || 'Anonymous'}
+                                            </a>
+                                          ) : (
+                                            <span className="font-medium text-xs sm:text-sm text-gray-900 dark:text-white transition-colors duration-200">{comment.user?.name || 'Anonymous'}</span>
+                                          )}
+                                          <span className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-200">{comment.createdAt ? new Date(comment.createdAt).toLocaleString() : ''}</span>
+                                          
+                                          {/* Delete button for comment author */}
+                                          {isCommentAuthor && (
+                                            <button
+                                              onClick={() => handleDeleteComment(item._id || item.id, comment._id || comment.id)}
+                                              disabled={deletingComments[`${item._id || item.id}-${comment._id || comment.id}`]}
+                                              className={`opacity-0 group-hover:opacity-100 ml-auto p-1 rounded transition-all duration-200 text-xs ${
+                                                deletingComments[`${item._id || item.id}-${comment._id || comment.id}`]
+                                                  ? 'text-gray-400 cursor-not-allowed'
+                                                  : 'text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20'
+                                              }`}
+                                              title={deletingComments[`${item._id || item.id}-${comment._id || comment.id}`] ? 'Deleting...' : 'Delete comment'}
+                                            >
+                                              {deletingComments[`${item._id || item.id}-${comment._id || comment.id}`] ? '⏳' : '🗑️'}
+                                            </button>
+                                          )}
+                                        </div>
+                                        <div className="text-sm break-words text-gray-900 dark:text-white transition-colors duration-200">{comment.text}</div>
                                       </div>
-                                      <div className="text-sm break-words">{comment.text}</div>
                                     </div>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             ) : (
-                              <div className="text-xs text-gray-400 mb-3">No comments yet.</div>
+                              <div className="text-xs text-gray-400 dark:text-gray-500 mb-3 transition-colors duration-200">No comments yet.</div>
                             )}
                             {/* Add comment form */}
                             <AddCommentForm postId={item._id || item.id} onAddComment={handleAddComment} />
@@ -1582,18 +1707,18 @@ export default function Dashboard() {
 
           {/* Sidebar */}
           <div className="w-full xl:w-1/4 flex flex-col gap-3 sm:gap-4 scrollbar-hide">
-            <div className="bg-white rounded-lg sm:rounded-xl shadow p-3 sm:p-4">
-              <div className="font-semibold mb-2 text-sm">Pro Members</div>
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 transition-colors duration-200">
+              <div className="font-semibold mb-2 text-sm text-gray-900 dark:text-white transition-colors duration-200">Pro Members</div>
               <button className="bg-orange-400 text-white px-3 py-2 rounded-full w-full mb-2 text-sm">Upgrade To Pro</button>
             </div>
-            <div className="bg-white rounded-lg sm:rounded-xl shadow p-3 sm:p-4">
-              <div className="font-semibold mb-2 text-sm">Pages you may like</div>
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 transition-colors duration-200">
+              <div className="font-semibold mb-2 text-sm text-gray-900 dark:text-white transition-colors duration-200">Pages you may like</div>
               <div className="flex flex-col gap-2">
-                <button className="bg-gray-100 px-3 py-1 rounded-full text-sm">Apnademand</button>
+                <button className="bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full text-sm text-gray-900 dark:text-white transition-colors duration-200">Apnademand</button>
               </div>
             </div>
-            <div className="bg-white rounded-lg sm:rounded-xl shadow p-3 sm:p-4">
-              <div className="font-semibold mb-2 text-sm">Latest Products</div>
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 transition-colors duration-200">
+              <div className="font-semibold mb-2 text-sm text-gray-900 dark:text-white transition-colors duration-200">Latest Products</div>
               <LatestProducts />
             </div>
           </div>
@@ -1658,7 +1783,7 @@ function AddCommentForm({ postId, onAddComment }: { postId: string, onAddComment
     >
       <input
         type="text"
-        className="flex-1 border rounded-full px-3 py-2 text-sm"
+        className="flex-1 border border-gray-300 dark:border-gray-600 rounded-full px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
         placeholder="Add a comment..."
         value={text}
         onChange={e => setText(e.target.value)}
@@ -1667,7 +1792,7 @@ function AddCommentForm({ postId, onAddComment }: { postId: string, onAddComment
       />
       <button
         type="submit"
-        className="bg-blue-500 text-white px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm flex-shrink-0"
+        className="bg-blue-500 text-white px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm flex-shrink-0 hover:bg-blue-600 transition-colors duration-200"
         disabled={loading || !text.trim()}
       >
         {loading ? 'Posting...' : 'Comment'}
