@@ -63,7 +63,7 @@ export default function PostDisplay({
   }, [post]);
 
   const getMediaUrl = (url: string) => {
-    if (!url) return '';
+    if (!url) return '/default-avatar.svg';
     if (url.startsWith('http')) return url;
     
     // Handle localhost URLs that might be stored incorrectly
@@ -71,6 +71,12 @@ export default function PostDisplay({
       const correctedUrl = url.replace('http://localhost:3000', 'https://jaifriend-backend-production.up.railway.app');
       console.log('🔗 getMediaUrl - Fixed localhost URL:', { original: url, corrected: correctedUrl });
       return correctedUrl;
+    }
+    
+    // Handle hardcoded placeholder avatars that don't exist
+    if (url.includes('/avatars/') || url.includes('/covers/')) {
+      console.log('🔗 getMediaUrl - Placeholder avatar detected:', url);
+      return '/default-avatar.svg';
     }
     
     const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;

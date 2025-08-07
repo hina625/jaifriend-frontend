@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Head from 'next/head';
 import { DarkModeProvider } from '../contexts/DarkModeContext';
+import { PrivacyProvider } from '../contexts/PrivacyContext';
 
 
 const geistSans = Geist({
@@ -30,10 +31,12 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
-      <body className="bg-gray-50 dark:bg-dark-900 overflow-x-hidden transition-colors duration-200">
+      <body className="bg-gray-50 dark:bg-gray-900 overflow-x-hidden transition-colors duration-200">
         <div className="w-full overflow-x-hidden">
           <DarkModeProvider>
-            {children}
+            <PrivacyProvider>
+              {children}
+            </PrivacyProvider>
           </DarkModeProvider>
         </div>
       </body>

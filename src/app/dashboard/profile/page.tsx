@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Edit, Trash2, MoreVertical, Search, Filter, Camera, Video, Music, FileText, Plus, Heart, MessageCircle, Share2, Bookmark, Settings, Camera as CameraIcon, MapPin, Globe, Calendar, Users, Eye, ThumbsUp, X, ShoppingBag } from 'lucide-react';
 import PostDisplay from '@/components/PostDisplay';
 import Popup, { PopupState } from '@/components/Popup';
+import PrivacyAwareProfile from '@/components/PrivacyAwareProfile';
 
 interface User {
   id: string;
@@ -809,6 +810,12 @@ const ProfilePage = () => {
       return correctedUrl;
     }
     
+    // Handle hardcoded placeholder avatars that don't exist
+    if (url.includes('/avatars/') || url.includes('/covers/')) {
+      console.log('🔗 getMediaUrl - Placeholder avatar detected:', url);
+      return '/default-avatar.svg';
+    }
+    
     const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
     console.log('🔗 getMediaUrl:', { original: url, full: fullUrl });
     return fullUrl;
@@ -1005,10 +1012,10 @@ const ProfilePage = () => {
         }));
         
         // Also update user profile to keep it synchronized
-        setUser(prev => ({
+        setUser(prev => prev ? {
           ...prev,
           avatar: data.avatar
-        }));
+        } : null);
         
         // Clear upload state
         setNewAvatar(null);
@@ -1045,6 +1052,7 @@ const ProfilePage = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-500 mx-auto"></div>
           <p className="mt-3 sm:mt-4 text-gray-600 dark:text-gray-400 text-sm sm:text-base">Loading profile...</p>
+          <p className="mt-2 text-xs text-gray-500">Please wait while we load your profile data</p>
         </div>
       </div>
     );
@@ -1053,8 +1061,26 @@ const ProfilePage = () => {
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-dark-900 flex items-center justify-center p-4 transition-colors duration-200">
-        <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">User not found</p>
+        <div className="text-center max-w-sm mx-auto">
+          <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-full mx-auto mb-4 flex items-center justify-center">
+            <span className="text-2xl">👤</span>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base mb-2">User not found</p>
+          <p className="text-xs text-gray-500 mb-4">Please check your login status or try refreshing the page</p>
+          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+            <button 
+              onClick={() => window.location.reload()} 
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-colors"
+            >
+              Refresh Page
+            </button>
+            <button 
+              onClick={() => router.push('/dashboard')} 
+              className="px-4 py-2 bg-gray-500 text-white rounded-lg text-sm hover:bg-gray-600 transition-colors"
+            >
+              Go to Dashboard
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1063,7 +1089,7 @@ const ProfilePage = () => {
   const filteredPosts = getFilteredPosts();
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 dark:bg-dark-900 overflow-x-hidden max-w-full transition-colors duration-200">
+    <div className="w-full min-h-screen bg-gray-50 dark:bg-dark-900 overflow-x-hidden max-w-full transition-colors duration-200 pb-4 sm:pb-6">
       {/* Cover Photo Section */}
       <div className="relative h-32 sm:h-48 md:h-64 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-800 overflow-hidden">
         {userImages.cover ? (
@@ -1141,10 +1167,7 @@ const ProfilePage = () => {
             </div>
 
             {/* User Info */}
-            <div className="text-center">
-              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-1 break-words">{user.name}</h1>
-              <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base mb-2">@{user.username}</p>
-            </div>
+            <PrivacyAwareProfile viewerType="self" user={user} />
 
             {/* Action Buttons */}
             <div className="flex gap-1 flex-wrap justify-center">
@@ -1165,35 +1188,7 @@ const ProfilePage = () => {
             </div>
           </div>
 
-          {/* User Details */}
-          <div className="mb-4 text-center">
-            {user.bio && (
-              <p className="text-gray-700 mb-3 text-sm sm:text-base max-w-full mx-auto px-2">{user.bio}</p>
-            )}
 
-            <div className="flex flex-wrap gap-1 text-xs sm:text-sm text-gray-600 mb-3 justify-center px-2">
-              {user.location && (
-                <div className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3 flex-shrink-0" />
-                  <span className="truncate">{user.location}</span>
-                </div>
-              )}
-              {user.website && (
-                <div className="flex items-center gap-1">
-                  <Globe className="w-3 h-3 flex-shrink-0" />
-                  <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate">
-                    {user.website}
-                  </a>
-                </div>
-              )}
-              {user.joinedDate && (
-                <div className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3 flex-shrink-0" />
-                  <span>Joined {new Date(user.joinedDate).toLocaleDateString()}</span>
-                </div>
-              )}
-            </div>
-          </div>
         </div>
       </div>
 

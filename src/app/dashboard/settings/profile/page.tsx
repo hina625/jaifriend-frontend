@@ -2,19 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Popup from '@/components/Popup';
-
-interface ProfileSettings {
-  firstName: string;
-  lastName: string;
-  aboutMe: string;
-  location: string;
-  website: string;
-  relationship: string;
-  school: string;
-  schoolCompleted: boolean;
-  workingAt: string;
-  companyWebsite: string;
-}
+import { usePrivacy } from '@/contexts/PrivacyContext';
+import { ProfileSettings } from '@/utils/privacyUtils';
 
 interface PopupState {
   isOpen: boolean;
@@ -25,6 +14,7 @@ interface PopupState {
 
 const ProfileSettingsPage = () => {
   const router = useRouter();
+  const { profileSettings, updateProfileSettings, loading: contextLoading } = usePrivacy();
   const [loading, setLoading] = useState(false);
   const [popup, setPopup] = useState<PopupState>({
     isOpen: false,
@@ -32,7 +22,7 @@ const ProfileSettingsPage = () => {
     title: '',
     message: ''
   });
-  const [profileSettings, setProfileSettings] = useState<ProfileSettings>({
+  const [localSettings, setLocalSettings] = useState<ProfileSettings>({
     firstName: 'Hina Sadaf -BSCS-2nd-029',
     lastName: '',
     aboutMe: '',
@@ -46,83 +36,11 @@ const ProfileSettingsPage = () => {
   });
 
   useEffect(() => {
-    // Load profile settings from backend API
-    const loadProfileSettings = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        console.log('🔍 Loading profile settings...');
-        console.log('🔍 Token available:', !!token);
-        
-        if (!token) {
-          console.log('❌ No token found, using localStorage fallback');
-          // Fallback to localStorage if no token
-          const savedSettings = localStorage.getItem('profileSettings');
-          if (savedSettings) {
-            setProfileSettings(JSON.parse(savedSettings));
-          }
-          return;
-        }
-
-        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`;
-        console.log('🌐 Making request to:', apiUrl);
-        console.log('🔐 Sending token:', token.substring(0, 20) + '...');
-
-        const response = await fetch(apiUrl, { 
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        console.log('📡 Response status:', response.status);
-        console.log('📡 Response ok:', response.ok);
-
-        if (response.ok) {
-          const userData = await response.json();
-          console.log('✅ User data loaded:', userData);
-          
-          // Map user data to settings format
-          const nameParts = (userData.name || '').split(' ');
-          const firstName = nameParts[0] || '';
-          const lastName = nameParts.slice(1).join(' ') || '';
-          
-          const mappedSettings = {
-            firstName,
-            lastName,
-            aboutMe: userData.bio || '',
-            location: userData.location || '',
-            website: userData.website || '',
-            relationship: 'None', // Not in user model yet
-            school: '', // Not in user model yet
-            schoolCompleted: false, // Not in user model yet
-            workingAt: userData.workplace || '',
-            companyWebsite: '' // Not in user model yet
-          };
-          
-          console.log('📋 Mapped profile settings:', mappedSettings);
-          setProfileSettings(mappedSettings);
-          // Also save to localStorage as backup
-          localStorage.setItem('profileSettings', JSON.stringify(mappedSettings));
-        } else {
-          const errorData = await response.json().catch(() => ({}));
-          console.error('❌ API request failed:', response.status, errorData);
-          // Fallback to localStorage if API fails
-          const savedSettings = localStorage.getItem('profileSettings');
-          if (savedSettings) {
-            setProfileSettings(JSON.parse(savedSettings));
-          }
-        }
-      } catch (error) {
-        console.error('❌ Error loading profile settings:', error);
-        // Fallback to localStorage if network error
-        const savedSettings = localStorage.getItem('profileSettings');
-        if (savedSettings) {
-          setProfileSettings(JSON.parse(savedSettings));
-        }
-      }
-    };
-    
-    loadProfileSettings();
-  }, []);
+    // Update local settings when context settings change
+    if (profileSettings) {
+      setLocalSettings(profileSettings);
+    }
+  }, [profileSettings]);
 
   const showPopup = (type: 'success' | 'error' | 'info', title: string, message: string) => {
     setPopup({
@@ -138,7 +56,7 @@ const ProfileSettingsPage = () => {
   };
 
   const handleInputChange = (field: keyof ProfileSettings, value: string | boolean) => {
-    setProfileSettings(prev => ({
+    setLocalSettings(prev => ({
       ...prev,
       [field]: value
     }));
@@ -147,69 +65,41 @@ const ProfileSettingsPage = () => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      await updateProfileSettings(localSettings);
+      showPopup('success', 'Success', 'Profile updated successfully!');
       
-      if (token) {
-        // Map the settings to the correct API format
-        const profileData = {
-          name: `${profileSettings.firstName} ${profileSettings.lastName}`.trim(),
-          bio: profileSettings.aboutMe,
-          location: profileSettings.location,
-          website: profileSettings.website,
-          workplace: profileSettings.workingAt,
-          // Add other fields as needed
-        };
-
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/update`, { 
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(profileData)
-        });
-
-        if (response.ok) {
-          const result = await response.json();
-          console.log('Profile updated successfully:', result);
-          
-          // Save to localStorage as backup
-          localStorage.setItem('profileSettings', JSON.stringify(profileSettings));
-          
-          showPopup('success', 'Success', 'Profile updated successfully!');
-          
-          // Get current user ID and navigate to profile page
-          try {
-            const currentUserResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
-            });
-
-            if (currentUserResponse.ok) {
-              const currentUser = await currentUserResponse.json();
-              setTimeout(() => {
-                router.push(`/dashboard/profile/${currentUser.id}`);
-              }, 1500);
-            } else {
-              // Fallback to "me" if we can't get the user ID
-              setTimeout(() => {
-                router.push('/dashboard/profile/me');
-              }, 1500);
+      // Get current user ID and navigate to profile page
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const currentUserResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
             }
-          } catch (error) {
-            console.error('Error getting current user ID:', error);
-            // Fallback to "me" if there's an error
+          });
+
+          if (currentUserResponse.ok) {
+            const currentUser = await currentUserResponse.json();
+            setTimeout(() => {
+              router.push(`/dashboard/profile/${currentUser.id}`);
+            }, 1500);
+          } else {
+            // Fallback to "me" if we can't get the user ID
             setTimeout(() => {
               router.push('/dashboard/profile/me');
             }, 1500);
           }
         } else {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to update profile');
+          setTimeout(() => {
+            router.push('/dashboard/profile/me');
+          }, 1500);
         }
-      } else {
-        throw new Error('No authentication token found');
+      } catch (error) {
+        console.error('Error getting current user ID:', error);
+        // Fallback to "me" if there's an error
+        setTimeout(() => {
+          router.push('/dashboard/profile/me');
+        }, 1500);
       }
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -247,7 +137,7 @@ const ProfileSettingsPage = () => {
               </label>
               <input
                 type="text"
-                value={profileSettings.firstName}
+                value={localSettings.firstName}
                 onChange={(e) => handleInputChange('firstName', e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
               />
@@ -258,7 +148,7 @@ const ProfileSettingsPage = () => {
               </label>
               <input
                 type="text"
-                value={profileSettings.lastName}
+                value={localSettings.lastName}
                 onChange={(e) => handleInputChange('lastName', e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
               />
@@ -271,7 +161,7 @@ const ProfileSettingsPage = () => {
               About me
             </label>
             <textarea
-              value={profileSettings.aboutMe}
+              value={localSettings.aboutMe}
               onChange={(e) => handleInputChange('aboutMe', e.target.value)}
               rows={4}
               className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white resize-vertical"
@@ -285,7 +175,7 @@ const ProfileSettingsPage = () => {
             </label>
             <input
               type="text"
-              value={profileSettings.location}
+              value={localSettings.location}
               onChange={(e) => handleInputChange('location', e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
             />
@@ -299,7 +189,7 @@ const ProfileSettingsPage = () => {
               </label>
               <input
                 type="url"
-                value={profileSettings.website}
+                value={localSettings.website}
                 onChange={(e) => handleInputChange('website', e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
               />
@@ -309,7 +199,7 @@ const ProfileSettingsPage = () => {
                 Relationship
               </label>
               <select
-                value={profileSettings.relationship}
+                value={localSettings.relationship}
                 onChange={(e) => handleInputChange('relationship', e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
               >
@@ -330,7 +220,7 @@ const ProfileSettingsPage = () => {
             <div className="flex items-center gap-4">
               <input
                 type="text"
-                value={profileSettings.school}
+                value={localSettings.school}
                 onChange={(e) => handleInputChange('school', e.target.value)}
                 className="flex-1 px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
               />
@@ -338,7 +228,7 @@ const ProfileSettingsPage = () => {
                 <input
                   type="checkbox"
                   id="schoolCompleted"
-                  checked={profileSettings.schoolCompleted}
+                  checked={localSettings.schoolCompleted}
                   onChange={(e) => handleInputChange('schoolCompleted', e.target.checked)}
                   className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                 />
@@ -357,7 +247,7 @@ const ProfileSettingsPage = () => {
               </label>
               <input
                 type="text"
-                value={profileSettings.workingAt}
+                value={localSettings.workingAt}
                 onChange={(e) => handleInputChange('workingAt', e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
               />
@@ -368,7 +258,7 @@ const ProfileSettingsPage = () => {
               </label>
               <input
                 type="url"
-                value={profileSettings.companyWebsite}
+                value={localSettings.companyWebsite}
                 onChange={(e) => handleInputChange('companyWebsite', e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
               />
