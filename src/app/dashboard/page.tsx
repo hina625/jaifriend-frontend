@@ -12,6 +12,13 @@ function getUserAvatar() {
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     if (user.avatar) {
+      // Handle localhost URLs that might be stored incorrectly
+      if (user.avatar.includes('localhost:3000')) {
+        const correctedUrl = user.avatar.replace('http://localhost:3000', 'https://jaifriend-backend-production.up.railway.app');
+        console.log('🔗 getUserAvatar - Fixed localhost URL:', { original: user.avatar, corrected: correctedUrl });
+        return correctedUrl;
+      }
+      
       // Use getMediaUrl function to construct proper URL
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
       if (user.avatar.startsWith('http')) {
@@ -19,9 +26,9 @@ function getUserAvatar() {
       }
       return `${baseUrl}${user.avatar}`;
     }
-    return '/avatars/1.png.png';
+    return '/default-avatar.svg';
   } catch {
-    return '/avatars/1.png.png';
+    return '/default-avatar.svg';
   }
 }
 
@@ -851,7 +858,14 @@ export default function Dashboard() {
         </h1>
         {user && (
           <div className="flex items-center gap-2 mb-3 sm:mb-4">
-            <img src={user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${user.avatar}`) : '/avatars/1.png.png'} className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-blue-500" />
+            <img 
+              src={user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${user.avatar}`) : '/default-avatar.svg'} 
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-blue-500 object-cover" 
+              onError={(e) => {
+                console.log('❌ Dashboard avatar load failed for user:', user.name, 'URL:', user.avatar);
+                e.currentTarget.src = '/default-avatar.svg';
+              }}
+            />
             <span className="font-bold text-blue-700 text-xs sm:text-sm md:text-base">ID: {user._id || user.id}</span>
           </div>
         )}
@@ -891,11 +905,24 @@ export default function Dashboard() {
                 onChange={handleStoryUpload}
               />
             </div>
-            {/* Demo static stories */}
+            {/* Demo static stories with user avatars */}
             {[1,2,3,4,5,6].map((i) => (
               <div key={i} className="flex-shrink-0 flex flex-col items-center group cursor-pointer">
-                <div className="w-20 h-28 sm:w-24 sm:h-36 md:w-32 md:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-gray-300 mb-2 sm:mb-3 shadow-lg sm:shadow-xl bg-gray-200 flex items-center justify-center transition-transform group-hover:scale-105">
-                  {/* Optionally, you can put a user icon or plus icon here */}
+                <div className="w-20 h-28 sm:w-24 sm:h-36 md:w-32 md:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-gray-300 mb-2 sm:mb-3 shadow-lg sm:shadow-xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center transition-transform group-hover:scale-105 relative overflow-hidden">
+                  <img 
+                    src={`/avatars/${i}.png`} 
+                    alt={`User ${i} Story`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.log('❌ Story avatar load failed for user:', i);
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.parentElement!.innerHTML = `
+                        <div class="flex items-center justify-center w-full h-full">
+                          <span class="text-white text-2xl font-bold">${i}</span>
+                        </div>
+                      `;
+                    }}
+                  />
                 </div>
                 <span className="text-xs sm:text-sm text-[#34495e] group-hover:text-[#022e8a] font-medium">User {i}</span>
               </div>

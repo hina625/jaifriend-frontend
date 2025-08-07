@@ -327,7 +327,7 @@ export default function PaymentConfiguration() {
                       enabled={withdrawalSettings.customMethod}
                       onToggle={() => toggleWithdrawalMethod('customMethod')}
                     />
-                  </div>
+                </div>
               </div>
 
               <div className="mt-6">
@@ -346,7 +346,7 @@ export default function PaymentConfiguration() {
                   <p className="text-sm text-gray-600 mt-1">
                     Minimum withdrawal the users can request
                   </p>
-                </div>
+              </div>
             </div>
 
               {/* CoinPayments */}
@@ -442,7 +442,7 @@ export default function PaymentConfiguration() {
 Your note to the customer after he submits the payment."
                       className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     />
-                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -535,7 +535,7 @@ Your note to the customer after he submits the payment."
                     <p className="text-sm text-gray-600 mt-1">
                       Set your PayPal currency, this will be used only on PayPal.
                     </p>
-                  </div>
+                </div>
               </div>
             </div>
 
@@ -608,8 +608,8 @@ Your note to the customer after he submits the payment."
                       onChange={(e) => updatePaymentMethod('stripe', 'publishableKey', e.target.value)}
                       placeholder="Your Stripe publishable key that starts with pk_"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
+                  />
+                </div>
               </div>
             </div>
 

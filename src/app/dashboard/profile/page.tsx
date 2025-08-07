@@ -119,7 +119,7 @@ interface ProfileCompletion {
   address: boolean;
 }
 
-const ProfilePage: React.FC = () => {
+const ProfilePage = () => {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [userImages, setUserImages] = useState<UserImages>({ avatar: null, cover: null });
@@ -191,6 +191,9 @@ const ProfilePage: React.FC = () => {
   ];
 
   useEffect(() => {
+    console.log('🚀 Profile page useEffect running...');
+    console.log('🔍 Testing console logs...');
+    console.log('📱 Browser console should show these messages');
     fetchUserProfile();
     fetchUserImages();
     fetchUserPosts();
@@ -290,6 +293,7 @@ const ProfilePage: React.FC = () => {
     window.addEventListener('productUpdated', handleProductUpdated);
     window.addEventListener('productDeleted', handleProductDeleted);
     
+    // Cleanup function
     return () => {
       window.removeEventListener('postCreated', handlePostCreated);
       window.removeEventListener('postDeleted', handlePostDeleted);
@@ -308,6 +312,50 @@ const ProfilePage: React.FC = () => {
       window.removeEventListener('productUpdated', handleProductUpdated);
       window.removeEventListener('productDeleted', handleProductDeleted);
     };
+  }, []);
+
+  // Monitor userImages and user state changes
+  useEffect(() => {
+    console.log('🖼️ UserImages state changed:', userImages);
+    console.log('🖼️ User state changed:', user);
+  }, [userImages, user]);
+
+  // Cleanup localhost URLs in database
+  useEffect(() => {
+    const cleanupLocalhostUrls = async () => {
+      try {
+        console.log('🧹 Starting localhost URL cleanup...');
+        const token = localStorage.getItem('token');
+        if (!token) {
+          console.log('❌ No token found for cleanup');
+          return;
+        }
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/userimages/cleanup-localhost`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('✅ Localhost URL cleanup completed:', result);
+          
+          // Refresh user data after cleanup
+          await fetchUserImages();
+          await fetchUserProfile();
+        } else {
+          console.log('❌ Cleanup failed:', response.status);
+        }
+      } catch (error) {
+        console.error('❌ Error during cleanup:', error);
+      }
+    };
+
+    // Run cleanup once when component mounts
+    cleanupLocalhostUrls();
   }, []);
 
   // Listen for profile updates from settings pages
@@ -397,9 +445,14 @@ const ProfilePage: React.FC = () => {
 
   const fetchUserPosts = async () => {
     try {
+      console.log('🔍 fetchUserPosts called...');
       const token = localStorage.getItem('token');
-      if (!token) return;
+      if (!token) {
+        console.log('❌ No token found');
+        return;
+      }
 
+      console.log('🌐 Fetching posts from API...');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/user`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -408,7 +461,12 @@ const ProfilePage: React.FC = () => {
 
       if (response.ok) {
         const postsData = await response.json();
+        console.log('📸 Fetched posts data:', postsData);
+        console.log('📸 Posts with media:', postsData.filter((post: any) => post.media && post.media.length > 0));
+        console.log('📸 Setting posts in state...');
         setPosts(postsData);
+      } else {
+        console.log('❌ API response not ok:', response.status);
       }
     } catch (error) {
       console.error('Error fetching user posts:', error);
@@ -741,8 +799,16 @@ const ProfilePage: React.FC = () => {
   };
 
   const getMediaUrl = (url: string) => {
-    if (!url) return '/default-avatar.png';
+    if (!url) return '/default-avatar.svg';
     if (url.startsWith('http')) return url;
+    
+    // Handle localhost URLs that might be stored incorrectly
+    if (url.includes('localhost:3000')) {
+      const correctedUrl = url.replace('http://localhost:3000', 'https://jaifriend-backend-production.up.railway.app');
+      console.log('🔗 getMediaUrl - Fixed localhost URL:', { original: url, corrected: correctedUrl });
+      return correctedUrl;
+    }
+    
     const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
     console.log('🔗 getMediaUrl:', { original: url, full: fullUrl });
     return fullUrl;
@@ -894,6 +960,8 @@ const ProfilePage: React.FC = () => {
 
   const handleSaveAvatar = async () => {
     console.log('💾 Starting avatar save process');
+    console.log('🔍 Testing avatar upload console logs...');
+    console.log('📱 This should appear in browser console');
     if (!newAvatar) {
       console.log('❌ No avatar file to save');
       return;
@@ -930,8 +998,14 @@ const ProfilePage: React.FC = () => {
         const data = await response.json();
         console.log('✅ Avatar uploaded successfully:', data);
         
-        // Update local state
+        // Update local state immediately
         setUserImages(prev => ({
+          ...prev,
+          avatar: data.avatar
+        }));
+        
+        // Also update user profile to keep it synchronized
+        setUser(prev => ({
           ...prev,
           avatar: data.avatar
         }));
@@ -946,8 +1020,11 @@ const ProfilePage: React.FC = () => {
         // Trigger profile update event to refresh navbar
         window.dispatchEvent(new CustomEvent('profileUpdated'));
         
-        // Refresh user images
-        fetchUserImages();
+        // Refresh user images and profile to ensure consistency
+        await fetchUserImages();
+        await fetchUserProfile();
+        
+        console.log('✅ Avatar update completed - data refreshed');
       } else {
         const errorData = await response.json();
         console.log('❌ Upload failed:', errorData);

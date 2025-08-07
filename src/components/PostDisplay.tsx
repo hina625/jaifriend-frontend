@@ -36,6 +36,8 @@ export default function PostDisplay({
 
   // Track view when component mounts
   useEffect(() => {
+    console.log('📸 PostDisplay mounted - Post ID:', post._id, 'Media count:', post.media?.length || 0);
+    
     const trackView = async () => {
       const token = localStorage.getItem('token');
       if (token && post._id) {
@@ -55,10 +57,25 @@ export default function PostDisplay({
     trackView();
   }, [post._id]);
 
+  // Monitor post changes
+  useEffect(() => {
+    console.log('📸 PostDisplay post changed - Post ID:', post._id, 'Media:', post.media);
+  }, [post]);
+
   const getMediaUrl = (url: string) => {
     if (!url) return '';
     if (url.startsWith('http')) return url;
-    return `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
+    
+    // Handle localhost URLs that might be stored incorrectly
+    if (url.includes('localhost:3000')) {
+      const correctedUrl = url.replace('http://localhost:3000', 'https://jaifriend-backend-production.up.railway.app');
+      console.log('🔗 getMediaUrl - Fixed localhost URL:', { original: url, corrected: correctedUrl });
+      return correctedUrl;
+    }
+    
+    const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
+    console.log('📸 getMediaUrl - Original:', url, 'Full:', fullUrl);
+    return fullUrl;
   };
 
   // Get current user's reaction
@@ -170,9 +187,13 @@ export default function PostDisplay({
     <div className="bg-white rounded-xl shadow p-3 sm:p-4 mb-4 sm:mb-6">
       <div className="flex items-center gap-2 mb-3">
         <img 
-          src={post.user?.avatar ? getMediaUrl(post.user.avatar) : '/avatars/1.png.png'} 
+          src={post.user?.avatar ? getMediaUrl(post.user.avatar) : '/default-avatar.svg'} 
           alt="avatar" 
-          className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0" 
+          className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0 object-cover" 
+          onError={(e) => {
+            console.log('❌ Avatar load failed for user:', post.user?.name, 'URL:', post.user?.avatar);
+            e.currentTarget.src = '/default-avatar.svg';
+          }}
         />
         <div className="flex-1 min-w-0">
           {post.user ? (
@@ -209,6 +230,8 @@ export default function PostDisplay({
         <div className="mb-3">
           {(() => {
             console.log('📸 PostDisplay media:', post.media);
+            console.log('📸 Post ID:', post._id);
+            console.log('📸 Media URLs:', post.media.map((m: any) => m.url));
             return post.media.map((media: any, index: number) => (
               <div key={index} className="mb-2">
                 {media.type === 'video' ? (
@@ -380,9 +403,13 @@ export default function PostDisplay({
           {post.comments.slice(0, 3).map((comment: any, index: number) => (
             <div key={index} className="flex items-start gap-2 p-2 bg-gray-50 rounded-lg">
               <img 
-                src={comment.user?.avatar ? getMediaUrl(comment.user.avatar) : '/avatars/1.png.png'} 
+                src={comment.user?.avatar ? getMediaUrl(comment.user.avatar) : '/default-avatar.svg'} 
                 alt="avatar" 
-                className="w-5 h-5 sm:w-6 sm:h-6 rounded-full flex-shrink-0" 
+                className="w-5 h-5 sm:w-6 sm:h-6 rounded-full flex-shrink-0 object-cover" 
+                onError={(e) => {
+                  console.log('❌ Comment avatar load failed for user:', comment.user?.name, 'URL:', comment.user?.avatar);
+                  e.currentTarget.src = '/default-avatar.svg';
+                }}
               />
               <div className="flex-1 min-w-0">
                 {comment.user ? (

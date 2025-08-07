@@ -260,9 +260,13 @@ const FollowersSidebar: React.FC<FollowersSidebarProps> = ({ isAdminPage = false
               >
                 <div className="w-10 h-10 bg-white rounded-full shadow-sm overflow-hidden relative">
                   <img
-                    src={user.avatar}
+                    src={user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${user.avatar}`) : '/default-avatar.svg'}
                     alt={user.name}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.log('❌ FollowersSidebar avatar load failed for user:', user.name, 'URL:', user.avatar);
+                      e.currentTarget.src = '/default-avatar.svg';
+                    }}
                   />
                   {/* Online Status Indicator */}
                   {user.isOnline && (
@@ -332,9 +336,13 @@ const FollowersSidebar: React.FC<FollowersSidebarProps> = ({ isAdminPage = false
                       className="rounded"
                     />
                     <img
-                      src={user.avatar}
+                      src={user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${user.avatar}`) : '/default-avatar.svg'}
                       alt={user.name}
-                      className="w-6 h-6 rounded-full"
+                      className="w-6 h-6 rounded-full object-cover"
+                      onError={(e) => {
+                        console.log('❌ Group creation avatar load failed for user:', user.name, 'URL:', user.avatar);
+                        e.currentTarget.src = '/default-avatar.svg';
+                      }}
                     />
                     <span className="text-sm text-gray-700">{user.name}</span>
                   </label>
