@@ -325,6 +325,12 @@
       "namedRegex": "^/dashboard/groups(?:/)?$"
     },
     {
+      "page": "/dashboard/id",
+      "regex": "^/dashboard/id(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/id(?:/)?$"
+    },
+    {
       "page": "/dashboard/jobs",
       "regex": "^/dashboard/jobs(?:/)?$",
       "routeKeys": {},
