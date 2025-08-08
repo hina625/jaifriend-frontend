@@ -50,11 +50,11 @@ export default function ReactionPopup({
   return (
     <div 
       ref={popupRef}
-      className={`absolute z-50 bg-white rounded-full shadow-lg border border-gray-200 p-2 ${
-        position === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'
+      className={`absolute z-50 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 p-2 sm:p-3 ${
+        position === 'top' ? 'bottom-full mb-2 sm:mb-3' : 'top-full mt-2 sm:mt-3'
       } left-0 transform -translate-x-1/2`}
     >
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 sm:gap-2">
         {reactions.map((reaction) => (
           <button
             key={reaction.type}
@@ -62,14 +62,15 @@ export default function ReactionPopup({
               onReaction(reaction.type);
               onClose();
             }}
-            className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-lg hover:scale-110 transition-all duration-200 ${
+            className={`w-12 h-12 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white text-lg sm:text-xl hover:scale-110 transition-all duration-200 touch-manipulation ${
               reaction.color
             } ${
               currentReaction === reaction.type 
-                ? 'ring-2 ring-blue-300 ring-offset-2' 
+                ? 'ring-2 ring-blue-300 dark:ring-blue-400 ring-offset-2 dark:ring-offset-gray-800' 
                 : 'hover:shadow-md'
             }`}
             title={reaction.label}
+            style={{ touchAction: 'manipulation' }}
           >
             {reaction.emoji}
           </button>

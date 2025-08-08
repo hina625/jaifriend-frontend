@@ -15,7 +15,7 @@ import {
   calculatePrivacyLevel,
   getPrivacyLevelText
 } from '@/utils/privacyUtils';
-import { MapPin, Globe, Calendar, Users, Eye, Shield } from 'lucide-react';
+import { MapPin, Globe, Calendar, Users, Eye, Shield, GraduationCap, Briefcase, Heart, School, Building, Link } from 'lucide-react';
 
 interface PrivacyAwareProfileProps {
   viewerType: 'public' | 'friend' | 'following' | 'self';
@@ -98,6 +98,12 @@ const PrivacyAwareProfile: React.FC<PrivacyAwareProfileProps> = ({ viewerType, u
   const canViewActivitiesList = canViewActivities(privacySettings, viewerType);
   const privacyLevel = calculatePrivacyLevel(privacySettings);
 
+  // Helper function to check if we should show education/work info
+  const shouldShowEducationWork = () => {
+    if (viewerType === 'self') return true;
+    return canViewActivitiesList;
+  };
+
   return (
     <div className="space-y-4">
       {/* User Info */}
@@ -152,7 +158,7 @@ const PrivacyAwareProfile: React.FC<PrivacyAwareProfileProps> = ({ viewerType, u
         </div>
       )}
 
-      {/* User Details */}
+      {/* Basic User Details */}
       <div className="flex flex-wrap gap-1 text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-3 justify-center px-2">
         {displayLocation && (
           <div className="flex items-center gap-1">
@@ -168,12 +174,6 @@ const PrivacyAwareProfile: React.FC<PrivacyAwareProfileProps> = ({ viewerType, u
             </a>
           </div>
         )}
-        {displayWorkplace && (
-          <div className="flex items-center gap-1">
-            <Users className="w-3 h-3 flex-shrink-0" />
-            <span className="truncate">Works at {displayWorkplace}</span>
-          </div>
-        )}
         {user.joinedDate && (
           <div className="flex items-center gap-1">
             <Calendar className="w-3 h-3 flex-shrink-0" />
@@ -181,6 +181,84 @@ const PrivacyAwareProfile: React.FC<PrivacyAwareProfileProps> = ({ viewerType, u
           </div>
         )}
       </div>
+
+      {/* Education & Work Information */}
+      {shouldShowEducationWork() && (
+        <div className="space-y-3">
+          {/* Education Section */}
+          {(profileSettings.school || profileSettings.schoolCompleted !== undefined) && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <GraduationCap className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Education</h3>
+              </div>
+              <div className="space-y-2">
+                {profileSettings.school && (
+                  <div className="flex items-center gap-2">
+                    <School className="w-3 h-3 text-gray-500 dark:text-gray-400" />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                      {profileSettings.school}
+                      {profileSettings.schoolCompleted !== undefined && (
+                        <span className="text-gray-500 dark:text-gray-400 ml-1">
+                          {profileSettings.schoolCompleted ? ' (Completed)' : ' (In Progress)'}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Work Section */}
+          {(profileSettings.workingAt || profileSettings.companyWebsite) && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Briefcase className="w-4 h-4 text-green-600 dark:text-green-400" />
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Work</h3>
+              </div>
+              <div className="space-y-2">
+                {profileSettings.workingAt && (
+                  <div className="flex items-center gap-2">
+                    <Building className="w-3 h-3 text-gray-500 dark:text-gray-400" />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                      {profileSettings.workingAt}
+                    </span>
+                  </div>
+                )}
+                {profileSettings.companyWebsite && (
+                  <div className="flex items-center gap-2">
+                    <Link className="w-3 h-3 text-gray-500 dark:text-gray-400" />
+                    <a 
+                      href={profileSettings.companyWebsite} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-sm text-blue-600 dark:text-blue-400 hover:underline truncate"
+                    >
+                      {profileSettings.companyWebsite}
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Relationship Status */}
+          {profileSettings.relationship && profileSettings.relationship !== 'None' && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Heart className="w-4 h-4 text-pink-600 dark:text-pink-400" />
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Relationship</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  {profileSettings.relationship}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 text-center">
