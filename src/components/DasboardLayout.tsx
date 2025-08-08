@@ -1691,7 +1691,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         <main className={`
           flex-1 transition-all duration-300 min-h-screen overflow-x-hidden bg-gray-50 dark:bg-gray-900
           ${isMobile 
-            ? 'ml-0 mr-0 pb-4' 
+            ? 'ml-0 mr-0 pb-20' 
             : sidebarCollapsed 
               ? 'ml-16' 
               : isAdminPage 

@@ -577,7 +577,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
       </div>
 
       {/* Create Album Form */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8 pb-20 sm:pb-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8 pb-24 sm:pb-8">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-8">
           {/* Form Header */}
           <div className="flex items-center mb-6 sm:mb-8">
@@ -623,7 +623,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
             </div>
             
             {/* Photo Upload Area */}
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 sm:p-12 text-center hover:border-gray-400 transition-colors">
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6 md:p-12 text-center hover:border-gray-400 transition-colors">
               <input
                 type="file"
                 multiple
@@ -633,16 +633,16 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
                 id="photo-upload"
               />
               <label htmlFor="photo-upload" className="cursor-pointer touch-manipulation" style={{ touchAction: 'manipulation' }}>
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-lg mx-auto mb-4 flex items-center justify-center relative">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-lg mx-auto mb-3 sm:mb-4 flex items-center justify-center relative">
                   <Camera className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
                   <div className="absolute -top-1 -right-1">
                     <Plus className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
                   </div>
                 </div>
-                <p className="text-gray-500 text-xs sm:text-sm px-4">
-                  Tap to upload photos or videos, or drag and drop
+                <p className="text-gray-700 dark:text-gray-300 text-sm sm:text-base px-2 sm:px-4 font-medium">
+                  Tap to upload photos or videos
                 </p>
-                <p className="text-gray-400 text-xs mt-2">
+                <p className="text-gray-500 dark:text-gray-400 text-xs mt-1 sm:mt-2">
                   Supports: JPG, PNG, GIF, MP4, MOV, AVI
                 </p>
               </label>
@@ -697,10 +697,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center space-y-3 sm:space-y-0 sm:space-x-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mt-6 sm:mt-8">
             <button
               onClick={handleGoBack}
-              className="flex items-center px-6 py-3 text-gray-600 hover:text-gray-800 font-medium transition-colors w-full sm:w-auto justify-center touch-manipulation"
+              className="flex items-center justify-center px-6 py-3 text-gray-600 hover:text-gray-800 font-medium transition-colors w-full sm:w-auto touch-manipulation border border-gray-300 rounded-lg hover:bg-gray-50"
               style={{ touchAction: 'manipulation' }}
             >
               <ArrowLeft className="w-4 h-4 mr-2" />

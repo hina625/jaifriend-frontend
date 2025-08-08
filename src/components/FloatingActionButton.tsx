@@ -60,7 +60,7 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ isAdminPage
       <button
         ref={buttonRef}
         onClick={handleButtonClick}
-        className={`fixed bottom-20 right-6 w-14 h-14 rounded-full shadow-lg transition-all duration-300 z-50 flex items-center justify-center md:bottom-6 ${
+        className={`fixed bottom-24 right-4 w-14 h-14 rounded-full shadow-lg transition-all duration-300 z-50 flex items-center justify-center md:bottom-6 md:right-6 ${
           isOpen 
             ? 'bg-red-500 hover:bg-red-600 rotate-45' 
             : 'bg-gray-700 hover:bg-gray-800'
@@ -80,7 +80,7 @@ const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({ isAdminPage
       {showPopup && (
         <div
           ref={popupRef}
-          className="fixed bottom-32 right-6 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 min-w-[200px] md:bottom-20"
+          className="fixed bottom-36 right-4 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 min-w-[200px] md:bottom-20 md:right-6"
           style={{
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
           }}
