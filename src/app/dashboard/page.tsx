@@ -951,11 +951,18 @@ export default function Dashboard() {
       {/* Share Popup */}
       <SharePopup
         isOpen={showSharePopup}
-        onClose={() => setShowSharePopup(false)}
-        onShare={handleShare}
-        postContent={selectedPost?.content}
-        postMedia={selectedPost?.media}
-        isAlbum={selectedPost?.type === 'album'}
+        onClose={() => {
+          setShowSharePopup(false);
+          setSelectedPostForShare(null);
+        }}
+        onShare={(shareOptions) => {
+          if (selectedPostForShare) {
+            handleShare(selectedPostForShare._id || selectedPostForShare.id, shareOptions);
+          }
+        }}
+        postContent={selectedPostForShare?.content}
+        postMedia={selectedPostForShare?.media}
+        isAlbum={selectedPostForShare?.type === 'album'}
       />
       
       <div className="px-2 sm:px-4 lg:px-6 w-full">
@@ -1767,21 +1774,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Share Popup */}
-      {selectedPostForShare && (
-        <SharePopup
-          isOpen={showSharePopup}
-          onClose={() => {
-            setShowSharePopup(false);
-            setSelectedPostForShare(null);
-          }}
-          onShare={(shareOptions) => {
-            handleShare(selectedPostForShare._id || selectedPostForShare.id, shareOptions);
-          }}
-          postContent={selectedPostForShare.content}
-          postMedia={selectedPostForShare.media}
-        />
-      )}
+
 
       {/* General Popup */}
       <Popup 
