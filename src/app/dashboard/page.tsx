@@ -944,7 +944,20 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="bg-[#f4f7fb] dark:bg-gray-900 min-h-screen pt-2 sm:pt-4 pb-6 w-full scrollbar-hide overflow-x-hidden transition-colors duration-200">
+    <div className="bg-[#f4f7fb] dark:bg-gray-900 min-h-screen pt-2 sm:pt-4 pb-24 sm:pb-6 w-full scrollbar-hide overflow-x-hidden transition-colors duration-200">
+      {/* Popup Modal */}
+      <Popup popup={popup} onClose={closePopup} />
+      
+      {/* Share Popup */}
+      <SharePopup
+        isOpen={showSharePopup}
+        onClose={() => setShowSharePopup(false)}
+        onShare={handleShare}
+        postContent={selectedPost?.content}
+        postMedia={selectedPost?.media}
+        isAlbum={selectedPost?.type === 'album'}
+      />
+      
       <div className="px-2 sm:px-4 lg:px-6 w-full">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 text-gray-900 dark:text-white transition-colors duration-200">
           {userEmail ? `Hello, ${userEmail}! 👋` : "Hello!"}
@@ -1472,28 +1485,42 @@ export default function Dashboard() {
                           <div className="flex flex-wrap gap-2 mt-3">
                             <div className="relative">
                               <button 
-                                className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-all duration-200 text-xs sm:text-sm ${
+                                className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 text-sm touch-manipulation ${
                                   Array.isArray(item.reactions) && item.reactions.length > 0 
                                     ? 'text-red-500 bg-red-50 border border-red-200' 
                                     : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
                                 }`} 
                                 onClick={() => handleLike(item._id || item.id)}
                                 onMouseEnter={() => {
-                                  // Show reaction popup on hover
-                                  const reactionButton = document.getElementById(`reaction-${item._id || item.id}`);
-                                  if (reactionButton) {
-                                    reactionButton.classList.remove('hidden');
+                                  // Show reaction popup on hover (desktop only)
+                                  if (window.innerWidth > 768) {
+                                    const reactionButton = document.getElementById(`reaction-${item._id || item.id}`);
+                                    if (reactionButton) {
+                                      reactionButton.classList.remove('hidden');
+                                    }
                                   }
                                 }}
                                 onMouseLeave={() => {
-                                  // Hide reaction popup after delay
-                                  setTimeout(() => {
+                                  // Hide reaction popup after delay (desktop only)
+                                  if (window.innerWidth > 768) {
+                                    setTimeout(() => {
+                                      const reactionButton = document.getElementById(`reaction-${item._id || item.id}`);
+                                      if (reactionButton) {
+                                        reactionButton.classList.add('hidden');
+                                      }
+                                    }, 300);
+                                  }
+                                }}
+                                onTouchStart={() => {
+                                  // Show reaction popup on touch (mobile)
+                                  if (window.innerWidth <= 768) {
                                     const reactionButton = document.getElementById(`reaction-${item._id || item.id}`);
                                     if (reactionButton) {
-                                      reactionButton.classList.add('hidden');
+                                      reactionButton.classList.toggle('hidden');
                                     }
-                                  }, 300);
+                                  }
                                 }}
+                                style={{ touchAction: 'manipulation' }}
                               >
                                 <span>
                                   {(() => {
@@ -1526,21 +1553,25 @@ export default function Dashboard() {
                               {/* Reaction Popup */}
                               <div 
                                 id={`reaction-${item._id || item.id}`}
-                                className="absolute bottom-full left-0 mb-2 hidden z-50 bg-white rounded-full shadow-lg border border-gray-200 p-2"
+                                className="absolute bottom-full left-0 mb-2 hidden z-50 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 p-2 sm:p-3"
                                 onMouseEnter={() => {
-                                  const reactionButton = document.getElementById(`reaction-${item._id || item.id}`);
-                                  if (reactionButton) {
-                                    reactionButton.classList.remove('hidden');
+                                  if (window.innerWidth > 768) {
+                                    const reactionButton = document.getElementById(`reaction-${item._id || item.id}`);
+                                    if (reactionButton) {
+                                      reactionButton.classList.remove('hidden');
+                                    }
                                   }
                                 }}
                                 onMouseLeave={() => {
-                                  const reactionButton = document.getElementById(`reaction-${item._id || item.id}`);
-                                  if (reactionButton) {
-                                    reactionButton.classList.add('hidden');
+                                  if (window.innerWidth > 768) {
+                                    const reactionButton = document.getElementById(`reaction-${item._id || item.id}`);
+                                    if (reactionButton) {
+                                      reactionButton.classList.add('hidden');
+                                    }
                                   }
                                 }}
                               >
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1 sm:gap-2">
                                   {[
                                     { type: 'like', emoji: '👍', color: 'bg-blue-500' },
                                     { type: 'love', emoji: '❤️', color: 'bg-red-500' },
@@ -1551,9 +1582,19 @@ export default function Dashboard() {
                                   ].map((reaction) => (
                                     <button
                                       key={reaction.type}
-                                      onClick={() => handleReaction(item._id || item.id, reaction.type)}
-                                      className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm hover:scale-110 transition-all duration-200 ${reaction.color}`}
+                                      onClick={() => {
+                                        handleReaction(item._id || item.id, reaction.type);
+                                        // Hide popup after selection on mobile
+                                        if (window.innerWidth <= 768) {
+                                          const reactionButton = document.getElementById(`reaction-${item._id || item.id}`);
+                                          if (reactionButton) {
+                                            reactionButton.classList.add('hidden');
+                                          }
+                                        }
+                                      }}
+                                      className={`w-10 h-10 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white text-base sm:text-sm hover:scale-110 transition-all duration-200 touch-manipulation ${reaction.color}`}
                                       title={reaction.type.charAt(0).toUpperCase() + reaction.type.slice(1)}
+                                      style={{ touchAction: 'manipulation' }}
                                     >
                                       {reaction.emoji}
                                     </button>
@@ -1562,21 +1603,21 @@ export default function Dashboard() {
                               </div>
                             </div>
                             <button 
-                              className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-all duration-200 text-xs sm:text-sm touch-manipulation ${
+                              className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 text-sm touch-manipulation ${
                                 Array.isArray(item.savedBy) && item.savedBy.length > 0 
-                                  ? 'text-green-500 bg-green-50 border border-green-200' 
-                                  : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
+                                  ? 'text-blue-500 bg-blue-50 border border-blue-200' 
+                                  : 'text-gray-500 hover:text-blue-500 hover:bg-blue-50'
                               }`} 
                               onClick={() => handleSave(item._id || item.id)}
                               style={{ touchAction: 'manipulation' }}
                             >
-                              <span>💾</span>
+                              <span>{Array.isArray(item.savedBy) && item.savedBy.length > 0 ? '💾' : '🔖'}</span>
                               <span className="font-medium hidden sm:inline">
                                 {Array.isArray(item.savedBy) && item.savedBy.length > 0 ? 'Saved' : 'Save'}
                               </span>
                             </button>
                             <button 
-                              className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-all duration-200 text-xs sm:text-sm touch-manipulation ${
+                              className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 text-sm touch-manipulation ${
                                 Array.isArray(item.shares) && item.shares.length > 0 
                                   ? 'text-green-500 bg-green-50 border border-green-200' 
                                   : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
@@ -1590,14 +1631,14 @@ export default function Dashboard() {
                                 {Array.isArray(item.shares) && item.shares.length > 0 ? `(${item.shares.length})` : ''}
                               </span>
                             </button>
-                            <span className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 text-gray-400 dark:text-gray-500 text-xs sm:text-sm transition-colors duration-200">
+                            <span className="flex items-center gap-1 px-3 py-2 text-gray-400 dark:text-gray-500 text-sm transition-colors duration-200">
                               <span>💬</span>
                               <span className="font-medium">
                                 {Array.isArray(item.comments) ? item.comments.length : 0}
                                 <span className="hidden sm:inline"> comments</span>
                               </span>
                             </span>
-                            <span className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 text-gray-400 dark:text-gray-500 text-xs sm:text-sm transition-colors duration-200">
+                            <span className="flex items-center gap-1 px-3 py-2 text-gray-400 dark:text-gray-500 text-sm transition-colors duration-200">
                               <span>👁️</span>
                               <span className="font-medium">
                                 {Array.isArray(item.views) ? item.views.length : 0}
@@ -1618,8 +1659,9 @@ export default function Dashboard() {
                                 return (
                                   <button 
                                     onClick={() => handleDelete(item._id || item.id)}
-                                    className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-all duration-200 text-xs sm:text-sm text-red-500 hover:text-red-700 hover:bg-red-50"
+                                    className="flex items-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 text-sm text-red-500 hover:text-red-700 hover:bg-red-50 touch-manipulation"
                                     title="Delete post"
+                                    style={{ touchAction: 'manipulation' }}
                                   >
                                     <span>🗑️</span>
                                     <span className="font-medium hidden sm:inline">Delete</span>

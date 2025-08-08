@@ -343,7 +343,7 @@ const AdvertisingPage = () => {
     );
   }
   return (
-    <div className="w-full h-full overflow-y-auto scrollbar-hide">
+    <div className="w-full h-full overflow-y-auto scrollbar-hide pb-20 sm:pb-0">
       {/* Back Button */}
       <div className="bg-white shadow-sm">
         <div className="max-w-6xl mx-auto px-4 py-4">

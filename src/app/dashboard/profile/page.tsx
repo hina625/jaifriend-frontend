@@ -1167,25 +1167,34 @@ const ProfilePage = () => {
             </div>
 
             {/* User Info */}
-            <PrivacyAwareProfile viewerType="self" user={user} />
+            <PrivacyAwareProfile 
+              viewerType="self" 
+              user={user || {
+                id: '',
+                name: '',
+                username: '',
+                avatar: '',
+                email: '',
+                followers: [],
+                following: [],
+                bio: '',
+                location: '',
+                website: '',
+                workplace: '',
+                address: '',
+                country: '',
+                isOnline: false,
+                joinedDate: '',
+                posts: []
+              }}
+              onEditProfile={() => setShowProfileEdit(true)}
+              onViewActivities={() => {
+                // Navigate to activities page or show activities modal
+                console.log('View activities clicked');
+              }}
+            />
 
-            {/* Action Buttons */}
-            <div className="flex gap-1 flex-wrap justify-center">
-              <button className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition-colors">
-                <MoreVertical className="w-4 h-4" />
-              </button>
-              <button 
-                onClick={() => setShowProfileEdit(true)}
-                className="flex items-center gap-1 px-3 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors text-sm"
-              >
-                <Edit className="w-4 h-4" />
-                <span>Edit</span>
-              </button>
-              <button className="flex items-center gap-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm">
-                <Eye className="w-4 h-4" />
-                <span>Activities</span>
-              </button>
-            </div>
+
           </div>
 
 
