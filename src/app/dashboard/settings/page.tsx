@@ -64,7 +64,7 @@ const GeneralSettings = () => {
         return;
       }
 
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/profile/me`;
       console.log('🌐 Making request to:', apiUrl);
       console.log('🔐 Sending token:', token.substring(0, 20) + '...');
 
@@ -181,7 +181,7 @@ const GeneralSettings = () => {
           workplace: settings.workplace
         };
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/update`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/profile/update`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -212,7 +212,7 @@ const GeneralSettings = () => {
           
           // Get current user ID and navigate to profile page
           try {
-            const currentUserResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+            const currentUserResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/profile/me`, {
               headers: {
                 'Authorization': `Bearer ${token}`
               }

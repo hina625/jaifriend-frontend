@@ -90,7 +90,7 @@ const GroupsPage: React.FC = () => {
         return;
       }
 
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/groups`;
 
       const response = await fetch(apiUrl, {
         headers: {
@@ -161,7 +161,7 @@ const GroupsPage: React.FC = () => {
       if (formData.email) formDataToSend.append('email', formData.email);
       if (formData.phone) formDataToSend.append('phone', formData.phone);
 
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/groups`;
 
       console.log('Sending group creation request to:', apiUrl);
 
@@ -241,7 +241,7 @@ const GroupsPage: React.FC = () => {
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups/${groupId}/join`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/groups/${groupId}/join`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -254,7 +254,7 @@ const GroupsPage: React.FC = () => {
         console.log('Successfully joined group');
         alert('Successfully joined the group!');
         // Refresh groups
-        const groupsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups`, {
+          const groupsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/groups`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -308,7 +308,7 @@ const GroupsPage: React.FC = () => {
       if (formData.email) formDataToSend.append('email', formData.email);
       if (formData.phone) formDataToSend.append('phone', formData.phone);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups/${editingGroup._id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/groups/${editingGroup._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -352,7 +352,7 @@ const GroupsPage: React.FC = () => {
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups/${groupId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/groups/${groupId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

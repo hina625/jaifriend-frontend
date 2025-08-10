@@ -49,7 +49,7 @@ const MarketplacePage: React.FC = () => {
       }
       console.log('Fetching products from market...');
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/products`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/products`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

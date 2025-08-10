@@ -1,24 +1,63 @@
 "use client";
-import React, { useState } from 'react';
-import { Search, ChevronDown, Users, FileText, Group, Gamepad2, Plus, Filter, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, ChevronDown, Users, FileText, Group, Gamepad2, Plus, Filter, X, Loader2 } from 'lucide-react';
 import Popup, { PopupState } from '../../../components/Popup';
+import { getToken } from '../../../utils/auth';
+import { 
+  searchUsersApi, 
+  getSuggestedUsersApi, 
+  followUserApi, 
+  getPagesApi, 
+  likePageApi, 
+  getPublicGroupsApi, 
+  joinGroupApi, 
+  searchGroupsApi 
+} from '../../../utils/api';
 
 // Type definitions
 interface User {
-  id: number;
+  id: string;
+  name: string;
   username: string;
   avatar: string;
-  verified: boolean;
-  isGame?: boolean;
+  isVerified: boolean;
+  isFollowing: boolean;
+  followers: number;
+  bio?: string;
+  location?: string;
 }
 
 interface Page {
-  id: number;
+  id: string;
   name: string;
-  likes: number;
+  description: string;
   category: string;
-  icon: string;
-  iconColor: string;
+  url: string;
+  likes: number;
+  isLiked: boolean;
+  createdBy: {
+    name: string;
+    username: string;
+    avatar: string;
+  };
+  createdAt: string;
+}
+
+interface Group {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  avatar: string;
+  privacy: string;
+  membersCount: number;
+  isMember: boolean;
+  creator: {
+    name: string;
+    username: string;
+    avatar: string;
+  };
+  createdAt: string;
 }
 
 interface Tab {
@@ -37,7 +76,7 @@ interface Filters {
 }
 
 const SocialExplorePage = () => {
-  const [activeTab, setActiveTab] = useState<string>('Pages');
+  const [activeTab, setActiveTab] = useState<string>('Users');
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [showFilters, setShowFilters] = useState<boolean>(false);
   const [filters, setFilters] = useState<Filters>({
@@ -55,6 +94,15 @@ const SocialExplorePage = () => {
     message: ''
   });
 
+  // Data states
+  const [users, setUsers] = useState<User[]>([]);
+  const [pages, setPages] = useState<Page[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [userLoading, setUserLoading] = useState<boolean>(false);
+  const [pageLoading, setPageLoading] = useState<boolean>(false);
+  const [groupLoading, setGroupLoading] = useState<boolean>(false);
+
   const showPopup = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
     setPopup({
       isOpen: true,
@@ -68,13 +116,183 @@ const SocialExplorePage = () => {
     setPopup(prev => ({ ...prev, isOpen: false }));
   };
 
-  // Handler functions with proper types
-  const handleFollow = (userId: number) => {
-    showPopup('success', 'Followed!', `You are now following user ${userId}`);
+  // Fetch users data
+  const fetchUsers = async (searchQuery?: string) => {
+    try {
+      setUserLoading(true);
+      const token = getToken();
+      if (!token) {
+        showPopup('error', 'Authentication Error', 'Please login to view users');
+        return;
+      }
+
+      let usersData;
+      if (searchQuery && searchQuery.trim()) {
+        usersData = await searchUsersApi(token, searchQuery);
+      } else {
+        usersData = await getSuggestedUsersApi(token);
+      }
+      
+      setUsers(usersData.users || usersData || []);
+    } catch (error: any) {
+      console.error('Error fetching users:', error);
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to fetch users';
+      showPopup('error', 'Error', errorMessage);
+      
+      // Fallback to sample data if API fails
+      if (error.response?.status === 404 || error.response?.status === 500) {
+        setUsers([
+          { id: '1', name: 'John Doe', username: 'johndoe', avatar: '/avatars/1.png.png', isVerified: false, isFollowing: false, followers: 150 },
+          { id: '2', name: 'Jane Smith', username: 'janesmith', avatar: '/avatars/2.png.png', isVerified: true, isFollowing: true, followers: 320 },
+          { id: '3', name: 'Mike Johnson', username: 'mikejohnson', avatar: '/avatars/3.png.png', isVerified: false, isFollowing: false, followers: 89 }
+        ]);
+      }
+    } finally {
+      setUserLoading(false);
+    }
   };
 
-  const handleSearch = () => {
-    showPopup('info', 'Searching...', `Searching for: ${searchKeyword}`);
+  // Fetch pages data
+  const fetchPages = async () => {
+    try {
+      setPageLoading(true);
+      const token = getToken();
+      const pagesData = await getPagesApi(token || undefined);
+      setPages(pagesData || []);
+    } catch (error: any) {
+      console.error('Error fetching pages:', error);
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to fetch pages';
+      showPopup('error', 'Error', errorMessage);
+      
+      // Fallback to sample data if API fails
+      if (error.response?.status === 404 || error.response?.status === 500) {
+        setPages([
+          {
+            id: '1',
+            name: 'Tech News Daily',
+            description: 'Latest technology news and updates',
+            category: 'Technology',
+            url: 'tech-news',
+            likes: 45,
+            isLiked: false,
+            createdBy: { name: 'Tech Admin', username: 'techadmin', avatar: '/avatars/1.png.png' },
+            createdAt: new Date().toISOString()
+          },
+          {
+            id: '2',
+            name: 'Food Lovers',
+            description: 'Delicious recipes and food tips',
+            category: 'Food & Drink',
+            url: 'food-lovers',
+            likes: 23,
+            isLiked: true,
+            createdBy: { name: 'Chef Master', username: 'chefmaster', avatar: '/avatars/2.png.png' },
+            createdAt: new Date().toISOString()
+          }
+        ]);
+      }
+    } finally {
+      setPageLoading(false);
+    }
+  };
+
+  // Fetch groups data
+  const fetchGroups = async () => {
+    try {
+      setGroupLoading(true);
+      const token = getToken();
+      const groupsData = await getPublicGroupsApi(token || undefined);
+      setGroups(groupsData || []);
+    } catch (error: any) {
+      console.error('Error fetching groups:', error);
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to fetch groups';
+      showPopup('error', 'Error', errorMessage);
+      
+      // Fallback to sample data if API fails
+      if (error.response?.status === 404 || error.response?.status === 500) {
+        setGroups([
+          {
+            id: '1',
+            name: 'Photography Enthusiasts',
+            description: 'Share your best photos and learn from others',
+            category: 'Entertainment',
+            avatar: '/avatars/1.png.png',
+            privacy: 'public',
+            membersCount: 156,
+            isMember: false,
+            creator: { name: 'Photo Pro', username: 'photopro', avatar: '/avatars/1.png.png' },
+            createdAt: new Date().toISOString()
+          },
+          {
+            id: '2',
+            name: 'Startup Founders',
+            description: 'Connect with fellow entrepreneurs',
+            category: 'Business',
+            avatar: '/avatars/2.png.png',
+            privacy: 'public',
+            membersCount: 89,
+            isMember: true,
+            creator: { name: 'Business Guru', username: 'businessguru', avatar: '/avatars/2.png.png' },
+            createdAt: new Date().toISOString()
+          }
+        ]);
+      }
+    } finally {
+      setGroupLoading(false);
+    }
+  };
+
+  // Load data when tab changes
+  useEffect(() => {
+    if (activeTab === 'Users') {
+      fetchUsers();
+    } else if (activeTab === 'Pages') {
+      fetchPages();
+    } else if (activeTab === 'Groups') {
+      fetchGroups();
+    }
+  }, [activeTab]);
+
+  // Handler functions with real API calls
+  const handleFollow = async (userId: string) => {
+    try {
+      const token = getToken();
+      if (!token) {
+        showPopup('error', 'Authentication Error', 'Please login to follow users');
+        return;
+      }
+
+      await followUserApi(token, userId);
+      
+      // Update local state
+      setUsers(prev => prev.map(user => 
+        user.id === userId 
+          ? { ...user, isFollowing: !user.isFollowing, followers: user.isFollowing ? user.followers - 1 : user.followers + 1 }
+          : user
+      ));
+
+      showPopup('success', 'Success!', 'User followed successfully');
+    } catch (error) {
+      console.error('Error following user:', error);
+      showPopup('error', 'Error', 'Failed to follow user');
+    }
+  };
+
+  const handleSearch = async () => {
+    if (activeTab === 'Users') {
+      await fetchUsers(searchKeyword);
+    } else if (activeTab === 'Groups') {
+      try {
+        const token = getToken();
+        if (token && searchKeyword.trim()) {
+          const groupsData = await searchGroupsApi(token, searchKeyword);
+          setGroups(groupsData || []);
+        }
+      } catch (error) {
+        console.error('Error searching groups:', error);
+        showPopup('error', 'Error', 'Failed to search groups');
+      }
+    }
   };
 
   const handleFilterChange = (filterType: string, value: string) => {
@@ -84,93 +302,57 @@ const SocialExplorePage = () => {
     }));
   };
 
-  const handleLikePage = (pageId: number) => {
-    showPopup('success', 'Liked!', `You liked page ${pageId}`);
+  const handleLikePage = async (pageId: string) => {
+    try {
+      const token = getToken();
+      if (!token) {
+        showPopup('error', 'Authentication Error', 'Please login to like pages');
+        return;
+      }
+
+      await likePageApi(token, pageId);
+      
+      // Update local state
+      setPages(prev => prev.map(page => 
+        page.id === pageId 
+          ? { ...page, isLiked: !page.isLiked, likes: page.isLiked ? page.likes - 1 : page.likes + 1 }
+          : page
+      ));
+
+      showPopup('success', 'Success!', 'Page liked successfully');
+    } catch (error) {
+      console.error('Error liking page:', error);
+      showPopup('error', 'Error', 'Failed to like page');
+    }
+  };
+
+  const handleJoinGroup = async (groupId: string) => {
+    try {
+      const token = getToken();
+      if (!token) {
+        showPopup('error', 'Authentication Error', 'Please login to join groups');
+        return;
+      }
+
+      await joinGroupApi(token, groupId);
+      
+      // Update local state
+      setGroups(prev => prev.map(group => 
+        group.id === groupId 
+          ? { ...group, isMember: !group.isMember, membersCount: group.isMember ? group.membersCount - 1 : group.membersCount + 1 }
+          : group
+      ));
+
+      showPopup('success', 'Success!', 'Group joined successfully');
+    } catch (error) {
+      console.error('Error joining group:', error);
+      showPopup('error', 'Error', 'Failed to join group');
+    }
   };
 
   const handleLoadMore = () => {
-    showPopup('info', 'Loading...', 'Loading more pages...');
+    showPopup('info', 'Loading...', 'Loading more content...');
   };
-
-  const users: User[] = [
-    { id: 1, username: 'velmarxx557754', avatar: '👨‍💼', verified: false },
-    { id: 2, username: 'mireyabevill36', avatar: '👨‍💼', verified: false },
-    { id: 3, username: 'rhodatownes20', avatar: '👨‍💼', verified: false },
-    { id: 4, username: 'rachelcox45054', avatar: '👨‍💼', verified: false },
-    { id: 5, username: 'everetted23827', avatar: '👨‍💼', verified: false },
-    { id: 6, username: 'kindraedler063', avatar: '👨‍💼', verified: false },
-    { id: 7, username: 'Sandeep Jamwal', avatar: '👨‍💼', verified: false },
-    { id: 8, username: 'sonyamcmahon2', avatar: '👨‍💼', verified: false },
-    { id: 9, username: 'janeenpoling22', avatar: '👨‍💼', verified: false },
-    { id: 10, username: 'sammiewittienoo', avatar: '👨‍💼', verified: false },
-    { id: 11, username: 'florenesedon2', avatar: '👨‍💼', verified: false },
-    { id: 12, username: 'lauriefoland2', avatar: '👨‍💼', verified: false },
-    { id: 13, username: 'wileynwz756826', avatar: '👨‍💼', verified: false },
-    { id: 14, username: 'susannahbarber', avatar: '👨‍💼', verified: false },
-    { id: 15, username: 'bobbywallwork', avatar: '👨‍💼', verified: false },
-    { id: 16, username: 'tiffany8533915', avatar: '👨‍💼', verified: false },
-    { id: 17, username: 'brycetakasuka8', avatar: '👨‍💼', verified: false },
-    { id: 18, username: 'Muskan Amir', avatar: '👨‍💼', verified: false },
-    { id: 19, username: 'claudioheadlam', avatar: '👨‍💼', verified: false },
-    { id: 20, username: 'aleciaburbank1', avatar: '👨‍💼', verified: false },
-    { id: 21, username: 'alinecoggins89', avatar: '👨‍💼', verified: false },
-    { id: 22, username: 'dkwim game', avatar: '🎮', verified: false, isGame: true },
-    { id: 23, username: 'sethaston47131', avatar: '👨‍💼', verified: false },
-    { id: 24, username: 'josiebyars639', avatar: '👨‍💼', verified: false },
-    { id: 25, username: 'deangelodennin', avatar: '👨‍💼', verified: false },
-    { id: 26, username: 'sibyllevay8113', avatar: '👨‍💼', verified: false }
-  ];
-
-  const pages: Page[] = [
-    {
-      id: 1,
-      name: 'Synarion IT Solutions',
-      likes: 0,
-      category: 'Science and Technology',
-      icon: 'S',
-      iconColor: 'bg-black text-white'
-    },
-    {
-      id: 2,
-      name: 'parker',
-      likes: 0,
-      category: 'Other',
-      icon: '📄',
-      iconColor: 'bg-orange-200'
-    },
-    {
-      id: 3,
-      name: 'jaifriend',
-      likes: 0,
-      category: 'Other',
-      icon: '📄',
-      iconColor: 'bg-orange-200'
-    },
-    {
-      id: 4,
-      name: 'Paperub Official',
-      likes: 0,
-      category: 'Other',
-      icon: 'P',
-      iconColor: 'bg-orange-500 text-white'
-    },
-    {
-      id: 5,
-      name: 'BookMyEssay Official',
-      likes: 0,
-      category: 'Education',
-      icon: '🎨',
-      iconColor: 'bg-gradient-to-br from-blue-400 via-purple-500 to-yellow-500'
-    },
-    {
-      id: 6,
-      name: 'Apnademand',
-      likes: 0,
-      category: 'Cars and Vehicles',
-      icon: '📄',
-      iconColor: 'bg-orange-200'
-    }
-  ];
 
   const tabs: Tab[] = [
     { name: 'Users', icon: Users, active: false },
@@ -179,7 +361,7 @@ const SocialExplorePage = () => {
     { name: 'Games', icon: Gamepad2, active: false }
   ];
 
-  // User Card Component with proper typing
+  // User Card Component with real data
   const UserCard = ({ user }: { user: User }) => (
     <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
       {/* Galaxy Background with Avatar */}
@@ -203,53 +385,66 @@ const SocialExplorePage = () => {
         {/* Centered Avatar */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-orange-200 flex items-center justify-center border-2 border-white shadow-lg">
-            {user.isGame ? (
-              <div className="text-lg sm:text-2xl">🎮</div>
-            ) : (
-              <div className="text-lg sm:text-2xl">🤓</div>
-            )}
+            <img 
+              src={user.avatar || '/avatars/1.png.png'} 
+              alt={user.name}
+              className="w-full h-full rounded-full object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/avatars/1.png.png';
+              }}
+            />
           </div>
         </div>
       </div>
 
       {/* User Info */}
       <div className="p-3 sm:p-4 text-center">
-        <h3 className="font-medium text-gray-900 text-xs sm:text-sm mb-2 sm:mb-3 truncate">
-          {user.username}
-        </h3>
+        <div className="flex items-center justify-center gap-1 mb-2">
+          <h3 className="font-medium text-gray-900 text-xs sm:text-sm truncate">
+            {user.name}
+          </h3>
+          {user.isVerified && (
+            <span className="text-blue-500 text-xs">✓</span>
+          )}
+        </div>
+        <p className="text-xs text-gray-600 mb-2">@{user.username}</p>
+        <p className="text-xs text-gray-500 mb-3">{user.followers} followers</p>
         <button
           onClick={() => handleFollow(user.id)}
-          className="w-full bg-blue-100 text-blue-600 py-1.5 sm:py-2 px-3 sm:px-4 rounded-md text-xs sm:text-sm font-medium hover:bg-blue-200 transition-colors"
+          className={`w-full py-1.5 sm:py-2 px-3 sm:px-4 rounded-md text-xs sm:text-sm font-medium transition-colors ${
+            user.isFollowing 
+              ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' 
+              : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+          }`}
         >
-          Follow
+          {user.isFollowing ? 'Following' : 'Follow'}
         </button>
       </div>
     </div>
   );
 
-  // Page List Item Component with proper typing
+  // Page List Item Component with real data
   const PageListItem = ({ page }: { page: Page }) => (
     <div className="bg-white border-b last:border-b-0 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-gray-50 transition-colors gap-3 sm:gap-4">
       <div className="flex items-center gap-3 sm:gap-4">
         {/* Page Icon */}
-        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0 ${page.iconColor}`}>
-          {page.icon === '📄' ? (
-            <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
-          ) : page.icon === '🎨' ? (
-            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-400 via-purple-500 to-yellow-500"></div>
-          ) : (
-            <span className="font-bold text-base sm:text-lg">{page.icon}</span>
-          )}
+        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0 bg-orange-200">
+          <span className="font-bold text-base sm:text-lg text-orange-600">
+            {page.name.charAt(0).toUpperCase()}
+          </span>
         </div>
         
         {/* Page Info */}
         <div className="min-w-0 flex-1">
           <h3 className="font-medium text-gray-900 text-sm sm:text-base mb-1 truncate">{page.name}</h3>
+          <p className="text-xs text-gray-600 mb-2 line-clamp-2">{page.description}</p>
           <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs sm:text-sm text-gray-600">
             <span className="flex items-center gap-1">
               👍 {page.likes} people like this
             </span>
             <span className="text-blue-600">{page.category}</span>
+            <span className="text-gray-500">by @{page.createdBy.username}</span>
           </div>
         </div>
       </div>
@@ -257,9 +452,64 @@ const SocialExplorePage = () => {
       {/* Like Button */}
       <button
         onClick={() => handleLikePage(page.id)}
-        className="flex items-center justify-center gap-1 bg-gray-100 hover:bg-gray-200 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium text-gray-700 transition-colors flex-shrink-0"
+        className={`flex items-center justify-center gap-1 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors flex-shrink-0 ${
+          page.isLiked 
+            ? 'bg-blue-100 text-blue-600 hover:bg-blue-200' 
+            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+        }`}
       >
-        👍 Like
+        👍 {page.isLiked ? 'Liked' : 'Like'}
+      </button>
+    </div>
+  );
+
+  // Group List Item Component
+  const GroupListItem = ({ group }: { group: Group }) => (
+    <div className="bg-white border-b last:border-b-0 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-gray-50 transition-colors gap-3 sm:gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
+        {/* Group Avatar */}
+        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0 bg-blue-200">
+          {group.avatar ? (
+            <img 
+              src={group.avatar} 
+              alt={group.name}
+              className="w-full h-full rounded-full object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = '/avatars/1.png.png';
+              }}
+            />
+          ) : (
+            <span className="font-bold text-base sm:text-lg text-blue-600">
+              {group.name.charAt(0).toUpperCase()}
+            </span>
+          )}
+        </div>
+        
+        {/* Group Info */}
+        <div className="min-w-0 flex-1">
+          <h3 className="font-medium text-gray-900 text-sm sm:text-base mb-1 truncate">{group.name}</h3>
+          <p className="text-xs text-gray-600 mb-2 line-clamp-2">{group.description}</p>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs sm:text-sm text-gray-600">
+            <span className="flex items-center gap-1">
+              👥 {group.membersCount} members
+            </span>
+            <span className="text-blue-600">{group.category}</span>
+            <span className="text-gray-500">by @{group.creator.username}</span>
+          </div>
+        </div>
+      </div>
+      
+      {/* Join Button */}
+      <button
+        onClick={() => handleJoinGroup(group.id)}
+        className={`flex items-center justify-center gap-1 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors flex-shrink-0 ${
+          group.isMember 
+            ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' 
+            : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+        }`}
+      >
+        {group.isMember ? 'Joined' : 'Join'}
       </button>
     </div>
   );
@@ -267,20 +517,68 @@ const SocialExplorePage = () => {
   // Pages Tab Component
   const PagesComponent = () => (
     <div className="bg-white rounded-lg shadow-sm border">
-      {pages.map((page) => (
-        <PageListItem key={page.id} page={page} />
-      ))}
-      
-      {/* Load More Button */}
-      <div className="p-3 sm:p-4 text-center border-t">
-        <button
-          onClick={handleLoadMore}
-          className="flex items-center gap-2 text-blue-600 font-medium hover:text-blue-700 transition-colors mx-auto text-sm"
-        >
-          <ChevronDown className="w-4 h-4" />
-          Load more pages
-        </button>
-      </div>
+      {pageLoading ? (
+        <div className="p-8 text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-500" />
+          <p className="text-gray-600">Loading pages...</p>
+        </div>
+      ) : pages.length > 0 ? (
+        <>
+          {pages.map((page) => (
+            <PageListItem key={page.id} page={page} />
+          ))}
+          
+          {/* Load More Button */}
+          <div className="p-3 sm:p-4 text-center border-t">
+            <button
+              onClick={handleLoadMore}
+              className="flex items-center gap-2 text-blue-600 font-medium hover:text-blue-700 transition-colors mx-auto text-sm"
+            >
+              <ChevronDown className="w-4 h-4" />
+              Load more pages
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="p-8 text-center">
+          <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600">No pages found</p>
+        </div>
+      )}
+    </div>
+  );
+
+  // Groups Tab Component
+  const GroupsComponent = () => (
+    <div className="bg-white rounded-lg shadow-sm border">
+      {groupLoading ? (
+        <div className="p-8 text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-500" />
+          <p className="text-gray-600">Loading groups...</p>
+        </div>
+      ) : groups.length > 0 ? (
+        <>
+          {groups.map((group) => (
+            <GroupListItem key={group.id} group={group} />
+          ))}
+          
+          {/* Load More Button */}
+          <div className="p-3 sm:p-4 text-center border-t">
+            <button
+              onClick={handleLoadMore}
+              className="flex items-center gap-2 text-blue-600 font-medium hover:text-blue-700 transition-colors mx-auto text-sm"
+            >
+              <ChevronDown className="w-4 h-4" />
+              Load more groups
+            </button>
+          </div>
+        </>
+      ) : (
+        <div className="p-8 text-center">
+          <Group className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600">No groups found</p>
+        </div>
+      )}
     </div>
   );
 
@@ -294,7 +592,7 @@ const SocialExplorePage = () => {
             type="text"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
-            placeholder="Keyword"
+            placeholder="Search..."
             className="w-full pl-3 sm:pl-4 pr-10 sm:pr-12 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-sm sm:text-base"
           />
           <button
@@ -383,8 +681,8 @@ const SocialExplorePage = () => {
       <Popup popup={popup} onClose={closePopup} />
       <div className="max-w-6xl mx-auto px-3 sm:px-6 py-3 sm:py-6">
         
-        {/* Search and Filters - Only show for Users tab */}
-        {activeTab === 'Users' && <SearchFilters />}
+        {/* Search and Filters - Show for Users and Groups tabs */}
+        {(activeTab === 'Users' || activeTab === 'Groups') && <SearchFilters />}
 
         {/* Navigation Tabs */}
         <div className="flex justify-center mb-4 sm:mb-6">
@@ -415,24 +713,40 @@ const SocialExplorePage = () => {
 
         {/* Users Grid */}
         {activeTab === 'Users' && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4">
-            {users.slice(0, 24).map((user) => (
-              <UserCard key={user.id} user={user} />
-            ))}
+          <div>
+            {userLoading ? (
+              <div className="text-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-500" />
+                <p className="text-gray-600">Loading users...</p>
+              </div>
+            ) : users.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4">
+                {users.map((user) => (
+                  <UserCard key={user.id} user={user} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">No users found</p>
+              </div>
+            )}
           </div>
         )}
 
         {/* Pages List */}
         {activeTab === 'Pages' && <PagesComponent />}
 
-        {/* Other Tabs Placeholder */}
-        {(activeTab === 'Groups' || activeTab === 'Games') && (
+        {/* Groups List */}
+        {activeTab === 'Groups' && <GroupsComponent />}
+
+        {/* Games Tab Placeholder */}
+        {activeTab === 'Games' && (
           <div className="bg-white rounded-lg shadow-sm border min-h-64 sm:min-h-96 flex flex-col items-center justify-center p-6 sm:p-8">
             <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-lg flex items-center justify-center mb-3 sm:mb-4">
-              {activeTab === 'Groups' && <Group className="w-6 h-6 sm:w-8 sm:h-8 text-gray-500" />}
-              {activeTab === 'Games' && <Gamepad2 className="w-6 h-6 sm:w-8 sm:h-8 text-gray-500" />}
+              <Gamepad2 className="w-6 h-6 sm:w-8 sm:h-8 text-gray-500" />
             </div>
-            <p className="text-gray-600 font-medium text-sm sm:text-base">{activeTab} coming soon</p>
+            <p className="text-gray-600 font-medium text-sm sm:text-base">Games coming soon</p>
           </div>
         )}
 

@@ -71,7 +71,7 @@ const NotificationsPage = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/notifications`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/notifications`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -91,7 +91,7 @@ const NotificationsPage = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/notifications/settings`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/notifications/settings`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -111,7 +111,7 @@ const NotificationsPage = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/notifications/${notificationId}/read`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/notifications/${notificationId}/read`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -138,7 +138,7 @@ const NotificationsPage = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/notifications/read-all`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/notifications/read-all`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -162,7 +162,7 @@ const NotificationsPage = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/notifications/${notificationId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/notifications/${notificationId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -192,7 +192,7 @@ const NotificationsPage = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/notifications/settings`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/notifications/settings`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

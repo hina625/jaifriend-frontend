@@ -42,7 +42,7 @@ export default function PostDisplay({
       const token = localStorage.getItem('token');
       if (token && post._id) {
         try {
-          await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${post._id}/view`, {
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/posts/${post._id}/view`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`
@@ -68,7 +68,7 @@ export default function PostDisplay({
     
     // Handle localhost URLs that might be stored incorrectly
     if (url.includes('localhost:3000')) {
-      const correctedUrl = url.replace('http://localhost:3000', 'https://jaifriend-backend-production.up.railway.app');
+              const correctedUrl = url.replace('http://localhost:3000', 'https://jaifriend-bacnd-production.up.railway.app');
       console.log('🔗 getMediaUrl - Fixed localhost URL:', { original: url, corrected: correctedUrl });
       return correctedUrl;
     }
@@ -79,7 +79,7 @@ export default function PostDisplay({
       return '/default-avatar.svg';
     }
     
-    const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
+            const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}${url}`;
     console.log('📸 getMediaUrl - Original:', url, 'Full:', fullUrl);
     return fullUrl;
   };

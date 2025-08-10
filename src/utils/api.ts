@@ -114,3 +114,59 @@ export const getAllAlbumsApi = async () => {
   const res = await axios.get(`${API_URL}/api/albums`);
   return res.data;
 };
+
+// Explore Page APIs
+export const searchUsersApi = async (token: string, query?: string) => {
+  const params = query ? `?q=${encodeURIComponent(query)}` : '';
+  const res = await axios.get(`${API_URL}/api/users/search${params}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+export const getSuggestedUsersApi = async (token: string) => {
+  const res = await axios.get(`${API_URL}/api/users/suggested`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+export const followUserApi = async (token: string, userId: string) => {
+  const res = await axios.post(`${API_URL}/api/users/${userId}/follow`, {}, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+export const getPagesApi = async (token?: string) => {
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const res = await axios.get(`${API_URL}/api/pages`, { headers });
+  return res.data;
+};
+
+export const likePageApi = async (token: string, pageId: string) => {
+  const res = await axios.post(`${API_URL}/api/pages/${pageId}/like`, {}, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+export const getPublicGroupsApi = async (token?: string) => {
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const res = await axios.get(`${API_URL}/api/groups/public`, { headers });
+  return res.data;
+};
+
+export const joinGroupApi = async (token: string, groupId: string) => {
+  const res = await axios.post(`${API_URL}/api/groups/${groupId}/join`, {}, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+export const searchGroupsApi = async (token: string, query: string) => {
+  const res = await axios.get(`${API_URL}/api/groups/search?q=${encodeURIComponent(query)}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};

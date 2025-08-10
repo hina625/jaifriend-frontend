@@ -14,7 +14,7 @@ function getUserAvatar() {
     if (user.avatar) {
       // Handle localhost URLs that might be stored incorrectly
       if (user.avatar.includes('localhost:3000')) {
-        const correctedUrl = user.avatar.replace('http://localhost:3000', 'https://jaifriend-backend-production.up.railway.app');
+        const correctedUrl = user.avatar.replace('http://localhost:3000', 'https://jaifriend-frontend-n6zr.vercel.app');
         console.log('🔗 getUserAvatar - Fixed localhost URL:', { original: user.avatar, corrected: correctedUrl });
         return correctedUrl;
       }
@@ -26,7 +26,7 @@ function getUserAvatar() {
       }
       
       // Use getMediaUrl function to construct proper URL
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app';
       if (user.avatar.startsWith('http')) {
         return user.avatar;
       }
@@ -153,7 +153,7 @@ export default function Dashboard() {
     const formData = new FormData();
     formData.append('content', editContent);
     editMediaFiles.forEach(file => formData.append('media', file));
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}`, {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/posts/${postId}`, {
       method: 'PUT',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -184,7 +184,7 @@ export default function Dashboard() {
     setDeletingComments(prev => ({ ...prev, [commentKey]: true }));
     
     try {
-      const url = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/comment/${commentId}`;
+              const url = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/posts/${postId}/comment/${commentId}`;
       console.log('🌐 Making request to:', url);
       
       const res = await fetch(url, {
@@ -229,7 +229,7 @@ export default function Dashboard() {
     setDeletingComments(prev => ({ ...prev, [commentKey]: true }));
     
     try {
-      const url = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/comment/${commentId}`;
+              const url = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/albums/${albumId}/comment/${commentId}`;
       console.log('🌐 Making request to:', url);
       
       const res = await fetch(url, {
@@ -268,8 +268,8 @@ export default function Dashboard() {
       console.log('🔍 Fetching feed data with token:', token ? 'Present' : 'Missing');
       
       const [postsResponse, albumsResponse] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`, token ? { headers: { 'Authorization': `Bearer ${token}` } } : {}),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums`, token ? { headers: { 'Authorization': `Bearer ${token}` } } : {})
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/posts`, token ? { headers: { 'Authorization': `Bearer ${token}` } } : {}),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/albums`, token ? { headers: { 'Authorization': `Bearer ${token}` } } : {})
       ]);
       
       console.log('📡 Posts response status:', postsResponse.status);
@@ -372,7 +372,7 @@ export default function Dashboard() {
         const postsToTrack = posts.slice(0, 5);
         for (const post of postsToTrack) {
           try {
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${post._id}/view`, {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/posts/${post._id}/view`, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${token}`
@@ -399,7 +399,7 @@ export default function Dashboard() {
         const albumsToTrack = albums.slice(0, 3);
         for (const album of albumsToTrack) {
           try {
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${album._id}/view`, {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/albums/${album._id}/view`, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${token}`
@@ -453,7 +453,7 @@ export default function Dashboard() {
       console.log('Creating post with content:', newPost.trim());
       console.log('Media files:', mediaFiles.length);
       
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`, {
+              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/posts`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -520,7 +520,7 @@ export default function Dashboard() {
         // Show loading popup
         showPopup('info', 'Deleting Post', 'Please wait while we delete your post...');
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${deletePostId}`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/posts/${deletePostId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -556,7 +556,7 @@ export default function Dashboard() {
   // Like a post
   const handleLike = async (postId: string) => {
     const token = localStorage.getItem('token');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/like`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/posts/${postId}/like`, {
       method: 'POST',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -572,7 +572,7 @@ export default function Dashboard() {
 
   const handleReaction = async (postId: string, reactionType: string) => {
     const token = localStorage.getItem('token');
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/reaction`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/posts/${postId}/reaction`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -593,7 +593,7 @@ export default function Dashboard() {
     const token = localStorage.getItem('token');
     console.log('Saving post:', postId);
     try {
-              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/save`, {
+              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/posts/${postId}/save`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -634,7 +634,7 @@ export default function Dashboard() {
     const token = localStorage.getItem('token');
     console.log('Adding comment to post:', postId, commentText);
     try {
-              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/comment`, {
+              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/posts/${postId}/comment`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -665,7 +665,7 @@ export default function Dashboard() {
     try {
       console.log('📤 Sharing post:', postId, 'with options:', shareOptions);
       
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/share`, {
+              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/posts/${postId}/share`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -720,7 +720,7 @@ export default function Dashboard() {
   const handleView = async (postId: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || `http://localhost:5000/api/posts/${postId}/view`, {
+              const res = await fetch(process.env.NEXT_PUBLIC_API_URL || `https://jaifriend-bacnd-production.up.railway.app/api/posts/${postId}/view`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -741,7 +741,7 @@ export default function Dashboard() {
   const handleAlbumDelete = async (albumId: string) => {
     if (!window.confirm('Delete this album?')) return;
     const token = localStorage.getItem('token');
-    const res = await fetch(process.env.NEXT_PUBLIC_API_URL || `http://localhost:5000/api/albums/${albumId}`, {
+            const res = await fetch(process.env.NEXT_PUBLIC_API_URL || `https://jaifriend-bacnd-production.up.railway.app/api/albums/${albumId}`, {
       method: 'DELETE',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -757,7 +757,7 @@ export default function Dashboard() {
   // Handle album like
   const handleAlbumLike = async (albumId: string) => {
     const token = localStorage.getItem('token');
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/like`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/albums/${albumId}/like`, {
       method: 'POST',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -773,7 +773,7 @@ export default function Dashboard() {
 
   const handleAlbumReaction = async (albumId: string, reactionType: string) => {
     const token = localStorage.getItem('token');
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/reaction`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/albums/${albumId}/reaction`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -793,7 +793,7 @@ export default function Dashboard() {
   const handleAlbumComment = async (albumId: string, comment: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/comment`, { 
+              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/albums/${albumId}/comment`, { 
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -816,7 +816,7 @@ export default function Dashboard() {
   const handleAlbumSave = async (albumId: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/save`, {
+              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/albums/${albumId}/save`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -842,7 +842,7 @@ export default function Dashboard() {
     try {
       console.log('Sharing album:', albumId, 'with options:', shareOptions);
       
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/share`, {
+              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/albums/${albumId}/share`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -893,7 +893,7 @@ export default function Dashboard() {
       return '/default-avatar.svg';
     }
     
-    return `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
+            return `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}${url}`;
   };
 
   const [userEmail, setUserEmail] = useState("");
@@ -972,7 +972,7 @@ export default function Dashboard() {
         {user && (
           <div className="flex items-center gap-2 mb-3 sm:mb-4">
             <img 
-              src={user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${user.avatar}`) : '/default-avatar.svg'} 
+              src={user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}${user.avatar}`) : '/default-avatar.svg'} 
               className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-blue-500 object-cover" 
               onError={(e) => {
                 console.log('❌ Dashboard avatar load failed for user:', user.name, 'URL:', user.avatar);
@@ -1224,7 +1224,7 @@ export default function Dashboard() {
                                   rel="noopener noreferrer"
                                 >
                                   <img
-                                    src={item.user.avatar ? (item.user.avatar.startsWith('http') ? item.user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${item.user.avatar}`) : '/avatars/1.png.png'}
+                                    src={item.user.avatar ? (item.user.avatar.startsWith('http') ? item.user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}${item.user.avatar}`) : '/avatars/1.png.png'}
                                     className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-blue-400 mr-2 cursor-pointer"
                                     alt={item.user.name || 'User'}
                                   />
@@ -1700,7 +1700,7 @@ export default function Dashboard() {
                                   
                                   return (
                                     <div key={idx} className="flex items-start gap-2 group">
-                                      <img src={comment.user?.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${comment.user.avatar}`) : '/avatars/1.png.png'} alt="avatar" className="w-6 h-6 rounded-full flex-shrink-0" />
+                                      <img src={comment.user?.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}${comment.user.avatar}`) : '/avatars/1.png.png'} alt="avatar" className="w-6 h-6 rounded-full flex-shrink-0" />
                                       <div className="flex-1 min-w-0">
                                         <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
                                           {comment.user ? (

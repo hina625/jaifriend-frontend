@@ -36,7 +36,7 @@ const FollowersSidebar: React.FC<FollowersSidebarProps> = ({ isAdminPage = false
         const token = localStorage.getItem('token');
         if (token) {
           // Get current user's following list
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/following/me`, {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/users/following/me`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -177,7 +177,7 @@ const FollowersSidebar: React.FC<FollowersSidebarProps> = ({ isAdminPage = false
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/search?q=${encodeURIComponent(query)}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/users/search?q=${encodeURIComponent(query)}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -260,7 +260,7 @@ const FollowersSidebar: React.FC<FollowersSidebarProps> = ({ isAdminPage = false
               >
                 <div className="w-10 h-10 bg-white rounded-full shadow-sm overflow-hidden relative">
                   <img
-                    src={user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${user.avatar}`) : '/default-avatar.svg'}
+                    src={user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}${user.avatar}`) : '/default-avatar.svg'}
                     alt={user.name}
                     className="w-full h-full object-cover"
                     onError={(e) => {
@@ -336,7 +336,7 @@ const FollowersSidebar: React.FC<FollowersSidebarProps> = ({ isAdminPage = false
                       className="rounded"
                     />
                     <img
-                      src={user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${user.avatar}`) : '/default-avatar.svg'}
+                      src={user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}${user.avatar}`) : '/default-avatar.svg'}
                       alt={user.name}
                       className="w-6 h-6 rounded-full object-cover"
                       onError={(e) => {

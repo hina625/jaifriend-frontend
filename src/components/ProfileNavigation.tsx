@@ -29,7 +29,7 @@ export default function ProfileNavigation({ className = '' }: ProfileNavigationP
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/profile/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -96,7 +96,7 @@ export default function ProfileNavigation({ className = '' }: ProfileNavigationP
         className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors"
       >
         <img
-          src={user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${user.avatar}`) : '/avatars/1.png.png'}
+          src={user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}${user.avatar}`) : '/avatars/1.png.png'}
           alt={user.name}
           className="w-8 h-8 rounded-full object-cover"
         />
@@ -122,7 +122,7 @@ export default function ProfileNavigation({ className = '' }: ProfileNavigationP
               <div className="px-3 py-2 border-b border-gray-100 dark:border-dark-700">
                 <div className="flex items-center gap-3">
                   <img
-                    src={user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${user.avatar}`) : '/avatars/1.png.png'}
+                    src={user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}${user.avatar}`) : '/avatars/1.png.png'}
                     alt={user.name}
                     className="w-10 h-10 rounded-full object-cover"
                   />

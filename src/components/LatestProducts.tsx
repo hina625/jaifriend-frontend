@@ -23,7 +23,7 @@ const LatestProducts: React.FC = () => {
   useEffect(() => {
   const fetchLatestProducts = async () => {
     try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/products/latest`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/products/latest`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }

@@ -41,7 +41,7 @@ export default function AlbumDisplay({
       const token = localStorage.getItem('token');
       if (token && album._id) {
         try {
-          await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${album._id}/view`, {
+          await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}/api/albums/${album._id}/view`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`
@@ -59,7 +59,7 @@ export default function AlbumDisplay({
   const getMediaUrl = (url: string) => {
     if (!url) return '';
     if (url.startsWith('http')) return url;
-    return `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
+            return `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}${url}`;
   };
 
   // Get current user's reaction
@@ -175,7 +175,7 @@ export default function AlbumDisplay({
     <div className="bg-white rounded-xl shadow p-3 sm:p-4 mb-4 sm:mb-6">
       <div className="flex items-center gap-2 mb-3">
         <img 
-          src={album.user?.avatar ? (album.user.avatar.startsWith('http') ? album.user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${album.user.avatar}`) : '/avatars/1.png.png'} 
+          src={album.user?.avatar ? (album.user.avatar.startsWith('http') ? album.user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}${album.user.avatar}`) : '/avatars/1.png.png'} 
           alt="avatar" 
           className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" 
         />
@@ -380,7 +380,7 @@ export default function AlbumDisplay({
             return (
               <div key={index} className="flex items-start gap-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg group transition-colors duration-200">
                 <img 
-                  src={comment.user?.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${comment.user.avatar}`) : '/avatars/1.png.png'} 
+                  src={comment.user?.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}${comment.user.avatar}`) : '/avatars/1.png.png'} 
                   alt="avatar" 
                   className="w-6 h-6 rounded-full" 
                 />
