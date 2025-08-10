@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app';
 
 export interface WebsiteSettings {
   websiteMode: 'public' | 'private' | 'maintenance';

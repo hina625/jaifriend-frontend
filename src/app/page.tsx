@@ -200,7 +200,8 @@ export default function Home(): React.ReactElement {
     }));
   };
 
-  const handleSubmit = async (): Promise<void> => {
+  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
+    e.preventDefault(); // Prevent default form submission
     // Validate form fields before API call
     if (!formData.email.trim()) {
       showPopup('error', 'Validation Error', 'Please enter your email.');
@@ -543,7 +544,7 @@ export default function Home(): React.ReactElement {
             </div>
 
             {loginType === 'username' ? (
-              <div className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 xl:gap-6 xl:items-end">
                   <div className="xl:col-span-1">
                     <input
@@ -579,7 +580,7 @@ export default function Home(): React.ReactElement {
 
                   <div className="xl:col-span-1">
                     <button
-                      onClick={handleSubmit}
+                      type="submit"
                       disabled={isLoading || !formData.email.trim() || !formData.password.trim()}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:transform-none shadow-lg hover:shadow-xl text-base"
                     >
@@ -608,7 +609,7 @@ export default function Home(): React.ReactElement {
                     Remember this device
                   </label>
                 </div>
-              </div>
+              </form>
             ) : (
               <div className="space-y-4 w-full max-w-md mx-auto">
                 <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg text-base">
