@@ -280,11 +280,11 @@ const SocialExplorePage = () => {
 
       const action = response.isFollowing ? 'followed' : 'unfollowed';
       showPopup('success', 'Success!', `User ${action} successfully`);
-    } catch (error) {
-      console.error('❌ Error following user:', error);
-      const errorMessage = error.response?.data?.error || error.message || 'Failed to follow user';
-      showPopup('error', 'Error', errorMessage);
-    }
+            } catch (error: any) {
+          console.error('❌ Error following user:', error);
+          const errorMessage = error.response?.data?.error || error.message || 'Failed to follow user';
+          showPopup('error', 'Error', errorMessage);
+        }
   };
 
   const handleSearch = async () => {
