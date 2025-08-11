@@ -13,7 +13,7 @@ export default function ProfileDropdown({ profile }: ProfileDropdownProps) {
       {/* Profile Section */}
       <div className="flex items-center gap-3 mb-2">
         <img
-          src={profile.avatar ? (profile.avatar.startsWith('http') ? profile.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}${profile.avatar}`) : "/avatars/1.png.png"}
+          src={profile.avatar ? (profile.avatar.startsWith('http') ? profile.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${profile.avatar}`) : "/avatars/1.png.png"}
           alt="avatar"
           className="w-12 h-12 rounded-full border border-gray-200 dark:border-dark-600 object-cover"
         />

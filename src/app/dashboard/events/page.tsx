@@ -278,7 +278,7 @@ const EventManagement: React.FC = () => {
       console.log('Token exists:', !!token);
       console.log('Token length:', token.length);
       console.log('Form data:', formData);
-      console.log('API URL:', process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app');
+              console.log('API URL:', process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app');
 
       const form = new FormData();
       form.append('title', formData.eventName.trim());
@@ -620,7 +620,7 @@ const EventManagement: React.FC = () => {
         closeEditModal();
         
         // Refresh events list
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`, {
+          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

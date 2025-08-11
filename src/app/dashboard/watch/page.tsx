@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Play, ThumbsUp, MessageCircle, Share2, MoreHorizontal, Plus, Settings, Users, User, FileText, Heart, Bookmark } from 'lucide-react';
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
 
 interface UserInfo {
   name: string;
@@ -66,7 +66,7 @@ function getMediaUrl(url: string) {
   if (url.startsWith('http')) return url;
   
   // Always use HTTPS to avoid mixed content errors
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
   const secureUrl = apiUrl.replace('http://', 'https://');
   
   // Ensure proper URL construction with forward slash
@@ -360,7 +360,7 @@ const WatchPage: React.FC = () => {
             <div className="flex items-center">
               <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
                 <img 
-                  src={video.user.avatar ? (video.user.avatar.startsWith('http') ? video.user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}${video.user.avatar}`) : '/avatars/1.png.png'} 
+                  src={video.user.avatar ? (video.user.avatar.startsWith('http') ? video.user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${video.user.avatar}`) : '/avatars/1.png.png'} 
                   alt={video.user.name}
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -542,7 +542,7 @@ const WatchPage: React.FC = () => {
               {video.comments.slice(0, 3).map((comment) => (
                 <div key={comment._id} className="flex items-start space-x-2">
                   <img 
-                    src={comment.user.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app'}${comment.user.avatar}`) : '/avatars/1.png.png'} 
+                    src={comment.user.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${comment.user.avatar}`) : '/avatars/1.png.png'} 
                     alt={comment.user.name}
                     className="w-6 h-6 rounded-full"
                     onError={(e) => {

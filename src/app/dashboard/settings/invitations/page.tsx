@@ -1,5 +1,4 @@
 "use client";
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 import React, { useState, useEffect } from 'react';
 import Popup from '@/components/Popup';
 
@@ -44,7 +43,7 @@ const InvitationLinksPage = () => {
           return;
         }
 
-        const response = await fetch(`${API_URL}/api/invitations/stats`, {
+        const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app/api/invitations/stats', { 
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -95,7 +94,7 @@ const InvitationLinksPage = () => {
       
       if (token) {
         // Try backend API first
-        const response = await fetch(`${API_URL}/api/invitations/generate`, {
+        const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app/api/invitations/generate', { 
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -1,5 +1,4 @@
 "use client";
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 import React, { useState, useEffect } from 'react';
 import Popup from '@/components/Popup';
 
@@ -61,7 +60,7 @@ const NotificationSettingsPage = () => {
           return;
         }
 
-        const response = await fetch(`${API_URL}/api/notifications/settings`, {
+        const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app/api/notifications/settings', { 
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -121,7 +120,7 @@ const NotificationSettingsPage = () => {
       
       if (token) {
         // Try backend API first
-        const response = await fetch(`${API_URL}/api/notifications/settings`, {
+        const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app/api/notifications/settings', { 
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

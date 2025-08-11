@@ -57,7 +57,7 @@ export default function MoviesPage() {
   const fetchMovies = async () => {
     try {
       setLoading(true);
-      const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-bacnd-production.up.railway.app/api/movies');
+      const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app/api/movies');
       if (response.ok) {
         const data = await response.json();
         setMovies(data);
