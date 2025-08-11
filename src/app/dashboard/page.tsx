@@ -1053,12 +1053,14 @@ export default function Dashboard() {
     }
     
     // Handle hardcoded placeholder avatars that don't exist
-    if (url.includes('/avatars/') || url.includes('/covers/')) {
+    if (url.includes('/avatars/') || url.includes('/covers/') || 
+        url.includes('1.png') || url.includes('2.png') || url.includes('3.png') || 
+        url.includes('4.png') || url.includes('5.png') || url.includes('6.png')) {
       console.log('🔗 getMediaUrl - Placeholder avatar detected:', url);
       return '/default-avatar.svg';
     }
     
-    const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
+    const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url.startsWith('/') ? url : `/${url}`}`;
     console.log('🔗 Constructed full URL:', fullUrl);
     return fullUrl;
   };
