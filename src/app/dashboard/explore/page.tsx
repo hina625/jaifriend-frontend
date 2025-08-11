@@ -133,20 +133,28 @@ const SocialExplorePage = () => {
         usersData = await getSuggestedUsersApi(token);
       }
       
-      setUsers(usersData.users || usersData || []);
+      console.log('🔍 Raw users data from backend:', usersData);
+      
+      // Map backend data to frontend interface
+      const mappedUsers = (usersData.users || usersData || []).map((user: any) => ({
+        id: user._id || user.id,
+        name: user.name || user.fullName || 'Unknown User',
+        username: user.username || `@${(user._id || user.id).toString().slice(-8)}`,
+        avatar: user.avatar || '/default-avatar.svg',
+        isVerified: user.isVerified || false,
+        isFollowing: user.isFollowing || false,
+        followers: user.followers || 0,
+        bio: user.bio || '',
+        location: user.location || ''
+      }));
+      
+      console.log('✅ Mapped users data:', mappedUsers);
+      setUsers(mappedUsers);
     } catch (error: any) {
-      console.error('Error fetching users:', error);
+      console.error('❌ Error fetching users:', error);
       const errorMessage = error.response?.data?.error || error.message || 'Failed to fetch users';
       showPopup('error', 'Error', errorMessage);
-      
-      // Fallback to sample data if API fails
-      if (error.response?.status === 404 || error.response?.status === 500) {
-        setUsers([
-          { id: '1', name: 'John Doe', username: 'johndoe', avatar: '/avatars/1.png.png', isVerified: false, isFollowing: false, followers: 150 },
-          { id: '2', name: 'Jane Smith', username: 'janesmith', avatar: '/avatars/2.png.png', isVerified: true, isFollowing: true, followers: 320 },
-          { id: '3', name: 'Mike Johnson', username: 'mikejohnson', avatar: '/avatars/3.png.png', isVerified: false, isFollowing: false, followers: 89 }
-        ]);
-      }
+      setUsers([]); // Set empty array instead of sample data
     } finally {
       setUserLoading(false);
     }
@@ -158,39 +166,33 @@ const SocialExplorePage = () => {
       setPageLoading(true);
       const token = getToken();
       const pagesData = await getPagesApi(token || undefined);
-      setPages(pagesData || []);
+      
+      console.log('🔍 Raw pages data from backend:', pagesData);
+      
+      // Map backend data to frontend interface
+      const mappedPages = (pagesData || []).map((page: any) => ({
+        id: page._id || page.id,
+        name: page.name || 'Untitled Page',
+        description: page.description || 'No description available',
+        category: page.category || 'General',
+        url: page.url || page._id || page.id,
+        likes: page.likes || 0,
+        isLiked: page.isLiked || false,
+        createdBy: {
+          name: page.createdBy?.name || page.creatorName || 'Unknown User',
+          username: page.createdBy?.username || 'unknown',
+          avatar: page.createdBy?.avatar || page.creatorAvatar || '/default-avatar.svg'
+        },
+        createdAt: page.createdAt || new Date().toISOString()
+      }));
+      
+      console.log('✅ Mapped pages data:', mappedPages);
+      setPages(mappedPages);
     } catch (error: any) {
-      console.error('Error fetching pages:', error);
+      console.error('❌ Error fetching pages:', error);
       const errorMessage = error.response?.data?.error || error.message || 'Failed to fetch pages';
       showPopup('error', 'Error', errorMessage);
-      
-      // Fallback to sample data if API fails
-      if (error.response?.status === 404 || error.response?.status === 500) {
-        setPages([
-          {
-            id: '1',
-            name: 'Tech News Daily',
-            description: 'Latest technology news and updates',
-            category: 'Technology',
-            url: 'tech-news',
-            likes: 45,
-            isLiked: false,
-            createdBy: { name: 'Tech Admin', username: 'techadmin', avatar: '/avatars/1.png.png' },
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: '2',
-            name: 'Food Lovers',
-            description: 'Delicious recipes and food tips',
-            category: 'Food & Drink',
-            url: 'food-lovers',
-            likes: 23,
-            isLiked: true,
-            createdBy: { name: 'Chef Master', username: 'chefmaster', avatar: '/avatars/2.png.png' },
-            createdAt: new Date().toISOString()
-          }
-        ]);
-      }
+      setPages([]); // Set empty array instead of sample data
     } finally {
       setPageLoading(false);
     }
@@ -202,41 +204,34 @@ const SocialExplorePage = () => {
       setGroupLoading(true);
       const token = getToken();
       const groupsData = await getPublicGroupsApi(token || undefined);
-      setGroups(groupsData || []);
+      
+      console.log('🔍 Raw groups data from backend:', groupsData);
+      
+      // Map backend data to frontend interface
+      const mappedGroups = (groupsData || []).map((group: any) => ({
+        id: group._id || group.id,
+        name: group.name || 'Untitled Group',
+        description: group.description || 'No description available',
+        category: group.category || 'General',
+        avatar: group.avatar || '/default-avatar.svg',
+        privacy: group.privacy || 'public',
+        membersCount: group.members?.length || group.membersCount || 0,
+        isMember: group.isMember || false,
+        creator: {
+          name: group.creator?.name || 'Unknown User',
+          username: group.creator?.username || 'unknown',
+          avatar: group.creator?.avatar || '/default-avatar.svg'
+        },
+        createdAt: group.createdAt || new Date().toISOString()
+      }));
+      
+      console.log('✅ Mapped groups data:', mappedGroups);
+      setGroups(mappedGroups);
     } catch (error: any) {
-      console.error('Error fetching groups:', error);
+      console.error('❌ Error fetching groups:', error);
       const errorMessage = error.response?.data?.error || error.message || 'Failed to fetch groups';
       showPopup('error', 'Error', errorMessage);
-      
-      // Fallback to sample data if API fails
-      if (error.response?.status === 404 || error.response?.status === 500) {
-        setGroups([
-          {
-            id: '1',
-            name: 'Photography Enthusiasts',
-            description: 'Share your best photos and learn from others',
-            category: 'Entertainment',
-            avatar: '/avatars/1.png.png',
-            privacy: 'public',
-            membersCount: 156,
-            isMember: false,
-            creator: { name: 'Photo Pro', username: 'photopro', avatar: '/avatars/1.png.png' },
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: '2',
-            name: 'Startup Founders',
-            description: 'Connect with fellow entrepreneurs',
-            category: 'Business',
-            avatar: '/avatars/2.png.png',
-            privacy: 'public',
-            membersCount: 89,
-            isMember: true,
-            creator: { name: 'Business Guru', username: 'businessguru', avatar: '/avatars/2.png.png' },
-            createdAt: new Date().toISOString()
-          }
-        ]);
-      }
+      setGroups([]); // Set empty array instead of sample data
     } finally {
       setGroupLoading(false);
     }
@@ -262,19 +257,33 @@ const SocialExplorePage = () => {
         return;
       }
 
-      await followUserApi(token, userId);
+      console.log('🔗 Frontend: Following user:', userId);
       
-      // Update local state
+      const response = await followUserApi(token, userId);
+      console.log('🔗 Backend response:', response);
+      
+      // Update local state based on backend response
       setUsers(prev => prev.map(user => 
         user.id === userId 
-          ? { ...user, isFollowing: !user.isFollowing, followers: user.isFollowing ? user.followers - 1 : user.followers + 1 }
+          ? { 
+              ...user, 
+              isFollowing: response.isFollowing, 
+              followers: response.isFollowing ? user.followers + 1 : user.followers - 1 
+            }
           : user
       ));
 
-      showPopup('success', 'Success!', 'User followed successfully');
+      // Refresh the users data to get updated following/followers lists
+      setTimeout(() => {
+        fetchUsers();
+      }, 500);
+
+      const action = response.isFollowing ? 'followed' : 'unfollowed';
+      showPopup('success', 'Success!', `User ${action} successfully`);
     } catch (error) {
-      console.error('Error following user:', error);
-      showPopup('error', 'Error', 'Failed to follow user');
+      console.error('❌ Error following user:', error);
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to follow user';
+      showPopup('error', 'Error', errorMessage);
     }
   };
 
@@ -286,7 +295,26 @@ const SocialExplorePage = () => {
         const token = getToken();
         if (token && searchKeyword.trim()) {
           const groupsData = await searchGroupsApi(token, searchKeyword);
-          setGroups(groupsData || []);
+          
+          // Map backend data to frontend interface
+          const mappedGroups = (groupsData || []).map((group: any) => ({
+            id: group._id || group.id,
+            name: group.name || 'Untitled Group',
+            description: group.description || 'No description available',
+            category: group.category || 'General',
+            avatar: group.avatar || '/default-avatar.svg',
+            privacy: group.privacy || 'public',
+            membersCount: group.members?.length || group.membersCount || 0,
+            isMember: group.isMember || false,
+            creator: {
+              name: group.creator?.name || 'Unknown User',
+              username: group.creator?.username || 'unknown',
+              avatar: group.creator?.avatar || '/default-avatar.svg'
+            },
+            createdAt: group.createdAt || new Date().toISOString()
+          }));
+          
+          setGroups(mappedGroups);
         }
       } catch (error) {
         console.error('Error searching groups:', error);

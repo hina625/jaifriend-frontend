@@ -22,6 +22,8 @@ interface User {
   country?: string;
   isOnline?: boolean;
   joinedDate?: string;
+  followingList?: any[];
+  followersList?: any[];
 }
 
 interface UserImages {
@@ -1353,6 +1355,81 @@ const ProfilePage = () => {
                     <span className="truncate">{user.location || 'Unknown'}</span>
                   </div>
                 </div>
+
+                {/* Following and Followers Lists */}
+                <div className="space-y-4">
+                  {/* Following List */}
+                  <div className="bg-white rounded-xl shadow-sm p-4">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      Following ({user.followingList?.length || 0})
+                    </h3>
+                    {user.followingList && user.followingList.length > 0 ? (
+                      <div className="space-y-2">
+                        {user.followingList.slice(0, 5).map((followedUser: any) => (
+                          <div key={followedUser._id || followedUser.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                            <img
+                              src={getMediaUrl(followedUser.avatar)}
+                              alt={followedUser.name}
+                              className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-800 truncate">
+                                {followedUser.name || followedUser.fullName || 'Unknown User'}
+                              </p>
+                              <p className="text-sm text-gray-500 truncate">
+                                @{followedUser.username || 'unknown'}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                        {user.followingList.length > 5 && (
+                          <p className="text-sm text-gray-500 text-center py-2">
+                            +{user.followingList.length - 5} more following
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-center py-4">No following yet</p>
+                    )}
+                  </div>
+
+                  {/* Followers List */}
+                  <div className="bg-white rounded-xl shadow-sm p-4">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      Followers ({user.followersList?.length || 0})
+                    </h3>
+                    {user.followersList && user.followersList.length > 0 ? (
+                      <div className="space-y-2">
+                        {user.followersList.slice(0, 5).map((follower: any) => (
+                          <div key={follower._id || follower.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                            <img
+                              src={getMediaUrl(follower.avatar)}
+                              alt={follower.name}
+                              className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-gray-800 truncate">
+                                {follower.name || follower.fullName || 'Unknown User'}
+                              </p>
+                              <p className="text-sm text-gray-500 truncate">
+                                @{follower.username || 'unknown'}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                        {user.followersList.length > 5 && (
+                          <p className="text-sm text-gray-500 text-center py-2">
+                            +{user.followersList.length - 5} more followers
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-center py-4">No followers yet</p>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Main Content */}
@@ -1463,46 +1540,122 @@ const ProfilePage = () => {
                 </div>
 
                 {/* Posts */}
-                {filteredPosts.length === 0 ? (
+                {filteredPosts.length === 0 && albums.length === 0 ? (
                   <div className="bg-white rounded-xl shadow-sm p-6 text-center">
                     <div className="text-gray-400 mb-3">
                       <FileText className="w-16 h-16 mx-auto" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No posts found</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No content found</h3>
                     <p className="text-gray-600 mb-4 text-sm">
-                      {searchQuery ? 'Try adjusting your search terms' : 'Start sharing your thoughts!'}
+                      {searchQuery ? 'Try adjusting your search terms' : 'Start sharing your thoughts and albums!'}
                     </p>
-                    <button
-                      onClick={() => setShowPostModal(true)}
-                      className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
-                    >
-                      Create Post
-                    </button>
+                    <div className="flex gap-2 justify-center">
+                      <button
+                        onClick={() => setShowPostModal(true)}
+                        className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                      >
+                        Create Post
+                      </button>
+                      <button
+                        onClick={() => router.push('/dashboard/albums')}
+                        className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm"
+                      >
+                        Create Album
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {filteredPosts.map((post) => (
-                      <div key={post._id} className="bg-white rounded-xl shadow-sm overflow-hidden">
-                        <PostDisplay
-                          post={post}
-                          onLike={async (postId) => {
-                            // Handle like
-                          }}
-                          onComment={async (postId, comment) => {
-                            // Handle comment
-                          }}
-                          onSave={async (postId) => {
-                            // Handle save
-                          }}
-                          onShare={async (postId, shareOptions) => {
-                            // Handle share
-                          }}
-                          onDelete={handleDeletePost}
-                          onEdit={handleEditPost}
-                          showEditDelete={true}
-                        />
-                      </div>
-                    ))}
+                    {/* Combine posts and albums and sort by creation date */}
+                    {(() => {
+                      const combinedContent = [
+                        ...filteredPosts.map((post: any) => ({ ...post, type: 'post' })),
+                        ...albums.map((album: any) => ({ ...album, type: 'album' }))
+                      ].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+                      return combinedContent.map((item: any) => {
+                        if (item.type === 'album') {
+                          return (
+                            <div key={item._id} className="bg-white rounded-xl shadow-sm overflow-hidden">
+                              <div className="p-4">
+                                <div className="flex items-center gap-3 mb-3">
+                                  <img
+                                    src={user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${user.avatar}`) : '/default-avatar.svg'}
+                                    alt={user.name}
+                                    className="w-10 h-10 rounded-full border-2 border-blue-400"
+                                  />
+                                  <div>
+                                    <h4 className="font-semibold text-gray-900">{user.name}</h4>
+                                    <p className="text-sm text-gray-500">Created an album • {new Date(item.createdAt).toLocaleDateString()}</p>
+                                  </div>
+                                </div>
+                                
+                                <h3 className="text-lg font-semibold text-gray-900 mb-3">{item.name}</h3>
+                                
+                                {/* Album Media Grid */}
+                                {item.media && item.media.length > 0 && (
+                                  <div className="grid grid-cols-3 gap-2 mb-3">
+                                    {item.media.slice(0, 6).map((media: any, index: number) => (
+                                      <img
+                                        key={index}
+                                        src={getMediaUrl(media.url)}
+                                        alt={`Album media ${index + 1}`}
+                                        className="w-full aspect-square object-cover rounded-lg"
+                                      />
+                                    ))}
+                                    {item.media.length > 6 && (
+                                      <div className="aspect-square bg-gray-200 rounded-lg flex items-center justify-center text-sm text-gray-500">
+                                        +{item.media.length - 6}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                
+                                {/* Album Actions */}
+                                <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
+                                  <button className="flex items-center gap-2 text-gray-500 hover:text-red-500 transition-colors">
+                                    <span>❤️</span>
+                                    <span className="text-sm">{item.likes?.length || 0}</span>
+                                  </button>
+                                  <button className="flex items-center gap-2 text-gray-500 hover:text-blue-500 transition-colors">
+                                    <span>💬</span>
+                                    <span className="text-sm">{item.comments?.length || 0}</span>
+                                  </button>
+                                  <button className="flex items-center gap-2 text-gray-500 hover:text-green-500 transition-colors">
+                                    <span>📤</span>
+                                    <span className="text-sm">{item.shares?.length || 0}</span>
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        } else {
+                          return (
+                            <div key={item._id} className="bg-white rounded-xl shadow-sm overflow-hidden">
+                              <PostDisplay
+                                post={item}
+                                onLike={async (postId) => {
+                                  // Handle like
+                                }}
+                                onComment={async (postId, comment) => {
+                                  // Handle comment
+                                }}
+                                onSave={async (postId) => {
+                                  // Handle save
+                                }}
+                                onShare={async (postId, shareOptions) => {
+                                  // Handle share
+                                }}
+                                onDelete={handleDeletePost}
+                                onEdit={handleEditPost}
+                                isOwner={true}
+                                showEditDelete={true}
+                              />
+                            </div>
+                          );
+                        }
+                      });
+                    })()}
                   </div>
                 )}
               </div>

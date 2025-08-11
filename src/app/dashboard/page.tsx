@@ -333,6 +333,11 @@ export default function Dashboard() {
       fetchFeedData();
     };
 
+    const handleAlbumShared = () => {
+      console.log('Album shared event received, refreshing feed...');
+      fetchFeedData();
+    };
+
     const handlePostCreated = () => {
       console.log('Post created event received, refreshing feed...');
       fetchFeedData();
@@ -350,6 +355,7 @@ export default function Dashboard() {
 
     window.addEventListener('albumCreated', handleAlbumCreated);
     window.addEventListener('albumDeleted', handleAlbumDeleted);
+    window.addEventListener('albumShared', handleAlbumShared);
     window.addEventListener('postCreated', handlePostCreated);
     window.addEventListener('postDeleted', handlePostDeleted);
     window.addEventListener('postUpdated', handlePostUpdated);
@@ -357,6 +363,7 @@ export default function Dashboard() {
     return () => {
       window.removeEventListener('albumCreated', handleAlbumCreated);
       window.removeEventListener('albumDeleted', handleAlbumDeleted);
+      window.removeEventListener('albumShared', handleAlbumShared);
       window.removeEventListener('postCreated', handlePostCreated);
       window.removeEventListener('postDeleted', handlePostDeleted);
       window.removeEventListener('postUpdated', handlePostUpdated);
@@ -556,35 +563,66 @@ export default function Dashboard() {
   // Like a post
   const handleLike = async (postId: string) => {
     const token = localStorage.getItem('token');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/like`, {
-      method: 'POST',
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
+    
+    if (!token) {
+      showPopup('error', 'Authentication Error', 'Please login to like posts');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? data.post : p));
+        console.log('Post liked/unliked successfully');
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('Failed to like post:', res.status, errorData);
+        showPopup('error', 'Error', 'Failed to like post. Please try again.');
       }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? data.post : p));
-    } else {
-      console.error('Failed to like post');
+    } catch (error) {
+      console.error('Error liking post:', error);
+      showPopup('error', 'Network Error', 'Failed to connect to server. Please check your internet connection.');
     }
   };
 
   const handleReaction = async (postId: string, reactionType: string) => {
     const token = localStorage.getItem('token');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/reaction`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      },
-      body: JSON.stringify({ reactionType })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? data.post : p));
-    } else {
-      console.error('Failed to add reaction');
+    
+    if (!token) {
+      showPopup('error', 'Authentication Error', 'Please login to add reactions');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/reaction`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ reactionType })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? data.post : p));
+        console.log('Reaction added successfully');
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('Failed to add reaction:', res.status, errorData);
+        showPopup('error', 'Error', 'Failed to add reaction. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+      showPopup('error', 'Network Error', 'Failed to connect to server. Please check your internet connection.');
     }
   };
 
@@ -757,35 +795,66 @@ export default function Dashboard() {
   // Handle album like
   const handleAlbumLike = async (albumId: string) => {
     const token = localStorage.getItem('token');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/like`, {
-      method: 'POST',
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
+    
+    if (!token) {
+      showPopup('error', 'Authentication Error', 'Please login to like albums');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setAlbums(albums => albums.map(a => a._id === albumId ? data.album : a));
+        console.log('Album liked/unliked successfully');
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('Failed to like album:', res.status, errorData);
+        showPopup('error', 'Error', 'Failed to like album. Please try again.');
       }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setAlbums(albums => albums.map(a => a._id === albumId ? data.album : a));
-    } else {
-      console.error('Failed to like album');
+    } catch (error) {
+      console.error('Error liking album:', error);
+      showPopup('error', 'Network Error', 'Failed to connect to server. Please check your internet connection.');
     }
   };
 
   const handleAlbumReaction = async (albumId: string, reactionType: string) => {
     const token = localStorage.getItem('token');
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/reaction`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      },
-      body: JSON.stringify({ reactionType })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setAlbums(albums => albums.map(a => a._id === albumId ? data.album : a));
-    } else {
-      console.error('Failed to add reaction to album');
+    
+    if (!token) {
+      showPopup('error', 'Authentication Error', 'Please login to add reactions');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/reaction`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ reactionType })
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setAlbums(albums => albums.map(a => a._id === albumId ? data.album : a));
+        console.log('Album reaction added successfully');
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('Failed to add reaction to album:', res.status, errorData);
+        showPopup('error', 'Error', 'Failed to add reaction. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error adding reaction to album:', error);
+      showPopup('error', 'Network Error', 'Failed to connect to server. Please check your internet connection.');
     }
   };
 
@@ -869,6 +938,9 @@ export default function Dashboard() {
         // Show success message
         showPopup('success', 'Album Shared!', 'Your album has been shared successfully!');
         
+        // Dispatch event to refresh feed
+        window.dispatchEvent(new CustomEvent('albumShared'));
+        
         // Refresh feed to show the shared post
         fetchFeedData();
       } else {
@@ -944,7 +1016,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="bg-[#f4f7fb] dark:bg-gray-900 min-h-screen pt-2 sm:pt-4 pb-24 sm:pb-6 w-full scrollbar-hide overflow-x-hidden transition-colors duration-200">
+    <div className="bg-[#f4f7fb] dark:bg-gray-900 min-h-screen pt-2 sm:pt-4 pb-24 sm:pb-6 w-full scrollbar-hide overflow-x-hidden transition-colors duration-200 touch-manipulation">
       {/* Popup Modal */}
       <Popup popup={popup} onClose={closePopup} />
       
@@ -985,9 +1057,19 @@ export default function Dashboard() {
 
         {/* Stories Row at the top */}
         <div className="w-full pt-2 mb-3 sm:mb-4">
-          <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-hide touch-pan-x">
             {/* Current user story */}
-            <div className="flex-shrink-0 flex flex-col items-center group cursor-pointer" onClick={() => storyInputRef.current?.click()}>
+            <div 
+              className="flex-shrink-0 flex flex-col items-center group cursor-pointer touch-manipulation" 
+              onClick={() => storyInputRef.current?.click()}
+              onTouchStart={(e) => {
+                e.currentTarget.style.transform = 'scale(0.95)';
+              }}
+              onTouchEnd={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+              style={{ touchAction: 'manipulation' }}
+            >
               {userStory ? (
                 userStory.startsWith('data:video') ? (
                   <video
@@ -1020,7 +1102,17 @@ export default function Dashboard() {
             </div>
             {/* Demo static stories with user avatars */}
             {[1,2,3,4,5,6].map((i) => (
-              <div key={i} className="flex-shrink-0 flex flex-col items-center group cursor-pointer">
+              <div 
+                key={i} 
+                className="flex-shrink-0 flex flex-col items-center group cursor-pointer touch-manipulation"
+                onTouchStart={(e) => {
+                  e.currentTarget.style.transform = 'scale(0.95)';
+                }}
+                onTouchEnd={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+                style={{ touchAction: 'manipulation' }}
+              >
                 <div className="w-20 h-28 sm:w-24 sm:h-36 md:w-32 md:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-gray-300 mb-2 sm:mb-3 shadow-lg sm:shadow-xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center transition-transform group-hover:scale-105 relative overflow-hidden">
                   <img 
                     src={`/avatars/${i}.png`} 
@@ -1498,6 +1590,18 @@ export default function Dashboard() {
                                     : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
                                 }`} 
                                 onClick={() => handleLike(item._id || item.id)}
+                                onTouchStart={(e) => {
+                                  // Prevent default touch behavior
+                                  e.preventDefault();
+                                  // Add visual feedback for mobile
+                                  e.currentTarget.style.transform = 'scale(0.95)';
+                                }}
+                                onTouchEnd={(e) => {
+                                  // Restore normal size
+                                  e.currentTarget.style.transform = 'scale(1)';
+                                  // Handle like on touch end
+                                  handleLike(item._id || item.id);
+                                }}
                                 onMouseEnter={() => {
                                   // Show reaction popup on hover (desktop only)
                                   if (window.innerWidth > 768) {
@@ -1516,15 +1620,6 @@ export default function Dashboard() {
                                         reactionButton.classList.add('hidden');
                                       }
                                     }, 300);
-                                  }
-                                }}
-                                onTouchStart={() => {
-                                  // Show reaction popup on touch (mobile)
-                                  if (window.innerWidth <= 768) {
-                                    const reactionButton = document.getElementById(`reaction-${item._id || item.id}`);
-                                    if (reactionButton) {
-                                      reactionButton.classList.toggle('hidden');
-                                    }
                                   }
                                 }}
                                 style={{ touchAction: 'manipulation' }}
@@ -1590,6 +1685,25 @@ export default function Dashboard() {
                                     <button
                                       key={reaction.type}
                                       onClick={() => {
+                                        handleReaction(item._id || item.id, reaction.type);
+                                        // Hide popup after selection on mobile
+                                        if (window.innerWidth <= 768) {
+                                          const reactionButton = document.getElementById(`reaction-${item._id || item.id}`);
+                                          if (reactionButton) {
+                                            reactionButton.classList.add('hidden');
+                                          }
+                                        }
+                                      }}
+                                      onTouchStart={(e) => {
+                                        // Prevent default touch behavior
+                                        e.preventDefault();
+                                        // Add visual feedback for mobile
+                                        e.currentTarget.style.transform = 'scale(0.9)';
+                                      }}
+                                      onTouchEnd={(e) => {
+                                        // Restore normal size
+                                        e.currentTarget.style.transform = 'scale(1)';
+                                        // Handle reaction on touch end
                                         handleReaction(item._id || item.id, reaction.type);
                                         // Hide popup after selection on mobile
                                         if (window.innerWidth <= 768) {
