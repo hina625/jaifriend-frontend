@@ -79,7 +79,17 @@ const NotificationsPage = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setNotifications(data.notifications || []);
+        console.log('🔔 Notifications API response:', data);
+        const notifications = data.data?.notifications || [];
+        console.log('📱 Setting notifications:', notifications);
+        setNotifications(notifications);
+        
+        // Dispatch event to update notification count in dashboard
+        window.dispatchEvent(new CustomEvent('notificationsUpdated'));
+      } else {
+        console.error('❌ Failed to fetch notifications:', response.status, response.statusText);
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ Error details:', errorData);
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -127,6 +137,9 @@ const NotificationsPage = () => {
               : notification
           )
         );
+        
+        // Dispatch event to update notification count in dashboard
+        window.dispatchEvent(new CustomEvent('notificationsUpdated'));
       }
     } catch (error) {
       console.error('Error marking notification as read:', error);
@@ -151,6 +164,9 @@ const NotificationsPage = () => {
           prev.map(notification => ({ ...notification, isRead: true }))
         );
         showPopup('success', 'Success', 'All notifications marked as read');
+        
+        // Dispatch event to update notification count in dashboard
+        window.dispatchEvent(new CustomEvent('notificationsUpdated'));
       }
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
@@ -173,6 +189,9 @@ const NotificationsPage = () => {
         // Remove from local state
         setNotifications(prev => prev.filter(notification => notification._id !== notificationId));
         showPopup('success', 'Success', 'Notification deleted');
+        
+        // Dispatch event to update notification count in dashboard
+        window.dispatchEvent(new CustomEvent('notificationsUpdated'));
       }
     } catch (error) {
       console.error('Error deleting notification:', error);

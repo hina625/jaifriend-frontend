@@ -90,6 +90,27 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   // Profile Sidebar State
   const [profileSidebarOpen, setProfileSidebarOpen] = useState<boolean>(false);
+  
+  // Fetch notification count
+  const fetchNotificationCount = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/notifications/stats`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setNotificationCount(data.data?.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching notification count:', error);
+    }
+  };
 
   // Admin Sidebar States
   const [adminSettingsOpen, setAdminSettingsOpen] = useState<boolean>(true);
@@ -101,6 +122,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [adminDesignOpen, setAdminDesignOpen] = useState<boolean>(false);
   const [adminToolsOpen, setAdminToolsOpen] = useState<boolean>(false);
   const [adminPagesOpen, setAdminPagesOpen] = useState<boolean>(false);
+  
+  // Notification state
+  const [notificationCount, setNotificationCount] = useState<number>(0);
   const [adminReportsOpen, setAdminReportsOpen] = useState<boolean>(false);
   const [adminApiSettingsOpen, setAdminApiSettingsOpen] = useState<boolean>(false);
 
@@ -162,6 +186,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     }
   }, [isSettingsPage]);
 
+  // Add event listeners for notifications
+  useEffect(() => {
+    window.addEventListener('notificationsUpdated', fetchNotificationCount);
+    
+    return () => {
+      window.removeEventListener('notificationsUpdated', fetchNotificationCount);
+    };
+  }, []);
+
   // Load user profile from API
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -173,6 +206,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         .then((data) => setProfile(data))
         .catch(() => console.log('Profile load failed'));
     }
+  }, []);
+
+  // Fetch notification count on mount
+  useEffect(() => {
+    fetchNotificationCount();
   }, []);
 
   // Listen for image updates from settings page
@@ -188,6 +226,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           .then((data) => setProfile(data))
           .catch(() => console.log('Profile refresh failed'));
       }
+    };
+
+    const handleNotificationsUpdated = () => {
+      console.log('Notifications updated event received in DashboardLayout, refreshing notification count...');
+      fetchNotificationCount();
     };
 
     const handlePrivacySettingsUpdated = () => {
@@ -900,7 +943,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-all touch-manipulation ${
                       isAdminPage 
                         ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
-                        : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300'
+                        : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300'
                     }`}
                     onClick={() => router.push('/dashboard/notifications')}
                     onTouchStart={(e) => {
@@ -910,7 +953,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     style={{ touchAction: 'manipulation' }}
                   >
                     🔔
-                        </button>
+                  </button>
+                  
+                  {/* Notification count badge */}
+                  {notificationCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium animate-pulse">
+                      {notificationCount > 99 ? '99+' : notificationCount}
+                    </span>
+                  )}
                 </div>
               </>
             )}

@@ -309,6 +309,11 @@ export default function Dashboard() {
         total: combinedFeed.length
       });
       
+      console.log('📊 Setting posts state with:', postsData);
+      console.log('📊 Sample post structure:', postsData[0]);
+      console.log('📊 Posts have _id field:', postsData.every((p: any) => p._id));
+      console.log('📊 Posts have id field:', postsData.every((p: any) => p.id));
+      
       setPosts(postsData);
       setAlbums(albumsData);
     } catch (error) {
@@ -320,6 +325,16 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    console.log('🔍 Dashboard component mounted');
+    console.log('🔍 Checking localStorage for token...');
+    const token = localStorage.getItem('token');
+    console.log('🔍 Token in localStorage:', token ? 'Present' : 'Missing');
+    
+    if (token) {
+      console.log('🔍 Token length:', token.length);
+      console.log('🔍 Token preview:', `${token.substring(0, 20)}...`);
+    }
+    
     fetchFeedData();
   }, []);
 
@@ -560,17 +575,54 @@ export default function Dashboard() {
     }
   };
 
+  // Test backend connectivity
+  const testBackendConnection = async () => {
+    try {
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}`;
+      console.log('🔍 Testing backend connection to:', apiUrl);
+      
+      const res = await fetch(apiUrl, { method: 'GET' });
+      console.log('🔍 Backend health check response:', res.status, res.statusText);
+      
+      if (res.ok) {
+        const data = await res.text();
+        console.log('✅ Backend is accessible:', data);
+        return true;
+      } else {
+        console.log('❌ Backend health check failed:', res.status);
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Backend connection test failed:', error);
+      return false;
+    }
+  };
+
   // Like a post
   const handleLike = async (postId: string) => {
+    console.log('🔍 handleLike called for postId:', postId);
+    console.log('🔍 Current posts state:', posts);
+    console.log('🔍 Finding post with ID:', postId);
+    
+    const currentPost = posts.find(p => (p._id === postId || p.id === postId));
+    console.log('🔍 Current post found:', currentPost);
+    
     const token = localStorage.getItem('token');
+    console.log('🔍 Token found:', token ? 'Yes' : 'No');
+    console.log('🔍 Token length:', token ? token.length : 0);
+    console.log('🔍 Token preview:', token ? `${token.substring(0, 20)}...` : 'None');
     
     if (!token) {
+      console.log('❌ No token found');
       showPopup('error', 'Authentication Error', 'Please login to like posts');
       return;
     }
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/like`, {
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/like`;
+      console.log('📡 Sending like request to:', apiUrl);
+      
+      const res = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -578,17 +630,49 @@ export default function Dashboard() {
         }
       });
       
+      console.log('📡 Response status:', res.status);
+      console.log('📡 Response headers:', Object.fromEntries(res.headers.entries()));
+      
       if (res.ok) {
         const data = await res.json();
-        setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? data.post : p));
+        console.log('✅ Like response data:', data);
+        
+        // Update posts state
+        setPosts(prevPosts => {
+          const updatedPosts = prevPosts.map(p => {
+            if (p._id === postId || p.id === postId) {
+              console.log('🔄 Updating post:', p._id || p.id, 'with new data:', data.post);
+              return data.post;
+            }
+            return p;
+          });
+          console.log('🔄 Updated posts state:', updatedPosts);
+          return updatedPosts;
+        });
+        
         console.log('Post liked/unliked successfully');
       } else {
-        const errorData = await res.json().catch(() => ({}));
-        console.error('Failed to like post:', res.status, errorData);
-        showPopup('error', 'Error', 'Failed to like post. Please try again.');
+        let errorMessage = 'Unknown error';
+        try {
+          const errorData = await res.json();
+          console.error('❌ Failed to like post:', res.status, errorData);
+          errorMessage = errorData.message || errorData.error || 'Unknown error';
+        } catch (parseError) {
+          console.error('❌ Could not parse error response:', parseError);
+          try {
+            const responseText = await res.text();
+            console.error('❌ Raw response text:', responseText);
+            errorMessage = responseText || 'Unknown error';
+          } catch (textError) {
+            console.error('❌ Could not read response text:', textError);
+            errorMessage = `HTTP ${res.status}: ${res.statusText}`;
+          }
+        }
+        
+        showPopup('error', 'Error', `Failed to like post: ${errorMessage}`);
       }
     } catch (error) {
-      console.error('Error liking post:', error);
+      console.error('❌ Error liking post:', error);
       showPopup('error', 'Network Error', 'Failed to connect to server. Please check your internet connection.');
     }
   };
@@ -956,8 +1040,17 @@ export default function Dashboard() {
 
   // Helper to get full media URL
   const getMediaUrl = (url: string) => {
-    if (!url) return '/default-avatar.svg';
-    if (url.startsWith('http')) return url;
+    console.log('🔗 getMediaUrl called with:', url);
+    
+    if (!url) {
+      console.log('🔗 No URL provided, returning default');
+      return '/default-avatar.svg';
+    }
+    
+    if (url.startsWith('http')) {
+      console.log('🔗 URL is already absolute, returning as-is');
+      return url;
+    }
     
     // Handle hardcoded placeholder avatars that don't exist
     if (url.includes('/avatars/') || url.includes('/covers/')) {
@@ -965,7 +1058,9 @@ export default function Dashboard() {
       return '/default-avatar.svg';
     }
     
-            return `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
+    const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
+    console.log('🔗 Constructed full URL:', fullUrl);
+    return fullUrl;
   };
 
   const [userEmail, setUserEmail] = useState("");
@@ -1514,71 +1609,116 @@ export default function Dashboard() {
                           )}
 
                           {/* Show media if present */}
-                          {item.media && item.media.length > 0 ? (
-                            <div className="mb-3">
-                              {item.media.length === 1 ? (
-                                // Single media
-                                item.media[0].type === 'video' ? (
-                                  <video controls className="rounded-lg w-full max-h-64 sm:max-h-80 object-cover">
-                                    <source src={getMediaUrl(item.media[0].url)} type="video/mp4" />
-                                    Your browser does not support the video tag.
-                                  </video>
-                                ) : (
-                                  <img src={getMediaUrl(item.media[0].url)} alt="media" className="rounded-lg w-full max-h-64 sm:max-h-80 object-cover" />
-                                )
-                              ) : (
-                                // Multiple media - grid layout
-                                <div className={`grid gap-1 sm:gap-2 ${item.media.length === 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'}`}>
-                                  {item.media.map((media: any, index: number) => (
-                                    <div key={index} className="relative">
-                                      {media.type === 'video' ? (
-                                        <video 
-                                          controls 
-                                          className="rounded-lg w-full h-24 sm:h-32 object-cover"
-                                          onClick={() => {
-                                            console.log('Video clicked:', media.url);
-                                          }}
-                                        >
-                                          <source src={getMediaUrl(media.url)} type="video/mp4" />
-                                          Your browser does not support the video tag.
-                                        </video>
-                                      ) : (
-                                        <img 
-                                          src={getMediaUrl(media.url)} 
-                                          alt={`media ${index + 1}`} 
-                                          className="rounded-lg w-full h-24 sm:h-32 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                                          onClick={() => {
-                                            console.log('Image clicked:', media.url);
-                                          }}
-                                        />
-                                      )}
-                                      {/* Video play icon overlay */}
-                                      {media.type === 'video' && (
-                                        <div className="absolute inset-0 flex items-center justify-center">
-                                          <div className="bg-black bg-opacity-50 rounded-full p-1">
-                                            <span className="text-white text-sm">▶</span>
-                                          </div>
+                          {(() => {
+                            console.log('🔍 Rendering media for item:', {
+                              id: item._id || item.id,
+                              hasMedia: !!item.media,
+                              mediaLength: item.media?.length,
+                              mediaType: item.media?.[0]?.type,
+                              mediaUrl: item.media?.[0]?.url,
+                              hasImage: !!item.image,
+                              imageUrl: item.image
+                            });
+                            
+                            if (item.media && item.media.length > 0) {
+                              return (
+                                <div className="mb-3">
+                                  {item.media.length === 1 ? (
+                                    // Single media
+                                    item.media[0].type === 'video' ? (
+                                      <video controls className="rounded-lg w-full max-h-64 sm:max-h-80 object-cover">
+                                        <source src={getMediaUrl(item.media[0].url)} type="video/mp4" />
+                                        Your browser does not support the video tag.
+                                      </video>
+                                    ) : (
+                                      <img 
+                                        src={getMediaUrl(item.media[0].url)} 
+                                        alt="media" 
+                                        className="rounded-lg w-full max-h-64 sm:max-h-80 object-cover"
+                                        onError={(e) => {
+                                          console.log('❌ Image load failed:', item.media[0].url);
+                                          e.currentTarget.src = '/default-avatar.svg';
+                                        }}
+                                      />
+                                    )
+                                  ) : (
+                                    // Multiple media - grid layout
+                                    <div className={`grid gap-1 sm:gap-2 ${item.media.length === 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'}`}>
+                                      {item.media.map((media: any, index: number) => (
+                                        <div key={index} className="relative">
+                                          {media.type === 'video' ? (
+                                            <video 
+                                              controls 
+                                              className="rounded-lg w-full h-24 sm:h-32 object-cover"
+                                              onClick={() => {
+                                                console.log('Video clicked:', media.url);
+                                              }}
+                                            >
+                                              <source src={getMediaUrl(media.url)} type="video/mp4" />
+                                              Your browser does not support the video tag.
+                                            </video>
+                                          ) : (
+                                            <img 
+                                              src={getMediaUrl(media.url)} 
+                                              alt={`media ${index + 1}`} 
+                                              className="rounded-lg w-full h-24 sm:h-32 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                              onClick={() => {
+                                                console.log('Image clicked:', media.url);
+                                              }}
+                                              onError={(e) => {
+                                                console.log('❌ Image load failed:', media.url);
+                                                e.currentTarget.src = '/default-avatar.svg';
+                                              }}
+                                            />
+                                          )}
+                                          {/* Video play icon overlay */}
+                                          {media.type === 'video' && (
+                                            <div className="absolute inset-0 flex items-center justify-center">
+                                              <div className="backdrop-blur-sm bg-black bg-opacity-50 rounded-full p-1">
+                                                <span className="text-white text-sm">▶</span>
+                                              </div>
+                                            </div>
+                                          )}
                                         </div>
-                                      )}
+                                      ))}
                                     </div>
-                                  ))}
+                                  )}
                                 </div>
-                              )}
-                            </div>
-                          ) : item.media && item.media.url ? (
-                            // Backward compatibility for old single media structure
-                            item.media.type === 'video' ? (
-                              <video controls className="rounded-lg w-full max-h-64 sm:max-h-80 object-cover mb-3">
-                                <source src={getMediaUrl(item.media.url)} type="video/mp4" />
-                                Your browser does not support the video tag.
-                              </video>
-                            ) : (
-                              <img src={getMediaUrl(item.media.url)} alt="media" className="rounded-lg w-full max-h-64 sm:max-h-80 object-cover mb-3" />
-                            )
-                          ) : item.image && item.image !== '' ? (
-                            // Legacy image support
-                            <img src={getMediaUrl(item.image)} alt="media" className="rounded-lg w-full max-h-64 sm:max-h-80 object-cover mb-3" />
-                          ) : null}
+                              );
+                            } else if (item.media && item.media.url) {
+                              // Backward compatibility for old single media structure
+                              return item.media.type === 'video' ? (
+                                <video controls className="rounded-lg w-full max-h-64 sm:max-h-80 object-cover mb-3">
+                                  <source src={getMediaUrl(item.media.url)} type="video/mp4" />
+                                  Your browser does not support the video tag.
+                                </video>
+                              ) : (
+                                <img 
+                                  src={getMediaUrl(item.media.url)} 
+                                  alt="media" 
+                                  className="rounded-lg w-full max-h-64 sm:max-h-80 object-cover mb-3"
+                                  onError={(e) => {
+                                    console.log('❌ Image load failed:', item.media.url);
+                                    e.currentTarget.src = '/default-avatar.svg';
+                                  }}
+                                />
+                              );
+                            } else if (item.image && item.image !== '') {
+                              // Legacy image support
+                              return (
+                                <img 
+                                  src={getMediaUrl(item.image)} 
+                                  alt="media" 
+                                  className="rounded-lg w-full max-h-64 sm:max-h-80 object-cover mb-3"
+                                  onError={(e) => {
+                                    console.log('❌ Image load failed:', item.image);
+                                    e.currentTarget.src = '/default-avatar.svg';
+                                  }}
+                                />
+                              );
+                            }
+                            return null;
+                          })()}
 
                           {/* Action buttons */}
                           <div className="flex flex-wrap gap-2 mt-3">
@@ -1589,7 +1729,21 @@ export default function Dashboard() {
                                     ? 'text-red-500 bg-red-50 border border-red-200' 
                                     : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
                                 }`} 
-                                onClick={() => handleLike(item._id || item.id)}
+                                onClick={async (e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  console.log('🔘 Like button clicked for post:', item._id || item.id);
+                                  console.log('🔘 Post data:', item);
+                                  
+                                  // Test backend connection first
+                                  const isBackendAccessible = await testBackendConnection();
+                                  if (!isBackendAccessible) {
+                                    showPopup('error', 'Connection Error', 'Cannot connect to server. Please check your internet connection.');
+                                    return;
+                                  }
+                                  
+                                  handleLike(item._id || item.id);
+                                }}
                                 onTouchStart={(e) => {
                                   // Prevent default touch behavior
                                   e.preventDefault();
