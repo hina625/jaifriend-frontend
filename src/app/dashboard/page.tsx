@@ -1112,6 +1112,47 @@ export default function Dashboard() {
     window.location.href = `/dashboard/profile/${userId}`;
   };
 
+  // Test function to verify media upload
+  const testMediaUpload = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      showPopup('error', 'No Token', 'Please log in first');
+      return;
+    }
+
+    // Create a simple test post with a text file to see if the endpoint is working
+    const formData = new FormData();
+    formData.append('content', 'Test post for media debugging');
+    
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      
+      if (res.ok) {
+        const post = await res.json();
+        console.log('✅ Test post created successfully:', post);
+        showPopup('success', 'Test Success', 'Test post created. Check console for details.');
+        
+        // Refresh feed to show the new post
+        fetchFeedData();
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        console.error('❌ Test post failed:', errorData);
+        showPopup('error', 'Test Failed', `Error: ${errorData.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('❌ Test post error:', error);
+      showPopup('error', 'Network Error', 'Failed to create test post');
+    }
+  };
+
+  // Enhanced post creation with better error handling
+
   return (
     <div className="bg-[#f4f7fb] dark:bg-gray-900 min-h-screen pt-2 sm:pt-4 pb-24 sm:pb-6 w-full scrollbar-hide overflow-x-hidden transition-colors duration-200 touch-manipulation">
       {/* Popup Modal */}
@@ -1297,6 +1338,15 @@ export default function Dashboard() {
                   disabled={posting || (!newPost.trim() && !mediaFiles.length)}
                 >
                   {posting ? 'Posting...' : 'Post'}
+                </button>
+                
+                {/* Test button for debugging */}
+                <button
+                  onClick={testMediaUpload}
+                  className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded-full text-xs transition-colors"
+                  title="Test media upload functionality"
+                >
+                  🧪 Test
                 </button>
               </div>
               {mediaFiles.length > 0 && (
@@ -1612,17 +1662,24 @@ export default function Dashboard() {
 
                           {/* Show media if present */}
                           {(() => {
-                            console.log('🔍 Rendering media for item:', {
+                            // Enhanced debugging for media
+                            const mediaDebug = {
                               id: item._id || item.id,
                               hasMedia: !!item.media,
                               mediaLength: item.media?.length,
                               mediaType: item.media?.[0]?.type,
                               mediaUrl: item.media?.[0]?.url,
                               hasImage: !!item.image,
-                              imageUrl: item.image
-                            });
+                              imageUrl: item.image,
+                              mediaArray: item.media,
+                              mediaTypeOf: typeof item.media,
+                              isArray: Array.isArray(item.media),
+                              mediaKeys: item.media ? Object.keys(item.media) : null
+                            };
+                            console.log('🔍 Rendering media for item:', mediaDebug);
                             
-                            if (item.media && item.media.length > 0) {
+                            // Check if media exists and has content
+                            if (item.media && Array.isArray(item.media) && item.media.length > 0) {
                               return (
                                 <div className="mb-3">
                                   {item.media.length === 1 ? (
