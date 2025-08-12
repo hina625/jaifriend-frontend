@@ -1094,9 +1094,22 @@ const ProfilePage = () => {
     <div className="w-full min-h-screen bg-gray-50 dark:bg-dark-900 overflow-x-hidden max-w-full transition-colors duration-200 pb-4 sm:pb-6">
       {/* Cover Photo Section */}
       <div className="relative h-32 sm:h-48 md:h-64 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-800 overflow-hidden">
-        {userImages.cover ? (
+        {(userImages.cover || user.coverPhoto) ? (
           <img 
-            src={getMediaUrl(userImages.cover)} 
+            src={(() => {
+              // Enhanced cover photo display logic
+              if (userImages.cover) {
+                return getMediaUrl(userImages.cover);
+              } else if (user.coverPhoto && user.coverPhoto !== '/covers/default-cover.jpg') {
+                // Handle Cloudinary URLs properly
+                if (user.coverPhoto.startsWith('http')) {
+                  return user.coverPhoto; // Already a full URL
+                } else {
+                  return getMediaUrl(user.coverPhoto);
+                }
+              }
+              return '/default-cover.jpg';
+            })()}
             alt="Cover" 
             className="w-full h-full object-cover"
           />
@@ -1137,12 +1150,29 @@ const ProfilePage = () => {
             <div className="relative">
               <img
                 src={(() => {
-                  const finalSrc = avatarPreview || (userImages.avatar ? getMediaUrl(userImages.avatar) : (user.avatar && user.avatar !== '/avatars/1.png.png' ? getMediaUrl(user.avatar) : '/avatars/1.png.png'));
+                  // Enhanced avatar display logic
+                  let finalSrc = '/default-avatar.svg';
+                  
+                  if (avatarPreview) {
+                    finalSrc = avatarPreview;
+                  } else if (userImages.avatar) {
+                    finalSrc = getMediaUrl(userImages.avatar);
+                  } else if (user.avatar && user.avatar !== '/avatars/1.png.png') {
+                    // Handle Cloudinary URLs properly
+                    if (user.avatar.startsWith('http')) {
+                      finalSrc = user.avatar; // Already a full URL
+                    } else {
+                      finalSrc = getMediaUrl(user.avatar);
+                    }
+                  }
+                  
                   console.log('🖼️ Profile picture src:', { 
                     avatarPreview, 
                     userImagesAvatar: userImages.avatar, 
                     userAvatar: user.avatar, 
-                    finalSrc 
+                    finalSrc,
+                    isCloudinary: user.avatar?.includes('cloudinary'),
+                    isHttp: user.avatar?.startsWith('http')
                   });
                   return finalSrc;
                 })()}
