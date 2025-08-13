@@ -1,6 +1,6 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
-import { createReel, CreateReelData } from '../utils/reelsApi';
+import { createReel, CreateReelData } from '@/utils/reelsApi';
 
 interface ReelsCreationModalProps {
   isOpen: boolean;
@@ -83,12 +83,27 @@ export default function ReelsCreationModal({ isOpen, onClose, onSuccess }: Reels
   };
 
   const handleFileSelect = (file: File) => {
-    if (file.type.startsWith('video/') || file.type.startsWith('image/')) {
-      setSelectedMedia(file);
-      const url = URL.createObjectURL(file);
-      setMediaPreview(url);
-      setStep('create');
+    console.log('📁 File selected:', file.name, file.type, file.size);
+    
+    // Validate file type
+    if (!file.type.startsWith('video/') && !file.type.startsWith('image/')) {
+      setError('Please select a valid video or image file');
+      return;
     }
+    
+    // Validate file size (max 100MB for videos)
+    const maxSize = file.type.startsWith('video/') ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setError(`File size must be less than ${maxSize / (1024 * 1024)}MB`);
+      return;
+    }
+    
+    console.log('✅ File validation passed');
+    setSelectedMedia(file);
+    const url = URL.createObjectURL(file);
+    setMediaPreview(url);
+    setStep('create');
+    setError(''); // Clear any previous errors
   };
 
   const handleMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -105,10 +120,14 @@ export default function ReelsCreationModal({ isOpen, onClose, onSuccess }: Reels
     setError('');
     
     try {
+      console.log('🎬 Creating reel with data:', { title, description, hashtags, category, privacy });
+      console.log('📁 Selected media:', selectedMedia);
+      
       // Calculate video duration if it's a video file
       let duration = 0;
       if (selectedMedia.type.startsWith('video/')) {
         duration = await getVideoDuration(selectedMedia);
+        console.log('⏱️ Video duration:', duration);
       }
       
       const reelData: CreateReelData = {
@@ -121,11 +140,17 @@ export default function ReelsCreationModal({ isOpen, onClose, onSuccess }: Reels
         aspectRatio: '9:16' // Default for reels
       };
       
-      await createReel(reelData, selectedMedia);
+      console.log('📊 Reel data prepared:', reelData);
+      console.log('📤 Calling createReel API...');
+      
+      const result = await createReel(reelData, selectedMedia);
+      console.log('✅ Reel created successfully:', result);
+      
       onSuccess?.();
       onClose();
     } catch (error: any) {
-      console.error('Error creating reel:', error);
+      console.error('❌ Error creating reel:', error);
+      console.error('❌ Error details:', error.response?.data || error.message);
       setError(error.response?.data?.message || 'Failed to create reel. Please try again.');
     } finally {
       setIsUploading(false);

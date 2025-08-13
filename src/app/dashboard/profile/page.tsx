@@ -47,6 +47,7 @@ interface Post {
     avatar: string;
     userId: string;
   };
+  title?: string;
 }
 
 interface Album {
@@ -144,6 +145,7 @@ const ProfilePage = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [editContent, setEditContent] = useState('');
+  const [editTitle, setEditTitle] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
   const [profileCompletion, setProfileCompletion] = useState<ProfileCompletion>({
     profilePicture: false,
@@ -176,6 +178,7 @@ const ProfilePage = () => {
   const [reelsCreationModalOpen, setReelsCreationModalOpen] = useState(false);
   const [showMediaPreview, setShowMediaPreview] = useState(false);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState<number>(0);
+  const [postTitle, setPostTitle] = useState('');
 
   const tabs = [
     { id: 'timeline', label: 'Timeline', icon: '📝' },
@@ -601,6 +604,7 @@ const ProfilePage = () => {
   const handleEditPost = (post: Post) => {
     setEditingPost(post);
     setEditContent(post.content);
+    setEditTitle(post.title || '');
     setShowEditModal(true);
   };
 
@@ -636,13 +640,19 @@ const ProfilePage = () => {
 
     try {
       const token = localStorage.getItem('token');
-              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${editingPost._id}`, { 
+      
+      const updateData: any = { content: editContent };
+      if (editTitle.trim()) {
+        updateData.title = editTitle.trim();
+      }
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${editingPost._id}`, { 
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ content: editContent })
+        body: JSON.stringify(updateData)
       });
 
       if (response.ok) {
@@ -653,6 +663,7 @@ const ProfilePage = () => {
         setShowEditModal(false);
         setEditingPost(null);
         setEditContent('');
+        setEditTitle('');
         showPopup('success', 'Post Updated', 'Post has been updated successfully!');
         
         // Dispatch event to notify other components (like feed)
@@ -751,6 +762,11 @@ const ProfilePage = () => {
       const formData = new FormData();
       formData.append('content', postContent);
       
+      // Add title if provided
+      if (postTitle.trim()) {
+        formData.append('title', postTitle.trim());
+      }
+      
       postMedia.forEach((file, index) => {
         formData.append('media', file);
       });
@@ -793,6 +809,7 @@ const ProfilePage = () => {
 
   const resetPostForm = () => {
     setPostContent('');
+    setPostTitle('');
     setPostMedia([]);
     setPostMediaUrls([]);
     setShowPostModal(false);
@@ -2216,18 +2233,32 @@ const ProfilePage = () => {
         <div className="fixed inset-0 flex items-center justify-center z-50 p-3 sm:p-4 bg-black bg-opacity-50">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-4 sm:p-6">
             <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Edit Post</h3>
+            
+            {/* Title Input */}
+            <input
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              className="w-full mb-3 p-2 sm:p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base"
+              placeholder="Post title (optional)"
+              maxLength={100}
+            />
+            
+            {/* Content Textarea */}
             <textarea
               value={editContent}
               onChange={(e) => setEditContent(e.target.value)}
               className="w-full h-24 sm:h-32 p-2 sm:p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base"
               placeholder="What's on your mind?"
             />
+            
             <div className="flex space-x-2 sm:space-x-3 mt-3 sm:mt-4">
               <button
                 onClick={() => {
                   setShowEditModal(false);
                   setEditingPost(null);
                   setEditContent('');
+                  setEditTitle('');
                 }}
                 className="flex-1 px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base"
               >
@@ -2274,16 +2305,29 @@ const ProfilePage = () => {
                 </div>
 
                 {/* Post Content */}
-                <div>
-                  <textarea
-                    value={postContent}
-                    onChange={(e) => setPostContent(e.target.value)}
-                    placeholder="What's going on? #Hashtag.. @Mention.. Link.."
-                    className="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base resize-none"
-                    maxLength={1000}
+                <div className="space-y-3">
+                  {/* Title Input */}
+                  <input
+                    type="text"
+                    value={postTitle}
+                    onChange={(e) => setPostTitle(e.target.value)}
+                    placeholder="Add a title to your post (optional)"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+                    maxLength={100}
                   />
-                  <div className="text-xs text-gray-500 mt-1 text-right">
-                    {postContent.length}/1000
+                  
+                  {/* Content Textarea */}
+                  <div>
+                    <textarea
+                      value={postContent}
+                      onChange={(e) => setPostContent(e.target.value)}
+                      placeholder="What's going on? #Hashtag.. @Mention.. Link.."
+                      className="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base resize-none"
+                      maxLength={1000}
+                    />
+                    <div className="text-xs text-gray-500 mt-1 text-right">
+                      {postContent.length}/1000
+                    </div>
                   </div>
                 </div>
 

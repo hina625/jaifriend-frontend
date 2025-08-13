@@ -6,6 +6,7 @@ import PostOptionsDropdown from './PostOptionsDropdown';
 import ReactionPopup, { ReactionType } from './ReactionPopup';
 import { toggleCommentsApi, pinPostApi, boostPostApi } from '@/utils/api';
 import SharePopup, { ShareOptions } from './SharePopup';
+import { getCurrentUserId } from '@/utils/auth';
 
 interface FeedPostProps {
   post: any;
@@ -206,8 +207,14 @@ const FeedPost: React.FC<FeedPostProps> = ({
     try {
       const currentUserId = getCurrentUserId();
       
-      if (!currentUserId || !post.savedBy) {
-        console.log('❌ isPostSaved: No currentUserId or savedBy array');
+      if (!currentUserId) {
+        console.log('❌ isPostSaved: No currentUserId found - user may not be logged in');
+        // Show a subtle indicator that the user needs to log in
+        return false;
+      }
+      
+      if (!post.savedBy) {
+        console.log('❌ isPostSaved: No savedBy array in post data');
         return false;
       }
       
@@ -620,19 +627,6 @@ const FeedPost: React.FC<FeedPostProps> = ({
   };
 
   // Get current user ID for like checking
-  const getCurrentUserId = () => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        return user.id || user._id;
-      } catch {
-        return null;
-      }
-    }
-    return null;
-  };
-
   const currentUserId = getCurrentUserId();
   const isLiked = post.likes?.includes(currentUserId);
 
@@ -793,6 +787,13 @@ const FeedPost: React.FC<FeedPostProps> = ({
 
       {/* Post Content */}
       <div className="p-4">
+        {/* Title */}
+        {post.title && (
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+            {post.title}
+          </h3>
+        )}
+        
         <p className="text-gray-900 dark:text-white text-base leading-relaxed mb-4">
           {post.content}
         </p>

@@ -51,6 +51,7 @@ interface UserImages {
 interface Post {
   _id: string;
   content: string;
+  title?: string;
   media: any[];
   likes: string[];
   comments: any[];

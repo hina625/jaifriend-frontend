@@ -11,6 +11,7 @@ import FeedPost from '@/components/FeedPost';
 import ReelsCreationModal from '@/components/ReelsCreationModal';
 import StoryCreationModal from '@/components/StoryCreationModal';
 import StoryViewer from '@/components/StoryViewer';
+import { isAuthenticated, clearAuth } from '@/utils/auth';
 
 function getUserAvatar() {
   try {
@@ -79,18 +80,21 @@ function getUserId(user: any): string {
 }
 
 export default function Dashboard() {
+  const router = useRouter();
   const [posts, setPosts] = useState<any[]>([]);
   const [albums, setAlbums] = useState<any[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [loadingAlbums, setLoadingAlbums] = useState(true);
   const [deletingComments, setDeletingComments] = useState<{[key: string]: boolean}>({});
   const [newPost, setNewPost] = useState('');
+  const [newPostTitle, setNewPostTitle] = useState('');
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [posting, setPosting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
+  const [editTitle, setEditTitle] = useState('');
   const [editMediaFiles, setEditMediaFiles] = useState<File[]>([]);
   const editFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -121,15 +125,22 @@ export default function Dashboard() {
     setPopup({ ...popup, isOpen: false });
   };
 
+  const logout = () => {
+    clearAuth();
+    router.push('/login');
+  };
+
   const startEditPost = (post: any) => {
     setEditingPostId(post._id || post.id);
     setEditContent(post.content);
+    setEditTitle(post.title || '');
     setEditMediaFiles([]);
   };
 
   const cancelEditPost = () => {
     setEditingPostId(null);
     setEditContent('');
+    setEditTitle('');
     setEditMediaFiles([]);
   };
 
@@ -137,6 +148,12 @@ export default function Dashboard() {
     const token = localStorage.getItem('token');
     const formData = new FormData();
     formData.append('content', editContent);
+    
+    // Add title if provided
+    if (editTitle.trim()) {
+      formData.append('title', editTitle.trim());
+    }
+    
     editMediaFiles.forEach(file => formData.append('media', file));
     
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}`, {
@@ -247,9 +264,19 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    fetchFeedData();
-    fetchStories();
+    const checkAuth = () => {
+      if (!isAuthenticated()) {
+        console.log('❌ No authentication found, redirecting to login');
+        router.push('/login');
+        return;
+      }
+      
+      console.log('✅ User authenticated, proceeding with data fetch');
+      fetchFeedData();
+      fetchStories();
+    };
+    
+    checkAuth();
   }, []);
 
   useEffect(() => {
@@ -358,6 +385,11 @@ export default function Dashboard() {
       const formData = new FormData();
       formData.append('content', newPost.trim());
       
+      // Add title if provided
+      if (newPostTitle.trim()) {
+        formData.append('title', newPostTitle.trim());
+      }
+      
       mediaFiles.forEach((file, index) => {
         if (file.size > 10 * 1024 * 1024) {
           throw new Error(`File "${file.name}" is too large. Maximum size is 10MB.`);
@@ -383,6 +415,7 @@ export default function Dashboard() {
         const post = await res.json();
         setPosts([post, ...posts]);
         setNewPost('');
+        setNewPostTitle('');
         setMediaFiles([]);
         if (fileInputRef.current) fileInputRef.current.value = '';
         
@@ -1043,8 +1076,6 @@ export default function Dashboard() {
     if (u) setUser(JSON.parse(u));
   }, []);
 
-  const router = useRouter();
-
   const navigateToProfile = (userId: string) => {
     window.location.href = `/dashboard/profile/${userId}`;
   };
@@ -1194,14 +1225,26 @@ export default function Dashboard() {
                   <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
                     <span className="text-white text-lg">💭</span>
                   </div>
-                  <div className="flex-1 relative">
+                  <div className="flex-1 relative space-y-3">
+                    {/* Title Input */}
+                    <input
+                      type="text"
+                      placeholder="Add a title to your post..."
+                      value={newPostTitle}
+                      onChange={e => setNewPostTitle(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
+                      disabled={posting}
+                      maxLength={100}
+                    />
+                    
+                    {/* Content Textarea */}
                     <textarea
                       placeholder="Write your message, add your photo or Video ... @Mention... #Hashtag"
                       className="w-full min-h-[120px] border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 resize-none"
-                  value={newPost}
-                  onChange={e => setNewPost(e.target.value)}
-                  disabled={posting}
-                />
+                      value={newPost}
+                      onChange={e => setNewPost(e.target.value)}
+                      disabled={posting}
+                    />
                     {/* Character Counter */}
                     <div className="absolute top-2 right-2">
                       <div className="bg-red-500 text-white text-xs px-2 py-1 rounded">

@@ -1,5 +1,7 @@
 'use client';
-import { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Heart, MessageCircle, Share2, ChevronDown, Smile, Paperclip, Send, MoreHorizontal, Globe } from 'lucide-react';
+import { getCurrentUserId } from '@/utils/auth';
 import SharePopup, { ShareOptions } from './SharePopup';
 import ReactionPopup, { ReactionType } from './ReactionPopup';
 
@@ -143,19 +145,6 @@ export default function AlbumDisplay({
   };
 
   // Get current user ID for save checking
-  const getCurrentUserId = () => {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        return user.id || user._id;
-      } catch {
-        return null;
-      }
-    }
-    return null;
-  };
-
   const currentUserId = getCurrentUserId();
   // Check if current user has saved this album
   const isSaved = album.savedBy && Array.isArray(album.savedBy) && 

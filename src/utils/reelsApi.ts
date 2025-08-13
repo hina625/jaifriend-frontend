@@ -7,6 +7,11 @@ const API_URL = config.API_URL;
 // Helper function to get auth headers
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
+  console.log('🔐 getAuthHeaders called, token exists:', !!token);
+  if (token) {
+    console.log('🔑 Token length:', token.length);
+    console.log('🔑 Token preview:', token.substring(0, 20) + '...');
+  }
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
@@ -185,10 +190,13 @@ export const createReel = async (
   reelData: CreateReelData,
   videoFile: File
 ): Promise<Reel> => {
+  console.log('🎬 createReel called with:', { reelData, videoFile });
+  
   const formData = new FormData();
   
   // Add video file
   formData.append('video', videoFile);
+  console.log('📁 Video file added to FormData:', videoFile.name, videoFile.type, videoFile.size);
   
   // Add other data
   Object.entries(reelData).forEach(([key, value]) => {
@@ -200,8 +208,12 @@ export const createReel = async (
       } else {
         formData.append(key, value.toString());
       }
+      console.log(`📋 Added ${key}:`, value);
     }
   });
+  
+  console.log('🔗 Making POST request to:', `${API_URL}/api/reels`);
+  console.log('🔐 Auth headers:', getAuthHeaders());
   
   const response = await axios.post(`${API_URL}/api/reels`, formData, {
     headers: {
@@ -209,6 +221,8 @@ export const createReel = async (
       ...getAuthHeaders(),
     },
   });
+  
+  console.log('✅ API response:', response.data);
   return response.data;
 };
 

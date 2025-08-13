@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, X, Menu, Search, Settings, MessageCircle, Star } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Plus, Search, Filter, Users, Settings, MessageCircle, Calendar, MapPin, Globe, Lock, Eye, EyeOff, UserPlus, UserMinus, Crown, Shield, Trash2, Edit3, MoreHorizontal, ChevronDown, Check, X, Star, Heart, Share2, Bookmark, Flag, Bell, BellOff } from 'lucide-react';
+import { getCurrentUserId } from '@/utils/auth';
 
 interface FormData {
   name: string;
@@ -372,41 +374,6 @@ const GroupsPage: React.FC = () => {
     } catch (error) {
       console.error('Error deleting group:', error);
     }
-  };
-
-  // Helper function to get current user ID
-  const getCurrentUserId = (): string | null => {
-    // Try multiple ways to get user ID
-    let userId = localStorage.getItem('userId');
-    
-    if (!userId) {
-      // Try from user object
-      const userStr = localStorage.getItem('user');
-      if (userStr) {
-        try {
-          const user = JSON.parse(userStr);
-          userId = user.id || user._id || user.userId;
-        } catch (e) {
-          console.error('Error parsing user from localStorage:', e);
-        }
-      }
-    }
-    
-    // Try from token (decode JWT)
-    if (!userId) {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          userId = payload.userId || payload.id || payload.sub;
-        } catch (e) {
-          console.error('Error decoding token:', e);
-        }
-      }
-    }
-    
-    console.log('🔍 Current user ID:', userId);
-    return userId;
   };
 
   const getGroupsForTab = (): Group[] => {

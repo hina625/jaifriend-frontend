@@ -8,6 +8,7 @@ export default function ReelsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('general');
   const [showTrending, setShowTrending] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const categories = [
     { id: 'general', name: 'General', icon: '🎬' },
@@ -28,7 +29,10 @@ export default function ReelsPage() {
 
   const handleCreateSuccess = () => {
     setShowCreateModal(false);
-    // Optionally refresh the reels or show success message
+    // Refresh the reels list
+    setRefreshKey(prev => prev + 1);
+    // Show success message
+    alert('🎬 Reel created successfully! It will appear in your feed shortly.');
   };
 
   const handleCategoryChange = (categoryId: string) => {
@@ -113,9 +117,9 @@ export default function ReelsPage() {
       {/* Reels Display */}
       <div className="relative">
         {showTrending ? (
-          <ReelsDisplay trending={true} />
+          <ReelsDisplay key={refreshKey} trending={true} />
         ) : (
-          <ReelsDisplay initialCategory={selectedCategory} />
+          <ReelsDisplay key={refreshKey} initialCategory={selectedCategory} />
         )}
       </div>
 

@@ -36,6 +36,8 @@ export default function ReelsDisplay({
       setLoading(true);
       setError('');
       
+      console.log('🎬 Loading reels with params:', { hashtag, userId, trending, initialCategory, page });
+      
       let response: any;
       if (hashtag) {
         response = await getReels({ hashtag, page, limit: 10 });
@@ -48,15 +50,22 @@ export default function ReelsDisplay({
         response = await getReels({ category: initialCategory, page, limit: 10 });
       }
       
+      console.log('📡 API Response:', response);
+      
       // Handle different response types properly
       let reelsArray: Reel[] = [];
       let pagination: any = null;
       
       if (Array.isArray(response)) {
         reelsArray = response;
+        console.log('📋 Response is array, length:', reelsArray.length);
       } else if (response && typeof response === 'object' && 'reels' in response) {
         reelsArray = response.reels || [];
         pagination = response.pagination;
+        console.log('📋 Response has reels property, count:', reelsArray.length);
+        console.log('📊 Pagination:', pagination);
+      } else {
+        console.log('⚠️ Unexpected response structure:', response);
       }
       
       if (page === 1) {
@@ -68,7 +77,10 @@ export default function ReelsDisplay({
       
       setHasNextPage(pagination?.hasNextPage || false);
       setCurrentPage(page);
+      
+      console.log('✅ Reels loaded successfully, total:', reelsArray.length);
     } catch (err: any) {
+      console.error('❌ Error loading reels:', err);
       setError(err.message || 'Failed to load reels');
     } finally {
       setLoading(false);
@@ -245,7 +257,22 @@ export default function ReelsDisplay({
       className="h-[580px] sm:h-screen overflow-y-auto snap-y snap-mandatory scrollbar-hide max-w-[310px] mx-auto sm:max-w-none"
       onScroll={handleScroll}
     >
-      {reels.map((reel, index) => (
+      {reels.length === 0 && !loading ? (
+        <div className="h-[580px] sm:h-screen snap-start flex items-center justify-center">
+          <div className="text-center text-white">
+            <div className="text-6xl mb-4">🎬</div>
+            <h3 className="text-xl font-semibold mb-2">No reels yet</h3>
+            <p className="text-gray-300 mb-4">Be the first to create a reel!</p>
+            <button
+              onClick={() => window.location.href = '/dashboard/reels'}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+            >
+              Create Reel
+            </button>
+          </div>
+        </div>
+      ) : (
+        reels.map((reel, index) => (
         <div 
           key={reel._id}
           className="h-[580px] sm:h-screen snap-start relative bg-black flex items-center justify-center"
@@ -448,7 +475,8 @@ export default function ReelsDisplay({
             </div>
           )}
         </div>
-      ))}
+      ))
+      )}
       
       {/* Loading indicator for more reels */}
       {loading && reels.length > 0 && (
