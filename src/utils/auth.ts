@@ -12,6 +12,62 @@ export interface User {
 }
 
 /**
+ * Get the current authentication token from localStorage
+ * @returns The token or null if not found
+ */
+export const getToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('token');
+};
+
+/**
+ * Set the authentication token in localStorage
+ * @param token The authentication token
+ */
+export const setToken = (token: string): void => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('token', token);
+};
+
+/**
+ * Remove the authentication token from localStorage
+ */
+export const removeToken = (): void => {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem('token');
+};
+
+/**
+ * Logout function that clears all authentication data
+ */
+export const logout = (): void => {
+  if (typeof window === 'undefined') return;
+  clearAuth();
+  // Optionally redirect to login page
+  if (typeof window !== 'undefined') {
+    window.location.href = '/';
+  }
+};
+
+/**
+ * Get user information from the JWT token
+ * @returns The decoded token payload or null if invalid
+ */
+export const getUserFromToken = (): any => {
+  const token = getToken();
+  if (!token) return null;
+  
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload;
+  } catch (error) {
+    console.error('Error parsing token:', error);
+    removeToken();
+    return null;
+  }
+};
+
+/**
  * Get the current user ID from localStorage or token
  * @returns The user ID or null if not found
  */
