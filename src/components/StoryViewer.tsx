@@ -50,7 +50,7 @@ const StoryViewer: React.FC<StoryViewerProps> = ({
   const isOwnStory = currentStory?.user._id === currentUser._id || currentStory?.user._id === currentUser.id;
   
   const videoRef = useRef<HTMLVideoElement>(null);
-  const progressIntervalRef = useRef<NodeJS.Timeout>();
+  const progressIntervalRef = useRef<number | null>(null);
 
   useEffect(() => {
     setCurrentStory(stories[currentIndex]);
@@ -84,6 +84,7 @@ const StoryViewer: React.FC<StoryViewerProps> = ({
       return () => {
         if (progressIntervalRef.current) {
           clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
         }
       };
     }
@@ -170,11 +171,19 @@ const StoryViewer: React.FC<StoryViewerProps> = ({
               {/* Header */}
         <div className="absolute top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-10 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <img
-            src={currentStory.user.avatar || '/default-avatar.svg'}
-            alt={currentStory.user.username}
-            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white object-cover"
-          />
+                     <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+             {currentStory.user.avatar ? (
+               <img
+                 src={currentStory.user.avatar}
+                 alt={currentStory.user.username}
+                 className="w-full h-full rounded-full object-cover"
+               />
+             ) : (
+               <span className="text-white text-lg font-bold">
+                 {currentStory.user.fullName?.charAt(0) || currentStory.user.username?.charAt(0) || 'U'}
+               </span>
+             )}
+           </div>
                       <div className="text-white">
               <div className="font-semibold text-sm sm:text-base">{currentStory.user.fullName || currentStory.user.username}</div>
               <div className="text-xs sm:text-sm text-gray-300">

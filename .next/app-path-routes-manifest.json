@@ -1,0 +1,7 @@
+{
+  "/dashboard/page": "/dashboard",
+  "/dashboard/watch/page": "/dashboard/watch",
+  "/dashboard/settings/page": "/dashboard/settings",
+  "/dashboard/admin/page": "/dashboard/admin",
+  "/dashboard/reels/page": "/dashboard/reels"
+}
