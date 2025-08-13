@@ -311,7 +311,7 @@ export default function ReelsDisplay({
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-black/30 rounded-full flex items-center justify-center">
                   <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-                  </svg>
+                </svg>
                 </div>
                 <span className="truncate max-w-16 sm:max-w-24">{reel.music?.title || 'Unknown Music'}</span>
               </div>
