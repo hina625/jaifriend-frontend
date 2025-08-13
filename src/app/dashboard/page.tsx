@@ -265,13 +265,15 @@ export default function Dashboard() {
 
   useEffect(() => {
     const checkAuth = () => {
-      if (!isAuthenticated()) {
-        console.log('❌ No authentication found, redirecting to login');
-        router.push('/login');
+      const token = localStorage.getItem('token');
+      
+      if (!token || token === 'null' || token === 'undefined') {
+        console.log('❌ No valid token found, redirecting to login');
+        router.push('/');
         return;
       }
       
-      console.log('✅ User authenticated, proceeding with data fetch');
+      console.log('✅ Token found, proceeding with data fetch');
       fetchFeedData();
       fetchStories();
     };

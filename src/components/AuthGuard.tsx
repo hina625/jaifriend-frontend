@@ -20,7 +20,8 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
 
   useEffect(() => {
     const checkAuth = () => {
-      const authenticated = isAuthenticated();
+      const token = localStorage.getItem('token');
+      const authenticated = !!(token && token !== 'null' && token !== 'undefined');
       setIsAuth(authenticated);
       
       if (requireAuth && !authenticated) {

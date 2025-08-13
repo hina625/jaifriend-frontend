@@ -140,7 +140,15 @@ export const getCurrentUser = (): User | null => {
 export const isAuthenticated = (): boolean => {
   const token = localStorage.getItem('token');
   const user = localStorage.getItem('user');
-  return !!(token && user);
+  
+  // Check if token exists and is valid
+  if (!token || token === 'null' || token === 'undefined') {
+    return false;
+  }
+  
+  // If we have a token, consider the user authenticated
+  // User data might be populated later
+  return true;
 };
 
 /**
