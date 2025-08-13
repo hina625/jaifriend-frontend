@@ -112,10 +112,10 @@ const PostOptionsDropdown: React.FC<PostOptionsDropdownProps> = ({
       {/* Mobile backdrop overlay */}
       <div className="sm:hidden fixed inset-0 bg-black bg-opacity-60 z-40" onClick={onClose} />
       
-      <div
-        ref={dropdownRef}
+    <div
+      ref={dropdownRef}
         className={`absolute z-50 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border-2 border-gray-200 dark:border-gray-600 min-w-[280px] sm:min-w-[320px] max-w-[90vw] ${
-          position === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'
+        position === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'
         } right-0 sm:right-0 transform -translate-x-1/2 sm:translate-x-0`}
         style={{
           backgroundColor: 'white',
@@ -135,37 +135,37 @@ const PostOptionsDropdown: React.FC<PostOptionsDropdownProps> = ({
         </div>
         
         <div className="py-2 relative bg-white dark:bg-gray-800 rounded-b-xl">
-          {options.map((option, index) => (
-            <React.Fragment key={option.title}>
-              <button
-                onClick={() => {
-                  option.onClick();
-                  onClose();
-                }}
+        {options.map((option, index) => (
+          <React.Fragment key={option.title}>
+            <button
+              onClick={() => {
+                option.onClick();
+                onClose();
+              }}
                 className={`w-full px-4 sm:px-4 py-4 sm:py-3 text-left transition-all duration-200 ${option.className} hover:scale-[1.02] active:scale-[0.98] touch-manipulation rounded-lg mx-2 sm:mx-0 hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600`}
                 style={{ touchAction: 'manipulation' }}
-              >
+            >
                 <div className="flex items-start gap-3 sm:gap-3">
-                  <div className="flex-shrink-0 mt-0.5">
-                    {option.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
+                <div className="flex-shrink-0 mt-0.5">
+                  {option.icon}
+                </div>
+                <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white">
-                      {option.title}
-                    </div>
+                    {option.title}
+                  </div>
                     <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">
-                      {option.subtitle}
-                    </div>
+                    {option.subtitle}
                   </div>
                 </div>
-              </button>
-              {index < options.length - 1 && (
+              </div>
+            </button>
+            {index < options.length - 1 && (
                 <div className="border-t-2 border-gray-200 dark:border-gray-600 mx-4 sm:mx-4" />
-              )}
-            </React.Fragment>
-          ))}
-        </div>
+            )}
+          </React.Fragment>
+        ))}
       </div>
+    </div>
     </>
   );
 };

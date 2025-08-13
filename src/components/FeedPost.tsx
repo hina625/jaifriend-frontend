@@ -174,7 +174,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
         // For now, we'll refresh the page to get updated data
         // In a real app, you'd update the local state
         window.location.reload();
-      } else {
+    } else {
         const errorData = await response.json().catch(() => ({}));
         console.error('Failed to add reaction:', errorData);
         alert(`Failed to add reaction: ${errorData.message || 'Unknown error'}`);
@@ -185,7 +185,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
     } finally {
       setIsReacting(false);
       // Automatically close the popup after reaction selection
-      setShowReactionPopup(false);
+    setShowReactionPopup(false);
       // Show reactions temporarily after adding a reaction
       setShowReactionsTemporarily(true);
       setTimeout(() => {
@@ -204,13 +204,44 @@ const FeedPost: React.FC<FeedPostProps> = ({
   // Check if current user has saved this post
   const isPostSaved = (): boolean => {
     try {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      const userId = user.id || user._id;
+      const currentUserId = getCurrentUserId();
       
-      if (!userId || !post.savedBy) return false;
+      if (!currentUserId || !post.savedBy) {
+        console.log('❌ isPostSaved: No currentUserId or savedBy array');
+        return false;
+      }
       
-      return Array.isArray(post.savedBy) && post.savedBy.includes(userId);
-    } catch {
+      console.log('🔍 Checking if post is saved:');
+      console.log('  - Current user ID:', currentUserId);
+      console.log('  - SavedBy array:', post.savedBy);
+      console.log('  - SavedBy type:', typeof post.savedBy);
+      console.log('  - Is array:', Array.isArray(post.savedBy));
+      
+      // Check if the current user ID exists in the savedBy array
+      // Handle both cases: when savedBy contains user IDs and when it contains populated user objects
+      const isSaved = Array.isArray(post.savedBy) && post.savedBy.some((savedUser: string | { _id?: string; id?: string; userId?: string }) => {
+        let savedUserId: string | undefined;
+        
+        if (typeof savedUser === 'object' && savedUser !== null) {
+          // If savedUser is an object (populated user), get the ID
+          savedUserId = savedUser._id || savedUser.id || savedUser.userId;
+          console.log('  - SavedUser object:', savedUser, '-> ID:', savedUserId);
+        } else {
+          // If savedUser is a string/primitive, use it directly
+          savedUserId = savedUser;
+          console.log('  - SavedUser string:', savedUser, '-> ID:', savedUserId);
+        }
+        
+        // Compare IDs (handle both string and ObjectId comparisons)
+        const matches = savedUserId === currentUserId || savedUserId?.toString() === currentUserId?.toString();
+        console.log('  - ID comparison:', savedUserId, '===', currentUserId, '->', matches);
+        return matches;
+      });
+      
+      console.log('💾 Final result - Is post saved:', isSaved);
+      return isSaved;
+    } catch (error) {
+      console.error('Error checking if post is saved:', error);
       return false;
     }
   };
@@ -265,11 +296,21 @@ const FeedPost: React.FC<FeedPostProps> = ({
         return;
       }
 
+      console.log('📌 Pinning/unpinning post:', post._id);
       const response = await pinPostApi(token, post._id);
 
       if (response.message) {
-        // Refresh the page to show updated state
-        window.location.reload();
+        console.log('✅ Pin response:', response);
+        // Update the post state locally instead of reloading
+        const updatedPost = { ...post, isPinned: response.isPinned };
+        
+        // Dispatch event to update parent component
+        window.dispatchEvent(new CustomEvent('postUpdated', { 
+          detail: { postId: post._id, updatedPost } 
+        }));
+        
+        // Show success message
+        alert(response.message);
       } else {
         alert('Failed to pin/unpin post');
       }
@@ -292,11 +333,21 @@ const FeedPost: React.FC<FeedPostProps> = ({
         return;
       }
 
+      console.log('🚀 Boosting/unboosting post:', post._id);
       const response = await boostPostApi(token, post._id);
 
       if (response.message) {
-        // Refresh the page to show updated state
-        window.location.reload();
+        console.log('✅ Boost response:', response);
+        // Update the post state locally instead of reloading
+        const updatedPost = { ...post, isBoosted: response.isBoosted };
+        
+        // Dispatch event to update parent component
+        window.dispatchEvent(new CustomEvent('postUpdated', { 
+          detail: { postId: post._id, updatedPost } 
+        }));
+        
+        // Show success message
+        alert(response.message);
       } else {
         alert('Failed to boost/unboost post');
       }
@@ -313,6 +364,11 @@ const FeedPost: React.FC<FeedPostProps> = ({
   const handleSave = async () => {
     try {
       if (!onSave) return;
+      
+      console.log('🔄 Saving/unsaving post:', post._id);
+      console.log('📋 Current savedBy:', post.savedBy);
+      console.log('👤 Current user ID:', getCurrentUserId());
+      console.log('💾 Is currently saved:', isPostSaved());
       
       onSave(post._id);
       setShowOptionsDropdown(false);
@@ -679,6 +735,23 @@ const FeedPost: React.FC<FeedPostProps> = ({
               </div>
               <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
                 <span>{formatDate(post.createdAt)}</span>
+                
+                {/* Pin indicator */}
+                {post.isPinned && (
+                  <div className="flex items-center space-x-1 text-blue-600 dark:text-blue-400">
+                    <span className="text-sm">📌</span>
+                    <span className="text-xs">Pinned</span>
+                  </div>
+                )}
+                
+                {/* Boost indicator */}
+                {post.isBoosted && (
+                  <div className="flex items-center space-x-1 text-purple-600 dark:text-purple-400">
+                    <span className="text-sm">🚀</span>
+                    <span className="text-xs">Boosted</span>
+                  </div>
+                )}
+                
                 <Globe className="w-3 h-3" />
                 {post.isShared && (
                   <span className="text-blue-600">📤 Shared</span>
@@ -828,11 +901,11 @@ const FeedPost: React.FC<FeedPostProps> = ({
           <div className="flex items-center space-x-8">
             {/* React Button */}
             <div className="relative">
-              <button
-                onClick={() => setShowReactionPopup(!showReactionPopup)}
+            <button
+              onClick={() => setShowReactionPopup(!showReactionPopup)}
                 disabled={isReacting}
                 className="flex flex-col items-center space-y-2 text-gray-600 hover:text-yellow-600 transition-colors touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
-                style={{ touchAction: 'manipulation' }}
+              style={{ touchAction: 'manipulation' }}
                 ref={reactionButtonRef}
               >
                 <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
@@ -841,7 +914,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
                   ) : (
                     <span className="text-xl">{getMostCommonReactionEmoji()}</span>
                   )}
-                </div>
+              </div>
                 <span className="text-sm font-medium">
                   {isReacting ? 'Processing...' : 'React'}
                 </span>
@@ -851,7 +924,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
                     {post.reactions.length}
                   </span>
                 )}
-              </button>
+            </button>
               
               {/* Reaction Popup */}
               {showReactionPopup && (
@@ -932,38 +1005,38 @@ const FeedPost: React.FC<FeedPostProps> = ({
                 <div className="flex flex-col space-y-3">
                   {/* Comment Input */}
                   <div className="flex items-center bg-white dark:bg-gray-700 rounded-lg px-3 py-2 shadow-sm border border-gray-200 dark:border-gray-600">
-                    <input
-                      type="text"
-                      value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      placeholder="Write a comment and press enter"
+              <input
+                type="text"
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                  placeholder="Write a comment and press enter"
                       className="flex-1 bg-transparent border-none outline-none text-sm sm:text-base text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                      onKeyPress={(e) => e.key === 'Enter' && handleComment()}
-                    />
-                    <div className="flex items-center space-x-2 ml-2">
-                      <button 
-                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                onKeyPress={(e) => e.key === 'Enter' && handleComment()}
+              />
+                <div className="flex items-center space-x-2 ml-2">
+                  <button 
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                         className="text-gray-400 hover:text-blue-500 p-1.5 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors" 
-                        title="Add emoji"
-                      >
-                        😊
-                      </button>
-                      <button 
-                        onClick={() => setShowMediaPicker(!showMediaPicker)}
+                    title="Add emoji"
+                  >
+                    😊
+                  </button>
+                  <button 
+                    onClick={() => setShowMediaPicker(!showMediaPicker)}
                         className="text-gray-400 hover:text-green-500 p-1.5 rounded-full hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors" 
-                        title="Add media"
-                      >
-                        📷
-                      </button>
+                    title="Add media"
+                  >
+                    📷
+                  </button>
                     </div>
                   </div>
                   
                   {/* Action Buttons */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <button
-                        onClick={handleComment}
-                        disabled={!commentText.trim()}
+              <button
+                onClick={handleComment}
+                disabled={!commentText.trim()}
                         className="px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
                       >
                         Post Comment
@@ -977,33 +1050,33 @@ const FeedPost: React.FC<FeedPostProps> = ({
                         className="px-3 py-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors text-sm"
                       >
                         Cancel
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Emoji Picker */}
-                {showEmojiPicker && (
+              </button>
+            </div>
+              </div>
+            </div>
+            
+            {/* Emoji Picker */}
+            {showEmojiPicker && (
                   <div ref={emojiPickerRef} className="mt-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-3 shadow-lg">
-                    <div className="grid grid-cols-8 gap-2">
-                      {['😊', '😂', '❤️', '👍', '🎉', '🔥', '😍', '🤔', '😭', '😡', '😱', '🥳', '😎', '🤗', '😴', '🤫'].map((emoji, index) => (
-                        <button
-                          key={index}
-                          onClick={() => {
-                            setCommentText(prev => prev + emoji);
-                            setShowEmojiPicker(false);
-                          }}
-                          className="text-2xl hover:scale-110 transition-transform p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-                        >
-                          {emoji}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                {/* Media Picker */}
-                {showMediaPicker && (
+                <div className="grid grid-cols-8 gap-2">
+                  {['😊', '😂', '❤️', '👍', '🎉', '🔥', '😍', '🤔', '😭', '😡', '😱', '🥳', '😎', '🤗', '😴', '🤫'].map((emoji, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setCommentText(prev => prev + emoji);
+                        setShowEmojiPicker(false);
+                      }}
+                      className="text-2xl hover:scale-110 transition-transform p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Media Picker */}
+            {showMediaPicker && (
                   <div ref={mediaPickerRef} className="mt-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg p-4 shadow-lg">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <button 
@@ -1015,7 +1088,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
                         <span className="text-sm font-medium">Photo</span>
                         <span className="text-xs opacity-80">JPG, PNG, GIF</span>
                         {isUploading && <span className="text-xs animate-pulse">Uploading...</span>}
-                      </button>
+                  </button>
                       <button 
                         onClick={() => handleMediaUpload('video')}
                         disabled={isUploading}
@@ -1025,7 +1098,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
                         <span className="text-sm font-medium">Video</span>
                         <span className="text-xs opacity-80">MP4, MOV, AVI</span>
                         {isUploading && <span className="text-xs animate-pulse">Uploading...</span>}
-                      </button>
+                  </button>
                       <button 
                         onClick={() => handleMediaUpload('file')}
                         disabled={isUploading}
@@ -1035,7 +1108,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
                         <span className="text-sm font-medium">File</span>
                         <span className="text-xs opacity-80">PDF, DOC, ZIP</span>
                         {isUploading && <span className="text-xs animate-pulse">Uploading...</span>}
-                      </button>
+                  </button>
                     </div>
                     
                     {/* File Upload Input */}
@@ -1053,9 +1126,9 @@ const FeedPost: React.FC<FeedPostProps> = ({
                         <div className="flex items-center space-x-2">
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
                           <span className="text-sm text-blue-600 dark:text-blue-400">Uploading media...</span>
-                        </div>
-                      </div>
-                    )}
+                </div>
+              </div>
+            )}
                   </div>
                 )}
               </div>
@@ -1080,12 +1153,12 @@ const FeedPost: React.FC<FeedPostProps> = ({
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
                     <div className="flex items-center space-x-2">
                       <span className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white">
-                        {comment.user?.name || comment.user?.username || 'User'}
-                      </span>
-                      {comment.user?.verified && (
-                        <span className="text-red-500 text-xs">✓</span>
-                      )}
-                    </div>
+                      {comment.user?.name || comment.user?.username || 'User'}
+                    </span>
+                    {comment.user?.verified && (
+                      <span className="text-red-500 text-xs">✓</span>
+                    )}
+                  </div>
                     <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 sm:mt-0">
                       {formatDate(comment.createdAt || comment.date)}
                     </span>
@@ -1110,19 +1183,19 @@ const FeedPost: React.FC<FeedPostProps> = ({
                           autoFocus
                         />
                         <div className="flex items-center space-x-2 w-full sm:w-auto">
-                          <button
-                            onClick={() => saveEditComment(comment._id || comment.id)}
-                            disabled={!editCommentText.trim()}
+                        <button
+                          onClick={() => saveEditComment(comment._id || comment.id)}
+                          disabled={!editCommentText.trim()}
                             className="flex-1 sm:flex-none px-3 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                          >
-                            Save
-                          </button>
-                          <button
-                            onClick={cancelEditComment}
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={cancelEditComment}
                             className="flex-1 sm:flex-none px-3 py-2 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition-colors"
-                          >
-                            Cancel
-                          </button>
+                        >
+                          Cancel
+                        </button>
                         </div>
                       </div>
                     </div>
@@ -1171,24 +1244,24 @@ const FeedPost: React.FC<FeedPostProps> = ({
                   
                   {/* Comment Actions */}
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
-                    <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-                      <button 
-                        onClick={() => handleCommentLike(comment._id || comment.id)}
+                  <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
+                    <button 
+                      onClick={() => handleCommentLike(comment._id || comment.id)}
+                      className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center space-x-1"
+                    >
+                      <span>👍</span>
+                      <span>Like</span>
+                      {comment.likes && comment.likes.length > 0 && (
+                        <span className="text-xs">({comment.likes.length})</span>
+                      )}
+                    </button>
+                    <button 
+                      onClick={() => handleCommentReply(comment._id || comment.id, comment.user?.name || 'User')}
                         className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center space-x-1"
-                      >
-                        <span>👍</span>
-                        <span>Like</span>
-                        {comment.likes && comment.likes.length > 0 && (
-                          <span className="text-xs">({comment.likes.length})</span>
-                        )}
-                      </button>
-                      <button 
-                        onClick={() => handleCommentReply(comment._id || comment.id, comment.user?.name || 'User')}
-                        className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center space-x-1"
-                      >
+                    >
                         <span>💬</span>
                         <span>Reply</span>
-                      </button>
+                    </button>
                     </div>
                   </div>
                 </div>
@@ -1199,8 +1272,8 @@ const FeedPost: React.FC<FeedPostProps> = ({
             {post.comments.length > 3 && (
               <div className="text-center pt-2">
                 <button className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-medium hover:underline transition-colors">
-                  View all {post.comments.length} comments
-                </button>
+                View all {post.comments.length} comments
+              </button>
               </div>
             )}
           </div>

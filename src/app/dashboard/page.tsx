@@ -258,7 +258,21 @@ export default function Dashboard() {
     const handleAlbumShared = () => fetchFeedData();
     const handlePostCreated = () => fetchFeedData();
     const handlePostDeleted = () => fetchFeedData();
-    const handlePostUpdated = () => fetchFeedData();
+    
+    // Handle post updates more efficiently
+    const handlePostUpdated = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail && customEvent.detail.postId && customEvent.detail.updatedPost) {
+        // Update specific post instead of refetching all data
+        setPosts(posts => posts.map(p => 
+          p._id === customEvent.detail.postId ? customEvent.detail.updatedPost : p
+        ));
+        console.log('🔄 Post updated locally:', customEvent.detail.postId);
+      } else {
+        // Fallback to refetching all data if no specific update info
+        fetchFeedData();
+      }
+    };
 
     window.addEventListener('albumCreated', handleAlbumCreated);
     window.addEventListener('albumDeleted', handleAlbumDeleted);
@@ -617,14 +631,19 @@ export default function Dashboard() {
   const handleSave = async (postId: string) => {
     const token = localStorage.getItem('token');
     try {
+      console.log('🔄 Dashboard: Saving post:', postId);
+      
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/save`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
+      
       if (res.ok) {
         const data = await res.json();
+        console.log('✅ Dashboard: Save response:', data);
+        
         setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? { 
           ...p, 
           savedBy: data.savedBy || p.savedBy,
@@ -632,9 +651,14 @@ export default function Dashboard() {
         } : p));
         
         window.dispatchEvent(new CustomEvent('postSaved'));
+        console.log('🔄 Dashboard: Post state updated');
+      } else {
+        console.error('❌ Dashboard: Save failed with status:', res.status);
+        const errorData = await res.json().catch(() => ({}));
+        console.error('❌ Dashboard: Save error data:', errorData);
       }
     } catch (error) {
-      // Silent fail
+      console.error('❌ Dashboard: Save network error:', error);
     }
   };
 
@@ -1082,11 +1106,11 @@ export default function Dashboard() {
               ) : (
                 <div className="w-20 h-28 sm:w-24 sm:h-36 md:w-32 md:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-blue-500 mb-2 sm:mb-3 shadow-lg sm:shadow-xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center transition-transform group-hover:scale-105">
                   {getUserAvatar() ? (
-                    <img
-                      src={getUserAvatar()}
+                <img
+                  src={getUserAvatar()}
                       className="w-full h-full object-cover rounded-xl sm:rounded-2xl"
-                      alt="Your Story"
-                    />
+                  alt="Your Story"
+                />
                   ) : (
                     <div className="flex flex-col items-center justify-center text-white">
                       <span className="text-2xl mb-1">📷</span>
@@ -1111,16 +1135,16 @@ export default function Dashboard() {
               stories.slice(0, 6).map((story, index) => (
                 <div 
                   key={story._id}
-                  className="flex-shrink-0 flex flex-col items-center group cursor-pointer touch-manipulation"
+                className="flex-shrink-0 flex flex-col items-center group cursor-pointer touch-manipulation"
                   onClick={() => openStoryViewer(index)}
-                  onTouchStart={(e) => {
-                    e.currentTarget.style.transform = 'scale(0.95)';
-                  }}
-                  onTouchEnd={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                  }}
-                  style={{ touchAction: 'manipulation' }}
-                >
+                onTouchStart={(e) => {
+                  e.currentTarget.style.transform = 'scale(0.95)';
+                }}
+                onTouchEnd={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+                style={{ touchAction: 'manipulation' }}
+              >
                   {story.mediaType === 'video' ? (
                     <video
                       src={story.media}

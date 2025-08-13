@@ -135,14 +135,14 @@ export const getReels = async (params?: {
   if (params?.trending) searchParams.append('trending', params.trending.toString());
   if (params?.userId) searchParams.append('userId', params.userId);
   
-  const response = await axios.get(`${API_URL}/reels?${searchParams.toString()}`, { headers: getAuthHeaders() });
+  const response = await axios.get(`${API_URL}/api/reels?${searchParams.toString()}`, { headers: getAuthHeaders() });
   return response.data;
 };
 
 // Get trending reels
 export const getTrendingReels = async (limit?: number): Promise<Reel[]> => {
   const params = limit ? `?limit=${limit}` : '';
-  const response = await axios.get(`${API_URL}/reels/trending${params}`, { headers: getAuthHeaders() });
+  const response = await axios.get(`${API_URL}/api/reels/trending${params}`, { headers: getAuthHeaders() });
   return response.data;
 };
 
@@ -156,7 +156,7 @@ export const getReelsByHashtag = async (
   if (page) searchParams.append('page', page.toString());
   if (limit) searchParams.append('limit', limit.toString());
   
-  const response = await axios.get(`${API_URL}/reels/hashtag/${hashtag}?${searchParams.toString()}`, { headers: getAuthHeaders() });
+  const response = await axios.get(`${API_URL}/api/reels/hashtag/${hashtag}?${searchParams.toString()}`, { headers: getAuthHeaders() });
   return response.data;
 };
 
@@ -170,13 +170,13 @@ export const getUserReels = async (
   if (page) searchParams.append('page', page.toString());
   if (limit) searchParams.append('limit', limit.toString());
   
-  const response = await axios.get(`${API_URL}/reels/user/${userId}?${searchParams.toString()}`, { headers: getAuthHeaders() });
+  const response = await axios.get(`${API_URL}/api/reels/user/${userId}?${searchParams.toString()}`, { headers: getAuthHeaders() });
   return response.data;
 };
 
 // Get reel by ID
 export const getReelById = async (id: string): Promise<Reel> => {
-  const response = await axios.get(`${API_URL}/reels/${id}`, { headers: getAuthHeaders() });
+  const response = await axios.get(`${API_URL}/api/reels/${id}`, { headers: getAuthHeaders() });
   return response.data;
 };
 
@@ -203,7 +203,7 @@ export const createReel = async (
     }
   });
   
-  const response = await axios.post(`${API_URL}/reels`, formData, {
+  const response = await axios.post(`${API_URL}/api/reels`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
       ...getAuthHeaders(),
@@ -217,13 +217,13 @@ export const updateReel = async (
   id: string,
   reelData: Partial<CreateReelData>
 ): Promise<Reel> => {
-  const response = await axios.put(`${API_URL}/reels/${id}`, reelData, { headers: getAuthHeaders() });
+  const response = await axios.put(`${API_URL}/api/reels/${id}`, reelData, { headers: getAuthHeaders() });
   return response.data;
 };
 
 // Delete reel
 export const deleteReel = async (id: string): Promise<{ message: string }> => {
-  const response = await axios.delete(`${API_URL}/reels/${id}`, { headers: getAuthHeaders() });
+  const response = await axios.delete(`${API_URL}/api/reels/${id}`, { headers: getAuthHeaders() });
   return response.data;
 };
 
@@ -233,7 +233,7 @@ export const toggleLike = async (id: string): Promise<{
   liked: boolean;
   trendingScore: number;
 }> => {
-  const response = await axios.post(`${API_URL}/reels/${id}/like`, {}, { headers: getAuthHeaders() });
+  const response = await axios.post(`${API_URL}/api/reels/${id}/like`, {}, { headers: getAuthHeaders() });
   return response.data;
 };
 
@@ -242,7 +242,7 @@ export const shareReel = async (id: string): Promise<{
   shares: string[];
   trendingScore: number;
 }> => {
-  const response = await axios.post(`${API_URL}/reels/${id}/share`, {}, { headers: getAuthHeaders() });
+  const response = await axios.post(`${API_URL}/api/reels/${id}/share`, {}, { headers: getAuthHeaders() });
   return response.data;
 };
 
@@ -251,7 +251,7 @@ export const toggleSave = async (id: string): Promise<{
   saved: string[];
   isSaved: boolean;
 }> => {
-  const response = await axios.post(`${API_URL}/reels/${id}/save`, {}, { headers: getAuthHeaders() });
+  const response = await axios.post(`${API_URL}/api/reels/${id}/save`, {}, { headers: getAuthHeaders() });
   return response.data;
 };
 
@@ -264,7 +264,7 @@ export const addComment = async (
   totalComments: number;
   trendingScore: number;
 }> => {
-  const response = await axios.post(`${API_URL}/reels/${id}/comment`, commentData, { headers: getAuthHeaders() });
+  const response = await axios.post(`${API_URL}/api/reels/${id}/comment`, commentData, { headers: getAuthHeaders() });
   return response.data;
 };
 
@@ -277,7 +277,7 @@ export const deleteComment = async (
   totalComments: number;
   trendingScore: number;
 }> => {
-  const response = await axios.delete(`${API_URL}/reels/${reelId}/comment/${commentId}`, { headers: getAuthHeaders() });
+  const response = await axios.delete(`${API_URL}/api/reels/${reelId}/comment/${commentId}`, { headers: getAuthHeaders() });
   return response.data;
 };
 
@@ -335,7 +335,7 @@ export const getReelsByCategory = async (
   if (page) searchParams.append('page', page.toString());
   if (limit) searchParams.append('limit', limit.toString());
   
-  const response = await axios.get(`${API_URL}/reels/category/${category}?${searchParams.toString()}`, {
+  const response = await axios.get(`${API_URL}/api/reels/category/${category}?${searchParams.toString()}`, {
     headers: getAuthHeaders()
   });
   return response.data;
@@ -344,7 +344,7 @@ export const getReelsByCategory = async (
 // Get featured reels
 export const getFeaturedReels = async (limit?: number): Promise<Reel[]> => {
   const params = limit ? `?limit=${limit}` : '';
-  const response = await axios.get(`${API_URL}/reels/featured${params}`, {
+  const response = await axios.get(`${API_URL}/api/reels/featured${params}`, {
     headers: getAuthHeaders()
   });
   return response.data;
@@ -359,7 +359,7 @@ export const getReelsForYou = async (
   if (page) searchParams.append('page', page.toString());
   if (limit) searchParams.append('limit', limit.toString());
   
-  const response = await axios.get(`${API_URL}/reels/for-you?${searchParams.toString()}`, {
+  const response = await axios.get(`${API_URL}/api/reels/for-you?${searchParams.toString()}`, {
     headers: getAuthHeaders()
   });
   return response.data;
@@ -370,7 +370,7 @@ export const addView = async (id: string): Promise<{
   views: string[];
   viewCount: number;
 }> => {
-  const response = await axios.post(`${API_URL}/reels/${id}/view`, {}, {
+  const response = await axios.post(`${API_URL}/api/reels/${id}/view`, {}, {
     headers: getAuthHeaders()
   });
   return response.data;
@@ -382,7 +382,7 @@ export const reportReel = async (
   reason: string,
   description?: string
 ): Promise<{ message: string }> => {
-  const response = await axios.post(`${API_URL}/reels/${id}/report`, {
+  const response = await axios.post(`${API_URL}/api/reels/${id}/report`, {
     reason,
     description
   }, {
@@ -401,7 +401,7 @@ export const getReelAnalytics = async (id: string): Promise<{
   reach: number;
   impressions: number;
 }> => {
-  const response = await axios.get(`${API_URL}/reels/${id}/analytics`, {
+  const response = await axios.get(`${API_URL}/api/reels/${id}/analytics`, {
     headers: getAuthHeaders()
   });
   return response.data;
@@ -433,7 +433,7 @@ export const createDuet = async (
     }
   });
   
-  const response = await axios.post(`${API_URL}/reels/duet`, formData, {
+  const response = await axios.post(`${API_URL}/api/reels/duet`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
       ...getAuthHeaders(),
@@ -452,7 +452,7 @@ export const getDuets = async (
   if (page) searchParams.append('page', page.toString());
   if (limit) searchParams.append('limit', limit.toString());
   
-  const response = await axios.get(`${API_URL}/reels/${reelId}/duets?${searchParams.toString()}`, {
+  const response = await axios.get(`${API_URL}/api/reels/${reelId}/duets?${searchParams.toString()}`, {
     headers: getAuthHeaders()
   });
   return response.data;
@@ -479,7 +479,7 @@ export const searchReels = async (
   if (filters?.hasMusic) searchParams.append('hasMusic', filters.hasMusic.toString());
   if (filters?.hasEffects) searchParams.append('hasEffects', filters.hasEffects.toString());
   
-  const response = await axios.get(`${API_URL}/reels/search?${searchParams.toString()}`, {
+  const response = await axios.get(`${API_URL}/api/reels/search?${searchParams.toString()}`, {
     headers: getAuthHeaders()
   });
   return response.data;
@@ -491,7 +491,7 @@ export const getReelRecommendations = async (
   limit?: number
 ): Promise<Reel[]> => {
   const params = limit ? `?limit=${limit}` : '';
-  const response = await axios.get(`${API_URL}/reels/${reelId}/recommendations${params}`, {
+  const response = await axios.get(`${API_URL}/api/reels/${reelId}/recommendations${params}`, {
     headers: getAuthHeaders()
   });
   return response.data;
@@ -499,7 +499,7 @@ export const getReelRecommendations = async (
 
 // Pin reel to profile
 export const pinReel = async (id: string): Promise<{ message: string }> => {
-  const response = await axios.post(`${API_URL}/reels/${id}/pin`, {}, {
+  const response = await axios.post(`${API_URL}/api/reels/${id}/pin`, {}, {
     headers: getAuthHeaders()
   });
   return response.data;
@@ -507,7 +507,7 @@ export const pinReel = async (id: string): Promise<{ message: string }> => {
 
 // Unpin reel from profile
 export const unpinReel = async (id: string): Promise<{ message: string }> => {
-  const response = await axios.delete(`${API_URL}/reels/${id}/pin`, {
+  const response = await axios.delete(`${API_URL}/api/reels/${id}/pin`, {
     headers: getAuthHeaders()
   });
   return response.data;
@@ -515,7 +515,7 @@ export const unpinReel = async (id: string): Promise<{ message: string }> => {
 
 // Get pinned reels for user
 export const getPinnedReels = async (userId: string): Promise<Reel[]> => {
-  const response = await axios.get(`${API_URL}/reels/user/${userId}/pinned`, {
+  const response = await axios.get(`${API_URL}/api/reels/user/${userId}/pinned`, {
     headers: getAuthHeaders()
   });
   return response.data;
@@ -678,7 +678,7 @@ export const getReelsInsights = async (timeframe: 'day' | 'week' | 'month' = 'we
   topPerformingReel?: Reel;
   growthRate: number;
 }> => {
-  const response = await axios.get(`${API_URL}/reels/insights?timeframe=${timeframe}`, {
+  const response = await axios.get(`${API_URL}/api/reels/insights?timeframe=${timeframe}`, {
     headers: getAuthHeaders()
   });
   return response.data;

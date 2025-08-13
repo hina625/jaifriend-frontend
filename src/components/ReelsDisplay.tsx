@@ -157,7 +157,12 @@ export default function ReelsDisplay({
 
   const handleShare = async (reelId: string) => {
     try {
+      console.log('🔄 Sharing reel:', reelId);
+      console.log('🔗 API URL:', `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/reels/${reelId}/share`);
+      
       const response = await shareReel(reelId);
+      console.log('✅ Share response:', response);
+      
       setReels(prev => prev.map(reel => 
         reel._id === reelId 
           ? { 
@@ -172,8 +177,9 @@ export default function ReelsDisplay({
       const reelUrl = `${window.location.origin}/dashboard/reels/${reelId}`;
       await navigator.clipboard.writeText(reelUrl);
       alert('Reel link copied to clipboard!');
-    } catch (err) {
-      console.error('Error sharing reel:', err);
+    } catch (err: any) {
+      console.error('❌ Error sharing reel:', err);
+      console.error('❌ Error details:', err.response?.data || err.message);
       alert('Failed to share reel. Please try again.');
     }
   };
