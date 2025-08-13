@@ -13,9 +13,13 @@ export default function ProfileDropdown({ profile }: ProfileDropdownProps) {
       {/* Profile Section */}
       <div className="flex items-center gap-3 mb-2">
         <img
-          src={profile.avatar ? (profile.avatar.startsWith('http') ? profile.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${profile.avatar}`) : "/avatars/1.png.png"}
+          src={profile.avatar ? (profile.avatar.startsWith('http') ? profile.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${profile.avatar}`) : "/default-avatar.svg"}
           alt="avatar"
           className="w-12 h-12 rounded-full border border-gray-200 dark:border-dark-600 object-cover"
+          onError={(e) => {
+            console.log('❌ Avatar load failed for profile:', profile.fullName, 'URL:', profile.avatar);
+            e.currentTarget.src = '/default-avatar.svg';
+          }}
         />
         <div className="flex flex-col">
           <span className="font-semibold text-base text-gray-900 dark:text-white">{profile.fullName || 'My Profile'}</span>

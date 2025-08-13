@@ -214,9 +214,6 @@ export default function Register(): React.ReactElement {
           </div>
           <span className="text-2xl font-bold text-blue-700">jaifriend</span>
         </div>
-        <Link href="/" className="bg-blue-600 text-white px-6 py-2 rounded font-semibold hover:bg-blue-700 transition">
-          Login
-        </Link>
       </nav>
 
       <main className="flex flex-col items-center justify-center flex-1">

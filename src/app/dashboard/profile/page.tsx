@@ -2294,9 +2294,13 @@ const ProfilePage = () => {
                 {/* User Info */}
                 <div className="flex items-center gap-3">
                   <img
-                    src={getMediaUrl(user?.avatar || '/avatars/1.png.png')}
+                    src={user?.avatar ? getMediaUrl(user.avatar) : '/default-avatar.svg'}
                     alt={user?.name || 'User'}
                     className="w-10 h-10 rounded-full object-cover"
+                    onError={(e) => {
+                      console.log('❌ Avatar load failed for user:', user?.name, 'URL:', user?.avatar);
+                      e.currentTarget.src = '/default-avatar.svg';
+                    }}
                   />
                   <div>
                     <div className="font-semibold text-gray-900">{user?.name || 'User'}</div>

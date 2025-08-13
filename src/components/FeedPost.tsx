@@ -50,6 +50,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
   const [isTogglingComments, setIsTogglingComments] = useState(false);
   const [isPinning, setIsPinning] = useState(false);
   const [isBoosting, setIsBoosting] = useState(false);
+  const [expandedPosts, setExpandedPosts] = useState<{[key: string]: boolean}>({});
 
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const mediaPickerRef = useRef<HTMLDivElement>(null);
@@ -691,6 +692,14 @@ const FeedPost: React.FC<FeedPostProps> = ({
     }
   };
 
+  // Toggle post content expansion
+  const togglePostExpansion = (postId: string) => {
+    setExpandedPosts(prev => ({
+      ...prev,
+      [postId]: !prev[postId]
+    }));
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-4 transition-colors duration-200">
       {/* Post Header - Matching the image structure */}
@@ -704,9 +713,13 @@ const FeedPost: React.FC<FeedPostProps> = ({
                 onClick={navigateToProfile}
               >
                 <img
-                  src={post.user?.avatar ? getMediaUrl(post.user.avatar) : '/avatars/1.png.png'}
+                  src={post.user?.avatar ? getMediaUrl(post.user.avatar) : '/default-avatar.svg'}
                   alt={post.user?.name || 'User'}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    console.log('❌ Avatar load failed for user:', post.user?.name, 'URL:', post.user?.avatar);
+                    e.currentTarget.src = '/default-avatar.svg';
+                  }}
                 />
               </div>
               {/* Online Status Indicator */}
@@ -787,16 +800,31 @@ const FeedPost: React.FC<FeedPostProps> = ({
 
       {/* Post Content */}
       <div className="p-4">
-        {/* Title */}
-        {post.title && (
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
-            {post.title}
-          </h3>
-        )}
-        
-        <p className="text-gray-900 dark:text-white text-base leading-relaxed mb-4">
-          {post.content}
-        </p>
+        {/* Content with word limit and Read More */}
+        <div className="text-gray-900 dark:text-white text-base leading-relaxed mb-4">
+          {(() => {
+            const content = post.content || '';
+            const wordCount = content.split(/\s+/).filter((word: string) => word && word.length > 0).length;
+            const isExpanded = expandedPosts[post._id] || false;
+            
+            if (wordCount > 300) {
+              const words = content.split(/\s+/);
+              const first300Words = words.slice(0, 300).join(' ');
+              
+              return (
+                <div>
+                  <span>{isExpanded ? content : first300Words}</span>
+                  <span className="text-blue-600 cursor-pointer hover:underline ml-1" 
+                        onClick={() => togglePostExpansion(post._id)}>
+                    {isExpanded ? '... Show Less' : '... Read More'}
+                  </span>
+                </div>
+              );
+            } else {
+              return <span>{content}</span>;
+            }
+          })()}
+        </div>
         
         {/* Media */}
         {post.media && post.media.length > 0 && (

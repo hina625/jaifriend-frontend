@@ -38,6 +38,7 @@ export default function PostDisplay({
   const [reactionTimeout, setReactionTimeout] = useState<NodeJS.Timeout | null>(null);
   const [showOptionsDropdown, setShowOptionsDropdown] = useState(false);
   const [showReactionsTemporarily, setShowReactionsTemporarily] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Track view when component mounts
   useEffect(() => {
@@ -228,14 +229,30 @@ export default function PostDisplay({
       </div>
 
       <div className="mb-3">
-        {/* Title */}
-        {post.title && (
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            {post.title}
-          </h3>
-        )}
-        
-        <p className="text-gray-800 text-sm sm:text-base">{post.content}</p>
+        {/* Content with word limit and Read More */}
+        <div className="text-gray-800 text-sm sm:text-base">
+          {(() => {
+            const content = post.content || '';
+            const wordCount = content.split(/\s+/).filter((word: string) => word && word.length > 0).length;
+            
+            if (wordCount > 300) {
+              const words = content.split(/\s+/);
+              const first300Words = words.slice(0, 300).join(' ');
+              
+              return (
+                <div>
+                  <span>{isExpanded ? content : first300Words}</span>
+                  <span className="text-blue-600 cursor-pointer hover:underline ml-1" 
+                        onClick={() => setIsExpanded(!isExpanded)}>
+                    {isExpanded ? '... Show Less' : '... Read More'}
+                  </span>
+                </div>
+              );
+            } else {
+              return <span>{content}</span>;
+            }
+          })()}
+        </div>
       </div>
 
       {/* Show media if present */}

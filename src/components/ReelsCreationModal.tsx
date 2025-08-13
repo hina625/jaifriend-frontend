@@ -36,6 +36,10 @@ export default function ReelsCreationModal({ isOpen, onClose, onSuccess }: Reels
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string>('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showHashtagSuggestions, setShowHashtagSuggestions] = useState(false);
+  const [showMentionSuggestions, setShowMentionSuggestions] = useState(false);
+  const [contentType, setContentType] = useState<'reel' | 'post'>('reel');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -52,6 +56,10 @@ export default function ReelsCreationModal({ isOpen, onClose, onSuccess }: Reels
       setHashtagInput('');
       setError('');
       setDragActive(false);
+      setShowEmojiPicker(false);
+      setShowHashtagSuggestions(false);
+      setShowMentionSuggestions(false);
+      setContentType('reel');
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -59,6 +67,26 @@ export default function ReelsCreationModal({ isOpen, onClose, onSuccess }: Reels
 
     return () => {
       document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  // Close suggestion panels when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.suggestion-panel') && !target.closest('.action-button')) {
+        setShowEmojiPicker(false);
+        setShowHashtagSuggestions(false);
+        setShowMentionSuggestions(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isOpen]);
 
@@ -120,6 +148,23 @@ export default function ReelsCreationModal({ isOpen, onClose, onSuccess }: Reels
     setError('');
     
     try {
+      if (contentType === 'reel') {
+        await createReelContent();
+      } else {
+        await createPostContent();
+      }
+    } catch (error: any) {
+      console.error(`❌ Error creating ${contentType}:`, error);
+      setError(error.response?.data?.message || `Failed to create ${contentType}. Please try again.`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Create reel content
+  const createReelContent = async () => {
+    if (!selectedMedia) return;
+    
       console.log('🎬 Creating reel with data:', { title, description, hashtags, category, privacy });
       console.log('📁 Selected media:', selectedMedia);
       
@@ -148,13 +193,64 @@ export default function ReelsCreationModal({ isOpen, onClose, onSuccess }: Reels
       
       onSuccess?.();
       onClose();
-    } catch (error: any) {
-      console.error('❌ Error creating reel:', error);
-      console.error('❌ Error details:', error.response?.data || error.message);
-      setError(error.response?.data?.message || 'Failed to create reel. Please try again.');
-    } finally {
-      setIsUploading(false);
+    
+    // Redirect to reels page
+    window.location.href = '/dashboard/reels';
+  };
+
+  // Create post content for feed
+  const createPostContent = async () => {
+    if (!selectedMedia) return;
+    
+    console.log('📝 Creating post with data:', { title, description, hashtags, privacy });
+    console.log('📁 Selected media:', selectedMedia);
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Authentication required');
     }
+
+    const formData = new FormData();
+    formData.append('content', description || title);
+    
+    // Add title if provided
+    if (title.trim()) {
+      formData.append('title', title.trim());
+    }
+    
+    // Add hashtags as content
+    if (hashtags.length > 0) {
+      const hashtagText = hashtags.map(tag => `#${tag}`).join(' ');
+      const currentContent = formData.get('content') as string;
+      formData.set('content', `${currentContent} ${hashtagText}`);
+    }
+    
+    // Add media file
+    formData.append('media', selectedMedia);
+    
+    console.log('📤 Calling createPost API...');
+    
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to create post');
+    }
+    
+    const result = await response.json();
+    console.log('✅ Post created successfully:', result);
+    
+    onSuccess?.();
+    onClose();
+    
+    // Redirect to dashboard feed
+    window.location.href = '/dashboard';
   };
 
   const getVideoDuration = (file: File): Promise<number> => {
@@ -224,6 +320,71 @@ export default function ReelsCreationModal({ isOpen, onClose, onSuccess }: Reels
         );
       default:
         return null;
+    }
+  };
+
+  // Handle hashtag button click
+  const handleHashtagButtonClick = () => {
+    setShowHashtagSuggestions(!showHashtagSuggestions);
+    setShowEmojiPicker(false);
+    setShowMentionSuggestions(false);
+  };
+
+  // Handle emoji button click
+  const handleEmojiButtonClick = () => {
+    setShowEmojiPicker(!showEmojiPicker);
+    setShowHashtagSuggestions(false);
+    setShowMentionSuggestions(false);
+  };
+
+  // Handle mention button click
+  const handleMentionButtonClick = () => {
+    setShowMentionSuggestions(!showMentionSuggestions);
+    setShowEmojiPicker(false);
+    setShowHashtagSuggestions(false);
+  };
+
+  // Insert hashtag into description
+  const insertHashtag = (tag: string) => {
+    const hashtag = tag.startsWith('#') ? tag : `#${tag}`;
+    setDescription(prev => prev + (prev.endsWith(' ') ? '' : ' ') + hashtag + ' ');
+    setShowHashtagSuggestions(false);
+  };
+
+  // Insert emoji into description
+  const insertEmoji = (emoji: string) => {
+    setDescription(prev => prev + emoji);
+    setShowEmojiPicker(false);
+  };
+
+  // Insert mention into description
+  const insertMention = (username: string) => {
+    const mention = username.startsWith('@') ? username : `@${username}`;
+    setDescription(prev => prev + (prev.endsWith(' ') ? '' : ' ') + mention + ' ');
+    setShowMentionSuggestions(false);
+  };
+
+  // Auto-extract hashtags from description
+  const extractHashtagsFromDescription = (text: string) => {
+    const hashtagRegex = /#(\w+)/g;
+    const matches = text.match(hashtagRegex);
+    if (matches) {
+      const extractedTags = matches.map(tag => tag.substring(1)); // Remove # symbol
+      setHashtags(prev => {
+        const newTags = [...new Set([...prev, ...extractedTags])]; // Remove duplicates
+        return newTags;
+      });
+    }
+  };
+
+  // Handle description change with hashtag extraction
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newDescription = e.target.value;
+    setDescription(newDescription);
+    
+    // Auto-extract hashtags when user types them
+    if (newDescription.includes('#')) {
+      extractHashtagsFromDescription(newDescription);
     }
   };
 
@@ -352,6 +513,43 @@ export default function ReelsCreationModal({ isOpen, onClose, onSuccess }: Reels
                     <span>Add details</span>
                   </div>
 
+                  {/* Content Type Toggle */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-800">
+                      Content Type
+                    </label>
+                    <div className="flex bg-gray-100 rounded-lg p-1">
+                      <button
+                        type="button"
+                        onClick={() => setContentType('reel')}
+                        className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-all duration-200 ${
+                          contentType === 'reel'
+                            ? 'bg-white text-blue-600 shadow-sm'
+                            : 'text-gray-600 hover:text-gray-800'
+                        }`}
+                      >
+                        🎬 Reel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setContentType('post')}
+                        className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-all duration-200 ${
+                          contentType === 'post'
+                            ? 'bg-white text-blue-600 shadow-sm'
+                            : 'text-gray-600 hover:text-gray-800'
+                        }`}
+                      >
+                        📝 Post
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      {contentType === 'reel' 
+                        ? 'Reels appear on the reels page with vertical video format' 
+                        : 'Posts appear in the main feed with standard format'
+                      }
+                    </p>
+                  </div>
+
                   {/* Error Display */}
                   {error && (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-3">
@@ -392,7 +590,7 @@ export default function ReelsCreationModal({ isOpen, onClose, onSuccess }: Reels
                     </label>
                     <textarea
                       value={description}
-                      onChange={(e) => setDescription(e.target.value)}
+                      onChange={handleDescriptionChange}
                       placeholder="Tell viewers what your reel is about..."
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm resize-none bg-white transition-all duration-200 hover:border-gray-400"
                       rows={3}
@@ -404,6 +602,30 @@ export default function ReelsCreationModal({ isOpen, onClose, onSuccess }: Reels
                         {description.length}/630
                       </span>
                     </div>
+                    
+                    {/* Current Hashtags Display */}
+                    {hashtags.length > 0 && (
+                      <div className="mt-2">
+                        <div className="text-xs text-gray-600 mb-1">Current hashtags:</div>
+                        <div className="flex flex-wrap gap-1">
+                          {hashtags.map((tag, index) => (
+                            <span
+                              key={index}
+                              className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full"
+                            >
+                              #{tag}
+                              <button
+                                onClick={() => setHashtags(prev => prev.filter((_, i) => i !== index))}
+                                className="text-blue-500 hover:text-blue-700 ml-1"
+                                title="Remove hashtag"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Category Input */}
@@ -558,16 +780,92 @@ export default function ReelsCreationModal({ isOpen, onClose, onSuccess }: Reels
               <span className="capitalize font-medium text-xs">{privacy}</span>
             </div>
             
+            {/* Suggestion Panels */}
+            <div className="relative">
+              {/* Hashtag Suggestions */}
+              {showHashtagSuggestions && (
+                <div className="absolute bottom-full left-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-2 w-48 z-50 suggestion-panel">
+                  <div className="text-xs font-medium text-gray-700 mb-2">Popular Hashtags</div>
+                  <div className="space-y-1">
+                    {['trending', 'viral', 'funny', 'dance', 'food', 'travel', 'fashion', 'beauty', 'fitness', 'music', 'comedy', 'lifestyle', 'motivation', 'inspiration', 'love', 'friends', 'family', 'workout', 'healthy', 'delicious', 'amazing', 'awesome', 'best', 'top', 'new', 'latest', 'hot', 'cool', 'perfect', 'beautiful', 'stunning'].map(tag => (
+                      <button
+                        key={tag}
+                        onClick={() => insertHashtag(tag)}
+                        className="w-full text-left px-2 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                      >
+                        #{tag}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Emoji Picker */}
+              {showEmojiPicker && (
+                <div className="absolute bottom-full left-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-2 w-64 z-50 suggestion-panel">
+                  <div className="text-xs font-medium text-gray-700 mb-2">Emojis</div>
+                  <div className="grid grid-cols-8 gap-1">
+                    {['😊', '😂', '❤️', '🔥', '👍', '🎉', '✨', '🌟', '💯', '😍', '🤔', '😎', '🥳', '😭', '🤣', '😱', '😴', '🤩', '😇', '😋', '🤗', '😌', '😉', '😘', '😍', '😎', '🤠', '👻', '🤖', '👽', '👾', '🎃', '🎄', '🎁', '🎈', '🎉', '🎊', '🎋', '🎍', '🎎', '🎏'].map(emoji => (
+                      <button
+                        key={emoji}
+                        onClick={() => insertEmoji(emoji)}
+                        className="w-8 h-8 text-lg hover:bg-gray-100 rounded transition-colors flex items-center justify-center"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Mention Suggestions */}
+              {showMentionSuggestions && (
+                <div className="absolute bottom-full left-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-2 w-48 z-50 suggestion-panel">
+                  <div className="text-xs font-medium text-gray-700 mb-2">Suggestions</div>
+                  <div className="space-y-1">
+                    {['friend1', 'friend2', 'user123', 'cooluser', 'trendinguser'].map(user => (
+                      <button
+                        key={user}
+                        onClick={() => insertMention(user)}
+                        className="w-full text-left px-2 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                      >
+                        @{user}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
             <div className="flex items-center gap-1">
-              <button className="w-7 h-7 bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800 rounded-md flex items-center justify-center transition-all duration-200 group">
+                <button 
+                  onClick={handleHashtagButtonClick}
+                  className={`w-7 h-7 rounded-md flex items-center justify-center transition-all duration-200 group action-button ${
+                    showHashtagSuggestions ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800'
+                  }`}
+                  title="Add hashtag"
+                >
                 <span className="text-xs font-bold group-hover:scale-110 transition-transform">#</span>
               </button>
-              <button className="w-7 h-7 bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800 rounded-md flex items-center justify-center transition-all duration-200 group">
+                <button 
+                  onClick={handleMentionButtonClick}
+                  className={`w-7 h-7 rounded-md flex items-center justify-center transition-all duration-200 group action-button ${
+                    showMentionSuggestions ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800'
+                  }`}
+                  title="Mention user"
+                >
                 <span className="text-xs font-bold group-hover:scale-110 transition-transform">@</span>
               </button>
-              <button className="w-7 h-7 bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800 rounded-md flex items-center justify-center transition-all duration-200 group">
+                <button 
+                  onClick={handleEmojiButtonClick}
+                  className={`w-7 h-7 rounded-md flex items-center justify-center transition-all duration-200 group action-button ${
+                    showEmojiPicker ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-800'
+                  }`}
+                  title="Add emoji"
+                >
                 <span className="text-sm group-hover:scale-110 transition-transform">😊</span>
               </button>
+              </div>
             </div>
           </div>
           
@@ -588,7 +886,7 @@ export default function ReelsCreationModal({ isOpen, onClose, onSuccess }: Reels
                   <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                   <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                 </svg>
-                <span>Share Reel</span>
+                <span>Share {contentType === 'reel' ? 'Reel' : 'Post'}</span>
               </div>
             )}
           </button>

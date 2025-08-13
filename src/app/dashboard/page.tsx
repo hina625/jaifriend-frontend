@@ -1224,8 +1224,21 @@ export default function Dashboard() {
               {/* Content Creation Area */}
               <div className="relative mb-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
-                    <span className="text-white text-lg">💭</span>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {getUserAvatar() ? (
+                      <img
+                        src={getUserAvatar()}
+                        alt="Your avatar"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                    ) : null}
+                    <div className={`w-full h-full bg-orange-500 flex items-center justify-center ${getUserAvatar() ? 'hidden' : ''}`}>
+                      <span className="text-white text-lg">💭</span>
+                    </div>
                   </div>
                   <div className="flex-1 relative space-y-3">
                     {/* Title Input */}
