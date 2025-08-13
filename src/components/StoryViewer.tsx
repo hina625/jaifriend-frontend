@@ -50,7 +50,7 @@ const StoryViewer: React.FC<StoryViewerProps> = ({
   const isOwnStory = currentStory?.user._id === currentUser._id || currentStory?.user._id === currentUser.id;
   
   const videoRef = useRef<HTMLVideoElement>(null);
-  const progressIntervalRef = useRef<number | null>(null);
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     setCurrentStory(stories[currentIndex]);
