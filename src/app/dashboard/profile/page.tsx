@@ -1,10 +1,11 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useRef } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import { Edit, Trash2, MoreVertical, Search, Filter, Camera, Video, Music, FileText, Plus, Heart, MessageCircle, Share2, Bookmark, Settings, Camera as CameraIcon, MapPin, Globe, Calendar, Users, Eye, ThumbsUp, X, ShoppingBag } from 'lucide-react';
 import PostDisplay from '@/components/PostDisplay';
 import Popup, { PopupState } from '@/components/Popup';
 import PrivacyAwareProfile from '@/components/PrivacyAwareProfile';
+import ReelsCreationModal from '@/components/ReelsCreationModal';
 
 interface User {
   id: string;
@@ -24,6 +25,7 @@ interface User {
   joinedDate?: string;
   followingList?: any[];
   followersList?: any[];
+  coverPhoto?: string;
 }
 
 interface UserImages {
@@ -124,6 +126,7 @@ interface ProfileCompletion {
 
 const ProfilePage = () => {
   const router = useRouter();
+  const params = useParams();
   const [user, setUser] = useState<User | null>(null);
   const [userImages, setUserImages] = useState<UserImages>({ avatar: null, cover: null });
   const [posts, setPosts] = useState<Post[]>([]);
@@ -170,6 +173,9 @@ const ProfilePage = () => {
   const [postMedia, setPostMedia] = useState<File[]>([]);
   const [postMediaUrls, setPostMediaUrls] = useState<string[]>([]);
   const [creatingPost, setCreatingPost] = useState(false);
+  const [reelsCreationModalOpen, setReelsCreationModalOpen] = useState(false);
+  const [showMediaPreview, setShowMediaPreview] = useState(false);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState<number>(0);
 
   const tabs = [
     { id: 'timeline', label: 'Timeline', icon: '📝' },
@@ -682,6 +688,42 @@ const ProfilePage = () => {
       // Create preview URLs
       const newUrls = files.map(file => URL.createObjectURL(file));
       setPostMediaUrls(prev => [...prev, ...newUrls]);
+      
+      // Show success message
+      const fileType = files[0].type.startsWith('video/') ? 'video' : 'image';
+      const fileCount = files.length;
+      showPopup('success', 'Media Added!', `${fileCount} ${fileType}${fileCount > 1 ? 's' : ''} added successfully. Review and continue to post.`);
+      
+      // Show media preview popup immediately after selection
+      setShowMediaPreview(true);
+      setSelectedMediaIndex(postMediaUrls.length); // Show the newly added media
+      
+      // Close post modal temporarily to show media preview
+      setShowPostModal(false);
+    }
+  };
+
+  const handleMediaPreviewClose = () => {
+    setShowMediaPreview(false);
+    setSelectedMediaIndex(0);
+    
+    // If user has media selected, ask if they want to continue to post
+    if (postMedia.length > 0) {
+      if (confirm('Do you want to continue creating a post with the selected media?')) {
+        setShowPostModal(true);
+      }
+    }
+  };
+
+  const handleMediaPreviewNext = () => {
+    if (selectedMediaIndex < postMediaUrls.length - 1) {
+      setSelectedMediaIndex(selectedMediaIndex + 1);
+    }
+  };
+
+  const handleMediaPreviewPrev = () => {
+    if (selectedMediaIndex > 0) {
+      setSelectedMediaIndex(selectedMediaIndex - 1);
     }
   };
 
@@ -696,34 +738,24 @@ const ProfilePage = () => {
   };
 
   const createPost = async () => {
-    if (!postContent.trim() && postMedia.length === 0) {
-      showPopup('error', 'Error', 'Please add some content or media to your post');
-      return;
-    }
+    if ((!postContent.trim() && postMedia.length === 0) || creatingPost) return;
 
     try {
       setCreatingPost(true);
       const token = localStorage.getItem('token');
-      console.log('🔍 Token present:', !!token);
       if (!token) {
-        showPopup('error', 'Error', 'Please log in to create a post');
+        showPopup('error', 'Authentication Error', 'Please log in again');
         return;
       }
 
       const formData = new FormData();
-      formData.append('content', postContent.trim());
-      formData.append('privacy', 'public'); // Default privacy
-
-      // Add media files
+      formData.append('content', postContent);
+      
       postMedia.forEach((file, index) => {
         formData.append('media', file);
       });
 
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`;
-      console.log('🔍 Creating post at:', apiUrl);
-      console.log('🔍 FormData content:', postContent);
-      console.log('🔍 Media files:', postMedia.length);
-      const response = await fetch(apiUrl, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -732,35 +764,30 @@ const ProfilePage = () => {
       });
 
       if (response.ok) {
-        const newPost = await response.json();
-        console.log('✅ Post created successfully:', newPost);
-        setPosts(prev => [newPost, ...prev]);
-        setShowPostModal(false);
-        setPostContent('');
-        setPostMedia([]);
-        setPostMediaUrls([]);
-        showPopup('success', 'Success', 'Post created successfully!');
-        
-        // Dispatch event to notify other components
-        window.dispatchEvent(new CustomEvent('postCreated'));
+        showPopup('success', 'Post Created!', 'Your post has been created successfully!');
+        resetPostForm();
       } else {
-        console.error('❌ Failed to create post:', response.status, response.statusText);
-        const errorText = await response.text();
-        console.error('❌ Error details:', errorText);
-        let errorMessage = 'Failed to create post';
-        try {
-          const error = JSON.parse(errorText);
-          errorMessage = error.message || errorMessage;
-        } catch (e) {
-          console.error('❌ Could not parse error response:', e);
-        }
-        showPopup('error', 'Error', errorMessage);
+        const errorData = await response.json();
+        showPopup('error', 'Post Failed', errorData.error || 'Failed to create post');
       }
     } catch (error) {
       console.error('Error creating post:', error);
-      showPopup('error', 'Error', 'Failed to create post. Please try again.');
+      showPopup('error', 'Post Failed', 'Failed to create post. Please try again.');
     } finally {
       setCreatingPost(false);
+    }
+  };
+
+  const handleReelShare = async () => {
+    try {
+      // Here you would typically upload the reel to your backend
+      // For now, we'll just redirect to the reels page
+      showPopup('success', 'Reel Created!', 'Your reel has been created successfully!');
+      
+      // Redirect to reels page (you'll need to create this page)
+      router.push('/dashboard/reels');
+    } catch (error) {
+      showPopup('error', 'Error', 'Failed to create reel. Please try again.');
     }
   };
 
@@ -769,6 +796,8 @@ const ProfilePage = () => {
     setPostMedia([]);
     setPostMediaUrls([]);
     setShowPostModal(false);
+    setShowMediaPreview(false);
+    setSelectedMediaIndex(0);
   };
 
   const getFilteredPosts = () => {
@@ -1045,6 +1074,55 @@ const ProfilePage = () => {
     } finally {
       setUploadingAvatar(false);
       console.log('🏁 Avatar upload process completed');
+    }
+  };
+
+  const handleContinueToPost = () => {
+    setShowMediaPreview(false);
+    setShowPostModal(true);
+  };
+
+  const handleCompleteMediaFlow = () => {
+    // Close media preview and open post modal
+    setShowMediaPreview(false);
+    setShowPostModal(true);
+    
+    // Focus on post content input
+    setTimeout(() => {
+      const postContentInput = document.querySelector('textarea[name="postContent"], textarea[placeholder*="What\'s happening"]') as HTMLTextAreaElement;
+      if (postContentInput) {
+        postContentInput.focus();
+      }
+    }, 100);
+  };
+
+  const handleRemoveMediaFromPreview = (index: number) => {
+    removeMedia(index);
+    
+    // If no media left, close the preview
+    if (postMedia.length <= 1) {
+      setShowMediaPreview(false);
+      setSelectedMediaIndex(0);
+      
+      // Ask if user wants to create a text-only post
+      if (postMedia.length === 0) {
+        if (confirm('No media selected. Do you want to create a text-only post?')) {
+          setShowPostModal(true);
+        }
+      }
+    } else {
+      // Adjust selected index if needed
+      if (selectedMediaIndex >= postMedia.length - 1) {
+        setSelectedMediaIndex(postMedia.length - 2);
+      }
+    }
+  };
+
+  const handleAddMoreMedia = () => {
+    // Trigger file input click
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
     }
   };
 
@@ -1466,47 +1544,95 @@ const ProfilePage = () => {
               <div className="space-y-4">
                 {/* Post Creation */}
                 <div className="bg-white rounded-xl shadow-sm p-4">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={getMediaUrl(user.avatar)}
-                      alt={user.name}
-                      className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <input
-                        type="text"
-                        placeholder="What's going on? #Hashtag.. @Mention.. Link.."
-                        value={postContent}
-                        onChange={(e) => setPostContent(e.target.value)}
-                        className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm transition-colors"
-                      />
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
-                        <button 
-                          onClick={() => document.getElementById('photo-upload')?.click()}
-                          className="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                          title="Add photo"
-                        >
-                          <CameraIcon className="w-4 h-4" />
-                        </button>
-                        <div className="w-px bg-gray-300"></div>
-                        <button 
-                          onClick={() => document.getElementById('video-upload')?.click()}
-                          className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Add video"
-                        >
-                          <Video className="w-4 h-4" />
-                        </button>
+                  {/* Top Section: Content Type Selection */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                                        <button
+                    onClick={() => setReelsCreationModalOpen(true)}
+                    className="flex items-center gap-2 bg-pink-50 dark:bg-pink-900/20 px-3 py-2 rounded-lg border border-pink-200 dark:border-pink-700 hover:bg-pink-100 dark:hover:bg-pink-900/30 transition-colors cursor-pointer"
+                  >
+                    <span className="text-pink-500 text-lg">💎</span>
+                    <span className="text-sm font-medium text-pink-700 dark:text-pink-300">Reels Video</span>
+                  </button>
+                      <div className="flex items-center gap-2 bg-pink-50 dark:bg-pink-900/20 px-3 py-2 rounded-lg border border-pink-200 dark:border-pink-700">
+                        <span className="text-pink-500 text-lg">🕐</span>
+                        <span className="text-sm font-medium text-pink-700 dark:text-pink-300">Free live streams</span>
                       </div>
-                      <button
-                        onClick={createPost}
-                        disabled={(!postContent.trim() && postMedia.length === 0) || creatingPost}
-                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg transition-colors text-sm font-medium flex items-center justify-center"
-                      >
-                        {creatingPost ? 'Posting...' : 'Post'}
-                      </button>
                     </div>
+                  </div>
+
+                  {/* Content Creation Area */}
+                  <div className="relative mb-4">
+                    <div className="flex items-start gap-3">
+                      <img
+                        src={getMediaUrl(user.avatar)}
+                        alt={user.name}
+                        className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                      />
+                      <div className="flex-1 relative">
+                        <textarea
+                          placeholder="Write your message, add your photo or Video ... @Mention... #Hashtag"
+                          className="w-full min-h-[120px] border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 resize-none"
+                          value={postContent}
+                          onChange={(e) => setPostContent(e.target.value)}
+                        />
+                        {/* Character Counter */}
+                        <div className="absolute top-2 right-2">
+                          <div className="bg-red-500 text-white text-xs px-2 py-1 rounded">
+                            {postContent.length}/250
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Bar / Footer */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <button
+                        className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+                        onClick={() => document.getElementById('photo-upload')?.click()}
+                        title="Add photos"
+                      >
+                        <span className="text-xl">📷</span>
+                        <span className="text-sm hidden sm:inline">Photo</span>
+                      </button>
+                      
+                      <button
+                        className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                        onClick={() => document.getElementById('video-upload')?.click()}
+                        title="Add videos"
+                      >
+                        <span className="text-xl">🎥</span>
+                        <span className="text-sm hidden sm:inline">Video</span>
+                      </button>
+                      
+                      <button
+                        className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-yellow-500 dark:hover:text-yellow-400 transition-colors"
+                        title="Add emojis"
+                      >
+                        <span className="text-xl">😊</span>
+                        <span className="text-sm hidden sm:inline">Emoji</span>
+                      </button>
+                      
+                      <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                        <span className="text-lg">🌐</span>
+                        <select className="text-sm bg-transparent border-none outline-none cursor-pointer">
+                          <option>Everyone</option>
+                          <option>Friends</option>
+                          <option>Private</option>
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={createPost}
+                      disabled={(!postContent.trim() && postMedia.length === 0) || creatingPost}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      <span className="text-lg">📤</span>
+                      {creatingPost ? 'Publishing...' : 'Publish'}
+                    </button>
                   </div>
                   
                   {/* Hidden file inputs */}
@@ -2235,6 +2361,162 @@ const ProfilePage = () => {
 
       {/* Popup */}
       <Popup popup={popup} onClose={closePopup} />
+
+      {/* Reels Creation Modal */}
+      <ReelsCreationModal
+        isOpen={reelsCreationModalOpen}
+        onClose={() => setReelsCreationModalOpen(false)}
+        onSuccess={handleReelShare}
+      />
+
+      {/* Media Preview Popup */}
+      {showMediaPreview && postMediaUrls.length > 0 && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Media Preview
+              </h3>
+              <button
+                onClick={handleMediaPreviewClose}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+              >
+                <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Media Content */}
+            <div className="flex-1 p-4">
+              <div className="relative">
+                {/* Media Display */}
+                <div className="flex justify-center mb-4">
+                  {postMedia[selectedMediaIndex]?.type.startsWith('video/') ? (
+                    <video
+                      src={postMediaUrls[selectedMediaIndex]}
+                      controls
+                      className="max-w-full max-h-96 rounded-lg"
+                      autoPlay
+                      muted
+                    />
+                  ) : (
+                    <img
+                      src={postMediaUrls[selectedMediaIndex]}
+                      alt={`Preview ${selectedMediaIndex + 1}`}
+                      className="max-w-full max-h-96 object-contain rounded-lg"
+                    />
+                  )}
+                </div>
+
+                {/* Navigation Controls */}
+                {postMediaUrls.length > 1 && (
+                  <div className="flex items-center justify-center gap-4 mb-4">
+                    <button
+                      onClick={handleMediaPreviewPrev}
+                      disabled={selectedMediaIndex === 0}
+                      className="p-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      {selectedMediaIndex + 1} of {postMediaUrls.length}
+                    </span>
+                    
+                    <button
+                      onClick={handleMediaPreviewNext}
+                      disabled={selectedMediaIndex === postMediaUrls.length - 1}
+                      className="p-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
+
+                {/* Thumbnail Grid */}
+                <div className="grid grid-cols-6 gap-2">
+                  {postMediaUrls.map((url, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedMediaIndex(index)}
+                      className={`relative rounded-lg overflow-hidden border-2 transition-all ${
+                        index === selectedMediaIndex
+                          ? 'border-blue-500 ring-2 ring-blue-200'
+                          : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
+                      }`}
+                    >
+                      {postMedia[index]?.type.startsWith('video/') ? (
+                        <div className="w-full h-16 bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                          <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
+                          </svg>
+                        </div>
+                      ) : (
+                        <img
+                          src={url}
+                          alt={`Thumbnail ${index + 1}`}
+                          className="w-full h-16 object-cover"
+                        />
+                      )}
+                      {index === selectedMediaIndex && (
+                        <div className="absolute inset-0 bg-blue-500 bg-opacity-20 flex items-center justify-center">
+                          <div className="w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/>
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+                          {/* Footer Actions */}
+              <div className="flex items-center justify-between p-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleRemoveMediaFromPreview(selectedMediaIndex)}
+                    className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                  >
+                    Remove Media
+                  </button>
+                  <button
+                    onClick={handleAddMoreMedia}
+                    className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                  >
+                    Add More
+                  </button>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    {postMedia[selectedMediaIndex]?.name}
+                  </span>
+                </div>
+                
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleMediaPreviewClose}
+                    className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={handleCompleteMediaFlow}
+                    className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                  >
+                    Continue to Post
+                  </button>
+                </div>
+              </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating Action Button */}
       <button

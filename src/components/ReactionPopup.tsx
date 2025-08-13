@@ -9,6 +9,7 @@ interface ReactionPopupProps {
   onReaction: (reactionType: ReactionType) => void;
   currentReaction?: ReactionType | null;
   position?: 'top' | 'bottom';
+  isReacting?: boolean;
 }
 
 const reactions: { type: ReactionType; emoji: string; label: string; color: string }[] = [
@@ -25,7 +26,8 @@ export default function ReactionPopup({
   onClose, 
   onReaction, 
   currentReaction,
-  position = 'top'
+  position = 'top',
+  isReacting
 }: ReactionPopupProps) {
   const popupRef = useRef<HTMLDivElement>(null);
 
@@ -62,17 +64,24 @@ export default function ReactionPopup({
               onReaction(reaction.type);
               onClose();
             }}
+            disabled={isReacting}
             className={`w-12 h-12 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white text-lg sm:text-xl hover:scale-110 transition-all duration-200 touch-manipulation ${
               reaction.color
             } ${
               currentReaction === reaction.type 
                 ? 'ring-2 ring-blue-300 dark:ring-blue-400 ring-offset-2 dark:ring-offset-gray-800' 
                 : 'hover:shadow-md'
+            } ${
+              isReacting ? 'opacity-50 cursor-not-allowed' : ''
             }`}
-            title={reaction.label}
+            title={isReacting ? 'Processing...' : reaction.label}
             style={{ touchAction: 'manipulation' }}
           >
-            {reaction.emoji}
+            {isReacting ? (
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+            ) : (
+              reaction.emoji
+            )}
           </button>
         ))}
       </div>

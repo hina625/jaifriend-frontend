@@ -10,6 +10,7 @@ interface User {
   name: string;
   username: string;
   avatar: string;
+  coverPhoto?: string;
   email: string;
   followers: string[];
   following: string[];

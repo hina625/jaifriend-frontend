@@ -34,6 +34,7 @@ export default function AlbumDisplay({
   const [showSharePopup, setShowSharePopup] = useState(false);
   const [showReactionPopup, setShowReactionPopup] = useState(false);
   const [reactionTimeout, setReactionTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [showReactionsTemporarily, setShowReactionsTemporarily] = useState(false);
 
   // Track view when component mounts
   useEffect(() => {
@@ -278,6 +279,8 @@ export default function AlbumDisplay({
               </span>
             </button>
             
+
+            
             {/* Reaction Popup */}
             <div
               onMouseEnter={handleReactionPopupMouseEnter}
@@ -335,6 +338,8 @@ export default function AlbumDisplay({
           <span className="text-xs sm:text-sm font-medium hidden sm:inline">{isSaved ? 'Saved' : 'Save'}</span>
         </button>
       </div>
+      
+      
 
       {/* Comment Input */}
       {showCommentInput && (

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import SharePopup, { ShareOptions } from './SharePopup';
 import ReactionPopup, { ReactionType } from './ReactionPopup';
+import PostOptionsDropdown from './PostOptionsDropdown';
 
 interface PostDisplayProps {
   post: any;
@@ -33,6 +34,8 @@ export default function PostDisplay({
   const [showSharePopup, setShowSharePopup] = useState(false);
   const [showReactionPopup, setShowReactionPopup] = useState(false);
   const [reactionTimeout, setReactionTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [showOptionsDropdown, setShowOptionsDropdown] = useState(false);
+  const [showReactionsTemporarily, setShowReactionsTemporarily] = useState(false);
 
   // Track view when component mounts
   useEffect(() => {
@@ -160,6 +163,11 @@ export default function PostDisplay({
     if (onReaction) {
       onReaction(post._id, reactionType);
     }
+    // Show reactions temporarily after adding a reaction
+    setShowReactionsTemporarily(true);
+    setTimeout(() => {
+      setShowReactionsTemporarily(false);
+    }, 2000); // Hide after 2 seconds
   };
 
   // Get current user ID for save checking
@@ -188,6 +196,9 @@ export default function PostDisplay({
       }
       return false;
     });
+
+  // Calculate total reactions (likes + other reactions if they exist)
+  const totalReactions = (post.likes?.length || 0) + (post.reactions?.length || 0);
 
   return (
     <div className="bg-white rounded-xl shadow p-3 sm:p-4 mb-4 sm:mb-6">
@@ -261,24 +272,102 @@ export default function PostDisplay({
         </div>
       )}
 
-      {/* Social Actions */}
-      <div className="flex items-center justify-between mt-3 sm:mt-4 pt-3 border-t border-gray-200">
-        <div className="flex items-center gap-3 sm:gap-6">
-          {/* Reaction Button with Popup */}
+      {/* Engagement Metrics Section - Upper Section */}
+      <div className="py-2 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          {/* Reactions - Left Side */}
+          <div className="flex items-center space-x-2">
+            <span className="text-pink-500 text-lg">❤️</span>
+            <span className="text-blue-500 text-lg">👍</span>
+            <span className="text-yellow-500 text-lg">😊</span>
+            <span className="text-gray-600 text-sm font-medium ml-1">
+              {totalReactions}
+            </span>
+            {/* Removed showReactionDetails indicator */}
+          </div>
+          
+          {/* Content Statistics - Right Side */}
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-1 text-gray-500">
+              <span className="text-lg">💬</span>
+              <span className="text-sm">{post.comments?.length || 0} Comments</span>
+            </div>
+            <div className="flex items-center space-x-1 text-gray-500">
+              <span className="text-lg">👁️</span>
+              <span className="text-sm">{post.views?.length || post.views || 0} Views</span>
+            </div>
+            <div className="flex items-center space-x-1 text-gray-500">
+              <span className="text-lg">⭐</span>
+              <span className="text-sm">{post.reviews?.length || 0} Reviews</span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Temporary Reaction Display - Shows briefly after adding reaction */}
+        {showReactionsTemporarily && (
+          <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-600">
+            <div className="flex flex-wrap gap-2">
+              {(() => {
+                if (post.reactions && Array.isArray(post.reactions) && post.reactions.length > 0) {
+                  const reactionCounts: { [key: string]: number } = {};
+                  post.reactions.forEach((reaction: any) => {
+                    reactionCounts[reaction.type] = (reactionCounts[reaction.type] || 0) + 1;
+                  });
+                  
+                  const reactionEmojis: { [key: string]: string } = {
+                    like: '👍',
+                    love: '❤️',
+                    haha: '😂',
+                    wow: '😮',
+                    sad: '😢',
+                    angry: '😠'
+                  };
+                  
+                  return Object.entries(reactionCounts).map(([type, count]) => (
+                    <div key={type} className="flex items-center space-x-1 bg-gray-50 dark:bg-gray-700 rounded-full px-3 py-1">
+                      <span className="text-lg">{reactionEmojis[type] || '😊'}</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-300">{count}</span>
+                    </div>
+                  ));
+                } else if (post.likes && Array.isArray(post.likes) && post.likes.length > 0) {
+                  return (
+                    <div className="flex items-center space-x-1 bg-gray-50 dark:bg-gray-700 rounded-full px-3 py-1">
+                      <span className="text-lg">👍</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-300">{post.likes.length}</span>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <div className="text-gray-500 dark:text-gray-400 text-sm">
+                      No reactions yet
+                    </div>
+                  );
+                }
+              })()}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Action Buttons Section - Lower Section */}
+      <div className="py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-6">
+            {/* React Button */}
           <div className="relative">
             <button 
               onMouseEnter={handleReactionButtonMouseEnter}
               onMouseLeave={handleReactionButtonMouseLeave}
               onClick={() => onLike && onLike(post._id)}
-              className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-colors touch-manipulation ${
-                getCurrentReaction() ? 'text-red-500 bg-red-50' : 'text-gray-600 hover:text-red-500 hover:bg-red-50'
+                className={`flex items-center space-x-2 transition-colors touch-manipulation ${
+                  getCurrentReaction() ? 'text-red-500' : 'text-gray-600 hover:text-red-500'
               }`}
               style={{ touchAction: 'manipulation' }}
             >
-              <span className="text-lg sm:text-xl">{getMostCommonReactionEmoji()}</span>
-              <span className="text-xs sm:text-sm font-medium">
-                {getReactionCount()}
-              </span>
+                <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
+                  <span className="text-sm">😊</span>
+                </div>
+                <span className="text-sm font-medium">React</span>
             </button>
             
             {/* Reaction Popup */}
@@ -296,38 +385,39 @@ export default function PostDisplay({
             </div>
           </div>
           
+            {/* Comment Button */}
           <button 
             onClick={() => setShowCommentInput(!showCommentInput)}
-            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-gray-600 hover:text-blue-500 hover:bg-blue-50 transition-colors touch-manipulation"
+              className="flex items-center space-x-2 text-gray-600 hover:text-blue-500 transition-colors touch-manipulation"
             style={{ touchAction: 'manipulation' }}
           >
-            <span className="text-lg sm:text-xl">💬</span>
-            <span className="text-xs sm:text-sm font-medium">
-              {post.comments ? post.comments.length : 0}
-            </span>
+              <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
+                <span className="text-lg">💬</span>
+              </div>
+              <span className="text-sm font-medium">Comment</span>
           </button>
           
-          {/* Views count */}
-          <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-gray-600">
-            <span className="text-lg sm:text-xl">👁️</span>
-            <span className="text-xs sm:text-sm font-medium">
-              {post.views ? (Array.isArray(post.views) ? post.views.length : post.views) : 0}
-            </span>
-          </div>
-          
+            {/* Share Button */}
           <button 
             onClick={() => setShowSharePopup(true)}
-            className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg transition-colors touch-manipulation ${
-              Array.isArray(post.shares) && post.shares.length > 0
-                ? 'text-green-500 bg-green-50 border border-green-200'
-                : 'text-gray-600 hover:text-green-500 hover:bg-green-50'
-            }`}
+              className="flex items-center space-x-2 text-gray-600 hover:text-green-500 transition-colors touch-manipulation"
+              style={{ touchAction: 'manipulation' }}
+            >
+              <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
+                <span className="text-lg">📤</span>
+              </div>
+              <span className="text-sm font-medium">Share</span>
+            </button>
+            
+            {/* Review Button */}
+            <button 
+              className="flex items-center space-x-2 text-gray-600 hover:text-yellow-500 transition-colors touch-manipulation"
             style={{ touchAction: 'manipulation' }}
           >
-            <span className="text-lg sm:text-xl">📤</span>
-            <span className="text-xs sm:text-sm font-medium">
-              {Array.isArray(post.shares) && post.shares.length > 0 ? post.shares.length : ''}
-            </span>
+              <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
+                <span className="text-lg">⭐</span>
+              </div>
+              <span className="text-sm font-medium">Review</span>
           </button>
         </div>
         
@@ -447,6 +537,7 @@ export default function PostDisplay({
           )}
         </div>
       )}
+      </div>
 
       {/* Share Popup */}
       <SharePopup

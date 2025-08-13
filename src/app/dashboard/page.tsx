@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import AlbumDisplay from '@/components/AlbumDisplay';
@@ -6,91 +6,72 @@ import SharePopup, { ShareOptions } from '@/components/SharePopup';
 import LatestProducts from '@/components/LatestProducts';
 import Popup from '@/components/Popup';
 import type { PopupState } from '@/components/Popup';
+import PostOptionsDropdown from '@/components/PostOptionsDropdown';
+import FeedPost from '@/components/FeedPost';
+import ReelsCreationModal from '@/components/ReelsCreationModal';
+import StoryCreationModal from '@/components/StoryCreationModal';
+import StoryViewer from '@/components/StoryViewer';
 
 function getUserAvatar() {
-  // Try to get avatar from localStorage (if you store it there after login), otherwise use default
   try {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     if (user.avatar) {
-      // Handle localhost URLs that might be stored incorrectly
       if (user.avatar.includes('localhost:3000')) {
         const correctedUrl = user.avatar.replace('http://localhost:3000', 'https://jaifriend-frontend-n6zr.vercel.app');
-        console.log('🔗 getUserAvatar - Fixed localhost URL:', { original: user.avatar, corrected: correctedUrl });
         return correctedUrl;
       }
       
-      // Handle hardcoded placeholder avatars that don't exist
       if (user.avatar.includes('/avatars/') || user.avatar.includes('/covers/')) {
-        console.log('🔗 getUserAvatar - Placeholder avatar detected:', user.avatar);
-        return '/default-avatar.svg';
+        return ''; // Return empty string instead of default avatar
       }
       
-      // Use getMediaUrl function to construct proper URL
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
       if (user.avatar.startsWith('http')) {
         return user.avatar;
       }
       return `${baseUrl}${user.avatar}`;
     }
-    return '/default-avatar.svg';
+    return ''; // Return empty string instead of default avatar
   } catch {
-    return '/default-avatar.svg';
+    return ''; // Return empty string instead of default avatar
   }
 }
 
 function getUserId(user: any): string {
   if (!user) {
-    console.log('❌ No user object provided');
     return '';
   }
   
-  console.log('🔍 Getting user ID for user:', user);
-  console.log('🔍 User type:', typeof user);
-  console.log('🔍 User keys:', Object.keys(user));
-  
-  // Handle populated user object (when userId is the full user object)
   if (user.userId && typeof user.userId === 'object' && user.userId._id) {
-    console.log('✅ Using populated userId._id:', user.userId._id);
     return user.userId._id;
   }
   
-  // Handle different possible user ID formats
   if (typeof user._id === 'string') {
-    console.log('✅ Using string _id:', user._id);
     return user._id;
   }
   if (typeof user.id === 'string') {
-    console.log('✅ Using string id:', user.id);
     return user.id;
   }
   if (typeof user.userId === 'string') {
-    console.log('✅ Using string userId:', user.userId);
     return user.userId;
   }
   
-  // Handle object IDs (MongoDB ObjectId)
   if (user._id && typeof user._id === 'object' && user._id.toString) {
     const id = user._id.toString();
-    console.log('✅ Using object _id.toString():', id);
     return id;
   }
   if (user.id && typeof user.id === 'object' && user.id.toString) {
     const id = user.id.toString();
-    console.log('✅ Using object id.toString():', id);
     return id;
   }
   if (user.userId && typeof user.userId === 'object' && user.userId.toString) {
     const id = user.userId.toString();
-    console.log('✅ Using object userId.toString():', id);
     return id;
   }
   
-  // Fallback - but with better error handling
   const fallbackId = String(user._id || user.id || user.userId || '');
-  console.log('⚠️ Using fallback ID:', fallbackId);
   
   if (!fallbackId || fallbackId === 'undefined' || fallbackId === 'null') {
-    console.error('❌ No valid user ID found in user object:', user);
     return '';
   }
   
@@ -108,17 +89,22 @@ export default function Dashboard() {
   const [posting, setPosting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Edit a post
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState('');
   const [editMediaFiles, setEditMediaFiles] = useState<File[]>([]);
   const editFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Share popup state
+  const [openDropdownPostId, setOpenDropdownPostId] = useState<string | null>(null);
+
   const [showSharePopup, setShowSharePopup] = useState(false);
   const [selectedPostForShare, setSelectedPostForShare] = useState<any>(null);
+  const [showReelsModal, setShowReelsModal] = useState(false);
+  const [showStoryModal, setShowStoryModal] = useState(false);
+  const [showStoryViewer, setShowStoryViewer] = useState(false);
+  const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
+  const [stories, setStories] = useState<any[]>([]);
+  const [loadingStories, setLoadingStories] = useState(true);
 
-  // Popup state
   const [popup, setPopup] = useState<PopupState>({
     isOpen: false,
     type: 'info',
@@ -127,7 +113,6 @@ export default function Dashboard() {
   });
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
 
-  // Popup functions
   const showPopup = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
     setPopup({ isOpen: true, type, title, message });
   };
@@ -153,39 +138,31 @@ export default function Dashboard() {
     const formData = new FormData();
     formData.append('content', editContent);
     editMediaFiles.forEach(file => formData.append('media', file));
-          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}`, {
+    
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}`, {
       method: 'PUT',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {})
       },
       body: formData
     });
+    
     if (res.ok) {
       const updatedPost = await res.json();
       setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? updatedPost : p));
       cancelEditPost();
-      
-      // Dispatch event to notify other components (like profile)
       window.dispatchEvent(new CustomEvent('postUpdated'));
-    } else {
-      console.error('Failed to edit post');
     }
   };
 
-  // Delete a comment
   const handleDeleteComment = async (postId: string, commentId: string) => {
     const token = localStorage.getItem('token');
     const commentKey = `${postId}-${commentId}`;
     
-    console.log('🗑️ Frontend: Deleting comment:', { postId, commentId, commentKey });
-    console.log('🔑 Token present:', !!token);
-    
-    // Set loading state
     setDeletingComments(prev => ({ ...prev, [commentKey]: true }));
     
     try {
-              const url = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/comment/${commentId}`;
-      console.log('🌐 Making request to:', url);
+      const url = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/comment/${commentId}`;
       
       const res = await fetch(url, {
         method: 'DELETE',
@@ -195,42 +172,28 @@ export default function Dashboard() {
         }
       });
       
-      console.log('📡 Response status:', res.status, res.statusText);
-      
       if (res.ok) {
         const data = await res.json();
-        console.log('✅ Response data:', data);
         setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? data.post : p));
-        console.log('✅ Comment deleted successfully');
         showPopup('success', 'Success', 'Comment deleted successfully');
       } else {
-        const errorText = await res.text();
-        console.error('❌ Failed to delete comment:', res.status, res.statusText, errorText);
-        showPopup('error', 'Error', `Failed to delete comment (${res.status}). Please try again.`);
+        showPopup('error', 'Error', 'Failed to delete comment. Please try again.');
       }
     } catch (error) {
-      console.error('❌ Error deleting comment:', error);
       showPopup('error', 'Error', 'Network error. Please check your connection and try again.');
     } finally {
-      // Clear loading state
       setDeletingComments(prev => ({ ...prev, [commentKey]: false }));
     }
   };
 
-  // Delete an album comment
   const handleDeleteAlbumComment = async (albumId: string, commentId: string) => {
     const token = localStorage.getItem('token');
     const commentKey = `album-${albumId}-${commentId}`;
     
-    console.log('🗑️ Frontend: Deleting album comment:', { albumId, commentId, commentKey });
-    console.log('🔑 Token present:', !!token);
-    
-    // Set loading state
     setDeletingComments(prev => ({ ...prev, [commentKey]: true }));
     
     try {
-              const url = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/comment/${commentId}`;
-      console.log('🌐 Making request to:', url);
+      const url = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/comment/${commentId}`;
       
       const res = await fetch(url, {
         method: 'DELETE',
@@ -240,24 +203,16 @@ export default function Dashboard() {
         }
       });
       
-      console.log('📡 Response status:', res.status, res.statusText);
-      
       if (res.ok) {
         const data = await res.json();
-        console.log('✅ Response data:', data);
         setAlbums(albums => albums.map(a => a._id === albumId ? data.album : a));
-        console.log('✅ Album comment deleted successfully');
         showPopup('success', 'Success', 'Comment deleted successfully');
       } else {
-        const errorText = await res.text();
-        console.error('❌ Failed to delete album comment:', res.status, res.statusText, errorText);
-        showPopup('error', 'Error', `Failed to delete comment (${res.status}). Please try again.`);
+        showPopup('error', 'Error', 'Failed to delete comment. Please try again.');
       }
     } catch (error) {
-      console.error('❌ Error deleting album comment:', error);
       showPopup('error', 'Error', 'Network error. Please check your connection and try again.');
     } finally {
-      // Clear loading state
       setDeletingComments(prev => ({ ...prev, [commentKey]: false }));
     }
   };
@@ -265,54 +220,21 @@ export default function Dashboard() {
   const fetchFeedData = async () => {
     try {
       const token = localStorage.getItem('token');
-      console.log('🔍 Fetching feed data with token:', token ? 'Present' : 'Missing');
       
       const [postsResponse, albumsResponse] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`, token ? { headers: { 'Authorization': `Bearer ${token}` } } : {}),
         fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums`, token ? { headers: { 'Authorization': `Bearer ${token}` } } : {})
       ]);
       
-      console.log('📡 Posts response status:', postsResponse.status);
-      console.log('📡 Albums response status:', albumsResponse.status);
-      
-      if (!postsResponse.ok) {
-        console.error('❌ Posts API error:', postsResponse.status, postsResponse.statusText);
-        const errorText = await postsResponse.text();
-        console.error('❌ Posts error details:', errorText);
-      }
-      
-      if (!albumsResponse.ok) {
-        console.error('❌ Albums API error:', albumsResponse.status, albumsResponse.statusText);
-        const errorText = await albumsResponse.text();
-        console.error('❌ Albums error details:', errorText);
-      }
-      
       const [postsData, albumsData] = await Promise.all([
         postsResponse.ok ? postsResponse.json() : [],
         albumsResponse.ok ? albumsResponse.json() : []
       ]);
       
-      console.log('📊 Posts fetched:', postsData.length);
-      console.log('📊 Albums fetched:', albumsData.length);
-      console.log('📊 Sample album:', albumsData[0]);
-      
-      // Combine posts and albums into a single feed
       const combinedFeed = [
         ...postsData.map((post: any) => ({ ...post, type: 'post' })),
         ...albumsData.map((album: any) => ({ ...album, type: 'album' }))
       ].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      
-      console.log('📊 Combined feed items:', combinedFeed.length);
-      console.log('📊 Feed breakdown:', {
-        posts: postsData.length,
-        albums: albumsData.length,
-        total: combinedFeed.length
-      });
-      
-      console.log('📊 Setting posts state with:', postsData);
-      console.log('📊 Sample post structure:', postsData[0]);
-      console.log('📊 Posts have _id field:', postsData.every((p: any) => p._id));
-      console.log('📊 Posts have id field:', postsData.every((p: any) => p.id));
       
       setPosts(postsData);
       setAlbums(albumsData);
@@ -325,48 +247,18 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    console.log('🔍 Dashboard component mounted');
-    console.log('🔍 Checking localStorage for token...');
     const token = localStorage.getItem('token');
-    console.log('🔍 Token in localStorage:', token ? 'Present' : 'Missing');
-    
-    if (token) {
-      console.log('🔍 Token length:', token.length);
-      console.log('🔍 Token preview:', `${token.substring(0, 20)}...`);
-    }
-    
     fetchFeedData();
+    fetchStories();
   }, []);
 
-  // Listen for album creation and deletion events
   useEffect(() => {
-    const handleAlbumCreated = () => {
-      fetchFeedData();
-    };
-
-    const handleAlbumDeleted = () => {
-      fetchFeedData();
-    };
-
-    const handleAlbumShared = () => {
-      console.log('Album shared event received, refreshing feed...');
-      fetchFeedData();
-    };
-
-    const handlePostCreated = () => {
-      console.log('Post created event received, refreshing feed...');
-      fetchFeedData();
-    };
-
-    const handlePostDeleted = () => {
-      console.log('Post deleted event received, refreshing feed...');
-      fetchFeedData();
-    };
-
-    const handlePostUpdated = () => {
-      console.log('Post updated event received, refreshing feed...');
-      fetchFeedData();
-    };
+    const handleAlbumCreated = () => fetchFeedData();
+    const handleAlbumDeleted = () => fetchFeedData();
+    const handleAlbumShared = () => fetchFeedData();
+    const handlePostCreated = () => fetchFeedData();
+    const handlePostDeleted = () => fetchFeedData();
+    const handlePostUpdated = () => fetchFeedData();
 
     window.addEventListener('albumCreated', handleAlbumCreated);
     window.addEventListener('albumDeleted', handleAlbumDeleted);
@@ -385,12 +277,10 @@ export default function Dashboard() {
     };
   }, []);
 
-  // Track views for posts when they are displayed
   useEffect(() => {
     const trackViews = async () => {
       const token = localStorage.getItem('token');
       if (token && posts.length > 0) {
-        // Track views for the first few posts (to avoid too many requests)
         const postsToTrack = posts.slice(0, 5);
         for (const post of postsToTrack) {
           try {
@@ -401,7 +291,7 @@ export default function Dashboard() {
               }
             });
           } catch (error) {
-            console.error('Error tracking view for post:', post._id, error);
+            // Silent fail
           }
         }
       }
@@ -412,12 +302,10 @@ export default function Dashboard() {
     }
   }, [posts]);
 
-  // Track views for albums when they are displayed
   useEffect(() => {
     const trackAlbumViews = async () => {
       const token = localStorage.getItem('token');
       if (token && albums.length > 0) {
-        // Track views for the first few albums (to avoid too many requests)
         const albumsToTrack = albums.slice(0, 3);
         for (const album of albumsToTrack) {
           try {
@@ -428,7 +316,7 @@ export default function Dashboard() {
               }
             });
           } catch (error) {
-            console.error('Error tracking view for album:', album._id, error);
+            // Silent fail
           }
         }
       }
@@ -456,14 +344,11 @@ export default function Dashboard() {
       const formData = new FormData();
       formData.append('content', newPost.trim());
       
-      // Add media files with proper validation
       mediaFiles.forEach((file, index) => {
-        // Validate file size (max 10MB)
         if (file.size > 10 * 1024 * 1024) {
           throw new Error(`File "${file.name}" is too large. Maximum size is 10MB.`);
         }
         
-        // Validate file type
         const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg'];
         if (!validTypes.includes(file.type)) {
           throw new Error(`File "${file.name}" has an unsupported format. Please use images (JPEG, PNG, GIF, WebP) or videos (MP4, WebM, OGG).`);
@@ -471,11 +356,8 @@ export default function Dashboard() {
         
         formData.append('media', file);
       });
-
-      console.log('Creating post with content:', newPost.trim());
-      console.log('Media files:', mediaFiles.length);
       
-              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -485,24 +367,19 @@ export default function Dashboard() {
       
       if (res.ok) {
         const post = await res.json();
-        console.log('Post created successfully:', post);
         setPosts([post, ...posts]);
         setNewPost('');
         setMediaFiles([]);
         if (fileInputRef.current) fileInputRef.current.value = '';
         
         showPopup('success', 'Post Created!', 'Your post has been shared successfully!');
-        
-        // Dispatch event to refresh profile pages
         window.dispatchEvent(new CustomEvent('postCreated'));
       } else {
         const errorData = await res.json().catch(() => ({}));
         const errorMessage = errorData.message || errorData.error || 'Failed to create post. Please try again.';
         showPopup('error', 'Post Failed', errorMessage);
-        console.error('Failed to create post:', res.status, errorMessage);
       }
     } catch (err) {
-      console.error('Error creating post:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to create post. Please try again.';
       showPopup('error', 'Post Failed', errorMessage);
     } finally {
@@ -510,12 +387,9 @@ export default function Dashboard() {
     }
   };
 
-  // Delete a post
   const handleDelete = async (id: string) => {
-    // Store the post ID for deletion
     setPostToDelete(id);
     
-    // Show confirmation popup
     setPopup({
       isOpen: true,
       type: 'warning',
@@ -527,7 +401,101 @@ export default function Dashboard() {
     });
   };
 
-  // Handle popup confirmation for delete
+  const handleToggleComments = async (postId: string) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      showPopup('error', 'Authentication Error', 'Please login to modify post settings');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/toggle-comments`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setPosts(posts => posts.map(p => 
+          (p._id === postId || p.id === postId) ? { ...p, commentsEnabled: data.commentsEnabled } : p
+        ));
+        showPopup('success', 'Success', `Comments ${data.commentsEnabled ? 'enabled' : 'disabled'} successfully`);
+      } else {
+        showPopup('error', 'Error', 'Failed to toggle comments');
+      }
+    } catch (error) {
+      showPopup('error', 'Network Error', 'Failed to connect to server');
+    }
+  };
+
+  const handleOpenInNewTab = (post: any) => {
+    const postUrl = `${window.location.origin}/dashboard/post/${post._id || post.id}`;
+    window.open(postUrl, '_blank');
+  };
+
+  const handlePinPost = async (postId: string) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      showPopup('error', 'Authentication Error', 'Please login to pin posts');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/pin`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setPosts(posts => posts.map(p => 
+          (p._id === postId || p.id === postId) ? { ...p, isPinned: data.isPinned } : p
+        ));
+        showPopup('success', 'Success', `Post ${data.isPinned ? 'pinned' : 'unpinned'} successfully`);
+      } else {
+        showPopup('error', 'Error', 'Failed to pin/unpin post');
+      }
+    } catch (error) {
+      showPopup('error', 'Network Error', 'Failed to connect to server');
+    }
+  };
+
+  const handleBoostPost = async (postId: string) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      showPopup('error', 'Authentication Error', 'Please login to boost posts');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/boost`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setPosts(posts => posts.map(p => 
+          (p._id === postId || p.id === postId) ? { ...p, isBoosted: data.isBoosted } : p
+        ));
+        showPopup('success', 'Success', `Post ${data.isBoosted ? 'boosted' : 'unboosted'} successfully`);
+      } else {
+        showPopup('error', 'Error', 'Failed to boost/unboost post');
+      }
+    } catch (error) {
+      showPopup('error', 'Network Error', 'Failed to connect to server');
+    }
+  };
+
   const handlePopupConfirm = async () => {
     if (popup.title === 'Delete Post' && postToDelete) {
       try {
@@ -538,8 +506,6 @@ export default function Dashboard() {
         }
 
         const deletePostId = postToDelete;
-
-        // Show loading popup
         showPopup('info', 'Deleting Post', 'Please wait while we delete your post...');
 
         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${deletePostId}`, {
@@ -551,17 +517,10 @@ export default function Dashboard() {
         });
 
         if (res.ok) {
-          // Remove post from state
           setPosts(posts.filter(p => (p._id || p.id) !== deletePostId));
           if (editingPostId === deletePostId) cancelEditPost();
-          
-          // Clear the post to delete
           setPostToDelete(null);
-          
-          // Show success popup
           showPopup('success', 'Post Deleted', 'Your post has been successfully deleted.');
-          
-          // Dispatch event to refresh other pages
           window.dispatchEvent(new CustomEvent('postDeleted'));
         } else {
           const errorData = await res.json().catch(() => ({}));
@@ -569,58 +528,22 @@ export default function Dashboard() {
           showPopup('error', 'Delete Failed', errorMessage);
         }
       } catch (error) {
-        console.error('Error deleting post:', error);
         showPopup('error', 'Network Error', 'Failed to connect to server. Please check your internet connection.');
       }
     }
   };
 
-  // Test backend connectivity
-  const testBackendConnection = async () => {
-    try {
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}`;
-      console.log('🔍 Testing backend connection to:', apiUrl);
-      
-      const res = await fetch(apiUrl, { method: 'GET' });
-      console.log('🔍 Backend health check response:', res.status, res.statusText);
-      
-      if (res.ok) {
-        const data = await res.text();
-        console.log('✅ Backend is accessible:', data);
-        return true;
-      } else {
-        console.log('❌ Backend health check failed:', res.status);
-        return false;
-      }
-    } catch (error) {
-      console.error('❌ Backend connection test failed:', error);
-      return false;
-    }
-  };
-
-  // Like a post
   const handleLike = async (postId: string) => {
-    console.log('🔍 handleLike called for postId:', postId);
-    console.log('🔍 Current posts state:', posts);
-    console.log('🔍 Finding post with ID:', postId);
-    
     const currentPost = posts.find(p => (p._id === postId || p.id === postId));
-    console.log('🔍 Current post found:', currentPost);
-    
     const token = localStorage.getItem('token');
-    console.log('🔍 Token found:', token ? 'Yes' : 'No');
-    console.log('🔍 Token length:', token ? token.length : 0);
-    console.log('🔍 Token preview:', token ? `${token.substring(0, 20)}...` : 'None');
     
     if (!token) {
-      console.log('❌ No token found');
       showPopup('error', 'Authentication Error', 'Please login to like posts');
       return;
     }
 
     try {
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/like`;
-      console.log('📡 Sending like request to:', apiUrl);
       
       const res = await fetch(apiUrl, {
         method: 'POST',
@@ -630,41 +553,27 @@ export default function Dashboard() {
         }
       });
       
-      console.log('📡 Response status:', res.status);
-      console.log('📡 Response headers:', Object.fromEntries(res.headers.entries()));
-      
       if (res.ok) {
         const data = await res.json();
-        console.log('✅ Like response data:', data);
-        
-        // Update posts state
         setPosts(prevPosts => {
           const updatedPosts = prevPosts.map(p => {
             if (p._id === postId || p.id === postId) {
-              console.log('🔄 Updating post:', p._id || p.id, 'with new data:', data.post);
               return data.post;
             }
             return p;
           });
-          console.log('🔄 Updated posts state:', updatedPosts);
           return updatedPosts;
         });
-        
-        console.log('Post liked/unliked successfully');
       } else {
         let errorMessage = 'Unknown error';
         try {
           const errorData = await res.json();
-          console.error('❌ Failed to like post:', res.status, errorData);
           errorMessage = errorData.message || errorData.error || 'Unknown error';
         } catch (parseError) {
-          console.error('❌ Could not parse error response:', parseError);
           try {
             const responseText = await res.text();
-            console.error('❌ Raw response text:', responseText);
             errorMessage = responseText || 'Unknown error';
           } catch (textError) {
-            console.error('❌ Could not read response text:', textError);
             errorMessage = `HTTP ${res.status}: ${res.statusText}`;
           }
         }
@@ -672,7 +581,6 @@ export default function Dashboard() {
         showPopup('error', 'Error', `Failed to like post: ${errorMessage}`);
       }
     } catch (error) {
-      console.error('❌ Error liking post:', error);
       showPopup('error', 'Network Error', 'Failed to connect to server. Please check your internet connection.');
     }
   };
@@ -698,24 +606,18 @@ export default function Dashboard() {
       if (res.ok) {
         const data = await res.json();
         setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? data.post : p));
-        console.log('Reaction added successfully');
       } else {
-        const errorData = await res.json().catch(() => ({}));
-        console.error('Failed to add reaction:', res.status, errorData);
         showPopup('error', 'Error', 'Failed to add reaction. Please try again.');
       }
     } catch (error) {
-      console.error('Error adding reaction:', error);
       showPopup('error', 'Network Error', 'Failed to connect to server. Please check your internet connection.');
     }
   };
 
-  // Save a post
   const handleSave = async (postId: string) => {
     const token = localStorage.getItem('token');
-    console.log('Saving post:', postId);
     try {
-              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/save`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/save`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -723,40 +625,24 @@ export default function Dashboard() {
       });
       if (res.ok) {
         const data = await res.json();
-        console.log('Save response:', data);
         setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? { 
           ...p, 
           savedBy: data.savedBy || p.savedBy,
           saved: data.saved 
         } : p));
         
-        // Dispatch event to refresh saved page
         window.dispatchEvent(new CustomEvent('postSaved'));
-        
-        // Show feedback
-        const post = posts.find(p => (p._id === postId || p.id === postId));
-        if (post) {
-          if (data.saved) {
-            console.log('Post Saved!');
-          } else {
-            console.log('Post Removed');
-          }
-        }
-      } else {
-        console.error('Failed to save post:', res.status, res.statusText);
       }
     } catch (error) {
-      console.error('Error saving post:', error);
+      // Silent fail
     }
   };
 
-  // Add comment to a post
-  const handleAddComment = async (postId: string, commentText: string, clearInput: () => void) => {
+  const handleAddComment = async (postId: string, commentText: string) => {
     if (!commentText.trim()) return;
     const token = localStorage.getItem('token');
-    console.log('Adding comment to post:', postId, commentText);
     try {
-              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/comment`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/comment`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -766,83 +652,38 @@ export default function Dashboard() {
       });
       if (res.ok) {
         const data = await res.json();
-        console.log('Comment response:', data);
         setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? {
           ...p,
           comments: [...(p.comments || []), data.comment]
         } : p));
-        clearInput();
-        console.log('Comment Posted!');
-      } else {
-        console.error('Failed to add comment:', res.status, res.statusText);
       }
     } catch (error) {
-      console.error('Error adding comment:', error);
+      // Silent fail
     }
   };
 
-  // Share a post
-  const handleShare = async (postId: string, shareOptions?: ShareOptions) => {
-    const token = localStorage.getItem('token');
-    try {
-      console.log('📤 Sharing post:', postId, 'with options:', shareOptions);
-      
-              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/share`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          message: shareOptions?.customMessage || '',
-          shareTo: shareOptions?.shareTo || 'friends',
-          shareOnTimeline: shareOptions?.shareOnTimeline || false,
-          shareToPage: shareOptions?.shareToPage || false,
-          shareToGroup: shareOptions?.shareToGroup || false,
-          socialPlatforms: shareOptions?.socialPlatforms || []
-        })
-      });
-      
-      if (res.ok) {
-        const data = await res.json();
-        console.log('✅ Post shared successfully:', data);
-        
-        // Update post shares count
-        setPosts(posts => posts.map(p => 
-          (p._id === postId || p.id === postId) ? { ...p, shares: data.shares, shared: data.shared } : p
-        ));
-        
-        // Show success message with details
-        const shareResults = data.shareResults || [];
-        const successMessage = shareResults.length > 0 
-          ? `Post shared successfully to: ${shareResults.join(', ')}`
-          : 'Your post has been shared successfully!';
-        
-        showPopup('success', 'Post Shared!', successMessage);
-        
-        // Refresh feed to show the shared post
-        fetchFeedData();
-      } else {
-        const errorData = await res.json();
-        console.error('❌ Post share error:', errorData);
-        showPopup('error', 'Share Failed', errorData.message || 'Failed to share post');
-      }
-    } catch (error) {
-      console.error('❌ Error sharing post:', error);
-      showPopup('error', 'Network Error', 'Failed to share post. Please try again.');
-    }
-  };
-
-  const openSharePopup = (post: any) => {
-    setSelectedPostForShare(post);
+  const handleShare = (postId: string, shareOptions: ShareOptions) => {
+    setSelectedPostForShare({ id: postId, ...shareOptions });
     setShowSharePopup(true);
   };
 
-  // Handle view tracking
+  const handleReelShare = async (reelData: any) => {
+    try {
+      // Here you would typically upload the reel to your backend
+      // For now, we'll just redirect to the reels page
+      showPopup('success', 'Reel Created!', 'Your reel has been created successfully!');
+      
+      // Redirect to reels page (you'll need to create this page)
+      router.push('/dashboard/reels');
+    } catch (error) {
+      showPopup('error', 'Error', 'Failed to create reel. Please try again.');
+    }
+  };
+
   const handleView = async (postId: string) => {
     const token = localStorage.getItem('token');
     try {
-              const res = await fetch(process.env.NEXT_PUBLIC_API_URL || `https://jaifriend-backend-production.up.railway.app/api/posts/${postId}/view`, {
+      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || `https://jaifriend-backend-production.up.railway.app/api/posts/${postId}/view`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -855,15 +696,14 @@ export default function Dashboard() {
         ));
       }
     } catch (error) {
-      console.error('Error tracking view:', error);
+      // Silent fail
     }
   };
 
-  // Handle album deletion
   const handleAlbumDelete = async (albumId: string) => {
     if (!window.confirm('Delete this album?')) return;
     const token = localStorage.getItem('token');
-            const res = await fetch(process.env.NEXT_PUBLIC_API_URL || `https://jaifriend-backend-production.up.railway.app/api/albums/${albumId}`, {
+    const res = await fetch(process.env.NEXT_PUBLIC_API_URL || `https://jaifriend-backend-production.up.railway.app/api/albums/${albumId}`, {
       method: 'DELETE',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -871,12 +711,9 @@ export default function Dashboard() {
     });
     if (res.ok) {
       setAlbums(prev => prev.filter(album => album._id !== albumId));
-    } else {
-      console.error('Failed to delete album');
     }
   };
 
-  // Handle album like
   const handleAlbumLike = async (albumId: string) => {
     const token = localStorage.getItem('token');
     
@@ -897,14 +734,10 @@ export default function Dashboard() {
       if (res.ok) {
         const data = await res.json();
         setAlbums(albums => albums.map(a => a._id === albumId ? data.album : a));
-        console.log('Album liked/unliked successfully');
       } else {
-        const errorData = await res.json().catch(() => ({}));
-        console.error('Failed to like album:', res.status, errorData);
         showPopup('error', 'Error', 'Failed to like album. Please try again.');
       }
     } catch (error) {
-      console.error('Error liking album:', error);
       showPopup('error', 'Network Error', 'Failed to connect to server. Please check your internet connection.');
     }
   };
@@ -930,23 +763,18 @@ export default function Dashboard() {
       if (res.ok) {
         const data = await res.json();
         setAlbums(albums => albums.map(a => a._id === albumId ? data.album : a));
-        console.log('Album reaction added successfully');
       } else {
-        const errorData = await res.json().catch(() => ({}));
-        console.error('Failed to add reaction to album:', res.status, errorData);
         showPopup('error', 'Error', 'Failed to add reaction. Please try again.');
       }
     } catch (error) {
-      console.error('Error adding reaction to album:', error);
       showPopup('error', 'Network Error', 'Failed to connect to server. Please check your internet connection.');
     }
   };
 
-  // Handle album comment
   const handleAlbumComment = async (albumId: string, comment: string) => {
     const token = localStorage.getItem('token');
     try {
-              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/comment`, { 
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/comment`, { 
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -961,15 +789,14 @@ export default function Dashboard() {
         ));
       }
     } catch (error) {
-      console.error('Error commenting on album:', error);
+      // Silent fail
     }
   };
 
-  // Handle album save
   const handleAlbumSave = async (albumId: string) => {
     const token = localStorage.getItem('token');
     try {
-              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/save`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/save`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -981,21 +808,17 @@ export default function Dashboard() {
           album._id === albumId ? { ...album, savedBy: data.savedBy, saved: data.saved } : album
         ));
         
-        // Dispatch event to refresh saved page
         window.dispatchEvent(new CustomEvent('albumSaved'));
       }
     } catch (error) {
-      console.error('Error saving album:', error);
+      // Silent fail
     }
   };
 
-  // Handle album share
   const handleAlbumShare = async (albumId: string, shareOptions?: ShareOptions) => {
     const token = localStorage.getItem('token');
     try {
-      console.log('Sharing album:', albumId, 'with options:', shareOptions);
-      
-              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/share`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/share`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -1012,78 +835,57 @@ export default function Dashboard() {
       
       if (res.ok) {
         const data = await res.json();
-        console.log('Album shared successfully:', data);
         
-        // Update album shares count
         setAlbums(prev => prev.map(album => 
           album._id === albumId ? { ...album, shares: data.shares, shared: data.shared } : album
         ));
         
-        // Show success message
         showPopup('success', 'Album Shared!', 'Your album has been shared successfully!');
-        
-        // Dispatch event to refresh feed
         window.dispatchEvent(new CustomEvent('albumShared'));
-        
-        // Refresh feed to show the shared post
         fetchFeedData();
       } else {
         const errorData = await res.json();
-        console.error('Album share error:', errorData);
         showPopup('error', 'Share Failed', errorData.message || 'Failed to share album');
       }
     } catch (error) {
-      console.error('Error sharing album:', error);
       showPopup('error', 'Network Error', 'Failed to share album. Please try again.');
     }
   };
 
-  // Helper to get full media URL
   const getMediaUrl = (url: string) => {
-    console.log('🔗 getMediaUrl called with:', url);
-    
     if (!url) {
-      console.log('🔗 No URL provided, returning default');
-      return '/default-avatar.svg';
+      return ''; // Return empty string instead of default avatar
     }
     
     if (url.startsWith('http')) {
-      console.log('🔗 URL is already absolute, returning as-is');
       return url;
     }
     
-    // Handle hardcoded placeholder avatars that don't exist
     if (url.includes('/avatars/') || url.includes('/covers/') || 
         url.includes('1.png') || url.includes('2.png') || url.includes('3.png') || 
         url.includes('4.png') || url.includes('5.png') || url.includes('6.png')) {
-      console.log('🔗 getMediaUrl - Placeholder avatar detected:', url);
-      return '/default-avatar.svg';
+      return ''; // Return empty string instead of default avatar
     }
     
     const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url.startsWith('/') ? url : `/${url}`}`;
-    console.log('🔗 Constructed full URL:', fullUrl);
     return fullUrl;
   };
 
   const [userEmail, setUserEmail] = useState("");
 
   useEffect(() => {
-    // Replace 'userEmail' with the actual key you use in localStorage
     const email = localStorage.getItem("userEmail");
     if (email) setUserEmail(email);
   }, []);
 
-  // Add state for user story
   const [userStory, setUserStory] = useState<string | null>(null);
   const storyInputRef = useRef<HTMLInputElement>(null);
 
-  // Load user story from localStorage on mount
   useEffect(() => {
     const savedStory = localStorage.getItem('userStory');
     if (savedStory) setUserStory(savedStory);
   }, []);
 
-  // Handle story upload
   const handleStoryUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -1098,6 +900,119 @@ export default function Dashboard() {
     }
   };
 
+  // New story system functions
+  const fetchStories = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/stories/feed`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setStories(data.stories || []);
+      }
+    } catch (error) {
+      console.error('Error fetching stories:', error);
+    } finally {
+      setLoadingStories(false);
+    }
+  };
+
+  const handleStorySuccess = (storyData: any) => {
+    setStories(prev => [storyData, ...prev]);
+    showPopup('success', 'Story Created!', 'Your story has been shared successfully!');
+  };
+
+  const handleStoryDelete = async (storyId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/stories/${storyId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        setStories(prev => prev.filter(story => story._id !== storyId));
+        showPopup('success', 'Story Deleted', 'Your story has been deleted successfully!');
+      }
+    } catch (error) {
+      console.error('Error deleting story:', error);
+      showPopup('error', 'Error', 'Failed to delete story');
+    }
+  };
+
+  const handleStoryReact = async (storyId: string, reactionType: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/stories/${storyId}/react`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reactionType })
+      });
+
+      if (response.ok) {
+        // Update stories state with new reaction
+        const updatedStories = stories.map(story => {
+          if (story._id === storyId) {
+            return { ...story, reactions: [...story.reactions, { userId: 'current', type: reactionType, createdAt: new Date().toISOString() }] };
+          }
+          return story;
+        });
+        setStories(updatedStories);
+      }
+    } catch (error) {
+      console.error('Error reacting to story:', error);
+    }
+  };
+
+  const handleStoryReply = async (storyId: string, content: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/stories/${storyId}/reply`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ content })
+      });
+
+      if (response.ok) {
+        // Update stories state with new reply
+        const updatedStories = stories.map(story => {
+          if (story._id === storyId) {
+            return { ...story, replies: [...story.replies, { userId: 'current', content, createdAt: new Date().toISOString() }] };
+          }
+          return story;
+        });
+        setStories(updatedStories);
+      }
+    } catch (error) {
+      console.error('Error replying to story:', error);
+    }
+  };
+
+  const openStoryViewer = (storyIndex: number) => {
+    setSelectedStoryIndex(storyIndex);
+    setShowStoryViewer(true);
+  };
+
   const [user, setUser] = useState<any>(null);
   useEffect(() => {
     const u = localStorage.getItem('user');
@@ -1106,59 +1021,14 @@ export default function Dashboard() {
 
   const router = useRouter();
 
-  // Navigate to user profile
   const navigateToProfile = (userId: string) => {
-    // Use window.location for more reliable navigation
     window.location.href = `/dashboard/profile/${userId}`;
   };
 
-  // Test function to verify media upload
-  const testMediaUpload = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      showPopup('error', 'No Token', 'Please log in first');
-      return;
-    }
-
-    // Create a simple test post with a text file to see if the endpoint is working
-    const formData = new FormData();
-    formData.append('content', 'Test post for media debugging');
-    
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
-      
-      if (res.ok) {
-        const post = await res.json();
-        console.log('✅ Test post created successfully:', post);
-        showPopup('success', 'Test Success', 'Test post created. Check console for details.');
-        
-        // Refresh feed to show the new post
-        fetchFeedData();
-      } else {
-        const errorData = await res.json().catch(() => ({}));
-        console.error('❌ Test post failed:', errorData);
-        showPopup('error', 'Test Failed', `Error: ${errorData.message || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('❌ Test post error:', error);
-      showPopup('error', 'Network Error', 'Failed to create test post');
-    }
-  };
-
-  // Enhanced post creation with better error handling
-
   return (
     <div className="bg-[#f4f7fb] dark:bg-gray-900 min-h-screen pt-2 sm:pt-4 pb-24 sm:pb-6 w-full scrollbar-hide overflow-x-hidden transition-colors duration-200 touch-manipulation">
-      {/* Popup Modal */}
       <Popup popup={popup} onClose={closePopup} />
       
-      {/* Share Popup */}
       <SharePopup
         isOpen={showSharePopup}
         onClose={() => {
@@ -1179,27 +1049,14 @@ export default function Dashboard() {
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 text-gray-900 dark:text-white transition-colors duration-200">
           {userEmail ? `Hello, ${userEmail}! 👋` : "Hello!"}
         </h1>
-        {user && (
-          <div className="flex items-center gap-2 mb-3 sm:mb-4">
-            <img 
-              src={user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${user.avatar}`) : '/default-avatar.svg'} 
-              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-blue-500 object-cover" 
-              onError={(e) => {
-                console.log('❌ Dashboard avatar load failed for user:', user.name, 'URL:', user.avatar);
-                e.currentTarget.src = '/default-avatar.svg';
-              }}
-            />
-            <span className="font-bold text-blue-700 dark:text-blue-400 text-xs sm:text-sm md:text-base transition-colors duration-200">ID: {user._id || user.id}</span>
-          </div>
-        )}
 
-        {/* Stories Row at the top */}
+
         <div className="w-full pt-2 mb-3 sm:mb-4">
           <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-hide touch-pan-x">
-            {/* Current user story */}
+            {/* Your Story */}
             <div 
               className="flex-shrink-0 flex flex-col items-center group cursor-pointer touch-manipulation" 
-              onClick={() => storyInputRef.current?.click()}
+              onClick={() => setShowStoryModal(true)}
               onTouchStart={(e) => {
                 e.currentTarget.style.transform = 'scale(0.95)';
               }}
@@ -1223,71 +1080,164 @@ export default function Dashboard() {
                   />
                 )
               ) : (
-                <img
-                  src={getUserAvatar()}
-                  className="w-20 h-28 sm:w-24 sm:h-36 md:w-32 md:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-blue-500 mb-2 sm:mb-3 shadow-lg sm:shadow-xl object-cover transition-transform group-hover:scale-105"
-                  alt="Your Story"
-                />
+                <div className="w-20 h-28 sm:w-24 sm:h-36 md:w-32 md:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-blue-500 mb-2 sm:mb-3 shadow-lg sm:shadow-xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center transition-transform group-hover:scale-105">
+                  {getUserAvatar() ? (
+                    <img
+                      src={getUserAvatar()}
+                      className="w-full h-full object-cover rounded-xl sm:rounded-2xl"
+                      alt="Your Story"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-white">
+                      <span className="text-2xl mb-1">📷</span>
+                      <span className="text-xs text-center">Add Story</span>
+                    </div>
+                  )}
+                </div>
               )}
               <span className="text-xs sm:text-sm text-[#022e8a] dark:text-blue-400 font-semibold transition-colors duration-200">Your Story</span>
-              <input
-                type="file"
-                accept="image/*,video/*"
-                className="hidden"
-                ref={storyInputRef}
-                onChange={handleStoryUpload}
-              />
             </div>
-            {/* Demo static stories with user avatars */}
-            {[1,2,3,4,5,6].map((i) => (
-              <div 
-                key={i} 
-                className="flex-shrink-0 flex flex-col items-center group cursor-pointer touch-manipulation"
-                onTouchStart={(e) => {
-                  e.currentTarget.style.transform = 'scale(0.95)';
-                }}
-                onTouchEnd={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                }}
-                style={{ touchAction: 'manipulation' }}
-              >
-                <div className="w-20 h-28 sm:w-24 sm:h-36 md:w-32 md:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-gray-300 mb-2 sm:mb-3 shadow-lg sm:shadow-xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center transition-transform group-hover:scale-105 relative overflow-hidden">
-                  <img 
-                    src={`/avatars/${i}.png`} 
-                    alt={`User ${i} Story`}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      console.log('❌ Story avatar load failed for user:', i);
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.parentElement!.innerHTML = `
-                        <div class="flex items-center justify-center w-full h-full">
-                          <span class="text-white text-2xl font-bold">${i}</span>
-                        </div>
-                      `;
-                    }}
-                  />
+
+            {/* Other Users' Stories */}
+            {loadingStories ? (
+              // Loading skeleton
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex-shrink-0 flex flex-col items-center">
+                  <div className="w-20 h-28 sm:w-24 sm:h-36 md:w-32 md:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-gray-300 mb-2 sm:mb-3 shadow-lg sm:shadow-xl bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse" />
+                  <div className="w-16 h-4 bg-gray-200 rounded animate-pulse" />
                 </div>
-                <span className="text-xs sm:text-sm text-[#34495e] dark:text-gray-300 group-hover:text-[#022e8a] dark:group-hover:text-blue-400 font-medium transition-colors duration-200">User {i}</span>
-              </div>
-            ))}
+              ))
+            ) : (
+              stories.slice(0, 6).map((story, index) => (
+                <div 
+                  key={story._id}
+                  className="flex-shrink-0 flex flex-col items-center group cursor-pointer touch-manipulation"
+                  onClick={() => openStoryViewer(index)}
+                  onTouchStart={(e) => {
+                    e.currentTarget.style.transform = 'scale(0.95)';
+                  }}
+                  onTouchEnd={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                  style={{ touchAction: 'manipulation' }}
+                >
+                  {story.mediaType === 'video' ? (
+                    <video
+                      src={story.media}
+                      poster={story.thumbnail}
+                      className="w-20 h-28 sm:w-24 sm:h-36 md:w-32 md:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-gray-300 mb-2 sm:mb-3 shadow-lg sm:shadow-xl object-cover transition-transform group-hover:scale-105"
+                    />
+                  ) : (
+                    <img
+                      src={story.media}
+                      className="w-20 h-28 sm:w-24 sm:h-36 md:w-32 md:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-gray-300 mb-2 sm:mb-3 shadow-lg sm:shadow-xl object-cover transition-transform group-hover:scale-105"
+                      alt={`${story.user.username}'s Story`}
+                    />
+                  )}
+                  <span className="text-xs sm:text-sm text-[#34495e] dark:text-gray-300 group-hover:text-[#022e8a] dark:group-hover:text-blue-400 font-medium transition-colors duration-200 truncate max-w-[80px] text-center">
+                    {story.user.fullName || story.user.username}
+                  </span>
+                </div>
+              ))
+            )}
+
           </div>
         </div>
 
-        {/* Main layout - Responsive */}
         <div className="flex flex-col xl:flex-row gap-3 sm:gap-4 w-full scrollbar-hide">
-          {/* Main content */}
           <div className="w-full xl:flex-1 max-w-none xl:max-w-2xl xl:mx-0 scrollbar-hide">
-            {/* Post Creation */}
             <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 mb-3 sm:mb-4 transition-colors duration-200">
-              <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                <input
-                  type="text"
-                  placeholder="What's going on? #Hashtag.. @Mention.. Link.."
-                  className="flex-1 border border-gray-300 dark:border-gray-600 rounded-full px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
+              {/* Top Section: Content Type Selection */}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setShowReelsModal(true)}
+                    className="flex items-center gap-2 bg-pink-50 dark:bg-pink-900/20 px-3 py-2 rounded-lg border border-pink-200 dark:border-pink-700 hover:bg-pink-100 dark:hover:bg-pink-900/30 transition-colors cursor-pointer"
+                  >
+                    <span className="text-pink-500 text-lg">💎</span>
+                    <span className="text-sm font-medium text-pink-700 dark:text-pink-300">Reels Video</span>
+                  </button>
+                  <div className="flex items-center gap-2 bg-pink-50 dark:bg-pink-900/20 px-3 py-2 rounded-lg border border-pink-200 dark:border-pink-700">
+                    <span className="text-pink-500 text-lg">🕐</span>
+                    <span className="text-sm font-medium text-pink-700 dark:text-pink-300">Free live streams</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content Creation Area */}
+              <div className="relative mb-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-white text-lg">💭</span>
+                  </div>
+                  <div className="flex-1 relative">
+                    <textarea
+                      placeholder="Write your message, add your photo or Video ... @Mention... #Hashtag"
+                      className="w-full min-h-[120px] border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 resize-none"
                   value={newPost}
                   onChange={e => setNewPost(e.target.value)}
                   disabled={posting}
                 />
+                    {/* Character Counter */}
+                    <div className="absolute top-2 right-2">
+                      <div className="bg-red-500 text-white text-xs px-2 py-1 rounded">
+                        {newPost.length}/250
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Bar / Footer */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <button
+                    className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+                    onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                    disabled={posting}
+                    title="Add photos or videos"
+                  >
+                    <span className="text-xl">📷</span>
+                    <span className="text-sm hidden sm:inline">Photo/Video</span>
+                  </button>
+                  
+                  <button
+                    className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-green-500 dark:hover:text-green-400 transition-colors"
+                    title="Tag products"
+                  >
+                    <span className="text-xl">🛒</span>
+                    <span className="text-sm hidden sm:inline">Products</span>
+                  </button>
+                  
+                  <button
+                    className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-yellow-500 dark:hover:text-yellow-400 transition-colors"
+                    title="Add emojis"
+                  >
+                    <span className="text-xl">😊</span>
+                    <span className="text-sm hidden sm:inline">Emoji</span>
+                  </button>
+                  
+                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                    <span className="text-lg">🌐</span>
+                    <select className="text-sm bg-transparent border-none outline-none cursor-pointer">
+                      <option>Everyone</option>
+                      <option>Friends</option>
+                      <option>Private</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <button
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  onClick={handlePost}
+                  disabled={posting || (!newPost.trim() && !mediaFiles.length)}
+                >
+                  <span className="text-lg">📤</span>
+                  {posting ? 'Publishing...' : 'Publish'}
+                </button>
+              </div>
+
+              {/* Hidden file input */}
                 <input
                   type="file"
                   accept="image/*,video/*"
@@ -1299,15 +1249,12 @@ export default function Dashboard() {
                     if (files) {
                       const fileArray = Array.from(files);
                       
-                      // Validate files before adding
                       const validFiles = fileArray.filter(file => {
-                        // Check file size (max 10MB)
                         if (file.size > 10 * 1024 * 1024) {
                           showPopup('error', 'File Too Large', `File "${file.name}" is too large. Maximum size is 10MB.`);
                           return false;
                         }
                         
-                        // Check file type
                         const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg'];
                         if (!validTypes.includes(file.type)) {
                           showPopup('error', 'Unsupported Format', `File "${file.name}" has an unsupported format. Please use images (JPEG, PNG, GIF, WebP) or videos (MP4, WebM, OGG).`);
@@ -1324,31 +1271,6 @@ export default function Dashboard() {
                     }
                   }}
                 />
-                <button
-                  className="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 px-3 py-2 rounded-full text-xs sm:text-sm transition-colors text-gray-700 dark:text-gray-300"
-                  onClick={() => fileInputRef.current && fileInputRef.current.click()}
-                  disabled={posting}
-                  title="Add photos or videos"
-                >
-                  📷/🎥
-                </button>
-                <button
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={handlePost}
-                  disabled={posting || (!newPost.trim() && !mediaFiles.length)}
-                >
-                  {posting ? 'Posting...' : 'Post'}
-                </button>
-                
-                {/* Test button for debugging */}
-                <button
-                  onClick={testMediaUpload}
-                  className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded-full text-xs transition-colors"
-                  title="Test media upload functionality"
-                >
-                  🧪 Test
-                </button>
-              </div>
               {mediaFiles.length > 0 && (
                 <div className="mt-2">
                   <div className="text-xs text-gray-600 dark:text-gray-400 mb-2 transition-colors duration-200">Selected files ({mediaFiles.length}):</div>
@@ -1387,7 +1309,6 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Feed */}
             {loadingPosts && loadingAlbums ? (
               <div className="text-center py-6 sm:py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-3"></div>
@@ -1401,40 +1322,15 @@ export default function Dashboard() {
               </div>
             ) : (
               <>
-                {/* Feed Stats */}
-                <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 mb-3 sm:mb-4 transition-colors duration-200">
-                                      <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 transition-colors duration-200">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <span className="flex items-center gap-1">
-                        📝 <span className="font-medium">{posts.length}</span> posts
-                      </span>
-                      <span className="flex items-center gap-1">
-                        📸 <span className="font-medium">{albums.length}</span> albums
-                      </span>
-                    </div>
-                    <span className="text-xs text-gray-400 hidden sm:inline">
-                      Latest updates first
-                    </span>
-                  </div>
-                </div>
 
-                {/* Create combined feed sorted by creation date */}
+
                 {(() => {
                   const combinedFeed = [
                     ...posts.map((post: any) => ({ ...post, type: 'post' })),
                     ...albums.map((album: any) => ({ ...album, type: 'album' }))
                   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-                  console.log('🎯 Rendering feed with items:', combinedFeed.length);
-                  console.log('🎯 Feed items breakdown:', {
-                    posts: posts.length,
-                    albums: albums.length,
-                    combined: combinedFeed.length
-                  });
-
                   return combinedFeed.map((item: any) => {
-                    console.log('🎯 Rendering item:', item.type, item._id, item.name || item.content?.substring(0, 50));
-                    
                     if (item.type === 'album') {
                       return (
                         <AlbumDisplay
@@ -1452,627 +1348,26 @@ export default function Dashboard() {
                         />
                       );
                     } else {
+                      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+                      const isOwnPost = item.user && (
+                        item.user._id === currentUser._id || 
+                        item.user.id === currentUser.id || 
+                        item.user.userId === currentUser.id
+                      );
+                      
                       return (
-                        <div key={item._id || item.id} className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 mb-3 sm:mb-4 transition-colors duration-200">
-                          <div className="flex items-center gap-2 mb-2 sm:mb-3">
-                            <div className="flex items-center flex-1">
-                              {item.user ? (
-                                <a 
-                                  href={`/dashboard/profile/${getUserId(item.user) || 'unknown'}`}
-                                  target="_blank" 
-                                  rel="noopener noreferrer"
-                                >
-                                  <img
-                                    src={item.user.avatar ? (item.user.avatar.startsWith('http') ? item.user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${item.user.avatar}`) : '/avatars/1.png.png'}
-                                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-blue-400 mr-2 cursor-pointer"
-                                    alt={item.user.name || 'User'}
-                                  />
-                                </a>
-                              ) : (
-                                <img
-                                  src="/avatars/1.png.png"
-                                  className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-blue-400 mr-2"
-                                  alt="User"
-                                />
-                              )}
-                              <div className="flex-1 min-w-0">
-                                {item.user ? (
-                                                                    <a 
-                                    href={`/dashboard/profile/${getUserId(item.user) || 'unknown'}`}
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="font-semibold text-sm sm:text-base hover:underline cursor-pointer truncate block text-gray-900 dark:text-white transition-colors duration-200"
-                                  >
-                                    {item.user.name || 'Anonymous'}
-                                  </a>
-                                ) : (
-                                  <div className="font-semibold text-sm sm:text-base truncate text-gray-900 dark:text-white transition-colors duration-200">Anonymous</div>
-                                )}
-                                                                  <div className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-200">
-                                    {new Date(item.createdAt).toLocaleString()}
-                                    {item.isShared && (
-                                      <span className="ml-2 text-blue-600 dark:text-blue-400">📤 Shared</span>
-                                    )}
-                                  </div>
-                              </div>
-                            </div>
-                            
-                            {/* Post Actions Menu */}
-                                                          <div className="flex items-center gap-2">
-                                {/* Media indicator */}
-                                {item.media && item.media.length > 0 && (
-                                  <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded-full transition-colors duration-200">
-                                    {item.media.some((m: any) => m.type === 'video') && <span>🎥</span>}
-                                    {item.media.some((m: any) => m.type === 'image') && <span>📷</span>}
-                                    <span className="hidden sm:inline">{item.media.length} media</span>
-                                    <span className="sm:hidden">{item.media.length}</span>
-                                  </div>
-                                )}
-                              
-                              {/* Edit/Delete Menu for own posts */}
-                              {(() => {
-                                const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-                                const isOwnPost = item.user && (
-                                  item.user._id === currentUser._id || 
-                                  item.user.id === currentUser.id || 
-                                  item.user.userId === currentUser.id
-                                );
-                                
-                                if (isOwnPost) {
-                                  return (
-                                    <div className="relative group">
-                                      <button className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
-                                        <span className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">⋮</span>
-                                      </button>
-                                      <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto min-w-[120px] transition-colors duration-200">
-                                        <button
-                                          onClick={() => startEditPost(item)}
-                                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 text-gray-900 dark:text-white transition-colors duration-200"
-                                        >
-                                          <span>✏️</span>
-                                          <span>Edit</span>
-                                        </button>
-                                        <button
-                                          onClick={() => handleDelete(item._id || item.id)}
-                                          className="w-full text-left px-3 py-2 text-sm hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 flex items-center gap-2 transition-colors duration-200"
-                                        >
-                                          <span>🗑️</span>
-                                          <span>Delete</span>
-                                        </button>
-                                      </div>
-                                    </div>
-                                  );
-                                }
-                                return null;
-                              })()}
-                            </div>
-                          </div>
-
-                          {/* Edit post form */}
-                          {editingPostId === (item._id || item.id) ? (
-                            <div className="mb-3 p-3 bg-blue-50 rounded border border-blue-200">
-                              <textarea
-                                className="w-full border rounded p-2 mb-2 text-sm"
-                                value={editContent}
-                                onChange={e => setEditContent(e.target.value)}
-                                rows={3}
-                                placeholder="Edit your post..."
-                              />
-                              <input
-                                type="file"
-                                accept="image/*,video/*"
-                                multiple
-                                className="mb-2 text-sm w-full"
-                                ref={editFileInputRef}
-                                onChange={e => {
-                                  const files = e.target.files;
-                                  if (files) {
-                                    const fileArray = Array.from(files);
-                                    setEditMediaFiles(prev => [...prev, ...fileArray]);
-                                  }
-                                }}
-                              />
-                              {editMediaFiles.length > 0 && (
-                                <div className="mb-2">
-                                  <div className="text-xs text-gray-600 mb-1">Selected files:</div>
-                                  <div className="flex flex-wrap gap-1">
-                                    {editMediaFiles.map((file, index) => (
-                                      <div key={index} className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded text-xs">
-                                        <span className="truncate max-w-[80px] sm:max-w-none">{file.name}</span>
-                                        <button
-                                          onClick={() => setEditMediaFiles(prev => prev.filter((_, i) => i !== index))}
-                                          className="text-red-500 hover:text-red-700"
-                                        >
-                                          ×
-                                        </button>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                              <div className="flex gap-2">
-                                <button
-                                  className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 transition text-sm flex-1 sm:flex-none"
-                                  onClick={() => handleEditPost(item._id || item.id)}
-                                  disabled={!editContent.trim()}
-                                >
-                                  Save
-                                </button>
-                                <button
-                                  className="bg-gray-300 px-3 py-2 rounded hover:bg-gray-400 transition text-sm flex-1 sm:flex-none"
-                                  onClick={cancelEditPost}
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="mb-2 sm:mb-3 text-sm sm:text-base text-gray-900 dark:text-white transition-colors duration-200">
-                              {/* Show shared post indicator */}
-                              {item.isShared && item.sharedFrom && (
-                                <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 transition-colors duration-200">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <span className="text-blue-600 dark:text-blue-400">🔄</span>
-                                    <span className="text-sm text-gray-600 dark:text-gray-400 transition-colors duration-200">
-                                      {item.sharedFrom.userName} shared this
-                                    </span>
-                                  </div>
-                                  {item.shareMessage && (
-                                    <div className="text-sm mb-2 text-gray-900 dark:text-white transition-colors duration-200">{item.shareMessage}</div>
-                                  )}
-                                  {/* Show original post content */}
-                                  {item.sharedFrom.postId && (
-                                    <div className="text-sm text-gray-700 dark:text-gray-300 italic transition-colors duration-200">
-                                      "{item.content}"
-                                    </div>
-                                  )}
-                                  {/* Show shared album */}
-                                  {item.sharedFrom.albumId && (
-                                    <div className="text-sm text-gray-700 dark:text-gray-300 italic transition-colors duration-200">
-                                      Album: {item.sharedFrom.albumName}
-                                      {item.sharedFrom.albumMedia && item.sharedFrom.albumMedia.length > 0 && (
-                                        <div className="mt-2 flex gap-2 overflow-x-auto">
-                                          {item.sharedFrom.albumMedia.slice(0, 3).map((media: any, idx: number) => (
-                                            <img
-                                              key={idx}
-                                              src={getMediaUrl(media.url)}
-                                              alt={`Album media ${idx + 1}`}
-                                              className="w-16 h-16 object-cover rounded"
-                                            />
-                                          ))}
-                                          {item.sharedFrom.albumMedia.length > 3 && (
-                                            <div className="w-16 h-16 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center text-xs text-gray-500 dark:text-gray-400 transition-colors duration-200">
-                                              +{item.sharedFrom.albumMedia.length - 3}
-                                            </div>
-                                          )}
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                              {/* Show regular post content */}
-                              {(!item.isShared || !item.sharedFrom) && (
-                                <div className="text-gray-900 dark:text-white transition-colors duration-200">
-                                  {item.content}
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Show media if present */}
-                          {(() => {
-                            // Enhanced debugging for media
-                            const mediaDebug = {
-                              id: item._id || item.id,
-                              hasMedia: !!item.media,
-                              mediaLength: item.media?.length,
-                              mediaType: item.media?.[0]?.type,
-                              mediaUrl: item.media?.[0]?.url,
-                              hasImage: !!item.image,
-                              imageUrl: item.image,
-                              mediaArray: item.media,
-                              mediaTypeOf: typeof item.media,
-                              isArray: Array.isArray(item.media),
-                              mediaKeys: item.media ? Object.keys(item.media) : null
-                            };
-                            console.log('🔍 Rendering media for item:', mediaDebug);
-                            
-                            // Check if media exists and has content
-                            if (item.media && Array.isArray(item.media) && item.media.length > 0) {
-                              return (
-                                <div className="mb-3">
-                                  {item.media.length === 1 ? (
-                                    // Single media
-                                    item.media[0].type === 'video' ? (
-                                      <video controls className="rounded-lg w-full max-h-64 sm:max-h-80 object-cover">
-                                        <source src={getMediaUrl(item.media[0].url)} type="video/mp4" />
-                                        Your browser does not support the video tag.
-                                      </video>
-                                    ) : (
-                                      <img 
-                                        src={getMediaUrl(item.media[0].url)} 
-                                        alt="media" 
-                                        className="rounded-lg w-full max-h-64 sm:max-h-80 object-cover"
-                                        onError={(e) => {
-                                          console.log('❌ Image load failed:', item.media[0].url);
-                                          e.currentTarget.src = '/default-avatar.svg';
-                                        }}
-                                      />
-                                    )
-                                  ) : (
-                                    // Multiple media - grid layout
-                                    <div className={`grid gap-1 sm:gap-2 ${item.media.length === 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3'}`}>
-                                      {item.media.map((media: any, index: number) => (
-                                        <div key={index} className="relative">
-                                          {media.type === 'video' ? (
-                                            <video 
-                                              controls 
-                                              className="rounded-lg w-full h-24 sm:h-32 object-cover"
-                                              onClick={() => {
-                                                console.log('Video clicked:', media.url);
-                                              }}
-                                            >
-                                              <source src={getMediaUrl(media.url)} type="video/mp4" />
-                                              Your browser does not support the video tag.
-                                            </video>
-                                          ) : (
-                                            <img 
-                                              src={getMediaUrl(media.url)} 
-                                              alt={`media ${index + 1}`} 
-                                              className="rounded-lg w-full h-24 sm:h-32 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                                              onClick={() => {
-                                                console.log('Image clicked:', media.url);
-                                              }}
-                                              onError={(e) => {
-                                                console.log('❌ Image load failed:', media.url);
-                                                e.currentTarget.src = '/default-avatar.svg';
-                                              }}
-                                            />
-                                          )}
-                                          {/* Video play icon overlay */}
-                                          {media.type === 'video' && (
-                                            <div className="absolute inset-0 flex items-center justify-center">
-                                              <div className="backdrop-blur-sm bg-black bg-opacity-50 rounded-full p-1">
-                                                <span className="text-white text-sm">▶</span>
-                                              </div>
-                                            </div>
-                                          )}
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            } else if (item.media && item.media.url) {
-                              // Backward compatibility for old single media structure
-                              return item.media.type === 'video' ? (
-                                <video controls className="rounded-lg w-full max-h-64 sm:max-h-80 object-cover mb-3">
-                                  <source src={getMediaUrl(item.media.url)} type="video/mp4" />
-                                  Your browser does not support the video tag.
-                                </video>
-                              ) : (
-                                <img 
-                                  src={getMediaUrl(item.media.url)} 
-                                  alt="media" 
-                                  className="rounded-lg w-full max-h-64 sm:max-h-80 object-cover mb-3"
-                                  onError={(e) => {
-                                    console.log('❌ Image load failed:', item.media.url);
-                                    e.currentTarget.src = '/default-avatar.svg';
-                                  }}
-                                />
-                              );
-                            } else if (item.image && item.image !== '') {
-                              // Legacy image support
-                              return (
-                                <img 
-                                  src={getMediaUrl(item.image)} 
-                                  alt="media" 
-                                  className="rounded-lg w-full max-h-64 sm:max-h-80 object-cover mb-3"
-                                  onError={(e) => {
-                                    console.log('❌ Image load failed:', item.image);
-                                    e.currentTarget.src = '/default-avatar.svg';
-                                  }}
-                                />
-                              );
-                            }
-                            return null;
-                          })()}
-
-                          {/* Action buttons */}
-                          <div className="flex flex-wrap gap-2 mt-3">
-                            <div className="relative">
-                              <button 
-                                className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 text-sm touch-manipulation ${
-                                  Array.isArray(item.reactions) && item.reactions.length > 0 
-                                    ? 'text-red-500 bg-red-50 border border-red-200' 
-                                    : 'text-gray-500 hover:text-red-500 hover:bg-red-50'
-                                }`} 
-                                onClick={async (e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  console.log('🔘 Like button clicked for post:', item._id || item.id);
-                                  console.log('🔘 Post data:', item);
-                                  
-                                  // Test backend connection first
-                                  const isBackendAccessible = await testBackendConnection();
-                                  if (!isBackendAccessible) {
-                                    showPopup('error', 'Connection Error', 'Cannot connect to server. Please check your internet connection.');
-                                    return;
-                                  }
-                                  
-                                  handleLike(item._id || item.id);
-                                }}
-                                onTouchStart={(e) => {
-                                  // Prevent default touch behavior
-                                  e.preventDefault();
-                                  // Add visual feedback for mobile
-                                  e.currentTarget.style.transform = 'scale(0.95)';
-                                }}
-                                onTouchEnd={(e) => {
-                                  // Restore normal size
-                                  e.currentTarget.style.transform = 'scale(1)';
-                                  // Handle like on touch end
-                                  handleLike(item._id || item.id);
-                                }}
-                                onMouseEnter={() => {
-                                  // Show reaction popup on hover (desktop only)
-                                  if (window.innerWidth > 768) {
-                                    const reactionButton = document.getElementById(`reaction-${item._id || item.id}`);
-                                    if (reactionButton) {
-                                      reactionButton.classList.remove('hidden');
-                                    }
-                                  }
-                                }}
-                                onMouseLeave={() => {
-                                  // Hide reaction popup after delay (desktop only)
-                                  if (window.innerWidth > 768) {
-                                    setTimeout(() => {
-                                      const reactionButton = document.getElementById(`reaction-${item._id || item.id}`);
-                                      if (reactionButton) {
-                                        reactionButton.classList.add('hidden');
-                                      }
-                                    }, 300);
-                                  }
-                                }}
-                                style={{ touchAction: 'manipulation' }}
-                              >
-                                <span>
-                                  {(() => {
-                                    if (item.reactions && Array.isArray(item.reactions) && item.reactions.length > 0) {
-                                      const reactionCounts: { [key: string]: number } = {};
-                                      item.reactions.forEach((reaction: any) => {
-                                        reactionCounts[reaction.type] = (reactionCounts[reaction.type] || 0) + 1;
-                                      });
-                                      const mostCommon = Object.keys(reactionCounts).reduce((a, b) => 
-                                        reactionCounts[a] > reactionCounts[b] ? a : b
-                                      );
-                                      const reactionEmojis: { [key: string]: string } = {
-                                        like: '👍',
-                                        love: '❤️',
-                                        haha: '😂',
-                                        wow: '😮',
-                                        sad: '😢',
-                                        angry: '😠'
-                                      };
-                                      return reactionEmojis[mostCommon] || '👍';
-                                    }
-                                    return '👍';
-                                  })()}
-                                </span>
-                                <span className="font-medium">
-                                  {Array.isArray(item.reactions) ? item.reactions.length : (Array.isArray(item.likes) ? item.likes.length : 0)}
-                                </span>
-                              </button>
-                              
-                              {/* Reaction Popup */}
-                              <div 
-                                id={`reaction-${item._id || item.id}`}
-                                className="absolute bottom-full left-0 mb-2 hidden z-50 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 p-2 sm:p-3"
-                                onMouseEnter={() => {
-                                  if (window.innerWidth > 768) {
-                                    const reactionButton = document.getElementById(`reaction-${item._id || item.id}`);
-                                    if (reactionButton) {
-                                      reactionButton.classList.remove('hidden');
-                                    }
-                                  }
-                                }}
-                                onMouseLeave={() => {
-                                  if (window.innerWidth > 768) {
-                                    const reactionButton = document.getElementById(`reaction-${item._id || item.id}`);
-                                    if (reactionButton) {
-                                      reactionButton.classList.add('hidden');
-                                    }
-                                  }
-                                }}
-                              >
-                                <div className="flex items-center gap-1 sm:gap-2">
-                                  {[
-                                    { type: 'like', emoji: '👍', color: 'bg-blue-500' },
-                                    { type: 'love', emoji: '❤️', color: 'bg-red-500' },
-                                    { type: 'haha', emoji: '😂', color: 'bg-yellow-500' },
-                                    { type: 'wow', emoji: '😮', color: 'bg-yellow-500' },
-                                    { type: 'sad', emoji: '😢', color: 'bg-yellow-500' },
-                                    { type: 'angry', emoji: '😠', color: 'bg-orange-500' }
-                                  ].map((reaction) => (
-                                    <button
-                                      key={reaction.type}
-                                      onClick={() => {
-                                        handleReaction(item._id || item.id, reaction.type);
-                                        // Hide popup after selection on mobile
-                                        if (window.innerWidth <= 768) {
-                                          const reactionButton = document.getElementById(`reaction-${item._id || item.id}`);
-                                          if (reactionButton) {
-                                            reactionButton.classList.add('hidden');
-                                          }
-                                        }
-                                      }}
-                                      onTouchStart={(e) => {
-                                        // Prevent default touch behavior
-                                        e.preventDefault();
-                                        // Add visual feedback for mobile
-                                        e.currentTarget.style.transform = 'scale(0.9)';
-                                      }}
-                                      onTouchEnd={(e) => {
-                                        // Restore normal size
-                                        e.currentTarget.style.transform = 'scale(1)';
-                                        // Handle reaction on touch end
-                                        handleReaction(item._id || item.id, reaction.type);
-                                        // Hide popup after selection on mobile
-                                        if (window.innerWidth <= 768) {
-                                          const reactionButton = document.getElementById(`reaction-${item._id || item.id}`);
-                                          if (reactionButton) {
-                                            reactionButton.classList.add('hidden');
-                                          }
-                                        }
-                                      }}
-                                      className={`w-10 h-10 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white text-base sm:text-sm hover:scale-110 transition-all duration-200 touch-manipulation ${reaction.color}`}
-                                      title={reaction.type.charAt(0).toUpperCase() + reaction.type.slice(1)}
-                                      style={{ touchAction: 'manipulation' }}
-                                    >
-                                      {reaction.emoji}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-                            <button 
-                              className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 text-sm touch-manipulation ${
-                                Array.isArray(item.savedBy) && item.savedBy.length > 0 
-                                  ? 'text-blue-500 bg-blue-50 border border-blue-200' 
-                                  : 'text-gray-500 hover:text-blue-500 hover:bg-blue-50'
-                              }`} 
-                              onClick={() => handleSave(item._id || item.id)}
-                              style={{ touchAction: 'manipulation' }}
-                            >
-                              <span>{Array.isArray(item.savedBy) && item.savedBy.length > 0 ? '💾' : '🔖'}</span>
-                              <span className="font-medium hidden sm:inline">
-                                {Array.isArray(item.savedBy) && item.savedBy.length > 0 ? 'Saved' : 'Save'}
-                              </span>
-                            </button>
-                            <button 
-                              className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 text-sm touch-manipulation ${
-                                Array.isArray(item.shares) && item.shares.length > 0 
-                                  ? 'text-green-500 bg-green-50 border border-green-200' 
-                                  : 'text-gray-500 hover:text-green-500 hover:bg-green-50'
-                              }`} 
-                              onClick={() => openSharePopup(item)}
-                              style={{ touchAction: 'manipulation' }}
-                            >
-                              <span>📤</span>
-                              <span className="font-medium">
-                                <span className="hidden sm:inline">Share </span>
-                                {Array.isArray(item.shares) && item.shares.length > 0 ? `(${item.shares.length})` : ''}
-                              </span>
-                            </button>
-                            <span className="flex items-center gap-1 px-3 py-2 text-gray-400 dark:text-gray-500 text-sm transition-colors duration-200">
-                              <span>💬</span>
-                              <span className="font-medium">
-                                {Array.isArray(item.comments) ? item.comments.length : 0}
-                                <span className="hidden sm:inline"> comments</span>
-                              </span>
-                            </span>
-                            <span className="flex items-center gap-1 px-3 py-2 text-gray-400 dark:text-gray-500 text-sm transition-colors duration-200">
-                              <span>👁️</span>
-                              <span className="font-medium">
-                                {Array.isArray(item.views) ? item.views.length : 0}
-                                <span className="hidden sm:inline"> views</span>
-                              </span>
-                            </span>
-                            
-                            {/* Delete button for own posts */}
-                            {(() => {
-                              const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-                              const isOwnPost = item.user && (
-                                item.user._id === currentUser._id || 
-                                item.user.id === currentUser.id || 
-                                item.user.userId === currentUser.id
-                              );
-                              
-                              if (isOwnPost) {
-                                return (
-                                  <button 
-                                    onClick={() => handleDelete(item._id || item.id)}
-                                    className="flex items-center gap-1 px-3 py-2 rounded-lg transition-all duration-200 text-sm text-red-500 hover:text-red-700 hover:bg-red-50 touch-manipulation"
-                                    title="Delete post"
-                                    style={{ touchAction: 'manipulation' }}
-                                  >
-                                    <span>🗑️</span>
-                                    <span className="font-medium hidden sm:inline">Delete</span>
-                                  </button>
-                                );
-                              }
-                              return null;
-                            })()}
-                          </div>
-
-                          {/* Comments Section */}
-                          <div className="mt-3 border-t border-gray-200 dark:border-gray-700 pt-3 transition-colors duration-200">
-                            <div className="font-semibold mb-2 text-sm flex items-center gap-2 text-gray-900 dark:text-white transition-colors duration-200">
-                              <span>Comments</span>
-                              {item.comments && item.comments.length > 0 && (
-                                <span className="text-xs text-gray-500 dark:text-gray-400">({item.comments.length})</span>
-                              )}
-                            </div>
-                            {item.comments && item.comments.length > 0 ? (
-                              <div className="space-y-2 mb-3">
-                                {item.comments.map((comment: any, idx: number) => {
-                                  // Check if current user is the comment author
-                                  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
-                                  const isCommentAuthor = comment.user && (
-                                    comment.user._id === currentUser._id || 
-                                    comment.user.id === currentUser.id || 
-                                    comment.user.userId === currentUser.id
-                                  );
-                                  
-                                  return (
-                                    <div key={idx} className="flex items-start gap-2 group">
-                                      <img src={comment.user?.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${comment.user.avatar}`) : '/avatars/1.png.png'} alt="avatar" className="w-6 h-6 rounded-full flex-shrink-0" />
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex flex-wrap items-center gap-1 sm:gap-2 mb-1">
-                                          {comment.user ? (
-                                            <a 
-                                              href={`/dashboard/profile/${getUserId(comment.user) || 'unknown'}`} 
-                                              target="_blank" 
-                                              rel="noopener noreferrer"
-                                              className="font-medium text-xs sm:text-sm hover:underline cursor-pointer text-gray-900 dark:text-white transition-colors duration-200"
-                                            >
-                                              {comment.user?.name || 'Anonymous'}
-                                            </a>
-                                          ) : (
-                                            <span className="font-medium text-xs sm:text-sm text-gray-900 dark:text-white transition-colors duration-200">{comment.user?.name || 'Anonymous'}</span>
-                                          )}
-                                          <span className="text-xs text-gray-400 dark:text-gray-500 transition-colors duration-200">{comment.createdAt ? new Date(comment.createdAt).toLocaleString() : ''}</span>
-                                          
-                                          {/* Delete button for comment author */}
-                                          {isCommentAuthor && (
-                                            <button
-                                              onClick={() => handleDeleteComment(item._id || item.id, comment._id || comment.id)}
-                                              disabled={deletingComments[`${item._id || item.id}-${comment._id || comment.id}`]}
-                                              className={`opacity-0 group-hover:opacity-100 ml-auto p-1 rounded transition-all duration-200 text-xs ${
-                                                deletingComments[`${item._id || item.id}-${comment._id || comment.id}`]
-                                                  ? 'text-gray-400 cursor-not-allowed'
-                                                  : 'text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20'
-                                              }`}
-                                              title={deletingComments[`${item._id || item.id}-${comment._id || comment.id}`] ? 'Deleting...' : 'Delete comment'}
-                                            >
-                                              {deletingComments[`${item._id || item.id}-${comment._id || comment.id}`] ? '⏳' : '🗑️'}
-                                            </button>
-                                          )}
-                                        </div>
-                                        <div className="text-sm break-words text-gray-900 dark:text-white transition-colors duration-200">{comment.text}</div>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            ) : (
-                              <div className="text-xs text-gray-400 dark:text-gray-500 mb-3 transition-colors duration-200">No comments yet.</div>
-                            )}
-                            {/* Add comment form */}
-                            <AddCommentForm postId={item._id || item.id} onAddComment={handleAddComment} />
-                          </div>
-                        </div>
+                        <FeedPost
+                          key={item._id || item.id}
+                          post={item}
+                          onLike={handleLike}
+                          onReaction={handleReaction}
+                          onComment={handleAddComment}
+                          onShare={handleShare}
+                          onSave={handleSave}
+                          onDelete={handleDelete}
+                          onEdit={startEditPost}
+                          isOwnPost={isOwnPost}
+                        />
                       );
                     }
                   });
@@ -2081,7 +1376,6 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Sidebar */}
           <div className="w-full xl:w-1/4 flex flex-col gap-3 sm:gap-4 scrollbar-hide">
             <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 transition-colors duration-200">
               <div className="font-semibold mb-2 text-sm text-gray-900 dark:text-white transition-colors duration-200">Pro Members</div>
@@ -2101,9 +1395,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-
-
-      {/* General Popup */}
       <Popup 
         popup={popup} 
         onClose={closePopup} 
@@ -2113,7 +1404,34 @@ export default function Dashboard() {
           closePopup();
         }}
       />
-        <style jsx>{`
+
+      {/* Reels Creation Modal */}
+      <ReelsCreationModal
+        isOpen={showReelsModal}
+        onClose={() => setShowReelsModal(false)}
+        onSuccess={() => handleReelShare({})}
+      />
+
+      {/* Story Creation Modal */}
+      <StoryCreationModal
+        isOpen={showStoryModal}
+        onClose={() => setShowStoryModal(false)}
+        onSuccess={handleStorySuccess}
+      />
+
+      {/* Story Viewer */}
+      {showStoryViewer && stories.length > 0 && (
+        <StoryViewer
+          stories={stories}
+          initialStoryIndex={selectedStoryIndex}
+          onClose={() => setShowStoryViewer(false)}
+          onDelete={handleStoryDelete}
+          onReact={handleStoryReact}
+          onReply={handleStoryReply}
+        />
+      )}
+      
+      <style jsx>{`
         .scrollbar-hide {
           -ms-overflow-style: none;
           scrollbar-width: none;
@@ -2126,12 +1444,10 @@ export default function Dashboard() {
   );
 }
 
-
-function AddCommentForm({ postId, onAddComment }: { postId: string, onAddComment: (postId: string, text: string, clearInput: () => void) => void }) {
+function AddCommentForm({ postId, onAddComment }: { postId: string, onAddComment: (postId: string, text: string) => void }) {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const clearInput = () => setText('');
   
   return (
     <form
@@ -2139,7 +1455,8 @@ function AddCommentForm({ postId, onAddComment }: { postId: string, onAddComment
       onSubmit={async e => {
         e.preventDefault();
         setLoading(true);
-        await onAddComment(postId, text, clearInput);
+        await onAddComment(postId, text);
+        setText(''); // Clear input after successful comment
         setLoading(false);
       }}
     >

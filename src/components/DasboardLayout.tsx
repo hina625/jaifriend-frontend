@@ -668,6 +668,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       e.preventDefault();
                       toggleSection(item.section);
                     }
+                    // Close admin sidebar when clicking on settings
+                    if (item.name === "Settings" || item.href?.includes('/admin/settings')) {
+                      setAdminSettingsOpen(false);
+                    }
                   }}
                 >
                   {menuItemContent}
@@ -682,6 +686,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   onClick={() => {
                     if (item.hasPlus && item.section) {
                       toggleSection(item.section);
+                    }
+                    // Close admin sidebar when clicking on settings
+                    if (item.name === "Settings" || item.href?.includes('/admin/settings')) {
+                      setAdminSettingsOpen(false);
                     }
                   }}
                 >
@@ -1103,7 +1111,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 
                 <button 
                   className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
-                  onClick={() => router.push('/dashboard/settings/privacy')}
+                  onClick={() => {
+                    router.push('/dashboard/settings/privacy');
+                    setProfileSidebarOpen(false);
+                  }}
                 >
                   <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">✔️</span>
                   <span className="font-medium text-gray-900 dark:text-white text-sm">Privacy Setting</span>
@@ -1111,7 +1122,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 
                 <button 
                   className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
-                  onClick={() => router.push('/dashboard/settings')}
+                  onClick={() => {
+                    router.push('/dashboard/settings');
+                    setProfileSidebarOpen(false);
+                  }}
                 >
                   <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">⚙️</span>
                   <span className="font-medium text-gray-900 dark:text-white text-sm">General Setting</span>
@@ -1127,7 +1141,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 
                 <button 
                   className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
-                  onClick={() => router.push('/dashboard/admin')}
+                  onClick={() => {
+                    router.push('/dashboard/admin');
+                    setProfileSidebarOpen(false);
+                  }}
                 >
                   <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">👑</span>
                   <span className="font-medium text-gray-900 dark:text-white text-sm">Admin Dashboard</span>
@@ -1655,7 +1672,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       
                       <button 
                         className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
-                        onClick={() => router.push('/dashboard/settings/privacy')}
+                        onClick={() => {
+                          router.push('/dashboard/settings/privacy');
+                          setProfileSidebarOpen(false);
+                        }}
                       >
                         <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">✔️</span>
                         <span className="font-medium text-gray-900 dark:text-white text-sm">Privacy Setting</span>
@@ -1663,7 +1683,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       
                       <button 
                         className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
-                        onClick={() => router.push('/dashboard/settings')}
+                        onClick={() => {
+                          router.push('/dashboard/settings');
+                          setProfileSidebarOpen(false);
+                        }}
                       >
                         <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">⚙️</span>
                         <span className="font-medium text-gray-900 dark:text-white text-sm">General Setting</span>
@@ -1679,7 +1702,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       
                       <button 
                         className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
-                        onClick={() => router.push('/dashboard/admin')}
+                        onClick={() => {
+                          router.push('/dashboard/admin');
+                          setProfileSidebarOpen(false);
+                        }}
                       >
                         <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">👑</span>
                         <span className="font-medium text-gray-900 dark:text-white text-sm">Admin Dashboard</span>

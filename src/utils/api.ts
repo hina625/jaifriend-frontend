@@ -103,6 +103,50 @@ export const deleteCommentApi = async (token: string, albumId: string, commentId
   return res.data;
 };
 
+// Post Save API functions
+export const savePostApi = async (token: string, postId: string) => {
+  const res = await axios.post(`${API_URL}/api/posts/${postId}/save`, {}, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+export const getSavedPostsApi = async (token: string, page: number = 1, limit: number = 10) => {
+  const res = await axios.get(`${API_URL}/api/posts/saved?page=${page}&limit=${limit}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+export const checkPostSavedApi = async (token: string, postId: string) => {
+  const res = await axios.get(`${API_URL}/api/posts/${postId}/saved-status`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+// Post management API functions
+export const toggleCommentsApi = async (token: string, postId: string) => {
+  const res = await axios.post(`${API_URL}/api/posts/${postId}/toggle-comments`, {}, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+export const pinPostApi = async (token: string, postId: string) => {
+  const res = await axios.post(`${API_URL}/api/posts/${postId}/pin`, {}, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+export const boostPostApi = async (token: string, postId: string) => {
+  const res = await axios.post(`${API_URL}/api/posts/${postId}/boost`, {}, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
 export const getSavedAlbumsApi = async (token: string) => {
   const res = await axios.get(`${API_URL}/api/albums/saved`, {
     headers: { Authorization: `Bearer ${token}` }
