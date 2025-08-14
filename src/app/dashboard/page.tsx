@@ -11,7 +11,7 @@ import FeedPost from '@/components/FeedPost';
 import ReelsCreationModal from '@/components/ReelsCreationModal';
 import StoryCreationModal from '@/components/StoryCreationModal';
 import StoryViewer from '@/components/StoryViewer';
-import { isAuthenticated, clearAuth } from '@/utils/auth';
+import { isAuthenticated, clearAuth, getCurrentUserId } from '@/utils/auth';
 
 function getUserAvatar() {
   try {
@@ -86,6 +86,7 @@ export default function Dashboard() {
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [loadingAlbums, setLoadingAlbums] = useState(true);
   const [deletingComments, setDeletingComments] = useState<{[key: string]: boolean}>({});
+  const [likingPosts, setLikingPosts] = useState<{[key: string]: boolean}>({});
   const [newPost, setNewPost] = useState('');
   const [newPostTitle, setNewPostTitle] = useState('');
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
@@ -594,16 +595,60 @@ export default function Dashboard() {
   };
 
   const handleLike = async (postId: string) => {
+    console.log('🔄 Dashboard handleLike called with postId:', postId);
     const currentPost = posts.find(p => (p._id === postId || p.id === postId));
     const token = localStorage.getItem('token');
     
     if (!token) {
+      console.error('❌ No token found for like operation');
       showPopup('error', 'Authentication Error', 'Please login to like posts');
       return;
     }
 
+    console.log('🔑 Token exists:', !!token);
+    console.log('📝 Current post:', currentPost);
+    console.log('💖 Current likes:', currentPost?.likes);
+
+    // Prevent multiple clicks
+    if (likingPosts[postId]) {
+      console.log('⚠️ Post is already being liked, ignoring click');
+      return;
+    }
+
+    // Set loading state
+    setLikingPosts(prev => ({ ...prev, [postId]: true }));
+    console.log('⏳ Set loading state for post:', postId);
+
+    // Optimistic update for better UX
+    const originalPosts = [...posts];
+    console.log('🔄 Performing optimistic update');
+    setPosts(prevPosts => {
+      return prevPosts.map(p => {
+        if (p._id === postId || p.id === postId) {
+          const currentUserId = getCurrentUserId();
+          const isCurrentlyLiked = p.likes?.includes(currentUserId);
+          console.log('💖 Current user ID:', currentUserId);
+          console.log('💖 Is currently liked:', isCurrentlyLiked);
+          console.log('💖 Current likes array:', p.likes);
+          
+          const newLikes = isCurrentlyLiked 
+            ? p.likes?.filter((id: string) => id !== currentUserId) || []
+            : [...(p.likes || []), currentUserId];
+          
+          console.log('💖 New likes array:', newLikes);
+          
+          return {
+            ...p,
+            likes: newLikes
+          };
+        }
+        return p;
+      });
+    });
+
     try {
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/like`;
+      console.log('🌐 Making API call to:', apiUrl);
       
       const res = await fetch(apiUrl, {
         method: 'POST',
@@ -613,8 +658,12 @@ export default function Dashboard() {
         }
       });
       
+      console.log('📡 API response status:', res.status);
+      
       if (res.ok) {
         const data = await res.json();
+        console.log('✅ API response data:', data);
+        // Update with server response
         setPosts(prevPosts => {
           const updatedPosts = prevPosts.map(p => {
             if (p._id === postId || p.id === postId) {
@@ -624,7 +673,17 @@ export default function Dashboard() {
           });
           return updatedPosts;
         });
+        
+        // Show success message
+        const isLiked = data.post.likes?.includes(getCurrentUserId());
+        console.log('💖 Final like state:', isLiked);
+        showPopup('success', 'Success', `Post ${isLiked ? 'liked' : 'unliked'} successfully!`);
       } else {
+        console.error('❌ API call failed with status:', res.status);
+        // Revert optimistic update on error
+        setPosts(originalPosts);
+        console.log('🔄 Reverted optimistic update due to API error');
+        
         let errorMessage = 'Unknown error';
         try {
           const errorData = await res.json();
@@ -641,7 +700,12 @@ export default function Dashboard() {
         showPopup('error', 'Error', `Failed to like post: ${errorMessage}`);
       }
     } catch (error) {
+      // Revert optimistic update on network error
+      setPosts(originalPosts);
       showPopup('error', 'Network Error', 'Failed to connect to server. Please check your internet connection.');
+    } finally {
+      // Clear loading state
+      setLikingPosts(prev => ({ ...prev, [postId]: false }));
     }
   };
 
@@ -1342,21 +1406,78 @@ export default function Dashboard() {
                     <textarea
                       placeholder="Write your message, add your photo or Video ... @Mention... #Hashtag"
                       className={`w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none ${
-                        newPost.trim() || document.activeElement === document.querySelector('textarea') 
-                          ? 'min-h-[120px]' 
-                          : 'min-h-[60px]'
+                        newPost.trim() ? 'min-h-[120px]' : 'min-h-[60px]'
                       }`}
                       value={newPost}
                       onChange={e => setNewPost(e.target.value)}
-                      onFocus={() => {
-                        const textarea = document.querySelector('textarea');
-                        if (textarea) textarea.style.minHeight = '120px';
+                      onFocus={(e) => {
+                        e.target.style.minHeight = '120px';
                       }}
-                      onBlur={() => {
+                      onBlur={(e) => {
                         if (!newPost.trim()) {
-                          const textarea = document.querySelector('textarea');
-                          if (textarea) textarea.style.minHeight = '60px';
+                          e.target.style.minHeight = '60px';
                         }
+                      }}
+                      onPaste={(e) => {
+                        // Handle paste event
+                        const pastedText = e.clipboardData.getData('text');
+                        if (pastedText) {
+                          console.log('📋 Pasted text length:', pastedText.length);
+                          // Auto-adjust height based on content
+                          setTimeout(() => {
+                            const target = e.target as HTMLTextAreaElement;
+                            if (target.scrollHeight > 120) {
+                              const newHeight = Math.min(target.scrollHeight, 300);
+                              target.style.minHeight = `${newHeight}px`;
+                              console.log('📏 Adjusted height to:', newHeight);
+                            }
+                          }, 0);
+                        }
+                      }}
+                      onInput={(e) => {
+                        // Auto-adjust height as user types
+                        const target = e.target as HTMLTextAreaElement;
+                        target.style.height = 'auto';
+                        const newHeight = Math.min(target.scrollHeight, 300);
+                        target.style.minHeight = `${newHeight}px`;
+                      }}
+                      onDrop={(e) => {
+                        // Handle file drops
+                        e.preventDefault();
+                        const files = Array.from(e.dataTransfer.files);
+                        if (files.length > 0) {
+                          // Handle dropped files similar to file input
+                          const validFiles = files.filter(file => {
+                            if (file.size > 10 * 1024 * 1024) {
+                              showPopup('error', 'File Too Large', `File "${file.name}" is too large. Maximum size is 10MB.`);
+                              return false;
+                            }
+                            
+                            const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg'];
+                            if (!validTypes.includes(file.type)) {
+                              showPopup('error', 'Unsupported Format', `File "${file.name}" has an unsupported format.`);
+                              return false;
+                            }
+                            
+                            return true;
+                          });
+                          
+                          if (validFiles.length > 0) {
+                            setMediaFiles(prev => [...prev, ...validFiles]);
+                            showPopup('success', 'Files Added', `${validFiles.length} file(s) dropped successfully!`);
+                          }
+                        }
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        const target = e.currentTarget as HTMLTextAreaElement;
+                        target.style.borderColor = '#3b82f6';
+                        target.style.backgroundColor = '#eff6ff';
+                      }}
+                      onDragLeave={(e) => {
+                        const target = e.currentTarget as HTMLTextAreaElement;
+                        target.style.borderColor = '';
+                        target.style.backgroundColor = '';
                       }}
                       disabled={posting}
                       maxLength={1800}
@@ -1365,6 +1486,14 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
+
+              {/* Character Count and Word Count */}
+              {newPost.trim() && (
+                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
+                  <span>Words: {newPost.split(/\s+/).filter(word => word && word.length > 0).length}/300</span>
+                  <span>Characters: {newPost.length}/1800</span>
+                </div>
+              )}
 
               {/* Action Bar / Footer */}
               <div className="flex items-center justify-between">
@@ -1546,6 +1675,7 @@ export default function Dashboard() {
                           onDelete={handleDelete}
                           onEdit={startEditPost}
                           isOwnPost={isOwnPost}
+                          isLiking={likingPosts[item._id || item.id] || false}
                         />
                       );
                     }

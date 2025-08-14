@@ -18,6 +18,7 @@ interface FeedPostProps {
   onDelete: (postId: string) => void;
   onEdit: (post: any) => void;
   isOwnPost: boolean;
+  isLiking?: boolean;
 }
 
 const FeedPost: React.FC<FeedPostProps> = ({
@@ -29,7 +30,8 @@ const FeedPost: React.FC<FeedPostProps> = ({
   onSave,
   onDelete,
   onEdit,
-  isOwnPost
+  isOwnPost,
+  isLiking
 }) => {
 
   const router = useRouter();
@@ -704,10 +706,17 @@ const FeedPost: React.FC<FeedPostProps> = ({
 
   // Toggle post content expansion
   const togglePostExpansion = (postId: string) => {
-    setExpandedPosts(prev => ({
-      ...prev,
-      [postId]: !prev[postId]
-    }));
+    console.log('🔄 Toggling post expansion for:', postId);
+    console.log('🔄 Current expanded state:', expandedPosts[postId]);
+    
+    setExpandedPosts(prev => {
+      const newState = {
+        ...prev,
+        [postId]: !prev[postId]
+      };
+      console.log('🔄 New expanded state:', newState);
+      return newState;
+    });
   };
 
   return (
@@ -844,19 +853,37 @@ const FeedPost: React.FC<FeedPostProps> = ({
           {(() => {
             const content = post.content || '';
             const wordCount = content.split(/\s+/).filter((word: string) => word && word.length > 0).length;
-            const isExpanded = expandedPosts[post._id] || false;
+            const postId = post._id || post.id;
+            const isExpanded = expandedPosts[postId] || false;
             
             if (wordCount > 300) {
               const words = content.split(/\s+/);
               const first300Words = words.slice(0, 300).join(' ');
               
               return (
-                <div>
+                <div className="relative">
                   <span>{isExpanded ? content : first300Words}</span>
-                  <span className="text-blue-600 cursor-pointer hover:underline ml-1" 
-                        onClick={() => togglePostExpansion(post._id)}>
-                    {isExpanded ? '... Show Less' : '... Read More'}
+                  {!isExpanded && (
+                    <span className="text-gray-500 dark:text-gray-400">...</span>
+                  )}
+                  <span 
+                    className="text-blue-600 cursor-pointer hover:underline ml-1 font-medium inline-flex items-center gap-1" 
+                    onClick={() => togglePostExpansion(postId)}
+                    title={isExpanded ? "Show less" : "Read more"}
+                  >
+                    {isExpanded ? (
+                      <>
+                        <span>Show Less</span>
+                        <span className="text-xs">▲</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Read More</span>
+                        <span className="text-xs">▼</span>
+                      </>
+                    )}
                   </span>
+                  <span className="text-xs text-gray-400 ml-2">({wordCount} words)</span>
                 </div>
               );
             } else {
@@ -966,8 +993,42 @@ const FeedPost: React.FC<FeedPostProps> = ({
 
         {/* Bottom Section: Action Buttons */}
         <div className="flex items-center justify-between py-6 px-6">
-          <div className="flex items-center space-x-16">
-            {/* React Button */}
+          <div className="flex items-center space-x-8">
+            {/* Like Button */}
+            <button
+              onClick={() => onLike(post._id || post.id)}
+              disabled={isLiking}
+              className={`flex flex-col items-center space-y-3 transition-colors touch-manipulation ${
+                isLiked 
+                  ? 'text-red-500' 
+                  : 'text-gray-600 hover:text-red-500'
+              } ${isLiking ? 'opacity-50 cursor-not-allowed' : ''}`}
+              style={{ touchAction: 'manipulation' }}
+              title={isLiked ? 'Unlike' : 'Like'}
+            >
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+                isLiked 
+                  ? 'bg-red-100 dark:bg-red-900/20' 
+                  : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}>
+                {isLiking ? (
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-500"></div>
+                ) : (
+                  <svg className="w-6 h-6" fill={isLiked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                )}
+              </div>
+              <span className="text-base font-medium">{isLiking ? 'Processing...' : (isLiked ? 'Liked' : 'Like')}</span>
+              {/* Show like count if any likes exist */}
+              {post.likes && post.likes.length > 0 && (
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {post.likes.length}
+                </span>
+              )}
+            </button>
+            
+            {/* Reaction Button */}
             <div className="relative">
             <button
               onClick={() => setShowReactionPopup(!showReactionPopup)}
