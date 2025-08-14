@@ -31,6 +31,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
   onEdit,
   isOwnPost
 }) => {
+
   const router = useRouter();
   const [showCommentInput, setShowCommentInput] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -371,17 +372,26 @@ const FeedPost: React.FC<FeedPostProps> = ({
   // Handle save/unsave post
   const handleSave = async () => {
     try {
-      if (!onSave) return;
+      console.log('🔄 handleSave called!');
+      console.log('📝 Post ID:', post._id);
+      console.log('🔗 onSave function exists:', !!onSave);
       
-      console.log('🔄 Saving/unsaving post:', post._id);
+      if (!onSave) {
+        console.error('❌ onSave function is not provided!');
+        alert('Save functionality not available');
+        return;
+      }
+      
+      console.log('🔄 Calling onSave with post ID:', post._id);
       console.log('📋 Current savedBy:', post.savedBy);
       console.log('👤 Current user ID:', getCurrentUserId());
       console.log('💾 Is currently saved:', isPostSaved());
       
       onSave(post._id);
+      console.log('✅ onSave called successfully');
       setShowOptionsDropdown(false);
     } catch (error) {
-      console.error('Error saving/unsaving post:', error);
+      console.error('❌ Error in handleSave:', error);
       alert('Error saving/unsaving post');
     }
   };
@@ -759,6 +769,14 @@ const FeedPost: React.FC<FeedPostProps> = ({
                   </div>
                 )}
                 
+                {/* Reel indicator */}
+                {post.type === 'reel' && (
+                  <div className="flex items-center space-x-1 text-red-500 dark:text-red-400">
+                    <span className="text-sm">🎬</span>
+                    <span className="text-xs">Reel</span>
+                  </div>
+                )}
+                
                 <Globe className="w-3 h-3" />
                 {post.isShared && (
                   <span className="text-blue-600">📤 Shared</span>
@@ -792,6 +810,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
                 isBoosted={post.isBoosted}
                 isSaved={isPostSaved()}
                 position="bottom"
+                isOwnPost={isOwnPost}
               />
             </div>
           )}
@@ -800,6 +819,26 @@ const FeedPost: React.FC<FeedPostProps> = ({
 
       {/* Post Content */}
       <div className="p-4">
+        {/* Title for posts and reels - Display first */}
+        {post.title && (
+          <div className="mb-3">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              {post.title}
+            </h3>
+          </div>
+        )}
+        
+                {/* Fallback title for reels without titles */}
+        {post.type === 'reel' && !post.title && (
+          <div className="mb-3">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-gray-500">
+              Untitled Reel
+            </h3>
+          </div>
+        )}
+        
+
+        
         {/* Content with word limit and Read More */}
         <div className="text-gray-900 dark:text-white text-base leading-relaxed mb-4">
           {(() => {
@@ -926,25 +965,25 @@ const FeedPost: React.FC<FeedPostProps> = ({
         )}
 
         {/* Bottom Section: Action Buttons */}
-        <div className="flex items-center justify-between py-4">
-          <div className="flex items-center space-x-8">
+        <div className="flex items-center justify-between py-6 px-6">
+          <div className="flex items-center space-x-16">
             {/* React Button */}
             <div className="relative">
             <button
               onClick={() => setShowReactionPopup(!showReactionPopup)}
                 disabled={isReacting}
-                className="flex flex-col items-center space-y-2 text-gray-600 hover:text-yellow-600 transition-colors touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex flex-col items-center space-y-3 text-gray-600 hover:text-yellow-600 transition-colors touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ touchAction: 'manipulation' }}
                 ref={reactionButtonRef}
               >
-                <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
                   {isReacting ? (
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-yellow-500"></div>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-yellow-500"></div>
                   ) : (
-                    <span className="text-xl">{getMostCommonReactionEmoji()}</span>
+                    <span className="text-2xl">{getMostCommonReactionEmoji()}</span>
                   )}
               </div>
-                <span className="text-sm font-medium">
+                <span className="text-base font-medium">
                   {isReacting ? 'Processing...' : 'React'}
                 </span>
                 {/* Show reaction count if any reactions exist */}
@@ -973,47 +1012,66 @@ const FeedPost: React.FC<FeedPostProps> = ({
             {/* Comment Button */}
             <button
               onClick={() => setShowComments(!showComments)}
-              className="flex flex-col items-center space-y-2 text-gray-600 hover:text-blue-600 transition-colors touch-manipulation"
+              className="flex flex-col items-center space-y-3 text-gray-600 hover:text-blue-600 transition-colors touch-manipulation"
               style={{ touchAction: 'manipulation' }}
             >
-              <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd"/>
                 </svg>
               </div>
-              <span className="text-sm font-medium">Comment</span>
+              <span className="text-base font-medium">Comment</span>
             </button>
             
             {/* Share Button */}
             <button
               onClick={handleShare}
-              className="flex flex-col items-center space-y-2 text-gray-600 hover:text-green-600 transition-colors touch-manipulation"
+              className="flex flex-col items-center space-y-3 text-gray-600 hover:text-green-600 transition-colors touch-manipulation"
               style={{ touchAction: 'manipulation' }}
             >
-              <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z"/>
                 </svg>
               </div>
-              <span className="text-sm font-medium">Share</span>
+              <span className="text-base font-medium">Share</span>
             </button>
             
             {/* Review Button */}
             <button
               onClick={handleReview}
-              className="flex flex-col items-center space-y-2 text-gray-600 hover:text-yellow-600 transition-colors touch-manipulation"
+              className="flex flex-col items-center space-y-3 text-gray-600 hover:text-yellow-600 transition-colors touch-manipulation"
               style={{ touchAction: 'manipulation' }}
             >
-              <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-                <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+              <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                <svg className="w-6 h-6 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-.1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                 </svg>
               </div>
-              <span className="text-sm font-medium">Review</span>
+              <span className="text-base font-medium">Review</span>
             </button>
             
-
+            {/* Save Button */}
+            <button
+              onClick={handleSave}
+              className="flex flex-col items-center space-y-3 text-gray-600 hover:text-purple-600 transition-colors touch-manipulation"
+              style={{ touchAction: 'manipulation' }}
+            >
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+                isPostSaved() 
+                  ? 'bg-purple-100 dark:bg-gray-900/20 text-purple-600 dark:text-purple-400' 
+                  : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}>
+                <svg className="w-6 h-6" fill={isPostSaved() ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+              </div>
+              <span className="text-base font-medium">{isPostSaved() ? 'Saved' : 'Save'}</span>
+            </button>
           </div>
+          
+          {/* Right side - Empty for balance */}
+          <div className="w-20"></div>
         </div>
 
         {/* Remove the old reaction popup section since we moved it above */}

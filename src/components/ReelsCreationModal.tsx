@@ -191,6 +191,9 @@ export default function ReelsCreationModal({ isOpen, onClose, onSuccess }: Reels
       const result = await createReel(reelData, selectedMedia);
       console.log('✅ Reel created successfully:', result);
       
+      // Dispatch event to refresh the main feed
+      window.dispatchEvent(new CustomEvent('reelCreated'));
+      
       onSuccess?.();
       onClose();
     
@@ -211,14 +214,16 @@ export default function ReelsCreationModal({ isOpen, onClose, onSuccess }: Reels
     }
 
     const formData = new FormData();
-    formData.append('content', description || title);
     
-    // Add title if provided
+    // Set content to description (not title)
+    formData.append('content', description || '');
+    
+    // Add title as separate field if provided
     if (title.trim()) {
       formData.append('title', title.trim());
     }
     
-    // Add hashtags as content
+    // Add hashtags to content
     if (hashtags.length > 0) {
       const hashtagText = hashtags.map(tag => `#${tag}`).join(' ');
       const currentContent = formData.get('content') as string;
@@ -245,6 +250,9 @@ export default function ReelsCreationModal({ isOpen, onClose, onSuccess }: Reels
     
     const result = await response.json();
     console.log('✅ Post created successfully:', result);
+    
+    // Dispatch event to refresh the main feed
+    window.dispatchEvent(new CustomEvent('postCreated'));
     
     onSuccess?.();
     onClose();
@@ -391,11 +399,11 @@ export default function ReelsCreationModal({ isOpen, onClose, onSuccess }: Reels
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 animate-in fade-in duration-200">
-      <div className="bg-white rounded-xl w-full max-w-5xl h-[90vh] max-h-[600px] overflow-hidden shadow-2xl border border-gray-100 animate-in slide-in-from-bottom-4 duration-300 flex flex-col">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-3 animate-in fade-in duration-200" style={{ top: '0', left: '0', right: '0', bottom: '0' }}>
+      <div className="bg-white rounded-xl w-full max-w-5xl h-[90vh] max-h-[600px] overflow-hidden shadow-2xl border border-gray-100 animate-in slide-in-from-bottom-4 duration-300 flex flex-col" style={{ marginTop: '20px' }}>
         
-        {/* Header - Fixed */}
-        <div className="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200 flex-shrink-0">
+        {/* Header - Fixed with higher z-index */}
+        <div className="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200 flex-shrink-0 relative z-[10000]">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
               <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">

@@ -17,6 +17,7 @@ interface PostOptionsDropdownProps {
   isBoosted?: boolean;
   isSaved?: boolean;
   position?: 'top' | 'bottom';
+  isOwnPost?: boolean; // Add this prop to check if current user owns the post
 }
 
 const PostOptionsDropdown: React.FC<PostOptionsDropdownProps> = ({
@@ -33,7 +34,8 @@ const PostOptionsDropdown: React.FC<PostOptionsDropdownProps> = ({
   isPinned = false,
   isBoosted = false,
   isSaved = false,
-  position = 'bottom'
+  position = 'bottom',
+  isOwnPost = false
 }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -55,7 +57,7 @@ const PostOptionsDropdown: React.FC<PostOptionsDropdownProps> = ({
 
   if (!isOpen) return null;
 
-  const options = [
+  const ownerOptions = Boolean(isOwnPost) ? [
     {
       icon: <Edit3 className="w-4 h-4 sm:w-5 sm:h-5" />,
       title: "Edit Post",
@@ -68,7 +70,7 @@ const PostOptionsDropdown: React.FC<PostOptionsDropdownProps> = ({
       title: "Delete Post",
       subtitle: "Delete this post completely.",
       onClick: onDelete,
-      className: "text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+      className: "text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
     },
     {
       icon: <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />,
@@ -76,7 +78,12 @@ const PostOptionsDropdown: React.FC<PostOptionsDropdownProps> = ({
       subtitle: "Allow or disallow members to comment on this post.",
       onClick: onToggleComments,
       className: "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
-    },
+    }
+  ] : [];
+  
+  const options = [
+    // Owner-only options - only show if isOwnPost is true
+    ...ownerOptions,
     {
       icon: <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5" />,
       title: "Open post in new tab",

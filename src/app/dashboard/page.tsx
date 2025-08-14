@@ -106,6 +106,7 @@ export default function Dashboard() {
   const [showStoryModal, setShowStoryModal] = useState(false);
   const [showStoryViewer, setShowStoryViewer] = useState(false);
   const [selectedStoryIndex, setSelectedStoryIndex] = useState(0);
+  const [selectedUserStories, setSelectedUserStories] = useState<any[]>([]);
   const [stories, setStories] = useState<any[]>([]);
   const [loadingStories, setLoadingStories] = useState(true);
 
@@ -248,6 +249,8 @@ export default function Dashboard() {
         albumsResponse.ok ? albumsResponse.json() : []
       ]);
       
+
+      
       const combinedFeed = [
         ...postsData.map((post: any) => ({ ...post, type: 'post' })),
         ...albumsData.map((album: any) => ({ ...album, type: 'album' }))
@@ -376,6 +379,13 @@ export default function Dashboard() {
       return;
     }
     
+    // Check word limit
+    const wordCount = newPost.split(/\s+/).filter(word => word && word.length > 0).length;
+    if (wordCount > 300) {
+      showPopup('error', 'Word Limit Exceeded', 'Your post cannot exceed 300 words. Please shorten your message.');
+      return;
+    }
+    
     setPosting(true);
     try {
       const token = localStorage.getItem('token');
@@ -385,7 +395,8 @@ export default function Dashboard() {
       }
 
       const formData = new FormData();
-      formData.append('content', newPost.trim());
+      // Preserve content exactly as typed/pasted - no trimming to maintain formatting
+      formData.append('content', newPost);
       
       // Add title if provided
       if (newPostTitle.trim()) {
@@ -664,16 +675,31 @@ export default function Dashboard() {
   };
 
   const handleSave = async (postId: string) => {
+    console.log('🔄 Dashboard handleSave called with postId:', postId);
     const token = localStorage.getItem('token');
+    
+    if (!token) {
+      console.error('❌ No token found for save operation');
+      alert('Please login to save posts');
+      return;
+    }
+    
     try {
       console.log('🔄 Dashboard: Saving post:', postId);
+      console.log('🔑 Token exists:', !!token);
       
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/save`, {
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/save`;
+      console.log('🌐 API URL:', apiUrl);
+      
+      const res = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
+      
+      console.log('📡 Response status:', res.status);
+      console.log('📡 Response headers:', res.headers);
       
       if (res.ok) {
         const data = await res.json();
@@ -687,13 +713,27 @@ export default function Dashboard() {
         
         window.dispatchEvent(new CustomEvent('postSaved'));
         console.log('🔄 Dashboard: Post state updated');
+        
+        // Show success message
+        showPopup('success', 'Post Saved!', 'Post has been saved to your collection');
       } else {
         console.error('❌ Dashboard: Save failed with status:', res.status);
-        const errorData = await res.json().catch(() => ({}));
+        console.error('❌ Response headers:', Object.fromEntries(res.headers.entries()));
+        
+        let errorData = {};
+        try {
+          errorData = await res.json();
         console.error('❌ Dashboard: Save error data:', errorData);
+        } catch (parseError) {
+          console.error('❌ Could not parse error response:', parseError);
+        }
+        
+        // Show error message
+        showPopup('error', 'Save Failed', errorData.message || `Failed to save post (Status: ${res.status})`);
       }
     } catch (error) {
       console.error('❌ Dashboard: Save network error:', error);
+      showPopup('error', 'Network Error', 'Failed to connect to server');
     }
   };
 
@@ -960,6 +1000,45 @@ export default function Dashboard() {
   };
 
   // New story system functions
+  
+  // Group stories by user to avoid duplicates
+  const groupStoriesByUser = (stories: any[]) => {
+    const grouped = new Map();
+    
+    console.log('🔍 Grouping stories:', stories.length, 'stories');
+    
+    stories.forEach(story => {
+      const userId = story.user._id || story.user.id;
+      console.log('🔍 Story user ID:', userId, 'Username:', story.user.username);
+      
+      if (!grouped.has(userId)) {
+        grouped.set(userId, {
+          user: story.user,
+          stories: [],
+          latestStory: story
+        });
+        console.log('🔍 Created new group for user:', userId);
+      } else {
+        console.log('🔍 Added to existing group for user:', userId);
+      }
+      
+      grouped.get(userId).stories.push(story);
+      
+      // Keep the most recent story as the latest
+      if (new Date(story.createdAt) > new Date(grouped.get(userId).latestStory.createdAt)) {
+        grouped.get(userId).latestStory = story;
+      }
+    });
+    
+    const result = Array.from(grouped.values());
+    console.log('🔍 Final grouped result:', result.length, 'groups');
+    result.forEach(group => {
+      console.log('🔍 Group:', group.user.username, 'Stories:', group.stories.length);
+    });
+    
+    return result;
+  };
+  
   const fetchStories = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -973,6 +1052,11 @@ export default function Dashboard() {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('🔍 Fetched stories:', data.stories?.map((s: any) => ({ 
+          id: s._id, 
+          userId: s.user._id || s.user.id, 
+          username: s.user.username 
+        })));
         setStories(data.stories || []);
       }
     } catch (error) {
@@ -1067,9 +1151,16 @@ export default function Dashboard() {
     }
   };
 
-  const openStoryViewer = (storyIndex: number) => {
-    setSelectedStoryIndex(storyIndex);
-    setShowStoryViewer(true);
+  const openStoryViewer = (groupedStoryIndex: number) => {
+    const groupedStories = groupStoriesByUser(stories);
+    const selectedGroupedStory = groupedStories[groupedStoryIndex];
+    
+    if (selectedGroupedStory) {
+      // Set the selected user's stories and show viewer
+      setSelectedUserStories(selectedGroupedStory.stories);
+      setSelectedStoryIndex(0); // Always start from first story of the user
+      setShowStoryViewer(true);
+    }
   };
 
   const [user, setUser] = useState<any>(null);
@@ -1164,35 +1255,42 @@ export default function Dashboard() {
                   <div className="w-16 h-4 bg-gray-200 rounded animate-pulse" />
                 </div>
               ))
-            ) : (
-              stories.slice(0, 6).map((story, index) => (
+                                    ) : (
+              groupStoriesByUser(stories).slice(0, 6).map((groupedStory, index) => (
                 <div 
-                  key={story._id}
-                className="flex-shrink-0 flex flex-col items-center group cursor-pointer touch-manipulation"
+                  key={groupedStory.user._id || groupedStory.user.id}
+                  className="flex-shrink-0 flex flex-col items-center group cursor-pointer touch-manipulation"
                   onClick={() => openStoryViewer(index)}
-                onTouchStart={(e) => {
-                  e.currentTarget.style.transform = 'scale(0.95)';
-                }}
-                onTouchEnd={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                }}
-                style={{ touchAction: 'manipulation' }}
-              >
-                  {story.mediaType === 'video' ? (
+                  onTouchStart={(e) => {
+                    e.currentTarget.style.transform = 'scale(0.95)';
+                  }}
+                  onTouchEnd={(e) => {
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                  style={{ touchAction: 'manipulation' }}
+                >
+                  {/* Show story count indicator if user has multiple stories */}
+                  {groupedStory.stories.length > 1 && (
+                    <div className="absolute top-2 right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold z-10">
+                      {groupedStory.stories.length}
+                    </div>
+                  )}
+                  
+                  {groupedStory.latestStory.mediaType === 'video' ? (
                     <video
-                      src={story.media}
-                      poster={story.thumbnail}
-                      className="w-20 h-28 sm:w-24 sm:h-36 md:w-32 md:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-gray-300 mb-2 sm:mb-3 shadow-lg sm:shadow-xl object-cover transition-transform group-hover:scale-105"
+                      src={groupedStory.latestStory.media}
+                      poster={groupedStory.latestStory.thumbnail}
+                      className="w-20 h-28 sm:w-24 sm:h-36 md:w-32 md:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-gray-300 mb-2 sm:mb-3 shadow-lg sm:shadow-xl object-cover transition-transform group-hover:scale-105 relative"
                     />
                   ) : (
                     <img
-                      src={story.media}
-                      className="w-20 h-28 sm:w-24 sm:h-36 md:w-32 md:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-gray-300 mb-2 sm:mb-3 shadow-lg sm:shadow-xl object-cover transition-transform group-hover:scale-105"
-                      alt={`${story.user.username}'s Story`}
+                      src={groupedStory.latestStory.media}
+                      className="w-20 h-28 sm:w-24 sm:h-36 md:w-32 md:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-gray-300 mb-2 sm:mb-3 shadow-lg sm:shadow-xl object-cover transition-transform group-hover:scale-105 relative"
+                      alt={`${groupedStory.user.username}'s Story`}
                     />
                   )}
                   <span className="text-xs sm:text-sm text-[#34495e] dark:text-gray-300 group-hover:text-[#022e8a] dark:group-hover:text-blue-400 font-medium transition-colors duration-200 truncate max-w-[80px] text-center">
-                    {story.user.fullName || story.user.username}
+                    {groupedStory.user.fullName || groupedStory.user.username}
                   </span>
                 </div>
               ))
@@ -1230,42 +1328,40 @@ export default function Dashboard() {
                         src={getUserAvatar()}
                         alt="Your avatar"
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                        }}
                       />
-                    ) : null}
-                    <div className={`w-full h-full bg-orange-500 flex items-center justify-center ${getUserAvatar() ? 'hidden' : ''}`}>
-                      <span className="text-white text-lg">💭</span>
-                    </div>
+                    ) : (
+                      <div className="w-full h-full bg-gray-300 flex items-center justify-center">
+                        <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex-1 relative space-y-3">
-                    {/* Title Input */}
-                    <input
-                      type="text"
-                      placeholder="Add a title to your post..."
-                      value={newPostTitle}
-                      onChange={e => setNewPostTitle(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200"
-                      disabled={posting}
-                      maxLength={100}
-                    />
-                    
+                  <div className="flex-1 relative">
                     {/* Content Textarea */}
                     <textarea
                       placeholder="Write your message, add your photo or Video ... @Mention... #Hashtag"
-                      className="w-full min-h-[120px] border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 resize-none"
+                      className={`w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none ${
+                        newPost.trim() || document.activeElement === document.querySelector('textarea') 
+                          ? 'min-h-[120px]' 
+                          : 'min-h-[60px]'
+                      }`}
                       value={newPost}
                       onChange={e => setNewPost(e.target.value)}
+                      onFocus={() => {
+                        const textarea = document.querySelector('textarea');
+                        if (textarea) textarea.style.minHeight = '120px';
+                      }}
+                      onBlur={() => {
+                        if (!newPost.trim()) {
+                          const textarea = document.querySelector('textarea');
+                          if (textarea) textarea.style.minHeight = '60px';
+                        }
+                      }}
                       disabled={posting}
+                      maxLength={1800}
                     />
-                    {/* Character Counter */}
-                    <div className="absolute top-2 right-2">
-                      <div className="bg-red-500 text-white text-xs px-2 py-1 rounded">
-                        {newPost.length}/250
-                      </div>
-                    </div>
+
                   </div>
                 </div>
               </div>
@@ -1431,6 +1527,7 @@ export default function Dashboard() {
                       );
                     } else {
                       const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+                      
                       const isOwnPost = item.user && (
                         item.user._id === currentUser._id || 
                         item.user.id === currentUser.id || 
@@ -1502,9 +1599,9 @@ export default function Dashboard() {
       />
 
       {/* Story Viewer */}
-      {showStoryViewer && stories.length > 0 && (
+      {showStoryViewer && selectedUserStories.length > 0 && (
         <StoryViewer
-          stories={stories}
+          stories={selectedUserStories}
           initialStoryIndex={selectedStoryIndex}
           onClose={() => setShowStoryViewer(false)}
           onDelete={handleStoryDelete}

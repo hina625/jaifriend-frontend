@@ -45,6 +45,9 @@ const StoryViewer: React.FC<StoryViewerProps> = ({
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [progress, setProgress] = useState<number>(0);
+  const [localReactions, setLocalReactions] = useState<{[key: string]: string}>({});
+  const [showReactionToast, setShowReactionToast] = useState(false);
+  const [lastReaction, setLastReaction] = useState('');
   
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const isOwnStory = currentStory?.user._id === currentUser._id || currentStory?.user._id === currentUser.id;
@@ -127,6 +130,20 @@ const StoryViewer: React.FC<StoryViewerProps> = ({
 
   const handleReaction = (reactionType: string) => {
     if (onReact && currentStory) {
+      // Add immediate local feedback
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const userId = currentUser._id || currentUser.id;
+      
+      setLocalReactions(prev => ({
+        ...prev,
+        [currentStory._id]: reactionType
+      }));
+      
+      // Show reaction toast
+      setLastReaction(reactionType);
+      setShowReactionToast(true);
+      setTimeout(() => setShowReactionToast(false), 1500);
+      
       onReact(currentStory._id, reactionType);
     }
   };
@@ -159,17 +176,31 @@ const StoryViewer: React.FC<StoryViewerProps> = ({
   if (!currentStory) return null;
 
   return (
-    <div className="fixed inset-0 bg-black flex items-center justify-center z-50 p-2 sm:p-0">
-      {/* Progress Bar */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gray-800">
-        <div 
-          className="h-full bg-white transition-all duration-1000 ease-linear"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
+    <div className="fixed inset-0 bg-black flex items-center justify-center z-[9999] p-2 sm:p-0">
+            {/* Mobile Story Container */}
+      <div className="w-[380px] h-[580px] bg-black rounded-2xl overflow-hidden relative shadow-2xl">
+        {/* Progress Bar */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gray-800">
+          <div 
+            className="h-full bg-white transition-all duration-1000 ease-linear"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
 
-              {/* Header */}
-        <div className="absolute top-2 sm:top-4 left-2 sm:left-4 right-2 sm:right-4 z-10 flex items-center justify-between">
+        {/* Reaction Toast */}
+        {showReactionToast && (
+          <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-80 text-white px-4 py-2 rounded-full text-lg animate-bounce z-[200]">
+            {lastReaction === 'like' && '👍 Liked!'}
+            {lastReaction === 'love' && '❤️ Loved!'}
+            {lastReaction === 'haha' && '😂 Haha!'}
+            {lastReaction === 'wow' && '😮 Wow!'}
+            {lastReaction === 'sad' && '😢 Sad!'}
+            {lastReaction === 'angry' && '😠 Angry!'}
+          </div>
+        )}
+
+        {/* Header */}
+        <div className="absolute top-4 left-2 right-2 z-[100] flex items-center justify-between">
         <div className="flex items-center gap-3">
                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-white bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
              {currentStory.user.avatar ? (
@@ -210,27 +241,27 @@ const StoryViewer: React.FC<StoryViewerProps> = ({
         </div>
       </div>
 
-              {/* Navigation Arrows */}
+        {/* Navigation Arrows */}
         {currentIndex > 0 && (
           <button
             onClick={handlePrevious}
-            className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 p-2 sm:p-3 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors z-10"
+            className="absolute left-2 top-1/2 transform -translate-y-1/2 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors z-[100]"
           >
-            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+            <ChevronLeft className="w-5 h-5" />
           </button>
         )}
         
         {currentIndex < stories.length - 1 && (
           <button
             onClick={handleNext}
-            className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 p-2 sm:p-3 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors z-10"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors z-[100]"
           >
-            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+            <ChevronRight className="w-5 h-5" />
           </button>
         )}
 
-             {/* Story Content */}
-       <div className="relative w-full h-full flex items-center justify-center pb-32 sm:pb-40">
+        {/* Story Content */}
+        <div className="relative w-full h-full flex items-center justify-center pb-20">
          {currentStory.mediaType === 'image' ? (
            <img
              src={currentStory.media}
@@ -249,65 +280,91 @@ const StoryViewer: React.FC<StoryViewerProps> = ({
            />
          )}
 
-         {/* Content Overlay */}
-         {currentStory.content && (
-           <div className="absolute bottom-32 sm:bottom-40 left-2 sm:left-4 right-2 sm:right-4 text-white text-center">
-             <div className="bg-black bg-opacity-50 rounded-lg p-3 sm:p-4 max-w-md mx-auto text-sm sm:text-base">
-               {currentStory.content}
-             </div>
-           </div>
-         )}
+        {/* Content Overlay */}
+        {currentStory.content && (
+          <div className="absolute bottom-20 left-2 right-2 text-white text-center">
+            <div className="bg-black bg-opacity-50 rounded-lg p-3 max-w-md mx-auto text-sm">
+              {currentStory.content}
+            </div>
+          </div>
+        )}
        </div>
 
-              {/* Bottom Actions */}
-        <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4 right-2 sm:right-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2 sm:gap-4">
-              {/* Views */}
-              <div className="flex items-center gap-1 sm:gap-2 text-white">
-                <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="text-xs sm:text-sm">{currentStory.views.length}</span>
-              </div>
+        {/* Bottom Actions */}
+        <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {/* Views */}
+            <div className="flex items-center gap-1 text-white">
+              <Eye className="w-4 h-4" />
+              <span className="text-xs">{currentStory.views?.length || 0}</span>
+            </div>
 
-                        {/* Reactions */}
-              <div className="flex items-center gap-1 sm:gap-2">
-                {['like', 'love', 'haha', 'wow', 'sad', 'angry'].map((reaction) => (
+            {/* Reaction Count */}
+            {currentStory.reactions && currentStory.reactions.length > 0 && (
+              <div className="flex items-center gap-1 text-white">
+                <span className="text-xs">❤️ {currentStory.reactions.length}</span>
+              </div>
+            )}
+
+            {/* Reactions */}
+            <div className="flex items-center gap-1">
+              {['like', 'love', 'haha', 'wow', 'sad', 'angry'].map((reaction) => {
+                const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+                const hasReacted = currentStory.reactions?.some((r: any) => 
+                  r.userId === currentUser._id || r.userId === currentUser.id
+                );
+                const isCurrentReaction = hasReacted && currentStory.reactions?.some((r: any) => 
+                  (r.userId === currentUser._id || r.userId === currentUser.id) && r.type === reaction
+                );
+                const isLocalReaction = localReactions[currentStory._id] === reaction;
+                
+                return (
                   <button
                     key={reaction}
                     onClick={() => handleReaction(reaction)}
-                    className="p-1 sm:p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors"
+                    className={`p-1 rounded-full hover:bg-opacity-70 transition-all duration-200 hover:scale-110 ${
+                      isCurrentReaction || isLocalReaction
+                        ? 'bg-blue-500 text-white' 
+                        : 'bg-black bg-opacity-50 text-white'
+                    }`}
                     title={reaction}
                   >
-                {reaction === 'like' && '👍'}
-                {reaction === 'love' && '❤️'}
-                {reaction === 'haha' && '😂'}
-                {reaction === 'wow' && '😮'}
-                {reaction === 'sad' && '😢'}
-                {reaction === 'angry' && '😠'}
-              </button>
-            ))}
+                    {reaction === 'like' && '👍'}
+                    {reaction === 'love' && '❤️'}
+                    {reaction === 'haha' && '😂'}
+                    {reaction === 'wow' && '😮'}
+                    {reaction === 'sad' && '😢'}
+                    {reaction === 'angry' && '😠'}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Reply Button */}
+            <button
+              onClick={() => setShowReplies(!showReplies)}
+              className={`p-1 rounded-full hover:bg-opacity-70 transition-colors ${
+                showReplies 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-black bg-opacity-50 text-white'
+              }`}
+            >
+              <MessageCircle className="w-4 h-4" />
+            </button>
           </div>
 
-                        {/* Reply Button */}
-              <button
-                onClick={() => setShowReplies(!showReplies)}
-                className="p-1 sm:p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors"
-              >
-                <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-        </div>
-
-                  {/* Story Counter */}
-          <div className="text-white text-xs sm:text-sm">
+          {/* Story Counter */}
+          <div className="text-white text-xs">
             {currentIndex + 1} / {stories.length}
           </div>
-      </div>
+        </div>
 
-                             {/* Replies Section */}
-         {showReplies && (
-           <div className="absolute bottom-32 sm:bottom-40 left-2 sm:left-4 right-2 sm:right-4 bg-black bg-opacity-90 rounded-lg p-3 sm:p-4 max-h-60 overflow-y-auto scrollbar-hide">
-                      <div className="text-white font-semibold mb-3 text-sm sm:text-base">Replies</div>
+        {/* Replies Section */}
+        {showReplies && (
+          <div className="absolute bottom-20 left-2 right-2 bg-black bg-opacity-90 rounded-lg p-3 max-h-60 overflow-y-auto scrollbar-hide">
+            <div className="text-white font-semibold mb-3 text-sm">Replies</div>
           
-                      {/* Reply Form */}
+            {/* Reply Form */}
             <form onSubmit={handleSubmitReply} className="mb-4">
               <div className="flex gap-2">
                 <input
@@ -315,30 +372,35 @@ const StoryViewer: React.FC<StoryViewerProps> = ({
                   value={replyContent}
                   onChange={(e) => setReplyContent(e.target.value)}
                   placeholder="Reply to this story..."
-                  className="flex-1 px-2 sm:px-3 py-1 sm:py-2 bg-white bg-opacity-20 text-white placeholder-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                  className="flex-1 px-2 py-1 bg-white bg-opacity-20 text-white placeholder-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                   maxLength={200}
                 />
                 <button
                   type="submit"
                   disabled={!replyContent.trim() || isSubmittingReply}
-                  className="px-3 sm:px-4 py-1 sm:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+                  className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   {isSubmittingReply ? 'Sending...' : 'Send'}
                 </button>
               </div>
             </form>
 
-                      {/* Replies List */}
+            {/* Replies List */}
             <div className="space-y-3">
-              {currentStory.replies.length === 0 ? (
-                <div className="text-gray-400 text-center py-4 text-sm sm:text-base">No replies yet</div>
+              {currentStory.replies?.length === 0 ? (
+                <div className="text-gray-400 text-center py-4 text-sm">No replies yet</div>
               ) : (
-                currentStory.replies.map((reply, index) => (
-                  <div key={index} className="flex items-start gap-2 sm:gap-3">
-                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-600 rounded-full flex-shrink-0" />
+                currentStory.replies?.map((reply, index) => (
+                  <div key={index} className="flex items-start gap-2">
+                    <div className="w-6 h-6 bg-gray-600 rounded-full flex-shrink-0" />
                     <div className="flex-1">
-                      <div className="text-white text-xs sm:text-sm font-medium">User</div>
-                      <div className="text-gray-300 text-xs sm:text-sm">{reply.content}</div>
+                      <div className="text-white text-xs font-medium">
+                        {reply.userId === 'current' ? 'You' : 'User'}
+                      </div>
+                      <div className="text-gray-300 text-xs">{reply.content}</div>
+                      <div className="text-gray-400 text-xs mt-1">
+                        {new Date(reply.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
                     </div>
                   </div>
                 ))
@@ -356,6 +418,7 @@ const StoryViewer: React.FC<StoryViewerProps> = ({
           display: none;
         }
       `}</style>
+      </div> {/* Close mobile container */}
     </div>
   );
 };
