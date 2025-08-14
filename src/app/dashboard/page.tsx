@@ -720,7 +720,7 @@ export default function Dashboard() {
         console.error('❌ Dashboard: Save failed with status:', res.status);
         console.error('❌ Response headers:', Object.fromEntries(res.headers.entries()));
         
-        let errorData = {};
+        let errorData: any = {};
         try {
           errorData = await res.json();
         console.error('❌ Dashboard: Save error data:', errorData);
