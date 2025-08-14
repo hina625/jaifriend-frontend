@@ -20,6 +20,7 @@ interface User {
   workplace?: string;
   address?: string;
   country?: string;
+  education?: string;
   isOnline?: boolean;
   joinedDate?: string;
   isFollowing?: boolean;
@@ -88,9 +89,9 @@ interface Group {
     avatar?: string;
   };
   members: Array<{
-  user: {
-    _id: string;
-    name: string;
+    user: {
+      _id: string;
+      name: string;
       username?: string;
       avatar?: string;
     };
@@ -162,11 +163,6 @@ const UserProfile: React.FC = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const [showProfileEdit, setShowProfileEdit] = useState(false);
-  const [showPostModal, setShowPostModal] = useState(false);
-  const [postContent, setPostContent] = useState('');
-  const [postMedia, setPostMedia] = useState<File[]>([]);
-  const [postMediaUrls, setPostMediaUrls] = useState<string[]>([]);
-  const [creatingPost, setCreatingPost] = useState(false);
   const [popup, setPopup] = useState<PopupState>({
     isOpen: false,
     type: 'success',
@@ -184,10 +180,12 @@ const UserProfile: React.FC = () => {
 
   // Filters configuration
   const filters = [
-    { id: 'all', label: 'All Posts', icon: <FileText className="w-4 h-4" /> },
+    { id: 'all', label: 'All', icon: <FileText className="w-4 h-4" /> },
+    { id: 'text', label: 'Text', icon: <FileText className="w-4 h-4" /> },
     { id: 'photos', label: 'Photos', icon: <Camera className="w-4 h-4" /> },
     { id: 'videos', label: 'Videos', icon: <Video className="w-4 h-4" /> },
-    { id: 'text', label: 'Text Only', icon: <FileText className="w-4 h-4" /> }
+    { id: 'sounds', label: 'Sounds', icon: <Music className="w-4 h-4" /> },
+    { id: 'files', label: 'Files', icon: <FileText className="w-4 h-4" /> }
   ];
 
   // Get the actual userId string
@@ -243,18 +241,6 @@ const UserProfile: React.FC = () => {
   }, []);
 
   // Add missing event handlers
-  const handlePostCreated = () => {
-    fetchUserContent();
-  };
-
-  const handlePostDeleted = () => {
-    fetchUserContent();
-  };
-
-  const handlePostUpdated = () => {
-    fetchUserContent();
-  };
-
   const handleAlbumCreated = () => {
     fetchUserAlbums();
   };
@@ -705,38 +691,6 @@ const UserProfile: React.FC = () => {
     setPopup(prev => ({ ...prev, isOpen: false }));
   };
 
-  const getFilteredPosts = () => {
-    let filtered = posts;
-
-    // Apply search filter
-    if (searchQuery) {
-      filtered = filtered.filter(post => 
-        post.content.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Apply content type filter
-    switch (activeFilter) {
-      case 'photos':
-        filtered = filtered.filter(post => 
-          post.media && post.media.some(media => media.type?.startsWith('image/'))
-        );
-        break;
-      case 'videos':
-        filtered = filtered.filter(post => 
-          post.media && post.media.some(media => media.type?.startsWith('video/'))
-        );
-        break;
-      case 'text':
-        filtered = filtered.filter(post => 
-          !post.media || post.media.length === 0
-        );
-        break;
-    }
-
-    return filtered;
-  };
-
   const getMediaUrl = (url: string) => {
     if (!url) return '/default-avatar.svg';
     if (url.startsWith('http')) return url;
@@ -757,93 +711,88 @@ const UserProfile: React.FC = () => {
           return `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) return 'Just now';
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)}d ago`;
-    return date.toLocaleDateString();
-  };
+  const getFilteredContent = () => {
+    // Combine posts and albums and sort by creation date
+    let combinedContent = [
+      ...posts.map((post: any) => ({ ...post, type: 'post' })),
+      ...albums.map((album: any) => ({ ...album, type: 'album' }))
+    ].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  const getLastSeenText = (lastSeen?: string) => {
-    if (!lastSeen) return 'Online';
-    
-    const lastSeenDate = new Date(lastSeen);
-    const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - lastSeenDate.getTime()) / (1000 * 60));
-    
-    if (diffInMinutes < 1) return 'Just now';
-    if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)} hours ago`;
-    return `${Math.floor(diffInMinutes / 1440)} days ago`;
-  };
-
-  const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
-    const newMedia = [...postMedia, ...files];
-    setPostMedia(newMedia);
-
-    // Create preview URLs
-    const newUrls = files.map(file => URL.createObjectURL(file));
-    setPostMediaUrls(prev => [...prev, ...newUrls]);
-  };
-
-  const removeMedia = (index: number) => {
-    setPostMedia(prev => prev.filter((_, i) => i !== index));
-    setPostMediaUrls(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const createPost = async () => {
-    if ((!postContent.trim() && postMedia.length === 0) || creatingPost) return;
-
-    try {
-      setCreatingPost(true);
-      const token = localStorage.getItem('token');
-      if (!token) {
-        showPopup('error', 'Authentication Error', 'Please log in again');
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append('content', postContent);
-      
-      postMedia.forEach((file, index) => {
-        formData.append('media', file);
+    // Apply search filter
+    if (searchQuery) {
+      combinedContent = combinedContent.filter(item => {
+        if (item.type === 'post') {
+          return item.content.toLowerCase().includes(searchQuery.toLowerCase());
+        } else if (item.type === 'album') {
+          return item.name.toLowerCase().includes(searchQuery.toLowerCase());
+        }
+        return false;
       });
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
-
-      if (response.ok) {
-        showPopup('success', 'Post Created!', 'Your post has been created successfully!');
-        resetPostForm();
-        fetchUserContent();
-      } else {
-        const errorData = await response.json();
-        showPopup('error', 'Post Failed', errorData.error || 'Failed to create post');
-      }
-    } catch (error) {
-      console.error('Error creating post:', error);
-      showPopup('error', 'Post Failed', 'Failed to create post. Please try again.');
-    } finally {
-      setCreatingPost(false);
     }
-  };
 
-  const resetPostForm = () => {
-    setPostContent('');
-    setPostMedia([]);
-    setPostMediaUrls([]);
+    // Apply content type filter
+    switch (activeFilter) {
+      case 'text':
+        combinedContent = combinedContent.filter(item => {
+          if (item.type === 'post') {
+            return !item.media || item.media.length === 0;
+          }
+          return false;
+        });
+        break;
+      case 'photos':
+        combinedContent = combinedContent.filter(item => {
+          if (item.type === 'post') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return item.media && item.media.some((media: any) => 
+              media.type?.startsWith('image/') || media.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+            );
+          } else if (item.type === 'album') {
+            return item.media && item.media.length > 0;
+          }
+          return false;
+        });
+        break;
+      case 'videos':
+        combinedContent = combinedContent.filter(item => {
+          if (item.type === 'post') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return item.media && item.media.some((media: any) => 
+              media.type?.startsWith('video/') || media.url?.match(/\.(mp4|avi|mov|wmv|flv|webm)$/i)
+            );
+          }
+          return false;
+        });
+        break;
+      case 'sounds':
+        combinedContent = combinedContent.filter(item => {
+          if (item.type === 'post') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return item.media && item.media.some((media: any) => 
+              media.type?.startsWith('audio/') || media.url?.match(/\.(mp3|wav|ogg|aac|flac)$/i)
+            );
+          }
+          return false;
+        });
+        break;
+      case 'files':
+        combinedContent = combinedContent.filter(item => {
+          if (item.type === 'post') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return item.media && item.media.some((media: any) => 
+              media.type?.startsWith('application/') || media.url?.match(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|zip|rar)$/i)
+            );
+          }
+          return false;
+        });
+        break;
+      case 'all':
+      default:
+        // Show all content
+        break;
+    }
+
+    return combinedContent;
   };
 
   if (loading) {
@@ -866,8 +815,6 @@ const UserProfile: React.FC = () => {
       </div>
     );
   }
-
-  const filteredPosts = getFilteredPosts();
 
   return (
     <div className="w-full min-h-screen bg-gray-50 dark:bg-dark-900 overflow-x-hidden max-w-full transition-colors duration-200 pb-4 sm:pb-6">
@@ -1038,83 +985,6 @@ const UserProfile: React.FC = () => {
         </div>
       </div>
 
-      {/* Following and Followers Lists */}
-      <div className="w-full px-3 py-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Following List */}
-          <div className="bg-white rounded-xl shadow-sm p-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Following ({user.followingList?.length || 0})
-            </h3>
-            {user.followingList && user.followingList.length > 0 ? (
-              <div className="space-y-2">
-                {user.followingList.slice(0, 5).map((followedUser: any) => (
-                  <div key={followedUser._id || followedUser.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
-                    <img
-                      src={getMediaUrl(followedUser.avatar)}
-                      alt={followedUser.name}
-                      className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-800 truncate">
-                        {followedUser.name || followedUser.fullName || 'Unknown User'}
-                      </p>
-                      <p className="text-sm text-gray-500 truncate">
-                        @{followedUser.username || 'unknown'}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-                {user.followingList.length > 5 && (
-                  <p className="text-sm text-gray-500 text-center py-2">
-                    +{user.followingList.length - 5} more following
-                  </p>
-                )}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-4">No following yet</p>
-            )}
-          </div>
-
-          {/* Followers List */}
-          <div className="bg-white rounded-xl shadow-sm p-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Followers ({user.followersList?.length || 0})
-            </h3>
-            {user.followersList && user.followersList.length > 0 ? (
-              <div className="space-y-2">
-                {user.followersList.slice(0, 5).map((follower: any) => (
-                  <div key={follower._id || follower.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors">
-                    <img
-                      src={getMediaUrl(follower.avatar)}
-                      alt={follower.name}
-                      className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-800 truncate">
-                        {follower.name || follower.fullName || 'Unknown User'}
-                      </p>
-                      <p className="text-sm text-gray-500 truncate">
-                        @{follower.username || 'unknown'}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-                {user.followersList.length > 5 && (
-                  <p className="text-sm text-gray-500 text-center py-2">
-                    +{user.followersList.length - 5} more followers
-                  </p>
-                )}
-              </div>
-            ) : (
-              <p className="text-gray-500 text-center py-4">No followers yet</p>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Navigation Tabs */}
       <div className="bg-white border-b sticky top-0 z-30">
         <div className="w-full px-3">
@@ -1144,47 +1014,254 @@ const UserProfile: React.FC = () => {
       {/* Main Content */}
       <div className="w-full px-3 py-4">
         {activeTab === 'timeline' && (
-          <div className="space-y-6">
-            {/* Search and Filter */}
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+          <div className="space-y-4">
+            {/* Content Layout - Two Column Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+              {/* Left Sidebar - User Information */}
+              <div className="lg:col-span-1 space-y-4">
+                {/* Search Box */}
+                <div className="bg-white rounded-xl shadow-sm p-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
-                  placeholder="Search posts..."
+                      placeholder="Search for posts"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-2 bg-gray-100 border-0 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
                 />
               </div>
-              <div className="flex gap-2">
-                {filters.map((filter) => (
-                  <button
-                    key={filter.id}
-                    onClick={() => setActiveFilter(filter.id)}
-                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors flex items-center gap-2 ${
-                      activeFilter === filter.id
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {filter.icon}
-                    {filter.label}
-                  </button>
-                ))}
+                </div>
+
+                {/* User Details Card */}
+                <div className="bg-white rounded-xl shadow-sm p-3 space-y-3">
+                  {/* Status */}
+                  <div className="text-center">
+                    <p className="text-gray-800 font-medium">{user.bio || 'No bio added yet'}</p>
+                  </div>
+
+                  {/* Online Status */}
+                  <div className="flex items-center justify-center gap-2">
+                    <div className={`w-3 h-3 rounded-full ${user.isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                    <span className="text-sm text-gray-600">{user.isOnline ? 'Online' : 'Offline'}</span>
+                  </div>
+
+                  {/* Connections */}
+                  <div className="space-y-3">
+                    <div className="text-center mb-3">
+                      <h4 className="text-sm font-semibold text-gray-700">Connections</h4>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors">
+                      <div className="flex items-center gap-2 text-blue-700">
+                        <Users className="w-5 h-5 flex-shrink-0 text-blue-500" />
+                        <span className="text-lg font-bold">
+                          {user.following?.length || user.followingList?.length || 0}
+                        </span>
+                        <span className="text-sm text-blue-600">Following</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200 hover:bg-green-100 transition-colors">
+                      <div className="flex items-center gap-2 text-green-700">
+                        <Users className="w-5 h-5 flex-shrink-0 text-green-500" />
+                        <span className="text-lg font-bold">
+                          {user.followers?.length || user.followersList?.length || 0}
+                        </span>
+                        <span className="text-sm text-green-600">Followers</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Posts Count */}
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <FileText className="w-4 h-4 flex-shrink-0" />
+                    <span>{posts.length} posts</span>
+                  </div>
+
+                  {/* Gender */}
+                  {user.gender && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <span className="text-lg">👤</span>
+                      <span>{user.gender}</span>
+                  </div>
+                  )}
+
+                  {/* Work */}
+                  {user.workplace && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <span className="text-lg">💼</span>
+                      <span>{user.workplace}</span>
+                </div>
+                  )}
+
+                  {/* Education */}
+                  {user.education && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <span className="text-lg">🎓</span>
+                      <span>{user.education}</span>
+                            </div>
+                  )}
+
+                  {/* Location */}
+                  {user.location && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <span className="text-lg">🏠</span>
+                      <span>{user.location}</span>
+                  </div>
+                  )}
+
+                  {/* Specific Location */}
+                  {user.address && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <MapPin className="w-4 h-4 flex-shrink-0" />
+                      <span>{user.address}</span>
+                  </div>
+                  )}
+
+                  {/* Country */}
+                  {user.country && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <span className="text-lg">🌍</span>
+                      <span>{user.country}</span>
+                </div>
+                  )}
+
+                  {/* Phone */}
+                  {user.phone && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Phone className="w-4 h-4 flex-shrink-0" />
+                      <span>{user.phone}</span>
+                      </div>
+                  )}
+
+                  {/* Date of Birth */}
+                  {user.dateOfBirth && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <span className="text-lg">🎂</span>
+                      <span>{new Date(user.dateOfBirth).toLocaleDateString()}</span>
+                        </div>
+                  )}
+
+                  {/* Joined Date */}
+                  {user.joinedDate && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Calendar className="w-4 h-4 flex-shrink-0" />
+                      <span>Joined {new Date(user.joinedDate).toLocaleDateString()}</span>
+                    </div>
+                  )}
+
+                  {/* Website */}
+                  {user.website && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Globe className="w-4 h-4 flex-shrink-0" />
+                      <a 
+                        href={user.website.startsWith('http') ? user.website : `https://${user.website}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline truncate"
+                      >
+                        {user.website}
+                      </a>
               </div>
+                        )}
             </div>
+              </div>
 
-            {/* Combined Timeline */}
-            <div className="space-y-6">
+              {/* Right Content Area - Posts and Content */}
+              <div className="lg:col-span-3 space-y-4">
+                {/* Content Filter Buttons */}
+                <div className="bg-white rounded-xl shadow-sm p-4">
+                  <div className="flex items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                    <style jsx>{`
+                      .filter-scroll::-webkit-scrollbar {
+                        display: none;
+                      }
+                    `}</style>
+                    <div className="filter-scroll flex items-center gap-2">
+                  <button
+                        onClick={() => setActiveFilter('all')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+                          activeFilter === 'all'
+                            ? 'bg-red-100 text-red-600 border border-red-200'
+                            : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span className="text-sm font-medium">All</span>
+                  </button>
+                      
+                      <button
+                        onClick={() => setActiveFilter('text')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+                          activeFilter === 'text'
+                            ? 'bg-red-100 text-red-600 border border-red-200'
+                            : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="w-4 h-4 flex items-center justify-center">
+                          <div className="w-3 h-0.5 bg-current rounded-full"></div>
+                          <div className="w-3 h-0.5 bg-current rounded-full mt-1"></div>
+                          <div className="w-3 h-0.5 bg-current rounded-full mt-1"></div>
+                      </div>
+                        <span className="text-sm font-medium">Text</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => setActiveFilter('photos')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+                          activeFilter === 'photos'
+                            ? 'bg-red-100 text-red-600 border border-red-200'
+                            : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <Camera className="w-4 h-4" />
+                        <span className="text-sm font-medium">Photos</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => setActiveFilter('videos')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+                          activeFilter === 'videos'
+                            ? 'bg-red-100 text-red-600 border border-red-200'
+                            : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <Video className="w-4 h-4" />
+                        <span className="text-sm font-medium">Videos</span>
+                  </button>
+
+                      <button
+                        onClick={() => setActiveFilter('sounds')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+                          activeFilter === 'sounds'
+                            ? 'bg-red-100 text-red-600 border border-red-200'
+                            : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <Music className="w-4 h-4" />
+                        <span className="text-sm font-medium">Sounds</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => setActiveFilter('files')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+                          activeFilter === 'files'
+                            ? 'bg-red-100 text-red-600 border border-red-200'
+                            : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span className="text-sm font-medium">Files</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Posts Feed */}
+                <div className="space-y-4">
               {(() => {
-                // Combine posts and albums and sort by creation date
-                const combinedContent = [
-                  ...posts.map((post: any) => ({ ...post, type: 'post' })),
-                  ...albums.map((album: any) => ({ ...album, type: 'album' }))
-                ].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                const filteredContent = getFilteredContent();
 
-                if (combinedContent.length === 0) {
+                if (filteredContent.length === 0) {
                   return (
                     <div className="bg-white rounded-xl shadow-sm p-6 text-center">
                       <div className="text-gray-400 mb-3">
@@ -1198,7 +1275,7 @@ const UserProfile: React.FC = () => {
                   );
                 }
 
-                return combinedContent.map((item: any) => {
+                return filteredContent.map((item: any) => {
                   if (item.type === 'album') {
                     return (
                       <div key={item._id} className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -1259,14 +1336,129 @@ const UserProfile: React.FC = () => {
                       <PostDisplay
                         key={item._id}
                         post={item}
-                        onEdit={setEditingPost}
-                        onDelete={() => {}}
+                        onLike={async (postId) => {
+                          try {
+                            const token = localStorage.getItem('token');
+                            if (!token) return;
+                            
+                            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/like`, {
+                              method: 'POST',
+                              headers: {
+                                'Authorization': `Bearer ${token}`
+                              }
+                            });
+                            
+                            if (response.ok) {
+                              // Refresh posts to show updated like count
+                              fetchUserContent();
+                            }
+                          } catch (error) {
+                            console.error('Error liking post:', error);
+                          }
+                        }}
+                        onReaction={async (postId, reactionType) => {
+                          try {
+                            const token = localStorage.getItem('token');
+                            if (!token) return;
+                            
+                            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/reaction`, {
+                              method: 'POST',
+                              headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                              },
+                              body: JSON.stringify({ reactionType })
+                            });
+                            
+                            if (response.ok) {
+                              // Refresh posts to show updated reaction
+                              fetchUserContent();
+                            }
+                          } catch (error) {
+                            console.error('Error adding reaction:', error);
+                          }
+                        }}
+                        onComment={async (postId, comment) => {
+                          try {
+                            const token = localStorage.getItem('token');
+                            if (!token) return;
+                            
+                            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/comment`, {
+                              method: 'POST',
+                              headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                              },
+                              body: JSON.stringify({ content: comment })
+                            });
+                            
+                            if (response.ok) {
+                              // Refresh posts to show new comment
+                              fetchUserContent();
+                            }
+                          } catch (error) {
+                            console.error('Error commenting on post:', error);
+                          }
+                        }}
+                        onSave={async (postId) => {
+                          try {
+                            const token = localStorage.getItem('token');
+                            if (!token) return;
+                            
+                            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/save`, {
+                              method: 'POST',
+                              headers: {
+                                'Authorization': `Bearer ${token}`
+                              }
+                            });
+                            
+                            if (response.ok) {
+                              // Refresh posts to show updated save status
+                              fetchUserContent();
+                            }
+                          } catch (error) {
+                            console.error('Error saving post:', error);
+                          }
+                        }}
+                        onShare={async (postId, shareOptions) => {
+                          try {
+                            const token = localStorage.getItem('token');
+                            if (!token) return;
+                            
+                            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/share`, {
+                              method: 'POST',
+                              headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                              },
+                              body: JSON.stringify(shareOptions)
+                            });
+                            
+                            if (response.ok) {
+                              showPopup('success', 'Post Shared', 'Post has been shared successfully!');
+                              // Refresh posts to show updated share count
+                              fetchUserContent();
+                            }
+                          } catch (error) {
+                            console.error('Error sharing post:', error);
+                            showPopup('error', 'Share Failed', 'Failed to share post');
+                          }
+                        }}
+                        onDelete={handleDeletePost}
+                        onEdit={handleEditPost}
+                        onToggleComments={async (postId) => {
+                          // This will be handled by the PostDisplay component internally
+                          console.log('Toggle comments for post:', postId);
+                        }}
                         isOwner={isCurrentUser}
+                        showEditDelete={isCurrentUser}
                       />
                     );
                   }
                 });
               })()}
+                </div>
+              </div>
             </div>
           </div>
         )}

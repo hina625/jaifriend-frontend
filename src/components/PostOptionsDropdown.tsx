@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
-import { Edit3, Trash2, MessageCircle, ExternalLink, Pin, Zap, Bookmark, X } from 'lucide-react';
+import { Edit3, Trash2, MessageCircle, ExternalLink, Pin, Zap, X } from 'lucide-react';
 
 interface PostOptionsDropdownProps {
   isOpen: boolean;
@@ -11,11 +11,9 @@ interface PostOptionsDropdownProps {
   onOpenInNewTab: () => void;
   onPin: () => void;
   onBoost: () => void;
-  onSave?: () => void;
   commentsEnabled?: boolean;
   isPinned?: boolean;
   isBoosted?: boolean;
-  isSaved?: boolean;
   position?: 'top' | 'bottom';
   isOwnPost?: boolean; // Add this prop to check if current user owns the post
 }
@@ -29,11 +27,9 @@ const PostOptionsDropdown: React.FC<PostOptionsDropdownProps> = ({
   onOpenInNewTab,
   onPin,
   onBoost,
-  onSave,
   commentsEnabled = true,
   isPinned = false,
   isBoosted = false,
-  isSaved = false,
   position = 'bottom',
   isOwnPost = false
 }) => {
@@ -91,13 +87,7 @@ const PostOptionsDropdown: React.FC<PostOptionsDropdownProps> = ({
       onClick: onOpenInNewTab,
       className: "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
     },
-    ...(onSave ? [{
-      icon: <Bookmark className="w-4 h-4 sm:w-5 sm:h-5" />,
-      title: isSaved ? "Remove from Saved" : "Save Post",
-      subtitle: isSaved ? "Remove this post from your saved posts." : "Save this post to your collection.",
-      onClick: onSave,
-      className: isSaved ? "text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-900/20" : "text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-700"
-    }] : []),
+
     {
       icon: <Pin className="w-4 h-4 sm:w-5 sm:h-5" />,
       title: isPinned ? "Unpin Post" : "Pin Post",

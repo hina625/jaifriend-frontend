@@ -1424,8 +1424,8 @@ export default function Dashboard() {
                   <div className="flex-1 relative">
                     {/* Content Textarea */}
                     <textarea
-                      placeholder="Write your message, add your photo or Video ... @Mention... #Hashtag"
-                      className={`w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none ${
+                      placeholder="What's going on? #Hashtag.. @Mention.. Link.."
+                      className={`w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none ${
                         newPost.trim() ? 'min-h-[120px]' : 'min-h-[60px]'
                       }`}
                       value={newPost}

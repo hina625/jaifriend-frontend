@@ -210,32 +210,10 @@ const GeneralSettings = () => {
           // Dispatch event to notify other components
           window.dispatchEvent(new CustomEvent('profileUpdated'));
           
-          // Get current user ID and navigate to profile page
-          try {
-            const currentUserResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
-              headers: {
-                'Authorization': `Bearer ${token}`
-              }
-            });
-
-            if (currentUserResponse.ok) {
-              const currentUser = await currentUserResponse.json();
+          // Navigate back to profile page after a short delay
               setTimeout(() => {
-                router.push(`/dashboard/profile/${currentUser.id}`);
+            router.push('/dashboard/profile');
               }, 1500);
-            } else {
-              // Fallback to "me" if we can't get the user ID
-              setTimeout(() => {
-                router.push('/dashboard/profile/me');
-              }, 1500);
-            }
-          } catch (error) {
-            console.error('Error getting current user ID:', error);
-            // Fallback to "me" if there's an error
-            setTimeout(() => {
-              router.push('/dashboard/profile/me');
-            }, 1500);
-          }
         } else {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to update profile');

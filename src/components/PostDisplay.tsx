@@ -16,6 +16,7 @@ interface PostDisplayProps {
   onShare?: (postId: string, shareOptions: ShareOptions) => void;
   onDelete?: (postId: string) => void;
   onEdit?: (post: any) => void;
+  onToggleComments?: (postId: string) => void;
   showEditDelete?: boolean;
 }
 
@@ -29,6 +30,7 @@ export default function PostDisplay({
   onShare,
   onDelete,
   onEdit,
+  onToggleComments,
   showEditDelete = false
 }: PostDisplayProps) {
   const [showCommentInput, setShowCommentInput] = useState(false);
@@ -230,10 +232,48 @@ export default function PostDisplay({
 
       <div className="mb-3">
         {/* Content with word limit and Read More */}
-        <div className="text-gray-800 text-sm sm:text-base">
+        <div className="text-gray-800 text-sm sm:text-base leading-relaxed">
           {(() => {
             const content = post.content || '';
             const wordCount = content.split(/\s+/).filter((word: string) => word && word.length > 0).length;
+            
+            // Function to format content with line breaks and paragraphs
+            const formatContent = (text: string) => {
+              // Split by double line breaks to create paragraphs
+              const paragraphs = text.split(/\n\n+/);
+              
+              return paragraphs.map((paragraph, index) => {
+                if (paragraph.trim() === '') return null;
+                
+                // Split by single line breaks within paragraphs
+                const lines = paragraph.split(/\n/);
+                
+                return (
+                  <div key={index} className="mb-3">
+                    {lines.map((line, lineIndex) => {
+                      if (line.trim() === '') return null;
+                      
+                      // Check if line starts with emoji or special characters
+                      const hasEmoji = /^[🚩✨✅💬🔴🟡🟢🔵⚫🟣🟠⚪🟤]/.test(line.trim());
+                      const isBulletPoint = /^[•·▪▫‣⁃]/.test(line.trim());
+                      
+                      return (
+                        <div key={lineIndex} className={`${lineIndex > 0 ? 'mt-2' : ''} ${hasEmoji || isBulletPoint ? 'flex items-start gap-2' : ''}`}>
+                          {hasEmoji || isBulletPoint ? (
+                            <>
+                              <span className="text-lg flex-shrink-0">{line.trim().charAt(0)}</span>
+                              <span className="flex-1">{line.trim().substring(1)}</span>
+                            </>
+                          ) : (
+                            <span>{line}</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              });
+            };
             
             if (wordCount > 300) {
               const words = content.split(/\s+/);
@@ -241,15 +281,15 @@ export default function PostDisplay({
               
               return (
                 <div>
-                  <span>{isExpanded ? content : first300Words}</span>
-                  <span className="text-blue-600 cursor-pointer hover:underline ml-1" 
+                  <div>{isExpanded ? formatContent(content) : formatContent(first300Words)}</div>
+                  <span className="text-blue-600 cursor-pointer hover:underline ml-1 mt-2 inline-block" 
                         onClick={() => setIsExpanded(!isExpanded)}>
                     {isExpanded ? '... Show Less' : '... Read More'}
                   </span>
                 </div>
               );
             } else {
-              return <span>{content}</span>;
+              return <div>{formatContent(content)}</div>;
             }
           })()}
         </div>
@@ -446,8 +486,8 @@ export default function PostDisplay({
             <span className="text-xs sm:text-sm font-medium hidden sm:inline">{isSaved ? 'Saved' : 'Save'}</span>
           </button>
           
-          {/* Edit and Delete buttons - only show if showEditDelete is true */}
-          {showEditDelete && (
+          {/* Edit and Delete buttons - only show if showEditDelete is true AND user owns the post */}
+          {showEditDelete && isOwner && (
             <>
               <button 
                 onClick={() => onEdit && onEdit(post)}
@@ -471,6 +511,21 @@ export default function PostDisplay({
               >
                 <span className="text-lg sm:text-xl">🗑️</span>
                 <span className="text-xs sm:text-sm font-medium hidden sm:inline">Delete</span>
+              </button>
+              
+              {/* Comment Toggle Button - only for post owners */}
+              <button 
+                onClick={() => {
+                  if (onToggleComments) {
+                    onToggleComments(post._id);
+                  }
+                }}
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-gray-600 hover:text-yellow-500 hover:bg-yellow-50 transition-colors touch-manipulation"
+                title={post.commentsEnabled !== false ? "Disable comments" : "Enable comments"}
+                style={{ touchAction: 'manipulation' }}
+              >
+                <span className="text-lg sm:text-xl">{post.commentsEnabled !== false ? '🔇' : '💬'}</span>
+                <span className="text-xs sm:text-sm font-medium hidden sm:inline">{post.commentsEnabled !== false ? 'Disable' : 'Enable'}</span>
               </button>
             </>
           )}

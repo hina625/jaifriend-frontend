@@ -877,7 +877,48 @@ const FeedPost: React.FC<FeedPostProps> = ({
           </div>
         );
       }
-      return <span key={index}>{part}</span>;
+      
+      // Render text content with proper formatting for line breaks and paragraphs
+      if (part.trim() === '') return null;
+      
+      // Split by double line breaks to create paragraphs
+      const paragraphs = part.split(/\n\n+/);
+      
+      return (
+        <div key={index}>
+          {paragraphs.map((paragraph, pIndex) => {
+            if (paragraph.trim() === '') return null;
+            
+            // Split by single line breaks within paragraphs
+            const lines = paragraph.split(/\n/);
+            
+            return (
+              <div key={pIndex} className="mb-3">
+                {lines.map((line, lineIndex) => {
+                  if (line.trim() === '') return null;
+                  
+                  // Check if line starts with emoji or special characters
+                  const hasEmoji = /^[🚩✨✅💬🔴🟡🟢🔵⚫🟣🟠⚪🟤]/.test(line.trim());
+                  const isBulletPoint = /^[•·▪▫‣⁃]/.test(line.trim());
+                  
+                  return (
+                    <div key={lineIndex} className={`${lineIndex > 0 ? 'mt-2' : ''} ${hasEmoji || isBulletPoint ? 'flex items-start gap-2' : ''}`}>
+                      {hasEmoji || isBulletPoint ? (
+                        <>
+                          <span className="text-lg flex-shrink-0">{line.trim().charAt(0)}</span>
+                          <span className="flex-1">{line.trim().substring(1)}</span>
+                        </>
+                      ) : (
+                        <span>{line}</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      );
     });
   };
 
@@ -975,11 +1016,9 @@ const FeedPost: React.FC<FeedPostProps> = ({
                 onOpenInNewTab={handleOpenInNewTab}
                 onPin={handlePin}
                 onBoost={handleBoost}
-                onSave={handleSave}
                 commentsEnabled={post.commentsEnabled !== false}
                 isPinned={post.isPinned}
                 isBoosted={post.isBoosted}
-                isSaved={isPostSaved()}
                 position="bottom"
                 isOwnPost={isOwnPost}
               />
