@@ -18,7 +18,6 @@ interface FeedPostProps {
   onDelete: (postId: string) => void;
   onEdit: (post: any) => void;
   isOwnPost: boolean;
-  isLiking?: boolean;
 }
 
 const FeedPost: React.FC<FeedPostProps> = ({
@@ -30,8 +29,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
   onSave,
   onDelete,
   onEdit,
-  isOwnPost,
-  isLiking
+  isOwnPost
 }) => {
 
   const router = useRouter();
@@ -711,11 +709,175 @@ const FeedPost: React.FC<FeedPostProps> = ({
     
     setExpandedPosts(prev => {
       const newState = {
-        ...prev,
-        [postId]: !prev[postId]
+      ...prev,
+      [postId]: !prev[postId]
       };
       console.log('🔄 New expanded state:', newState);
       return newState;
+    });
+  };
+
+  // Function to detect and extract video links
+  const extractVideoLinks = (content: string) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const urls = content.match(urlRegex) || [];
+    
+    return urls.filter(url => {
+      // YouTube links
+      if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) return true;
+      // Vimeo links
+      if (url.includes('vimeo.com/')) return true;
+      // Facebook video links
+      if (url.includes('facebook.com/') && url.includes('video')) return true;
+      // Instagram video links
+      if (url.includes('instagram.com/') && url.includes('reel')) return true;
+      // TikTok links
+      if (url.includes('tiktok.com/')) return true;
+      return false;
+    });
+  };
+
+  // Function to get video embed URL
+  const getVideoEmbedUrl = (url: string) => {
+    // YouTube
+    if (url.includes('youtube.com/watch')) {
+      const videoId = url.match(/v=([^&]+)/)?.[1];
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    }
+    if (url.includes('youtu.be/')) {
+      const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    }
+    // Vimeo
+    if (url.includes('vimeo.com/')) {
+      const videoId = url.split('vimeo.com/')[1]?.split('/')[0];
+      return videoId ? `https://player.vimeo.com/video/${videoId}` : null;
+    }
+    // Facebook (basic support)
+    if (url.includes('facebook.com/')) {
+      return url.replace('www.facebook.com', 'www.facebook.com/plugins/video.php');
+    }
+    // Instagram (basic support)
+    if (url.includes('instagram.com/')) {
+      return url;
+    }
+    // TikTok (basic support)
+    if (url.includes('tiktok.com/')) {
+      return url;
+    }
+    return null;
+  };
+
+  // Function to render content with video previews
+  const renderContentWithVideos = (content: string) => {
+    const videoLinks = extractVideoLinks(content);
+    
+    if (videoLinks.length === 0) {
+      return renderContentWithLinks(content);
+    }
+
+    // Split content by URLs and render with video previews
+    let parts = [content];
+    videoLinks.forEach(url => {
+      parts = parts.flatMap(part => {
+        if (typeof part === 'string') {
+          return part.split(url);
+        }
+        return [part];
+      });
+    });
+
+    return (
+      <div>
+        {parts.map((part, index) => {
+          if (videoLinks.includes(part)) {
+            const embedUrl = getVideoEmbedUrl(part);
+            if (embedUrl) {
+              return (
+                <div key={index} className="my-3">
+                  <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 mb-2">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                      🎥 Video Link: {part}
+                    </div>
+                    {embedUrl.includes('youtube.com/embed') || embedUrl.includes('vimeo.com') ? (
+                      <iframe
+                        src={embedUrl}
+                        width="100%"
+                        height="200"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="rounded-lg"
+                      />
+                    ) : (
+                      <div className="bg-gray-200 dark:bg-gray-600 rounded-lg p-4 text-center">
+                        <div className="text-lg mb-2">🎬</div>
+                        <a 
+                          href={part} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline text-sm"
+                        >
+                          Click to view video
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            }
+          }
+          return renderContentWithLinks(part);
+        })}
+      </div>
+    );
+  };
+
+  // Function to render content with clickable links
+  const renderContentWithLinks = (content: string) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = content.split(urlRegex);
+    
+    return parts.map((part, index) => {
+      if (urlRegex.test(part)) {
+        // Check if it's a video link (already handled above)
+        if (extractVideoLinks(part).length > 0) {
+          return <span key={index}>{part}</span>;
+        }
+        
+        // Show link preview for non-video links
+        return (
+          <div key={index} className="my-2">
+            <a
+              href={part}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline break-all"
+            >
+              {part}
+            </a>
+            <div className="mt-2 bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
+              <div className="flex items-center gap-2">
+                <div className="text-lg">🔗</div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    {new URL(part).hostname}
+                  </div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    Click to visit link
+                  </div>
+                </div>
+                <div className="text-xs text-gray-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      }
+      return <span key={index}>{part}</span>;
     });
   };
 
@@ -856,13 +1018,13 @@ const FeedPost: React.FC<FeedPostProps> = ({
             const postId = post._id || post.id;
             const isExpanded = expandedPosts[postId] || false;
             
-            if (wordCount > 300) {
+            if (wordCount > 50) {
               const words = content.split(/\s+/);
-              const first300Words = words.slice(0, 300).join(' ');
+              const first50Words = words.slice(0, 50).join(' ');
               
               return (
                 <div className="relative">
-                  <span>{isExpanded ? content : first300Words}</span>
+                  <div>{isExpanded ? renderContentWithVideos(content) : renderContentWithVideos(first50Words)}</div>
                   {!isExpanded && (
                     <span className="text-gray-500 dark:text-gray-400">...</span>
                   )}
@@ -887,7 +1049,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
                 </div>
               );
             } else {
-              return <span>{content}</span>;
+              return renderContentWithVideos(content);
             }
           })()}
         </div>
@@ -993,41 +1155,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
 
         {/* Bottom Section: Action Buttons */}
         <div className="flex items-center justify-between py-6 px-6">
-          <div className="flex items-center space-x-8">
-            {/* Like Button */}
-            <button
-              onClick={() => onLike(post._id || post.id)}
-              disabled={isLiking}
-              className={`flex flex-col items-center space-y-3 transition-colors touch-manipulation ${
-                isLiked 
-                  ? 'text-red-500' 
-                  : 'text-gray-600 hover:text-red-500'
-              } ${isLiking ? 'opacity-50 cursor-not-allowed' : ''}`}
-              style={{ touchAction: 'manipulation' }}
-              title={isLiked ? 'Unlike' : 'Like'}
-            >
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
-                isLiked 
-                  ? 'bg-red-100 dark:bg-red-900/20' 
-                  : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}>
-                {isLiking ? (
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-500"></div>
-                ) : (
-                  <svg className="w-6 h-6" fill={isLiked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
-                )}
-              </div>
-              <span className="text-base font-medium">{isLiking ? 'Processing...' : (isLiked ? 'Liked' : 'Like')}</span>
-              {/* Show like count if any likes exist */}
-              {post.likes && post.likes.length > 0 && (
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {post.likes.length}
-                </span>
-              )}
-            </button>
-            
+          <div className="flex items-center space-x-16">
             {/* Reaction Button */}
             <div className="relative">
             <button

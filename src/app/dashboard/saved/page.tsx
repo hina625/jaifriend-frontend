@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Bookmark, Grid, List, Search, Filter, Share2, Heart, MessageCircle, Download, Settings, MoreHorizontal } from 'lucide-react';
 import AlbumDisplay from '@/components/AlbumDisplay';
 import PostDisplay from '@/components/PostDisplay';
+import FeedPost from '@/components/FeedPost'; // Added FeedPost import
 
 export default function SavedPosts() {
   const [savedAlbums, setSavedAlbums] = useState<any[]>([]);
@@ -22,6 +23,7 @@ export default function SavedPosts() {
     { id: 'recent', label: 'Recent', count: 0 },
   ];
 
+  // Check auth and fetch saved content
   const checkAuthAndFetchSaved = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -30,6 +32,7 @@ export default function SavedPosts() {
     }
     try {
       console.log('🔄 Fetching saved content...');
+      setLoading(true);
       
       // Fetch saved albums
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
@@ -68,7 +71,19 @@ export default function SavedPosts() {
       if (savedPostsRes.ok) {
         const savedPostsData = await savedPostsRes.json();
         console.log('✅ Saved posts data:', savedPostsData);
-        setSavedPosts(savedPostsData);
+        
+        // Handle new API response format with savedPosts and pagination
+        if (savedPostsData.savedPosts && Array.isArray(savedPostsData.savedPosts)) {
+          setSavedPosts(savedPostsData.savedPosts);
+          console.log('✅ Extracted saved posts:', savedPostsData.savedPosts.length);
+        } else if (Array.isArray(savedPostsData)) {
+          // Handle old format (direct array)
+          setSavedPosts(savedPostsData);
+          console.log('✅ Using old format, saved posts:', savedPostsData.length);
+        } else {
+          console.error('❌ Unexpected saved posts data format:', savedPostsData);
+          setSavedPosts([]);
+        }
       } else {
         const errorData = await savedPostsRes.json().catch(() => ({}));
         console.error('❌ Failed to fetch saved posts:', savedPostsRes.status, errorData);
@@ -76,6 +91,7 @@ export default function SavedPosts() {
     } catch (error) {
       console.error('❌ Error fetching saved content:', error);
     } finally {
+      console.log('🏁 Finished fetching saved content, setting loading to false');
       setLoading(false);
     }
   };
@@ -129,10 +145,24 @@ export default function SavedPosts() {
     filters[3].count = savedAlbums.length + savedPosts.length; // Recent = all for now
   }, [savedAlbums, savedPosts]);
 
+  // Debug effect to monitor filtered content changes
+  useEffect(() => {
+    const { albums: filteredAlbums, posts: filteredPosts } = getFilteredContent();
+    console.log('🔍 Filtered content changed:');
+    console.log('  - Filtered albums:', filteredAlbums.length);
+    console.log('  - Filtered posts:', filteredPosts.length);
+  }, [savedAlbums, savedPosts, activeFilter, searchQuery]);
+
   // Filter content based on active filter and search
   const getFilteredContent = () => {
     let albums = savedAlbums;
     let posts = savedPosts;
+
+    console.log('🔍 getFilteredContent called:');
+    console.log('  - Raw saved albums:', albums.length);
+    console.log('  - Raw saved posts:', posts.length);
+    console.log('  - Active filter:', activeFilter);
+    console.log('  - Search query:', searchQuery);
 
     // Apply search filter
     if (searchQuery) {
@@ -144,25 +174,40 @@ export default function SavedPosts() {
         post.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         post.content?.toLowerCase().includes(searchQuery.toLowerCase())
       );
+      console.log('  - After search filter - albums:', albums.length, 'posts:', posts.length);
     }
 
     // Apply category filter
     switch (activeFilter) {
       case 'albums':
+        console.log('  - Filter: albums only');
         return { albums, posts: [] };
       case 'posts':
+        console.log('  - Filter: posts only');
         return { albums: [], posts };
       case 'recent':
         // Sort by most recent
         const recentAlbums = albums.slice().sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
         const recentPosts = posts.slice().sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
+        console.log('  - Filter: recent - albums:', recentAlbums.length, 'posts:', recentPosts.length);
         return { albums: recentAlbums, posts: recentPosts };
       default:
+        console.log('  - Filter: all - albums:', albums.length, 'posts:', posts.length);
         return { albums, posts };
     }
   };
 
   const { albums: filteredAlbums, posts: filteredPosts } = getFilteredContent();
+
+  // Debug logging
+  console.log('🔍 Debug saved content:');
+  console.log('  - Saved albums:', savedAlbums.length);
+  console.log('  - Saved posts:', savedPosts.length);
+  console.log('  - Filtered albums:', filteredAlbums.length);
+  console.log('  - Filtered posts:', filteredPosts.length);
+  console.log('  - Active filter:', activeFilter);
+  console.log('  - Search query:', searchQuery);
+  console.log('  - Loading state:', loading);
 
   // Handle album like
   const handleAlbumLike = async (albumId: string) => {
@@ -567,6 +612,20 @@ export default function SavedPosts() {
       {/* Main Content */}
       <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
         <div className="max-w-4xl mx-auto">
+          {/* Debug Section - Remove this later */}
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <h4 className="font-semibold text-yellow-800 mb-2">🔍 Debug Info:</h4>
+            <div className="text-sm text-yellow-700 space-y-1">
+              <div>Loading: {loading ? 'Yes' : 'No'}</div>
+              <div>Raw savedAlbums: {savedAlbums.length}</div>
+              <div>Raw savedPosts: {savedPosts.length}</div>
+              <div>Filtered albums: {filteredAlbums.length}</div>
+              <div>Filtered posts: {filteredPosts.length}</div>
+              <div>Active filter: {activeFilter}</div>
+              <div>Search query: {searchQuery || 'None'}</div>
+            </div>
+          </div>
+          
           {loading ? (
             <div className="flex items-center justify-center min-h-64">
               <div className="text-center">
@@ -665,19 +724,24 @@ export default function SavedPosts() {
                     </div>
                   )}
                   <div className={`${viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6' : 'space-y-4 sm:space-y-6'}`}>
-                    {filteredPosts.map((post) => (
-                      <div key={post._id} className={viewMode === 'grid' ? 'bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow' : ''}>
-                        <PostDisplay
-                          post={post}
-                          isOwner={false}
-                          onLike={handlePostLike}
-                          onComment={handlePostComment}
-                          onSave={handlePostSave}
-                          onShare={handlePostShare}
-                          onReaction={handleReaction}
-                        />
-                      </div>
-                    ))}
+                    {filteredPosts.map((post) => {
+                      console.log('🔍 Rendering saved post:', post);
+                      return (
+                        <div key={post._id} className={viewMode === 'grid' ? 'bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow' : ''}>
+                          <FeedPost
+                            post={post}
+                            onLike={handlePostLike}
+                            onReaction={handleReaction}
+                            onComment={handlePostComment}
+                            onShare={handlePostShare}
+                            onSave={handlePostSave}
+                            onDelete={() => {}} // No delete for saved posts
+                            onEdit={() => {}} // No edit for saved posts
+                            isOwnPost={false}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

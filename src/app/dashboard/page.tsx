@@ -86,7 +86,6 @@ export default function Dashboard() {
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [loadingAlbums, setLoadingAlbums] = useState(true);
   const [deletingComments, setDeletingComments] = useState<{[key: string]: boolean}>({});
-  const [likingPosts, setLikingPosts] = useState<{[key: string]: boolean}>({});
   const [newPost, setNewPost] = useState('');
   const [newPostTitle, setNewPostTitle] = useState('');
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
@@ -609,16 +608,6 @@ export default function Dashboard() {
     console.log('📝 Current post:', currentPost);
     console.log('💖 Current likes:', currentPost?.likes);
 
-    // Prevent multiple clicks
-    if (likingPosts[postId]) {
-      console.log('⚠️ Post is already being liked, ignoring click');
-      return;
-    }
-
-    // Set loading state
-    setLikingPosts(prev => ({ ...prev, [postId]: true }));
-    console.log('⏳ Set loading state for post:', postId);
-
     // Optimistic update for better UX
     const originalPosts = [...posts];
     console.log('🔄 Performing optimistic update');
@@ -703,9 +692,6 @@ export default function Dashboard() {
       // Revert optimistic update on network error
       setPosts(originalPosts);
       showPopup('error', 'Network Error', 'Failed to connect to server. Please check your internet connection.');
-    } finally {
-      // Clear loading state
-      setLikingPosts(prev => ({ ...prev, [postId]: false }));
     }
   };
 
@@ -738,19 +724,42 @@ export default function Dashboard() {
     }
   };
 
+  // Test function to check save functionality
+  const testSaveFunctionality = async () => {
+    console.log('🧪 Testing save functionality...');
+    console.log('📝 Current posts:', posts);
+    console.log('💾 Posts with savedBy:', posts.filter(p => p.savedBy && p.savedBy.length > 0));
+    
+    if (posts.length > 0) {
+      const firstPost = posts[0];
+      console.log('🧪 Testing with first post:', firstPost);
+      console.log('🧪 Post ID:', firstPost._id || firstPost.id);
+      console.log('🧪 Current savedBy:', firstPost.savedBy);
+      
+      // Try to save the first post
+      await handleSave(firstPost._id || firstPost.id);
+    } else {
+      console.log('🧪 No posts available for testing');
+    }
+  };
+
   const handleSave = async (postId: string) => {
     console.log('🔄 Dashboard handleSave called with postId:', postId);
+    const currentPost = posts.find(p => (p._id === postId || p.id === postId));
     const token = localStorage.getItem('token');
+    
+    console.log('📝 Current post data:', currentPost);
+    console.log('💾 Current savedBy:', currentPost?.savedBy);
+    console.log('🔑 Token exists:', !!token);
     
     if (!token) {
       console.error('❌ No token found for save operation');
-      alert('Please login to save posts');
+      showPopup('error', 'Authentication Error', 'Please login to save posts');
       return;
     }
     
     try {
       console.log('🔄 Dashboard: Saving post:', postId);
-      console.log('🔑 Token exists:', !!token);
       
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/save`;
       console.log('🌐 API URL:', apiUrl);
@@ -763,11 +772,13 @@ export default function Dashboard() {
       });
       
       console.log('📡 Response status:', res.status);
-      console.log('📡 Response headers:', res.headers);
+      console.log('📡 Response headers:', Object.fromEntries(res.headers.entries()));
       
       if (res.ok) {
         const data = await res.json();
         console.log('✅ Dashboard: Save response:', data);
+        console.log('💾 New savedBy:', data.savedBy);
+        console.log('💾 New saved status:', data.saved);
         
         setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? { 
           ...p, 
@@ -775,21 +786,30 @@ export default function Dashboard() {
           saved: data.saved 
         } : p));
         
-        window.dispatchEvent(new CustomEvent('postSaved'));
-        console.log('🔄 Dashboard: Post state updated');
+        // Dispatch event for other components
+        window.dispatchEvent(new CustomEvent('postSaved', { 
+          detail: { postId, savedBy: data.savedBy, saved: data.saved } 
+        }));
+        console.log('🔄 Dashboard: Post state updated and event dispatched');
         
         // Show success message
-        showPopup('success', 'Post Saved!', 'Post has been saved to your collection');
+        const isSaved = data.saved || (data.savedBy && data.savedBy.length > 0);
+        showPopup('success', 'Success', `Post ${isSaved ? 'saved' : 'removed from saved'} successfully!`);
       } else {
         console.error('❌ Dashboard: Save failed with status:', res.status);
-        console.error('❌ Response headers:', Object.fromEntries(res.headers.entries()));
         
         let errorData: any = {};
         try {
           errorData = await res.json();
-        console.error('❌ Dashboard: Save error data:', errorData);
+          console.error('❌ Dashboard: Save error data:', errorData);
         } catch (parseError) {
           console.error('❌ Could not parse error response:', parseError);
+          try {
+            const responseText = await res.text();
+            console.error('❌ Raw response text:', responseText);
+          } catch (textError) {
+            console.error('❌ Could not read response text:', textError);
+          }
         }
         
         // Show error message
@@ -1675,7 +1695,6 @@ export default function Dashboard() {
                           onDelete={handleDelete}
                           onEdit={startEditPost}
                           isOwnPost={isOwnPost}
-                          isLiking={likingPosts[item._id || item.id] || false}
                         />
                       );
                     }
@@ -1689,6 +1708,14 @@ export default function Dashboard() {
             <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 transition-colors duration-200">
               <div className="font-semibold mb-2 text-sm text-gray-900 dark:text-white transition-colors duration-200">Pro Members</div>
               <button className="bg-orange-400 text-white px-3 py-2 rounded-full w-full mb-2 text-sm">Upgrade To Pro</button>
+              
+              {/* Test Save Functionality Button */}
+              <button 
+                onClick={testSaveFunctionality}
+                className="bg-blue-500 text-white px-3 py-2 rounded-full w-full mb-2 text-sm"
+              >
+                🧪 Test Save
+              </button>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 transition-colors duration-200">
               <div className="font-semibold mb-2 text-sm text-gray-900 dark:text-white transition-colors duration-200">Pages you may like</div>
