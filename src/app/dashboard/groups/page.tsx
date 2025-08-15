@@ -72,6 +72,7 @@ const GroupsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch groups from API
   const fetchGroups = async (isRefresh = false) => {
@@ -388,23 +389,23 @@ const GroupsPage: React.FC = () => {
       return groups;
     }
     
+    let filteredGroups: Group[] = [];
+    
     switch (activeTab) {
       case 'My Groups':
-          const myGroups = groups.filter(group => {
+          filteredGroups = groups.filter(group => {
             const creatorId = typeof group.creator === 'object' ? group.creator?._id : group.creator;
             const isCreator = creatorId === userId;
             const isAdmin = group.members?.some(member => {
               const memberId = typeof member.user === 'object' ? member.user?._id : member.user;
               return memberId === userId && member.role === 'admin';
             });
-            console.log(`Group ${group.name}: creator=${isCreator}, admin=${isAdmin}`);
             return isCreator || isAdmin;
           });
-        console.log('My Groups count:', myGroups.length);
-        return myGroups;
+        break;
           
       case 'Suggested groups':
-          const suggestedGroups = groups.filter(group => {
+          filteredGroups = groups.filter(group => {
             const isPublic = group.privacy === 'public';
             const isNotMember = !group.members?.some(member => {
               const memberId = typeof member.user === 'object' ? member.user?._id : member.user;
@@ -414,11 +415,10 @@ const GroupsPage: React.FC = () => {
             const isNotCreator = creatorId !== userId;
             return isPublic && isNotMember && isNotCreator;
           });
-        console.log('Suggested Groups count:', suggestedGroups.length);
-        return suggestedGroups;
+        break;
           
       case 'Joined Groups':
-          const joinedGroups = groups.filter(group => {
+          filteredGroups = groups.filter(group => {
             const isMember = group.members?.some(member => {
               const memberId = typeof member.user === 'object' ? member.user?._id : member.user;
               return memberId === userId;
@@ -427,12 +427,22 @@ const GroupsPage: React.FC = () => {
             const isCreator = creatorId === userId;
             return isMember || isCreator;
           });
-        console.log('Joined Groups count:', joinedGroups.length);
-        return joinedGroups;
+        break;
         
       default:
         return [];
     }
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      filteredGroups = filteredGroups.filter(group => 
+        group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        group.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        group.category.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    return filteredGroups;
   };
 
   // Group Card Component
@@ -581,9 +591,16 @@ const GroupsPage: React.FC = () => {
                 </div>
               </button>
               
-              <button className="p-2 text-gray-400 hover:text-gray-600 hidden sm:block">
-                <Search className="w-5 h-5" />
-              </button>
+              <div className="relative hidden sm:block">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search groups..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-4 py-2 w-64 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
               <button className="p-2 text-gray-400 hover:text-gray-600">
                 <Users className="w-5 h-5" />
               </button>
@@ -620,6 +637,20 @@ const GroupsPage: React.FC = () => {
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
               <span className="text-sm font-medium text-gray-700">{activeTab}</span>
+            </div>
+          </div>
+          
+          {/* Mobile Search Bar */}
+          <div className="sm:hidden mt-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search groups..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
           </div>
         </div>

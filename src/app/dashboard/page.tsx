@@ -1180,6 +1180,10 @@ export default function Dashboard() {
   };
 
   const [user, setUser] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  
   useEffect(() => {
     const u = localStorage.getItem('user');
     if (u) setUser(JSON.parse(u));
@@ -1188,6 +1192,50 @@ export default function Dashboard() {
   const navigateToProfile = (userId: string) => {
     window.location.href = `/dashboard/profile/${userId}`;
   };
+
+  // Search functionality
+  const handleSearch = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/search?q=${encodeURIComponent(query)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data.results || []);
+      } else {
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.trim()) {
+        handleSearch(searchQuery);
+      } else {
+        setSearchResults([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
 
 
 
@@ -1314,39 +1362,36 @@ export default function Dashboard() {
         postContent += '\nNote: Audio files are referenced but not uploaded due to server limitations.';
       }
 
-      const formData = new FormData();
-      formData.append('content', postContent);
-      
-      // Only append image and video files to FormData (backend limitation)
-      imageVideoFiles.forEach(file => {
-        formData.append('media', file);
-      });
+      // Create the post data object
+      const postData: any = {
+        content: postContent
+      };
 
       // Add new post type data
       if (selectedGif) {
-        formData.append('gif', JSON.stringify(selectedGif));
+        postData.gif = selectedGif;
       }
       
       if (voiceRecording) {
-        formData.append('voice', voiceRecording);
-        formData.append('voiceData', JSON.stringify({
+        postData.voice = voiceRecording;
+        postData.voiceData = {
           duration: recordingTime,
           transcription: 'Voice recording', // In real app, this would use speech-to-text API
           isPublic: true
-        }));
+        };
       }
       
       if (selectedFeeling) {
-        formData.append('feeling', JSON.stringify({
+        postData.feeling = {
           type: selectedFeeling.type,
           intensity: 5,
           emoji: selectedFeeling.emoji,
           description: selectedFeeling.description
-        }));
+        };
       }
       
       if (sellData) {
-        formData.append('sell', JSON.stringify({
+        postData.sell = {
           productName: sellData.productName,
           price: sellData.price,
           currency: 'USD',
@@ -1354,31 +1399,99 @@ export default function Dashboard() {
           negotiable: sellData.negotiable || false,
           shipping: false,
           pickup: true
-        }));
+        };
       }
       
       if (pollData) {
-        formData.append('poll', JSON.stringify({
+        postData.poll = {
           question: pollData.question,
           options: pollData.options.map((opt: string) => ({ text: opt })),
           isMultipleChoice: pollData.isMultipleChoice || false,
           allowCustomOptions: false,
           expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
-        }));
+        };
       }
       
       if (locationData) {
-        formData.append('location', JSON.stringify({
+        postData.location = {
           name: locationData.name,
           address: locationData.address,
           category: locationData.category,
           coordinates: null, // In real app, this would use geocoding API
           placeId: null,
           rating: null
-        }));
+        };
       }
 
-      // FormData is ready for submission
+      // Create FormData for media files
+      const formData = new FormData();
+      
+      // Add basic post data
+      formData.append('content', postContent);
+      
+      // Add new post type data as separate fields
+      if (selectedGif) {
+        formData.append('gif[url]', selectedGif.url);
+        formData.append('gif[source]', selectedGif.source);
+        formData.append('gif[tags]', selectedGif.tags.join(','));
+        formData.append('gif[width]', selectedGif.width.toString());
+        formData.append('gif[height]', selectedGif.height.toString());
+      }
+      if (voiceRecording) {
+        formData.append('voice', voiceRecording);
+        formData.append('voiceData[duration]', postData.voiceData.duration.toString());
+        formData.append('voiceData[transcription]', postData.voiceData.transcription);
+        formData.append('voiceData[isPublic]', postData.voiceData.isPublic.toString());
+      }
+      if (selectedFeeling) {
+        formData.append('feeling[type]', postData.feeling.type);
+        formData.append('feeling[intensity]', postData.feeling.intensity.toString());
+        formData.append('feeling[emoji]', postData.feeling.emoji);
+        formData.append('feeling[description]', postData.feeling.description);
+      }
+      if (sellData) {
+        formData.append('sell[productName]', postData.sell.productName);
+        formData.append('sell[price]', postData.sell.price.toString());
+        formData.append('sell[currency]', postData.sell.currency);
+        formData.append('sell[condition]', postData.sell.condition);
+        formData.append('sell[negotiable]', postData.sell.negotiable.toString());
+        formData.append('sell[shipping]', postData.sell.shipping.toString());
+        formData.append('sell[pickup]', postData.sell.pickup.toString());
+      }
+      if (pollData) {
+        formData.append('poll[question]', postData.poll.question);
+        formData.append('poll[isMultipleChoice]', postData.poll.isMultipleChoice.toString());
+        formData.append('poll[allowCustomOptions]', postData.poll.allowCustomOptions.toString());
+        formData.append('poll[expiresAt]', postData.poll.expiresAt.toISOString());
+        // Add poll options
+        postData.poll.options.forEach((option: any, index: number) => {
+          formData.append(`poll[options][${index}][text]`, option.text);
+        });
+      }
+      if (locationData) {
+        formData.append('location[name]', postData.location.name);
+        formData.append('location[address]', postData.location.address);
+        formData.append('location[category]', postData.location.category);
+      }
+      
+      // Add media files
+      imageVideoFiles.forEach(file => {
+        formData.append('media', file);
+      });
+
+      // Debug: Log what's being sent
+      console.log('🚀 Sending to backend:');
+      console.log('🚀 selectedGif:', selectedGif);
+      console.log('🚀 voiceRecording:', voiceRecording);
+      console.log('🚀 selectedFeeling:', selectedFeeling);
+      console.log('🚀 sellData:', sellData);
+      console.log('🚀 pollData:', pollData);
+      console.log('🚀 locationData:', locationData);
+      
+      // Log FormData entries
+      for (let [key, value] of formData.entries()) {
+        console.log('🚀 FormData entry:', key, value);
+      }
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`, {
         method: 'POST',
@@ -1684,6 +1797,73 @@ export default function Dashboard() {
           {userEmail ? `Hello, ${userEmail}! 👋` : "Hello!"}
         </h1>
 
+        {/* Main Search Bar */}
+        <div className="mb-4 sm:mb-6">
+          <div className="relative max-w-md mx-auto">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Search posts, users, or content..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="block w-full pl-10 pr-3 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-all duration-200"
+            />
+            {isSearching && (
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+              </div>
+            )}
+          </div>
+          
+          {/* Search Results */}
+          {searchResults.length > 0 && (
+            <div className="mt-3 max-w-md mx-auto">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 max-h-96 overflow-y-auto">
+                <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                    Search Results ({searchResults.length})
+                  </h3>
+                </div>
+                <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {searchResults.map((result, index) => (
+                    <div key={index} className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0">
+                          {result.type === 'user' ? (
+                            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                              <span className="text-white font-medium text-sm">
+                                {result.username?.charAt(0)?.toUpperCase() || 'U'}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                              <span className="text-white font-medium text-sm">
+                                {result.type === 'post' ? 'P' : 'A'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {result.type === 'user' ? result.username : result.title || result.content?.substring(0, 50)}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            {result.type === 'user' ? 'User' : result.type === 'post' ? 'Post' : 'Album'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
 
         <div className="w-full pt-2 mb-3 sm:mb-4">
           <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-hide touch-pan-x">
@@ -1717,11 +1897,11 @@ export default function Dashboard() {
                 <div className="w-20 h-28 sm:w-24 sm:h-36 md:w-32 md:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-gray-300 mb-2 sm:mb-3 shadow-lg sm:shadow-xl bg-gray-100 dark:bg-gray-200 relative overflow-hidden transition-transform group-hover:scale-105">
                   {/* User Profile Picture */}
                   {getUserAvatar() ? (
-                    <img
-                      src={getUserAvatar()}
+                <img
+                  src={getUserAvatar()}
                       className="w-full h-full object-cover"
                       alt="Your Profile"
-                    />
+                />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
                       <span className="text-white text-2xl">👤</span>

@@ -52,6 +52,7 @@ const PrivacyAwareProfile: React.FC<PrivacyAwareProfileProps> = ({
   const [followersCount, setFollowersCount] = useState(user.followers?.length || 0);
   const [followingCount, setFollowingCount] = useState(user.following?.length || 0);
   const [postsCount, setPostsCount] = useState(user.posts?.length || 0);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Update online status periodically
   useEffect(() => {
@@ -395,6 +396,8 @@ const PrivacyAwareProfile: React.FC<PrivacyAwareProfileProps> = ({
           <input
             type="text"
             placeholder="Search for posts..."
+            value={searchQuery || ''}
+            onChange={(e) => setSearchQuery?.(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           />
         </div>
