@@ -1189,9 +1189,6 @@ export default function Dashboard() {
   };
 
   const [user, setUser] = useState<any>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
   
   useEffect(() => {
     const u = localStorage.getItem('user');
@@ -1202,49 +1199,7 @@ export default function Dashboard() {
     window.location.href = `/dashboard/profile/${userId}`;
   };
 
-  // Search functionality
-  const handleSearch = async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      setIsSearching(false);
-      return;
-    }
 
-    setIsSearching(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/search?q=${encodeURIComponent(query)}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSearchResults(data.results || []);
-      } else {
-        setSearchResults([]);
-      }
-    } catch (error) {
-      console.error('Search error:', error);
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  // Debounced search effect
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchQuery.trim()) {
-        handleSearch(searchQuery);
-      } else {
-        setSearchResults([]);
-      }
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
 
 
 
@@ -1764,74 +1719,6 @@ export default function Dashboard() {
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 text-gray-900 dark:text-white transition-colors duration-200">
           {userEmail ? `Hello, ${userEmail}! 👋` : "Hello!"}
         </h1>
-
-        {/* Main Search Bar */}
-        <div className="mb-4 sm:mb-6">
-          <div className="relative max-w-md mx-auto">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-            <input
-              type="text"
-              placeholder="Search posts, users, or content..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="block w-full pl-10 pr-3 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 rounded-lg sm:rounded-xl leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400 transition-all duration-200"
-            />
-            {isSearching && (
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
-              </div>
-            )}
-          </div>
-          
-          {/* Search Results */}
-          {searchResults.length > 0 && (
-            <div className="mt-3 max-w-md mx-auto">
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 max-h-96 overflow-y-auto">
-                <div className="p-3 border-b border-gray-200 dark:border-gray-700">
-                  <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-                    Search Results ({searchResults.length})
-                  </h3>
-                </div>
-                <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {searchResults.map((result, index) => (
-                    <div key={index} className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors">
-                      <div className="flex items-center space-x-3">
-                        <div className="flex-shrink-0">
-                          {result.type === 'user' ? (
-                            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-                              <span className="text-white font-medium text-sm">
-                                {result.username?.charAt(0)?.toUpperCase() || 'U'}
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                              <span className="text-white font-medium text-sm">
-                                {result.type === 'post' ? 'P' : 'A'}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                            {result.type === 'user' ? result.username : result.title || result.content?.substring(0, 50)}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                            {result.type === 'user' ? 'User' : result.type === 'post' ? 'Post' : 'Album'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
 
         <div className="w-full pt-2 mb-3 sm:mb-4">
           <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-hide touch-pan-x">

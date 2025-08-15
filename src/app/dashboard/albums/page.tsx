@@ -663,9 +663,15 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
                       </button>
                       {(() => {
                         if (typeof media === 'string') {
-                          if (/\.(mp4|webm|ogg)$/i.test(media)) {
+                          if (/\.(mp4|webm|ogg|mov|avi)$/i.test(media)) {
                             return (
-                              <video src={media} className="w-full aspect-square object-cover rounded-lg border" />
+                              <video 
+                                src={media} 
+                                className="w-full aspect-square object-cover rounded-lg border" 
+                                controls
+                                muted
+                                preload="metadata"
+                              />
                             );
                           }
                           return (
@@ -674,7 +680,13 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
                         } else if (media.type && media.type.startsWith('video')) {
                           const videoUrl = URL.createObjectURL(media);
                           return (
-                            <video src={videoUrl} className="w-full aspect-square object-cover rounded-lg border" />
+                            <video 
+                              src={videoUrl} 
+                              className="w-full aspect-square object-cover rounded-lg border" 
+                              controls
+                              muted
+                              preload="metadata"
+                            />
                           );
                         } else if (media.type && media.type.startsWith('image')) {
                           const imageUrl = URL.createObjectURL(media);

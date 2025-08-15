@@ -90,6 +90,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   // Profile Sidebar State
   const [profileSidebarOpen, setProfileSidebarOpen] = useState<boolean>(false);
   
+  // Search States
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState<boolean>(false);
+  const [showSearchResults, setShowSearchResults] = useState<boolean>(false);
+  
   // Fetch notification count
   const fetchNotificationCount = async () => {
     try {
@@ -110,6 +116,69 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       console.error('Error fetching notification count:', error);
     }
   };
+
+  // Search function
+  const handleSearch = async (query: string) => {
+    if (!query.trim() || query.length < 3) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    setShowSearchResults(true);
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/search?q=${encodeURIComponent(query)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data.results || []);
+      } else {
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.trim() && searchQuery.length >= 3) {
+        handleSearch(searchQuery);
+      } else if (searchQuery.trim().length < 3) {
+        setSearchResults([]);
+        setShowSearchResults(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  // Close search results when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.search-container')) {
+        setShowSearchResults(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Admin Sidebar States
   const [adminSettingsOpen, setAdminSettingsOpen] = useState<boolean>(true);
@@ -837,7 +906,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           </div>
 
           {/* Center - Search Bar (Hidden on mobile and tablet) */}
-          <div className="hidden lg:flex flex-1 justify-center max-w-lg mx-4">
+          <div className="hidden lg:flex flex-1 justify-center max-w-lg mx-4 search-container relative">
             <div className={`rounded-full px-4 py-2 w-full flex items-center gap-2 focus-within:ring-2 focus-within:ring-blue-400 transition-all ${
               isAdminPage 
                 ? 'bg-gray-700 focus-within:bg-gray-600' 
@@ -847,26 +916,201 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               <input
                 type="text"
                 placeholder="Search for people, pages, groups and #hashtags"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => {
+                  if (searchQuery.trim().length >= 3) {
+                    setShowSearchResults(true);
+                  }
+                }}
                 className={`bg-transparent outline-none border-none flex-1 text-sm ${
                   isAdminPage 
                     ? 'placeholder-gray-400 text-white' 
                     : 'placeholder-gray-400 dark:placeholder-gray-500 text-gray-900 dark:text-white'
                 }`}
               />
+              {isSearching && (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+              )}
             </div>
+            
+            {/* Search Results Dropdown */}
+            {showSearchResults && searchResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 max-h-96 overflow-y-auto z-50">
+                <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                    Search Results ({searchResults.length})
+                  </h3>
+                </div>
+                <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {searchResults.map((result, index) => (
+                    <div 
+                      key={index} 
+                      className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                      onClick={() => {
+                        if (result.type === 'user') {
+                          router.push(`/dashboard/profile/${result._id || result.id}`);
+                        } else if (result.type === 'post') {
+                          router.push(`/dashboard/post/${result._id || result.id}`);
+                        } else if (result.type === 'album') {
+                          router.push(`/dashboard/albums/${result._id || result.id}`);
+                        }
+                        setShowSearchResults(false);
+                        setSearchQuery('');
+                      }}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="flex-shrink-0">
+                          {result.type === 'user' ? (
+                            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                              <span className="text-white font-medium text-sm">
+                                {result.username?.charAt(0)?.toUpperCase() || result.name?.charAt(0)?.toUpperCase() || 'U'}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                              <span className="text-white font-medium text-sm">
+                                {result.type === 'post' ? 'P' : 'A'}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {result.type === 'user' ? (result.username || result.name) : (result.title || result.content?.substring(0, 50))}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            {result.type === 'user' ? 'User' : result.type === 'post' ? 'Post' : 'Album'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* No Results Message */}
+            {showSearchResults && searchQuery.trim().length >= 3 && searchResults.length === 0 && !isSearching && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50">
+                <div className="p-4 text-center">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    No results found for "{searchQuery}"
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Right Side Icons */}
           <div className="flex items-center gap-1 relative">
             {/* Mobile Search Icon */}
             {isMobile && (
-              <button className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-all ${
-                isAdminPage 
-                  ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
-                  : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300'
-              }`}>
+              <button 
+                onClick={() => setShowSearchResults(!showSearchResults)}
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-all ${
+                  isAdminPage 
+                    ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                    : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300'
+                }`}>
                 🔍
               </button>
+            )}
+            
+            {/* Mobile Search Modal */}
+            {isMobile && showSearchResults && (
+              <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-start justify-center pt-20 px-4">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md max-h-96 overflow-hidden">
+                  <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
+                      <input
+                        type="text"
+                        placeholder="Search for people, pages, groups and #hashtags"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        autoFocus
+                      />
+                      {isSearching && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {searchResults.length > 0 && (
+                    <div className="max-h-80 overflow-y-auto">
+                      <div className="p-3 border-b border-gray-200 dark:border-gray-700">
+                        <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+                          Search Results ({searchResults.length})
+                        </h3>
+                      </div>
+                      <div className="divide-y divide-gray-200 dark:divide-gray-700">
+                        {searchResults.map((result, index) => (
+                          <div 
+                            key={index} 
+                            className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                            onClick={() => {
+                              if (result.type === 'user') {
+                                router.push(`/dashboard/profile/${result._id || result.id}`);
+                              } else if (result.type === 'post') {
+                                router.push(`/dashboard/post/${result._id || result.id}`);
+                              } else if (result.type === 'album') {
+                                router.push(`/dashboard/albums/${result._id || result.id}`);
+                              }
+                              setShowSearchResults(false);
+                              setSearchQuery('');
+                            }}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <div className="flex-shrink-0">
+                                {result.type === 'user' ? (
+                                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                                    <span className="text-white font-medium text-sm">
+                                      {result.username?.charAt(0)?.toUpperCase() || result.name?.charAt(0)?.toUpperCase() || 'U'}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                                    <span className="text-white font-medium text-sm">
+                                      {result.type === 'post' ? 'P' : 'A'}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                                  {result.type === 'user' ? (result.username || result.name) : (result.title || result.content?.substring(0, 50))}
+                                </p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                  {result.type === 'user' ? 'User' : result.type === 'post' ? 'Post' : 'Album'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {searchQuery.trim().length >= 3 && searchResults.length === 0 && !isSearching && (
+                    <div className="p-4 text-center">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        No results found for "{searchQuery}"
+                      </p>
+                    </div>
+                  )}
+                  
+                  <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+                    <button
+                      onClick={() => setShowSearchResults(false)}
+                      className="w-full py-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* Desktop Icons Only */}
