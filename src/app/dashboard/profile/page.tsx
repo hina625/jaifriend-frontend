@@ -714,7 +714,7 @@ const ProfilePage = () => {
                               post={item}
                               onPostUpdate={(updatedPost) => {
                                 // Update the post in the local state
-                                setUserPosts(prevPosts => 
+                                setPosts(prevPosts => 
                                   prevPosts.map(post => 
                                     post._id === updatedPost._id ? updatedPost : post
                                   )
