@@ -472,6 +472,15 @@ export default function Dashboard() {
     });
   };
 
+  // Handle post updates (for polls, reactions, etc.)
+  const handlePostUpdate = (updatedPost: any) => {
+    setPosts(prevPosts => 
+      prevPosts.map(post => 
+        post._id === updatedPost._id || post.id === updatedPost.id ? updatedPost : post
+      )
+    );
+  };
+
   const handleToggleComments = async (postId: string) => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -1325,42 +1334,8 @@ export default function Dashboard() {
         return;
       }
 
-      // Separate files by type - only send images and videos to backend
-      const imageVideoFiles = modalMediaFiles.filter(file => 
-        file.type.startsWith('image/') || file.type.startsWith('video/')
-      );
-      
-      const documentFiles = modalMediaFiles.filter(file => 
-        file.type.startsWith('application/') || file.type.startsWith('text/')
-      );
-      
-      const audioFiles = modalMediaFiles.filter(file => 
-        file.type.startsWith('audio/')
-      );
-
-      // Create post content with file information
-      let postContent = newPost;
-      
-      // Add document files info
-      if (documentFiles.length > 0) {
-        postContent += '\n\n📄 Attached Documents:\n';
-        documentFiles.forEach(file => {
-          const fileIcon = file.type.includes('pdf') ? '📕' : 
-                          file.type.includes('word') ? '📘' : 
-                          file.type.includes('excel') ? '📗' : '📄';
-          postContent += `${fileIcon} ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)\n`;
-        });
-        postContent += '\nNote: Document files are referenced but not uploaded due to server limitations.';
-      }
-      
-      // Add audio files info
-      if (audioFiles.length > 0) {
-        postContent += '\n\n🎵 Attached Audio:\n';
-        audioFiles.forEach(file => {
-          postContent += `🎵 ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)\n`;
-        });
-        postContent += '\nNote: Audio files are referenced but not uploaded due to server limitations.';
-      }
+      // Separate files by type - now we can send all file types to backend
+      const allFiles = modalMediaFiles;
 
       // Create the post data object
       const postData: any = {
@@ -1427,7 +1402,7 @@ export default function Dashboard() {
       const formData = new FormData();
       
       // Add basic post data
-      formData.append('content', postContent);
+      formData.append('content', newPost);
       
       // Add new post type data as separate fields
       if (selectedGif) {
@@ -1474,8 +1449,8 @@ export default function Dashboard() {
         formData.append('location[category]', postData.location.category);
       }
       
-      // Add media files
-      imageVideoFiles.forEach(file => {
+      // Add all media files (now including documents and audio)
+      allFiles.forEach(file => {
         formData.append('media', file);
       });
 
@@ -1531,14 +1506,7 @@ export default function Dashboard() {
           setRecordingTime(0);
           
           if (modalMediaFiles.length > 0) {
-            const uploadedCount = imageVideoFiles.length;
-            const referencedCount = documentFiles.length + audioFiles.length;
-            
-            if (referencedCount > 0) {
-              showPopup('success', 'Post Created!', `Post created successfully! ${uploadedCount} file(s) uploaded, ${referencedCount} file(s) referenced in content.`);
-            } else {
-              showPopup('success', 'Post Created!', `Post created successfully with ${uploadedCount} file(s)!`);
-            }
+            showPopup('success', 'Post Created!', `Post created successfully with ${modalMediaFiles.length} file(s)!`);
           } else {
             showPopup('success', 'Post Created!', 'Your post has been shared successfully!');
           }
@@ -2057,7 +2025,7 @@ export default function Dashboard() {
               {/* Hidden file input */}
                 <input
                   type="file"
-                  accept="image/*,video/*"
+                  accept="*/*"
                   multiple
                   className="hidden"
                   ref={fileInputRef}
@@ -2184,6 +2152,7 @@ export default function Dashboard() {
                           onSave={handleSave}
                           onDelete={handleDelete}
                           onEdit={startEditPost}
+                          onPostUpdate={handlePostUpdate}
                           isOwnPost={isOwnPost}
                         />
                       );
@@ -2408,13 +2377,7 @@ export default function Dashboard() {
                 </svg>
               </div>
 
-              {/* File Upload Limitations Notice */}
-              <div className="col-span-full mb-2 p-2 sm:p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                <div className="text-xs sm:text-sm text-yellow-700 dark:text-yellow-300">
-                  <span className="font-medium">📋 Note:</span> Only images and videos are uploaded to server. 
-                  Documents and audio files are referenced in post content.
-                </div>
-              </div>
+
 
               {/* Action Buttons Grid */}
               <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3 mt-3 sm:mt-4">

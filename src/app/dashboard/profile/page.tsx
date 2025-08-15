@@ -712,6 +712,14 @@ const ProfilePage = () => {
                           <div key={item._id} className="bg-white rounded-xl shadow-sm overflow-hidden">
                             <PostDisplay
                               post={item}
+                              onPostUpdate={(updatedPost) => {
+                                // Update the post in the local state
+                                setUserPosts(prevPosts => 
+                                  prevPosts.map(post => 
+                                    post._id === updatedPost._id ? updatedPost : post
+                                  )
+                                );
+                              }}
                               onLike={async (postId) => {
                                 try {
                                   const token = localStorage.getItem('token');

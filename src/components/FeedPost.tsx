@@ -17,6 +17,7 @@ interface FeedPostProps {
   onSave: (postId: string) => void;
   onDelete: (postId: string) => void;
   onEdit: (post: any) => void;
+  onPostUpdate?: (updatedPost: any) => void;
   isOwnPost: boolean;
 }
 
@@ -29,6 +30,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
   onSave,
   onDelete,
   onEdit,
+  onPostUpdate,
   isOwnPost
 }) => {
 
@@ -473,8 +475,10 @@ const FeedPost: React.FC<FeedPostProps> = ({
           if (updatedPost.poll.userVote) {
             updatedPost.poll.userVote = updatedPost.poll.userVote.filter((vote: number) => vote !== optionIndex);
           }
-          // Refresh the page to show updated poll results
-          window.location.reload();
+          // Update the post state to reflect changes
+          if (onPostUpdate) {
+            onPostUpdate(updatedPost);
+          }
         }
       } else {
         // Add vote
@@ -488,8 +492,14 @@ const FeedPost: React.FC<FeedPostProps> = ({
         });
 
         if (response.ok) {
-          // Refresh the page to show updated poll results
-          window.location.reload();
+          const data = await response.json();
+          // Update local state with the new poll data
+          const updatedPost = { ...post };
+          updatedPost.poll = data.poll;
+          // Update the post state to reflect changes
+          if (onPostUpdate) {
+            onPostUpdate(updatedPost);
+          }
         } else {
           alert('Failed to vote. Please try again.');
         }
@@ -1312,6 +1322,51 @@ const FeedPost: React.FC<FeedPostProps> = ({
                     controls
                     className="w-full rounded-lg max-h-64 sm:max-h-96 object-cover"
                   />
+                ) : media.type === 'audio' ? (
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">🎵</span>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {media.originalName || 'Audio File'}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {(media.size / 1024 / 1024).toFixed(1)}MB
+                        </p>
+                      </div>
+                      <audio
+                        src={getMediaUrl(media.url)}
+                        controls
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                ) : media.type === 'file' ? (
+                  <div className="bg-blue-50 dark:bg-blue-800 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">
+                        {media.mimetype?.includes('pdf') ? '📕' : 
+                         media.mimetype?.includes('word') ? '📘' : 
+                         media.mimetype?.includes('excel') ? '📗' : '📄'}
+                      </span>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                          {media.originalName || 'Document'}
+                        </p>
+                        <p className="text-xs text-blue-700 dark:text-blue-300">
+                          {(media.size / 1024 / 1024).toFixed(1)}MB • {media.extension?.toUpperCase()}
+                        </p>
+                      </div>
+                      <a
+                        href={getMediaUrl(media.url)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition-colors"
+                      >
+                        Download
+                      </a>
+                    </div>
+                  </div>
                 ) : (
                   <img
                     src={getMediaUrl(media.url)}

@@ -17,6 +17,7 @@ interface PostDisplayProps {
   onDelete?: (postId: string) => void;
   onEdit?: (post: any) => void;
   onToggleComments?: (postId: string) => void;
+  onPostUpdate?: (updatedPost: any) => void;
   showEditDelete?: boolean;
 }
 
@@ -31,6 +32,7 @@ export default function PostDisplay({
   onDelete,
   onEdit,
   onToggleComments,
+  onPostUpdate,
   showEditDelete = false
 }: PostDisplayProps) {
   const [showCommentInput, setShowCommentInput] = useState(false);
@@ -103,6 +105,68 @@ export default function PostDisplay({
       }
     }
     return null;
+  };
+
+  // Handle poll voting
+  const handlePollVote = async (optionIndex: number) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please login to vote in polls.');
+        return;
+      }
+
+      // Check if user has already voted
+      if (post.poll.userVote && post.poll.userVote.includes(optionIndex)) {
+        // Remove vote
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${post._id}/poll/vote`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ optionIndex })
+        });
+
+        if (response.ok) {
+          // Update local state to reflect vote removal
+          const updatedPost = { ...post };
+          if (updatedPost.poll.userVote) {
+            updatedPost.poll.userVote = updatedPost.poll.userVote.filter((vote: number) => vote !== optionIndex);
+          }
+          // Update the post state to reflect changes
+          if (onPostUpdate) {
+            onPostUpdate(updatedPost);
+          }
+        }
+      } else {
+        // Add vote
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${post._id}/poll/vote`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ optionIndex })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          // Update local state with the new poll data
+          const updatedPost = { ...post };
+          updatedPost.poll = data.poll;
+          // Update the post state to reflect changes
+          if (onPostUpdate) {
+            onPostUpdate(updatedPost);
+          }
+        } else {
+          alert('Failed to vote. Please try again.');
+        }
+      }
+    } catch (error) {
+      console.error('Error voting in poll:', error);
+      alert('Error voting in poll. Please try again.');
+    }
   };
 
   // Get reaction count
@@ -307,10 +371,18 @@ export default function PostDisplay({
                 const totalVotes = post.poll.totalVotes || 0;
                 const optionVotes = option.voteCount || 0;
                 const percentage = totalVotes > 0 ? Math.round((optionVotes / totalVotes) * 100) : 0;
+                const isVoted = post.poll.userVote && post.poll.userVote.includes(index);
                 
                 return (
                   <div key={index} className="relative">
-                    <div className="w-full text-left p-2 rounded-lg border bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
+                    <button
+                      onClick={() => handlePollVote(index)}
+                      className={`w-full text-left p-2 rounded-lg border transition-all duration-200 ${
+                        isVoted 
+                          ? 'bg-blue-500 text-white border-blue-500' 
+                          : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
+                      }`}
+                    >
                       <div className="flex items-center justify-between">
                         <span className="text-sm">{option.text}</span>
                         <span className="text-xs">
@@ -324,7 +396,7 @@ export default function PostDisplay({
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
-                    </div>
+                    </button>
                   </div>
                 );
               })}
@@ -457,6 +529,51 @@ export default function PostDisplay({
                     className="w-full h-32 sm:h-48 md:h-96 object-cover rounded-lg shadow-lg"
                     style={{ maxHeight: '70vh' }}
                   />
+                ) : media.type === 'audio' ? (
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">🎵</span>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {media.originalName || 'Audio File'}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {(media.size / 1024 / 1024).toFixed(1)}MB
+                        </p>
+                      </div>
+                      <audio
+                        src={getMediaUrl(media.url)}
+                        controls
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                ) : media.type === 'file' ? (
+                  <div className="bg-blue-50 dark:bg-blue-800 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">
+                        {media.mimetype?.includes('pdf') ? '📕' : 
+                         media.mimetype?.includes('word') ? '📘' : 
+                         media.mimetype?.includes('excel') ? '📗' : '📄'}
+                      </span>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                          {media.originalName || 'Document'}
+                        </p>
+                        <p className="text-xs text-blue-700 dark:text-blue-300">
+                          {(media.size / 1024 / 1024).toFixed(1)}MB • {media.extension?.toUpperCase()}
+                        </p>
+                      </div>
+                      <a
+                        href={getMediaUrl(media.url)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1 bg-blue-500 text-white text-xs rounded-lg hover:bg-blue-600 transition-colors"
+                      >
+                        Download
+                      </a>
+                    </div>
+                  </div>
                 ) : (
                   <img
                     src={getMediaUrl(media.url)}

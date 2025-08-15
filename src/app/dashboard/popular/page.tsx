@@ -483,6 +483,14 @@ export default function PopularPostsPage() {
                         <PostDisplay 
                           post={post} 
                           isOwner={false}
+                          onPostUpdate={(updatedPost) => {
+                            // Update the post in the local state
+                            setPosts(prevPosts => 
+                              prevPosts.map(p => 
+                                p._id === updatedPost._id ? updatedPost : p
+                              )
+                            );
+                          }}
                           onLike={handleLike}
                           onReaction={handleReaction}
                           onShare={handlePostShare}
