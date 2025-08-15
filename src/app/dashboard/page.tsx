@@ -1339,7 +1339,7 @@ export default function Dashboard() {
 
       // Create the post data object
       const postData: any = {
-        content: postContent
+        content: newPost
       };
 
       // Add new post type data
