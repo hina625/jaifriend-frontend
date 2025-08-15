@@ -214,3 +214,184 @@ export const searchGroupsApi = async (token: string, query: string) => {
   });
   return res.data;
 };
+
+// New Post Type API Functions
+
+// Poll APIs
+export const addPollVoteApi = async (token: string, postId: string, optionIndex: number) => {
+  const res = await axios.post(`${API_URL}/api/posts/${postId}/poll/vote`, { optionIndex }, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+export const removePollVoteApi = async (token: string, postId: string, optionIndex: number) => {
+  const res = await axios.delete(`${API_URL}/api/posts/${postId}/poll/vote`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data: { optionIndex }
+  });
+  return res.data;
+};
+
+// Get posts by type
+export const getPostsByTypeApi = async (token: string, postType: string, page: number = 1, limit: number = 20) => {
+  const res = await axios.get(`${API_URL}/api/posts/type/${postType}?page=${page}&limit=${limit}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+// Get posts with specific features
+export const getPostsWithFeelingsApi = async (token: string, feelingType?: string, page: number = 1, limit: number = 20) => {
+  const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
+  if (feelingType) params.append('feelingType', feelingType);
+  
+  const res = await axios.get(`${API_URL}/api/posts/feelings?${params}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+export const getPostsWithPollsApi = async (token: string, page: number = 1, limit: number = 20) => {
+  const res = await axios.get(`${API_URL}/api/posts/polls?page=${page}&limit=${limit}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+export const getPostsWithLocationApi = async (token: string, page: number = 1, limit: number = 20) => {
+  const res = await axios.get(`${API_URL}/api/posts/location?page=${page}&limit=${limit}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+export const getPostsWithSellApi = async (token: string, page: number = 1, limit: number = 20) => {
+  const res = await axios.get(`${API_URL}/api/posts/sell?page=${page}&limit=${limit}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+export const getPostsWithAudioApi = async (token: string, page: number = 1, limit: number = 20) => {
+  const res = await axios.get(`${API_URL}/api/posts/audio?page=${page}&limit=${limit}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+export const getPostsWithVoiceApi = async (token: string, page: number = 1, limit: number = 20) => {
+  const res = await axios.get(`${API_URL}/api/posts/voice?page=${page}&limit=${limit}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+export const getPostsWithFilesApi = async (token: string, page: number = 1, limit: number = 20) => {
+  const res = await axios.get(`${API_URL}/api/posts/files?page=${page}&limit=${limit}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+export const getPostsWithGifsApi = async (token: string, page: number = 1, limit: number = 20) => {
+  const res = await axios.get(`${API_URL}/api/posts/gifs?page=${page}&limit=${limit}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+// File Management APIs
+export const uploadFileApi = async (token: string, file: File, postId?: string) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (postId) formData.append('postId', postId);
+  
+  const res = await axios.post(`${API_URL}/api/files/upload`, formData, {
+    headers: { 
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+  return res.data;
+};
+
+export const uploadMultipleFilesApi = async (token: string, files: File[], postId?: string) => {
+  const formData = new FormData();
+  files.forEach(file => formData.append('files', file));
+  if (postId) formData.append('postId', postId);
+  
+  const res = await axios.post(`${API_URL}/api/files/upload-multiple`, formData, {
+    headers: { 
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+  return res.data;
+};
+
+export const getFileApi = async (fileId: string) => {
+  const res = await axios.get(`${API_URL}/api/files/${fileId}`);
+  return res.data;
+};
+
+export const downloadFileApi = async (token: string, fileId: string) => {
+  const res = await axios.post(`${API_URL}/api/files/${fileId}/download`, {}, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+export const deleteFileApi = async (token: string, fileId: string) => {
+  const res = await axios.delete(`${API_URL}/api/files/${fileId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+export const getFilesByPostApi = async (postId: string) => {
+  const res = await axios.get(`${API_URL}/api/files/post/${postId}`);
+  return res.data;
+};
+
+export const getUserFilesApi = async (token: string, page: number = 1, limit: number = 20) => {
+  const res = await axios.get(`${API_URL}/api/files/user/files?page=${page}&limit=${limit}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+// GIPHY API for real GIFs (you'll need to add GIPHY API key to your environment)
+export const searchGifsApi = async (query: string, limit: number = 20) => {
+  // This would use GIPHY API - you'll need to add GIPHY_API_KEY to your .env
+  const GIPHY_API_KEY = process.env.NEXT_PUBLIC_GIPHY_API_KEY;
+  if (!GIPHY_API_KEY) {
+    throw new Error('GIPHY API key not configured');
+  }
+  
+  const res = await axios.get(`https://api.giphy.com/v1/gifs/search`, {
+    params: {
+      api_key: GIPHY_API_KEY,
+      q: query,
+      limit: limit,
+      rating: 'g'
+    }
+  });
+  return res.data;
+};
+
+export const getTrendingGifsApi = async (limit: number = 20) => {
+  const GIPHY_API_KEY = process.env.NEXT_PUBLIC_GIPHY_API_KEY;
+  if (!GIPHY_API_KEY) {
+    throw new Error('GIPHY API key not configured');
+  }
+  
+  const res = await axios.get(`https://api.giphy.com/v1/gifs/trending`, {
+    params: {
+      api_key: GIPHY_API_KEY,
+      limit: limit,
+      rating: 'g'
+    }
+  });
+  return res.data;
+};

@@ -12,6 +12,12 @@ import ReelsCreationModal from '@/components/ReelsCreationModal';
 import StoryCreationModal from '@/components/StoryCreationModal';
 import StoryViewer from '@/components/StoryViewer';
 import { isAuthenticated, clearAuth, getCurrentUserId } from '@/utils/auth';
+import { 
+  searchGifsApi, 
+  getTrendingGifsApi,
+  uploadFileApi,
+  uploadMultipleFilesApi
+} from '@/utils/api';
 
 function getUserAvatar() {
   try {
@@ -97,6 +103,14 @@ export default function Dashboard() {
   const [editTitle, setEditTitle] = useState('');
   const [editMediaFiles, setEditMediaFiles] = useState<File[]>([]);
   const editFileInputRef = useRef<HTMLInputElement>(null);
+  const [showPostModal, setShowPostModal] = useState(false);
+  const [modalMediaFiles, setModalMediaFiles] = useState<File[]>([]);
+  const [modalMediaType, setModalMediaType] = useState<string>('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const modalImageInputRef = useRef<HTMLInputElement>(null);
+  const modalVideoInputRef = useRef<HTMLInputElement>(null);
+  const modalAudioInputRef = useRef<HTMLInputElement>(null);
+  const modalFileUploadRef = useRef<HTMLInputElement>(null);
 
   const [openDropdownPostId, setOpenDropdownPostId] = useState<string | null>(null);
 
@@ -271,12 +285,10 @@ export default function Dashboard() {
       const token = localStorage.getItem('token');
       
       if (!token || token === 'null' || token === 'undefined') {
-        console.log('❌ No valid token found, redirecting to login');
         router.push('/');
         return;
       }
       
-      console.log('✅ Token found, proceeding with data fetch');
       fetchFeedData();
       fetchStories();
     };
@@ -299,7 +311,6 @@ export default function Dashboard() {
         setPosts(posts => posts.map(p => 
           p._id === customEvent.detail.postId ? customEvent.detail.updatedPost : p
         ));
-        console.log('🔄 Post updated locally:', customEvent.detail.postId);
       } else {
         // Fallback to refetching all data if no specific update info
         fetchFeedData();
@@ -594,37 +605,25 @@ export default function Dashboard() {
   };
 
   const handleLike = async (postId: string) => {
-    console.log('🔄 Dashboard handleLike called with postId:', postId);
     const currentPost = posts.find(p => (p._id === postId || p.id === postId));
     const token = localStorage.getItem('token');
     
     if (!token) {
-      console.error('❌ No token found for like operation');
       showPopup('error', 'Authentication Error', 'Please login to like posts');
       return;
     }
 
-    console.log('🔑 Token exists:', !!token);
-    console.log('📝 Current post:', currentPost);
-    console.log('💖 Current likes:', currentPost?.likes);
-
     // Optimistic update for better UX
     const originalPosts = [...posts];
-    console.log('🔄 Performing optimistic update');
     setPosts(prevPosts => {
       return prevPosts.map(p => {
         if (p._id === postId || p.id === postId) {
           const currentUserId = getCurrentUserId();
           const isCurrentlyLiked = p.likes?.includes(currentUserId);
-          console.log('💖 Current user ID:', currentUserId);
-          console.log('💖 Is currently liked:', isCurrentlyLiked);
-          console.log('💖 Current likes array:', p.likes);
           
           const newLikes = isCurrentlyLiked 
             ? p.likes?.filter((id: string) => id !== currentUserId) || []
             : [...(p.likes || []), currentUserId];
-          
-          console.log('💖 New likes array:', newLikes);
           
           return {
             ...p,
@@ -637,7 +636,6 @@ export default function Dashboard() {
 
     try {
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/like`;
-      console.log('🌐 Making API call to:', apiUrl);
       
       const res = await fetch(apiUrl, {
         method: 'POST',
@@ -647,11 +645,8 @@ export default function Dashboard() {
         }
       });
       
-      console.log('📡 API response status:', res.status);
-      
       if (res.ok) {
         const data = await res.json();
-        console.log('✅ API response data:', data);
         // Update with server response
         setPosts(prevPosts => {
           const updatedPosts = prevPosts.map(p => {
@@ -665,13 +660,10 @@ export default function Dashboard() {
         
         // Show success message
         const isLiked = data.post.likes?.includes(getCurrentUserId());
-        console.log('💖 Final like state:', isLiked);
         showPopup('success', 'Success', `Post ${isLiked ? 'liked' : 'unliked'} successfully!`);
       } else {
-        console.error('❌ API call failed with status:', res.status);
         // Revert optimistic update on error
         setPosts(originalPosts);
-        console.log('🔄 Reverted optimistic update due to API error');
         
         let errorMessage = 'Unknown error';
         try {
@@ -724,45 +716,18 @@ export default function Dashboard() {
     }
   };
 
-  // Test function to check save functionality
-  const testSaveFunctionality = async () => {
-    console.log('🧪 Testing save functionality...');
-    console.log('📝 Current posts:', posts);
-    console.log('💾 Posts with savedBy:', posts.filter(p => p.savedBy && p.savedBy.length > 0));
-    
-    if (posts.length > 0) {
-      const firstPost = posts[0];
-      console.log('🧪 Testing with first post:', firstPost);
-      console.log('🧪 Post ID:', firstPost._id || firstPost.id);
-      console.log('🧪 Current savedBy:', firstPost.savedBy);
-      
-      // Try to save the first post
-      await handleSave(firstPost._id || firstPost.id);
-    } else {
-      console.log('🧪 No posts available for testing');
-    }
-  };
+
 
   const handleSave = async (postId: string) => {
-    console.log('🔄 Dashboard handleSave called with postId:', postId);
-    const currentPost = posts.find(p => (p._id === postId || p.id === postId));
     const token = localStorage.getItem('token');
     
-    console.log('📝 Current post data:', currentPost);
-    console.log('💾 Current savedBy:', currentPost?.savedBy);
-    console.log('🔑 Token exists:', !!token);
-    
     if (!token) {
-      console.error('❌ No token found for save operation');
       showPopup('error', 'Authentication Error', 'Please login to save posts');
       return;
     }
     
     try {
-      console.log('🔄 Dashboard: Saving post:', postId);
-      
       const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/save`;
-      console.log('🌐 API URL:', apiUrl);
       
       const res = await fetch(apiUrl, {
         method: 'POST',
@@ -771,14 +736,8 @@ export default function Dashboard() {
         }
       });
       
-      console.log('📡 Response status:', res.status);
-      console.log('📡 Response headers:', Object.fromEntries(res.headers.entries()));
-      
       if (res.ok) {
         const data = await res.json();
-        console.log('✅ Dashboard: Save response:', data);
-        console.log('💾 New savedBy:', data.savedBy);
-        console.log('💾 New saved status:', data.saved);
         
         setPosts(posts => posts.map(p => (p._id === postId || p.id === postId) ? { 
           ...p, 
@@ -790,33 +749,22 @@ export default function Dashboard() {
         window.dispatchEvent(new CustomEvent('postSaved', { 
           detail: { postId, savedBy: data.savedBy, saved: data.saved } 
         }));
-        console.log('🔄 Dashboard: Post state updated and event dispatched');
         
         // Show success message
         const isSaved = data.saved || (data.savedBy && data.savedBy.length > 0);
         showPopup('success', 'Success', `Post ${isSaved ? 'saved' : 'removed from saved'} successfully!`);
       } else {
-        console.error('❌ Dashboard: Save failed with status:', res.status);
-        
         let errorData: any = {};
         try {
           errorData = await res.json();
-          console.error('❌ Dashboard: Save error data:', errorData);
         } catch (parseError) {
-          console.error('❌ Could not parse error response:', parseError);
-          try {
-            const responseText = await res.text();
-            console.error('❌ Raw response text:', responseText);
-          } catch (textError) {
-            console.error('❌ Could not read response text:', textError);
-          }
+          // Silent fail
         }
         
         // Show error message
         showPopup('error', 'Save Failed', errorData.message || `Failed to save post (Status: ${res.status})`);
       }
     } catch (error) {
-      console.error('❌ Dashboard: Save network error:', error);
       showPopup('error', 'Network Error', 'Failed to connect to server');
     }
   };
@@ -1089,11 +1037,8 @@ export default function Dashboard() {
   const groupStoriesByUser = (stories: any[]) => {
     const grouped = new Map();
     
-    console.log('🔍 Grouping stories:', stories.length, 'stories');
-    
     stories.forEach(story => {
       const userId = story.user._id || story.user.id;
-      console.log('🔍 Story user ID:', userId, 'Username:', story.user.username);
       
       if (!grouped.has(userId)) {
         grouped.set(userId, {
@@ -1101,9 +1046,6 @@ export default function Dashboard() {
           stories: [],
           latestStory: story
         });
-        console.log('🔍 Created new group for user:', userId);
-      } else {
-        console.log('🔍 Added to existing group for user:', userId);
       }
       
       grouped.get(userId).stories.push(story);
@@ -1115,11 +1057,6 @@ export default function Dashboard() {
     });
     
     const result = Array.from(grouped.values());
-    console.log('🔍 Final grouped result:', result.length, 'groups');
-    result.forEach(group => {
-      console.log('🔍 Group:', group.user.username, 'Stories:', group.stories.length);
-    });
-    
     return result;
   };
   
@@ -1136,11 +1073,6 @@ export default function Dashboard() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('🔍 Fetched stories:', data.stories?.map((s: any) => ({ 
-          id: s._id, 
-          userId: s.user._id || s.user.id, 
-          username: s.user.username 
-        })));
         setStories(data.stories || []);
       }
     } catch (error) {
@@ -1257,6 +1189,476 @@ export default function Dashboard() {
     window.location.href = `/dashboard/profile/${userId}`;
   };
 
+
+
+  // Modal media handlers
+  const handleModalImageUpload = () => {
+    modalImageInputRef.current?.click();
+  };
+
+  const handleModalVideoUpload = () => {
+    modalVideoInputRef.current?.click();
+  };
+
+  const handleModalAudioUpload = () => {
+    modalAudioInputRef.current?.click();
+  };
+
+  const handleModalFileUpload = () => {
+    modalFileUploadRef.current?.click();
+  };
+
+  const handleModalMediaChange = (e: React.ChangeEvent<HTMLInputElement>, type: string) => {
+    const files = e.target.files;
+    if (files) {
+      const fileArray = Array.from(files);
+      
+      const validFiles = fileArray.filter(file => {
+        if (file.size > 10 * 1024 * 1024) {
+          showPopup('error', 'File Too Large', `File "${file.name}" is too large. Maximum size is 10MB.`);
+          return false;
+        }
+        
+        // Check file type based on the upload type
+        let isValid = false;
+        switch (type) {
+          case 'image':
+            isValid = file.type.startsWith('image/');
+            break;
+          case 'video':
+            isValid = file.type.startsWith('video/');
+            break;
+          case 'audio':
+            isValid = file.type.startsWith('audio/');
+            break;
+          case 'file':
+            isValid = file.type.startsWith('application/') || file.type.startsWith('text/');
+            break;
+          default:
+            isValid = true;
+        }
+        
+        if (!isValid) {
+          showPopup('error', 'Unsupported Format', `File "${file.name}" is not a valid ${type} file.`);
+          return false;
+        }
+        
+        return true;
+      });
+      
+      if (validFiles.length > 0) {
+        setModalMediaFiles(prev => [...prev, ...validFiles]);
+        setModalMediaType(type);
+        showPopup('success', 'Files Added', `${validFiles.length} ${type} file(s) added successfully!`);
+      }
+    }
+  };
+
+  const removeModalMedia = (index: number) => {
+    setModalMediaFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const clearModalMedia = () => {
+    setModalMediaFiles([]);
+    setModalMediaType('');
+  };
+
+  const handleModalPost = async () => {
+    if (!newPost.trim() && modalMediaFiles.length === 0) {
+      showPopup('error', 'Empty Post', 'Please add some content or media to your post');
+      return;
+    }
+
+    try {
+      setPosting(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showPopup('error', 'Authentication Error', 'Please log in again');
+        return;
+      }
+
+      // Separate files by type - only send images and videos to backend
+      const imageVideoFiles = modalMediaFiles.filter(file => 
+        file.type.startsWith('image/') || file.type.startsWith('video/')
+      );
+      
+      const documentFiles = modalMediaFiles.filter(file => 
+        file.type.startsWith('application/') || file.type.startsWith('text/')
+      );
+      
+      const audioFiles = modalMediaFiles.filter(file => 
+        file.type.startsWith('audio/')
+      );
+
+      // Create post content with file information
+      let postContent = newPost;
+      
+      // Add document files info
+      if (documentFiles.length > 0) {
+        postContent += '\n\n📄 Attached Documents:\n';
+        documentFiles.forEach(file => {
+          const fileIcon = file.type.includes('pdf') ? '📕' : 
+                          file.type.includes('word') ? '📘' : 
+                          file.type.includes('excel') ? '📗' : '📄';
+          postContent += `${fileIcon} ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)\n`;
+        });
+        postContent += '\nNote: Document files are referenced but not uploaded due to server limitations.';
+      }
+      
+      // Add audio files info
+      if (audioFiles.length > 0) {
+        postContent += '\n\n🎵 Attached Audio:\n';
+        audioFiles.forEach(file => {
+          postContent += `🎵 ${file.name} (${(file.size / 1024 / 1024).toFixed(1)}MB)\n`;
+        });
+        postContent += '\nNote: Audio files are referenced but not uploaded due to server limitations.';
+      }
+
+      const formData = new FormData();
+      formData.append('content', postContent);
+      
+      // Only append image and video files to FormData (backend limitation)
+      imageVideoFiles.forEach(file => {
+        formData.append('media', file);
+      });
+
+      // Add new post type data
+      if (selectedGif) {
+        formData.append('gif', JSON.stringify(selectedGif));
+      }
+      
+      if (voiceRecording) {
+        formData.append('voice', voiceRecording);
+        formData.append('voiceData', JSON.stringify({
+          duration: recordingTime,
+          transcription: 'Voice recording', // In real app, this would use speech-to-text API
+          isPublic: true
+        }));
+      }
+      
+      if (selectedFeeling) {
+        formData.append('feeling', JSON.stringify({
+          type: selectedFeeling.type,
+          intensity: 5,
+          emoji: selectedFeeling.emoji,
+          description: selectedFeeling.description
+        }));
+      }
+      
+      if (sellData) {
+        formData.append('sell', JSON.stringify({
+          productName: sellData.productName,
+          price: sellData.price,
+          currency: 'USD',
+          condition: sellData.condition,
+          negotiable: sellData.negotiable || false,
+          shipping: false,
+          pickup: true
+        }));
+      }
+      
+      if (pollData) {
+        formData.append('poll', JSON.stringify({
+          question: pollData.question,
+          options: pollData.options.map((opt: string) => ({ text: opt })),
+          isMultipleChoice: pollData.isMultipleChoice || false,
+          allowCustomOptions: false,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
+        }));
+      }
+      
+      if (locationData) {
+        formData.append('location', JSON.stringify({
+          name: locationData.name,
+          address: locationData.address,
+          category: locationData.category,
+          coordinates: null, // In real app, this would use geocoding API
+          placeId: null,
+          rating: null
+        }));
+      }
+
+      // FormData is ready for submission
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      // API response received
+
+      if (response.ok) {
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const newPostData = await response.json();
+          setPosts(prev => [newPostData, ...prev]);
+          setNewPost('');
+          setModalMediaFiles([]);
+          setModalMediaType('');
+          setShowPostModal(false);
+          
+          // Clear all modal data
+          setSelectedGif(null);
+          setVoiceRecording(null);
+          setSelectedFeeling(null);
+          setSellData(null);
+          setPollData(null);
+          setLocationData(null);
+          
+          // Clear form data
+          setSellFormData({});
+          setPollFormData({});
+          setLocationFormData({});
+          setGifSearchQuery('');
+          setGifResults([]);
+          setRecordingTime(0);
+          
+          if (modalMediaFiles.length > 0) {
+            const uploadedCount = imageVideoFiles.length;
+            const referencedCount = documentFiles.length + audioFiles.length;
+            
+            if (referencedCount > 0) {
+              showPopup('success', 'Post Created!', `Post created successfully! ${uploadedCount} file(s) uploaded, ${referencedCount} file(s) referenced in content.`);
+            } else {
+              showPopup('success', 'Post Created!', `Post created successfully with ${uploadedCount} file(s)!`);
+            }
+          } else {
+            showPopup('success', 'Post Created!', 'Your post has been shared successfully!');
+          }
+          
+          // Refresh posts
+          fetchFeedData();
+        } else {
+          // Handle non-JSON response
+          const responseText = await response.text();
+          console.error('Non-JSON response:', responseText);
+          showPopup('error', 'API Error', 'Server returned invalid response format');
+        }
+      } else {
+        // Handle error response
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const errorData = await response.json();
+            showPopup('error', 'Error', errorData.message || 'Failed to create post');
+          } catch (jsonError) {
+            showPopup('error', 'Error', `HTTP ${response.status}: Failed to create post`);
+          }
+        } else {
+          // Handle HTML error response
+          const responseText = await response.text();
+          console.error('HTML error response:', responseText);
+          showPopup('error', 'Server Error', `HTTP ${response.status}: Server error occurred`);
+        }
+      }
+    } catch (error) {
+      console.error('Error creating post:', error);
+      showPopup('error', 'Error', 'Failed to create post. Please try again.');
+    } finally {
+      setPosting(false);
+    }
+  };
+
+  // State for different modal types
+  const [showGifModal, setShowGifModal] = useState(false);
+  const [showVoiceModal, setShowVoiceModal] = useState(false);
+  const [showFeelingsModal, setShowFeelingsModal] = useState(false);
+  const [showSellModal, setShowSellModal] = useState(false);
+  const [showPollModal, setShowPollModal] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+
+  // State for modal data
+  const [selectedGif, setSelectedGif] = useState<any>(null);
+  const [voiceRecording, setVoiceRecording] = useState<Blob | null>(null);
+  const [selectedFeeling, setSelectedFeeling] = useState<any>(null);
+  const [sellData, setSellData] = useState<any>(null);
+  const [pollData, setPollData] = useState<any>(null);
+  const [locationData, setLocationData] = useState<any>(null);
+  
+  // Form data states
+  const [sellFormData, setSellFormData] = useState<{
+    productName?: string;
+    price?: number;
+    condition?: string;
+    negotiable?: boolean;
+  }>({});
+  const [pollFormData, setPollFormData] = useState<{
+    question?: string;
+    option1?: string;
+    option2?: string;
+    option3?: string;
+    option4?: string;
+    isMultipleChoice?: boolean;
+  }>({});
+  const [locationFormData, setLocationFormData] = useState<{
+    name?: string;
+    address?: string;
+    category?: string;
+  }>({});
+  
+  // GIF search state
+  const [gifResults, setGifResults] = useState<any[]>([]);
+  const [gifSearchQuery, setGifSearchQuery] = useState('');
+  const [gifSearchLoading, setGifSearchLoading] = useState(false);
+  
+  // Voice recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [recordingChunks, setRecordingChunks] = useState<Blob[]>([]);
+
+  const handleModalGIF = async () => {
+    setShowGifModal(true);
+    await loadTrendingGifs();
+  };
+
+  const handleModalVoice = () => {
+    setShowVoiceModal(true);
+  };
+
+  const handleModalFeelings = () => {
+    setShowFeelingsModal(true);
+  };
+
+  const handleModalSell = () => {
+    setShowSellModal(true);
+  };
+
+  const handleModalPoll = () => {
+    setShowPollModal(true);
+  };
+
+  const handleModalLocation = () => {
+    setShowLocationModal(true);
+  };
+
+  // GIF search handler
+  const handleGifSearch = async (query: string) => {
+    setGifSearchQuery(query);
+    
+    if (query.trim().length < 2) {
+      setGifResults([]);
+      return;
+    }
+    
+    try {
+      setGifSearchLoading(true);
+      const results = await searchGifsApi(query, 20);
+      setGifResults(results.data || []);
+    } catch (error) {
+      console.error('Error searching GIFs:', error);
+      setGifResults([]);
+    } finally {
+      setGifSearchLoading(false);
+    }
+  };
+
+  // Load trending GIFs when modal opens
+  const loadTrendingGifs = async () => {
+    try {
+      setGifSearchLoading(true);
+      const results = await getTrendingGifsApi(20);
+      setGifResults(results.data || []);
+    } catch (error) {
+      console.error('Error loading trending GIFs:', error);
+      setGifResults([]);
+    } finally {
+      setGifSearchLoading(false);
+    }
+  };
+
+  // Voice recording functions
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          setRecordingChunks(prev => [...prev, event.data]);
+        }
+      };
+      
+      recorder.onstop = () => {
+        const audioBlob = new Blob(recordingChunks, { type: 'audio/wav' });
+        setVoiceRecording(audioBlob);
+        setRecordingChunks([]);
+        stream.getTracks().forEach(track => track.stop());
+      };
+      
+      setMediaRecorder(recorder);
+      recorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      
+      // Start timer
+      const timer = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+      
+      setRecordingTime(0);
+      recorder.onstop = () => {
+        clearInterval(timer);
+        const audioBlob = new Blob(recordingChunks, { type: 'audio/wav' });
+        setVoiceRecording(audioBlob);
+        setRecordingChunks([]);
+        stream.getTracks().forEach(track => track.stop());
+      };
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      showPopup('error', 'Recording Error', 'Could not access microphone. Please check permissions.');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const addEmojiToPost = (emoji: string) => {
+    const textarea = document.querySelector('textarea[placeholder="What\'s happening?"]') as HTMLTextAreaElement;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const text = textarea.value;
+      const before = text.substring(0, start);
+      const after = text.substring(start);
+      textarea.value = before + emoji + after;
+      textarea.setSelectionRange(start + emoji.length, start + emoji.length);
+      textarea.focus();
+      setNewPost(textarea.value);
+    }
+    setShowEmojiPicker(false);
+  };
+
+  const emojiCategories = [
+    {
+      name: 'Smileys',
+      emojis: ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩', '🥳']
+    },
+    {
+      name: 'Animals',
+      emojis: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗', '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞']
+    },
+    {
+      name: 'Food',
+      emojis: ['🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇', '🍓', '🍈', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝', '🍅', '🥑', '🥦', '🥬', '🥒', '🌶️', '🌽', '🥕', '🥔', '🍠', '🥐', '🥯', '🍞', '🥖', '🥨', '🧀']
+    },
+    {
+      name: 'Activities',
+      emojis: ['⚽', '🏀', '🏈', '⚾', '🥎', '🎾', '🏐', '🏉', '🥏', '🎱', '🪀', '🏓', '🏸', '🏒', '🏑', '🥍', '🏏', '🥅', '⛳', '🪁', '🏹', '🎣', '🤿', '🥊', '🥋', '🎽', '🛹', '🛷', '⛸️', '🥌', '🎿']
+    },
+    {
+      name: 'Objects',
+      emojis: ['💎', '💍', '💐', '💒', '💓', '💔', '💕', '💖', '💗', '💘', '💙', '💚', '💛', '🧡', '💜', '🖤', '💝', '💞', '💟', '❣️', '💕', '💟', '💘', '💝', '💖', '💗', '💓', '💔', '💕', '💖', '💗']
+    }
+  ];
+
   return (
     <div className="bg-[#f4f7fb] dark:bg-gray-900 min-h-screen pt-2 sm:pt-4 pb-24 sm:pb-6 w-full scrollbar-hide overflow-x-hidden transition-colors duration-200 touch-manipulation">
       <Popup popup={popup} onClose={closePopup} />
@@ -1312,22 +1714,30 @@ export default function Dashboard() {
                   />
                 )
               ) : (
-                <div className="w-20 h-28 sm:w-24 sm:h-36 md:w-32 md:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-blue-500 mb-2 sm:mb-3 shadow-lg sm:shadow-xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center transition-transform group-hover:scale-105">
+                <div className="w-20 h-28 sm:w-24 sm:h-36 md:w-32 md:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-gray-300 mb-2 sm:mb-3 shadow-lg sm:shadow-xl bg-gray-100 dark:bg-gray-200 relative overflow-hidden transition-transform group-hover:scale-105">
+                  {/* User Profile Picture */}
                   {getUserAvatar() ? (
-                <img
-                  src={getUserAvatar()}
-                      className="w-full h-full object-cover rounded-xl sm:rounded-2xl"
-                  alt="Your Story"
-                />
+                    <img
+                      src={getUserAvatar()}
+                      className="w-full h-full object-cover"
+                      alt="Your Profile"
+                    />
                   ) : (
-                    <div className="flex flex-col items-center justify-center text-white">
-                      <span className="text-2xl mb-1">📷</span>
-                      <span className="text-xs text-center">Add Story</span>
+                    <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                      <span className="text-white text-2xl">👤</span>
                     </div>
                   )}
+                  
+                  {/* Gradient Overlay */}
+                  <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-gray-300 to-transparent"></div>
+                  
+                  {/* Plus Button */}
+                  <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-lg border-2 border-gray-200 z-10">
+                    <span className="text-gray-800 text-lg font-bold">+</span>
+                  </div>
                 </div>
               )}
-              <span className="text-xs sm:text-sm text-[#022e8a] dark:text-blue-400 font-semibold transition-colors duration-200">Your Story</span>
+              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-medium transition-colors duration-200">Create new story</span>
             </div>
 
             {/* Other Users' Stories */}
@@ -1424,85 +1834,32 @@ export default function Dashboard() {
                   <div className="flex-1 relative">
                     {/* Content Textarea */}
                     <textarea
-                      placeholder="What's going on? #Hashtag.. @Mention.. Link.."
-                      className={`w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-3 text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none ${
-                        newPost.trim() ? 'min-h-[120px]' : 'min-h-[60px]'
+                      placeholder="Click to create a new post..."
+                      className={`w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none cursor-pointer ${
+                        newPost.trim() ? 'min-h-[80px]' : 'min-h-[40px]'
                       }`}
-                      value={newPost}
-                      onChange={e => setNewPost(e.target.value)}
+                      value=""
+                      readOnly
+                      onClick={() => setShowPostModal(true)}
                       onFocus={(e) => {
-                        e.target.style.minHeight = '120px';
-                      }}
-                      onBlur={(e) => {
-                        if (!newPost.trim()) {
-                          e.target.style.minHeight = '60px';
-                        }
-                      }}
-                      onPaste={(e) => {
-                        // Handle paste event
-                        const pastedText = e.clipboardData.getData('text');
-                        if (pastedText) {
-                          console.log('📋 Pasted text length:', pastedText.length);
-                          // Auto-adjust height based on content
-                          setTimeout(() => {
-                            const target = e.target as HTMLTextAreaElement;
-                            if (target.scrollHeight > 120) {
-                              const newHeight = Math.min(target.scrollHeight, 300);
-                              target.style.minHeight = `${newHeight}px`;
-                              console.log('📏 Adjusted height to:', newHeight);
-                            }
-                          }, 0);
-                        }
-                      }}
-                      onInput={(e) => {
-                        // Auto-adjust height as user types
-                        const target = e.target as HTMLTextAreaElement;
-                        target.style.height = 'auto';
-                        const newHeight = Math.min(target.scrollHeight, 300);
-                        target.style.minHeight = `${newHeight}px`;
-                      }}
-                      onDrop={(e) => {
-                        // Handle file drops
-                        e.preventDefault();
-                        const files = Array.from(e.dataTransfer.files);
-                        if (files.length > 0) {
-                          // Handle dropped files similar to file input
-                          const validFiles = files.filter(file => {
-                            if (file.size > 10 * 1024 * 1024) {
-                              showPopup('error', 'File Too Large', `File "${file.name}" is too large. Maximum size is 10MB.`);
-                              return false;
-                            }
-                            
-                            const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg'];
-                            if (!validTypes.includes(file.type)) {
-                              showPopup('error', 'Unsupported Format', `File "${file.name}" has an unsupported format.`);
-                              return false;
-                            }
-                            
-                            return true;
-                          });
-                          
-                          if (validFiles.length > 0) {
-                            setMediaFiles(prev => [...prev, ...validFiles]);
-                            showPopup('success', 'Files Added', `${validFiles.length} file(s) dropped successfully!`);
-                          }
-                        }
-                      }}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        const target = e.currentTarget as HTMLTextAreaElement;
-                        target.style.borderColor = '#3b82f6';
-                        target.style.backgroundColor = '#eff6ff';
-                      }}
-                      onDragLeave={(e) => {
-                        const target = e.currentTarget as HTMLTextAreaElement;
-                        target.style.borderColor = '';
-                        target.style.backgroundColor = '';
+                        e.target.blur();
+                        setShowPostModal(true);
                       }}
                       disabled={posting}
                       maxLength={1800}
                     />
-
+                  </div>
+                  
+                  {/* Camera Icon - Positioned to the right of textarea */}
+                  <div className="flex items-center justify-center w-10 h-10 flex-shrink-0">
+                    <button
+                      className="flex items-center justify-center w-10 h-10 text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                      onClick={() => fileInputRef.current && fileInputRef.current.click()}
+                      disabled={posting}
+                      title="Add photos or videos"
+                    >
+                      <span className="text-xl">📷</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1515,54 +1872,7 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {/* Action Bar / Footer */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <button
-                    className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
-                    onClick={() => fileInputRef.current && fileInputRef.current.click()}
-                    disabled={posting}
-                    title="Add photos or videos"
-                  >
-                    <span className="text-xl">📷</span>
-                    <span className="text-sm hidden sm:inline">Photo/Video</span>
-                  </button>
-                  
-                  <button
-                    className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-green-500 dark:hover:text-green-400 transition-colors"
-                    title="Tag products"
-                  >
-                    <span className="text-xl">🛒</span>
-                    <span className="text-sm hidden sm:inline">Products</span>
-                  </button>
-                  
-                  <button
-                    className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-yellow-500 dark:hover:text-yellow-400 transition-colors"
-                    title="Add emojis"
-                  >
-                    <span className="text-xl">😊</span>
-                    <span className="text-sm hidden sm:inline">Emoji</span>
-                  </button>
-                  
-                  <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                    <span className="text-lg">🌐</span>
-                    <select className="text-sm bg-transparent border-none outline-none cursor-pointer">
-                      <option>Everyone</option>
-                      <option>Friends</option>
-                      <option>Private</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <button
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  onClick={handlePost}
-                  disabled={posting || (!newPost.trim() && !mediaFiles.length)}
-                >
-                  <span className="text-lg">📤</span>
-                  {posting ? 'Publishing...' : 'Publish'}
-                </button>
-              </div>
+
 
               {/* Hidden file input */}
                 <input
@@ -1584,7 +1894,7 @@ export default function Dashboard() {
                         
                         const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/ogg'];
                         if (!validTypes.includes(file.type)) {
-                          showPopup('error', 'Unsupported Format', `File "${file.name}" has an unsupported format. Please use images (JPEG, PNG, GIF, WebP) or videos (MP4, WebM, OGG).`);
+                          showPopup('error', 'Unsupported Format', `File "${file.name}" has an unsupported format.`);
                           return false;
                         }
                         
@@ -1708,14 +2018,6 @@ export default function Dashboard() {
             <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 transition-colors duration-200">
               <div className="font-semibold mb-2 text-sm text-gray-900 dark:text-white transition-colors duration-200">Pro Members</div>
               <button className="bg-orange-400 text-white px-3 py-2 rounded-full w-full mb-2 text-sm">Upgrade To Pro</button>
-              
-              {/* Test Save Functionality Button */}
-              <button 
-                onClick={testSaveFunctionality}
-                className="bg-blue-500 text-white px-3 py-2 rounded-full w-full mb-2 text-sm"
-              >
-                🧪 Test Save
-              </button>
             </div>
             <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 transition-colors duration-200">
               <div className="font-semibold mb-2 text-sm text-gray-900 dark:text-white transition-colors duration-200">Pages you may like</div>
@@ -1767,15 +2069,823 @@ export default function Dashboard() {
         />
       )}
       
-      <style jsx>{`
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .scrollbar-hide::-webkit-scrollbar { 
-          display: none;
-        }
-      `}</style>
+      {/* Post Creation Modal */}
+      {showPostModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4 bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md max-h-[90vh] sm:max-h-[80vh] overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700">
+              <button
+                onClick={() => setShowPostModal(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors p-1"
+              >
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">{1800 - (newPost.length)}</span>
+                <button
+                  onClick={handleModalPost}
+                  disabled={posting || (!newPost.trim() && modalMediaFiles.length === 0 && !selectedGif && !voiceRecording && !selectedFeeling && !sellData && !pollData && !locationData)}
+                  className="bg-red-500 hover:bg-red-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {posting ? 'Sharing...' : 'Share'}
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content - Scrollable */}
+            <div className="p-3 sm:p-4 overflow-y-auto max-h-[calc(90vh-120px)] sm:max-h-[calc(80vh-120px)] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              {/* Post Input */}
+              <textarea
+                placeholder="What's happening?"
+                value={newPost}
+                onChange={(e) => setNewPost(e.target.value)}
+                className="w-full border-none outline-none text-sm sm:text-base resize-none min-h-[60px] sm:min-h-[80px] bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                maxLength={1800}
+              />
+
+              {/* Media Preview */}
+              {modalMediaFiles.length > 0 && (
+                <div className="mt-3 sm:mt-4">
+                  <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2">Selected files ({modalMediaFiles.length}):</div>
+                  <div className="flex flex-wrap gap-2">
+                    {modalMediaFiles.map((file, index) => (
+                      <div key={index} className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 px-2 sm:px-3 py-1 sm:py-2 rounded-lg text-xs sm:text-sm">
+                        <div className="flex items-center gap-1 sm:gap-2">
+                          <span className="text-sm sm:text-base">
+                            {file.type.startsWith('image/') ? '🖼️' : 
+                             file.type.startsWith('video/') ? '🎥' : 
+                             file.type.startsWith('audio/') ? '🎵' : '📄'}
+                          </span>
+                          <div className="flex flex-col">
+                            <span className="font-medium truncate max-w-[80px] sm:max-w-[120px]">{file.name}</span>
+                            <span className="text-gray-500 dark:text-gray-400">{(file.size / 1024 / 1024).toFixed(1)}MB</span>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => removeModalMedia(index)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-100 p-1 rounded transition-colors"
+                          title="Remove file"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={clearModalMedia}
+                    className="mt-2 text-xs sm:text-sm text-red-500 hover:text-red-700 hover:bg-red-50 px-2 sm:px-3 py-1 sm:py-2 rounded transition-colors"
+                  >
+                    Clear all files
+                  </button>
+                </div>
+              )}
+
+              {/* Selected Features Preview */}
+              {(selectedGif || voiceRecording || selectedFeeling || sellData || pollData || locationData) && (
+                <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <div className="text-xs sm:text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">Selected features:</div>
+                  <div className="space-y-2">
+                    {selectedGif && (
+                      <div className="flex items-center gap-2 text-xs sm:text-sm">
+                        <span>🎭 GIF: {selectedGif.source}</span>
+                        <button
+                          onClick={() => setSelectedGif(null)}
+                          className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                    {voiceRecording && (
+                      <div className="flex items-center gap-2 text-xs sm:text-sm">
+                        <span>🎤 Voice recording</span>
+                        <button
+                          onClick={() => setVoiceRecording(null)}
+                          className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                    {selectedFeeling && (
+                      <div className="flex items-center gap-2 text-xs sm:text-sm">
+                        <span>{selectedFeeling.emoji} Feeling: {selectedFeeling.description}</span>
+                        <button
+                          onClick={() => setSelectedFeeling(null)}
+                          className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                    {sellData && (
+                      <div className="flex items-center gap-2 text-xs sm:text-sm">
+                        <span>🏪 Selling: {sellData.productName} - ${sellData.price}</span>
+                        <button
+                          onClick={() => setSellData(null)}
+                          className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                    {pollData && (
+                      <div className="flex items-center gap-2 text-xs sm:text-sm">
+                        <span>📊 Poll: {pollData.question}</span>
+                        <button
+                          onClick={() => setPollData(null)}
+                          className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                    {locationData && (
+                      <div className="flex items-center gap-2 text-xs sm:text-sm">
+                        <span>📍 Location: {locationData.name}</span>
+                        <button
+                          onClick={() => setLocationData(null)}
+                          className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Audience Selector */}
+              <div className="flex items-center gap-2 mt-3 sm:mt-4 p-2 sm:p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <span className="text-sm sm:text-base">🌐</span>
+                <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Everyone</span>
+                <svg className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+
+              {/* File Upload Limitations Notice */}
+              <div className="col-span-full mb-2 p-2 sm:p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <div className="text-xs sm:text-sm text-yellow-700 dark:text-yellow-300">
+                  <span className="font-medium">📋 Note:</span> Only images and videos are uploaded to server. 
+                  Documents and audio files are referenced in post content.
+                </div>
+              </div>
+
+              {/* Action Buttons Grid */}
+              <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3 mt-3 sm:mt-4">
+                <button 
+                  onClick={handleModalImageUpload}
+                  className="flex flex-col items-center gap-1 p-2 sm:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                >
+                  <span className="text-lg sm:text-xl">📷</span>
+                  <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">Images</span>
+                </button>
+                
+                <button 
+                  onClick={handleModalAudioUpload}
+                  className="flex flex-col items-center gap-1 p-2 sm:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                >
+                  <span className="text-lg sm:text-xl">🎵</span>
+                  <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">Audio</span>
+                </button>
+                
+                <button 
+                  onClick={handleModalFileUpload}
+                  className="flex flex-col items-center gap-1 p-2 sm:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                >
+                  <span className="text-lg sm:text-xl">📄</span>
+                  <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">Files</span>
+                </button>
+                
+                <button 
+                  onClick={handleModalGIF}
+                  className="flex flex-col items-center gap-1 p-2 sm:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                >
+                  <span className="text-lg sm:text-xl">🎭</span>
+                  <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">GIF</span>
+                </button>
+                
+                <button 
+                  onClick={handleModalVoice}
+                  className="flex flex-col items-center gap-1 p-2 sm:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                >
+                  <span className="text-lg sm:text-xl">🎤</span>
+                  <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">Voice</span>
+                </button>
+                
+                <button 
+                  onClick={handleModalFeelings}
+                  className="flex flex-col items-center gap-1 p-2 sm:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                >
+                  <span className="text-lg sm:text-xl">😊</span>
+                  <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">Feelings</span>
+                </button>
+                
+                <button 
+                  onClick={handleModalSell}
+                  className="flex flex-col items-center gap-1 p-2 sm:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                >
+                  <span className="text-lg sm:text-xl">🏪</span>
+                  <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">Sell</span>
+                </button>
+                
+                <button 
+                  onClick={handleModalPoll}
+                  className="flex flex-col items-center gap-1 p-2 sm:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                >
+                  <span className="text-lg sm:text-xl">📊</span>
+                  <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">Poll</span>
+                </button>
+                
+                <button 
+                  onClick={handleModalLocation}
+                  className="flex flex-col items-center gap-1 p-2 sm:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                >
+                  <span className="text-lg sm:text-xl">📍</span>
+                  <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">Location</span>
+                </button>
+              </div>
+
+              {/* Mark/Formatting Icons */}
+              <div className="flex items-center gap-2 sm:gap-3 mt-3 sm:mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+                <button 
+                  onClick={() => {
+                    const textarea = document.querySelector('textarea[placeholder="What\'s happening?"]') as HTMLTextAreaElement;
+                    if (textarea) {
+                      const start = textarea.selectionStart;
+                      const end = textarea.selectionEnd;
+                      const text = textarea.value;
+                      const before = text.substring(0, start);
+                      const selected = text.substring(start, end);
+                      const after = text.substring(end);
+                      textarea.value = before + '#' + selected + after;
+                      textarea.setSelectionRange(start + 1, start + 1 + selected.length);
+                      textarea.focus();
+                      setNewPost(textarea.value);
+                    }
+                  }}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                  title="Add hashtag"
+                >
+                  <span className="text-base sm:text-lg font-bold">#</span>
+                </button>
+                
+                <button 
+                  onClick={() => {
+                    const textarea = document.querySelector('textarea[placeholder="What\'s happening?"]') as HTMLTextAreaElement;
+                    if (textarea) {
+                      const start = textarea.selectionStart;
+                      const end = textarea.selectionEnd;
+                      const text = textarea.value;
+                      const before = text.substring(0, start);
+                      const selected = text.substring(start, end);
+                      const after = text.substring(end);
+                      textarea.value = before + '@' + selected + after;
+                      textarea.setSelectionRange(start + 1, start + 1 + selected.length);
+                      textarea.focus();
+                      setNewPost(textarea.value);
+                    }
+                  }}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                  title="Mention user"
+                >
+                  <span className="text-base sm:text-lg font-bold">@</span>
+                </button>
+                
+                <button 
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                  title="Add emoji"
+                >
+                  <span className="text-base sm:text-lg">😊</span>
+                </button>
+              </div>
+
+              {/* Emoji Picker */}
+              {showEmojiPicker && (
+                <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                  <div className="flex items-center justify-between mb-2 sm:mb-3">
+                    <span className="text-sm sm:text-base font-medium text-gray-700 dark:text-gray-300">Select Emoji</span>
+                    <button 
+                      onClick={() => setShowEmojiPicker(false)}
+                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  
+                  {emojiCategories.map((category, categoryIndex) => (
+                    <div key={categoryIndex} className="mb-3 sm:mb-4">
+                      <h4 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{category.name}</h4>
+                      <div className="grid grid-cols-8 sm:grid-cols-10 gap-1 sm:gap-2">
+                        {category.emojis.map((emoji, emojiIndex) => (
+                          <button
+                            key={emojiIndex}
+                            onClick={() => addEmojiToPost(emoji)}
+                            className="w-7 h-7 sm:w-8 sm:h-8 text-base sm:text-lg hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors flex items-center justify-center"
+                            title={emoji}
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Hidden file inputs */}
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                ref={modalImageInputRef}
+                onChange={(e) => handleModalMediaChange(e, 'image')}
+              />
+              <input
+                type="file"
+                accept="video/*"
+                multiple
+                className="hidden"
+                ref={modalVideoInputRef}
+                onChange={(e) => handleModalMediaChange(e, 'video')}
+              />
+              <input
+                type="file"
+                accept="audio/*"
+                multiple
+                className="hidden"
+                ref={modalAudioInputRef}
+                onChange={(e) => handleModalMediaChange(e, 'audio')}
+                title="Note: Audio files will be referenced in post content but not uploaded to server"
+              />
+              <input
+                type="file"
+                accept=".pdf,.doc,.docx,.txt"
+                multiple
+                className="hidden"
+                ref={modalFileUploadRef}
+                onChange={(e) => handleModalMediaChange(e, 'file')}
+                title="Note: Document files will be referenced in post content but not uploaded to server"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* GIF Selection Modal */}
+      {showGifModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Select GIF</h3>
+              <button
+                onClick={() => setShowGifModal(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4">
+              <div className="mb-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search GIFs..."
+                    value={gifSearchQuery}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white pr-10"
+                    onChange={(e) => handleGifSearch(e.target.value)}
+                  />
+                  {gifSearchLoading && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2 max-h-96 overflow-y-auto">
+                {gifResults.length > 0 ? (
+                  gifResults.map((gif: any, index: number) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setSelectedGif({
+                          url: gif.images.fixed_height.url,
+                          source: 'giphy',
+                          tags: gif.tags || [],
+                          width: gif.images.fixed_height.width,
+                          height: gif.images.fixed_height.height,
+                          giphyId: gif.id
+                        });
+                        setShowGifModal(false);
+                      }}
+                      className="w-full h-24 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors overflow-hidden"
+                    >
+                      <img 
+                        src={gif.images.fixed_height.url} 
+                        alt={gif.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))
+                ) : (
+                  // Fallback to emoji placeholders if no GIFs loaded
+                  ['🎭', '🎪', '🎨', '🎬', '🎤', '🎧', '🎮', '🎯', '🎲', '🎸', '🎹', '🎺'].map((gif, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setSelectedGif({ url: gif, source: 'emoji', tags: ['fun'], width: 200, height: 200 });
+                        setShowGifModal(false);
+                      }}
+                      className="w-full h-24 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center text-4xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      {gif}
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Voice Recording Modal */}
+      {showVoiceModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Record Voice</h3>
+              <button
+                onClick={() => setShowVoiceModal(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4">
+              <div className="text-center">
+                <button 
+                  className={`w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl mb-4 transition-colors ${
+                    isRecording ? 'bg-red-600 animate-pulse' : 'bg-red-500 hover:bg-red-600'
+                  }`}
+                  onClick={isRecording ? stopRecording : startRecording}
+                >
+                  {isRecording ? '⏹️' : '🎤'}
+                </button>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  {isRecording ? 'Recording... Click to stop' : 'Click to start recording'}
+                </p>
+                {recordingTime > 0 && (
+                  <p className="text-sm text-gray-500 mb-4">Duration: {recordingTime}s</p>
+                )}
+                {voiceRecording && (
+                  <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                    <p className="text-sm text-green-700 dark:text-green-300">Voice recorded successfully!</p>
+                    <audio controls className="w-full mt-2">
+                      <source src={URL.createObjectURL(voiceRecording)} type="audio/wav" />
+                    </audio>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  {!voiceRecording ? (
+                    <button
+                      onClick={() => setShowVoiceModal(false)}
+                      className="flex-1 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                    >
+                      Cancel
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => {
+                          setVoiceRecording(null);
+                          setRecordingTime(0);
+                        }}
+                        className="flex-1 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600"
+                      >
+                        Re-record
+                      </button>
+                      <button
+                        onClick={() => setShowVoiceModal(false)}
+                        className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600"
+                      >
+                        Use Recording
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Feelings Selection Modal */}
+      {showFeelingsModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">How are you feeling?</h3>
+              <button
+                onClick={() => setShowFeelingsModal(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-4 gap-3 max-h-96 overflow-y-auto">
+                {[
+                  { type: 'happy', emoji: '😊', description: 'Happy' },
+                  { type: 'excited', emoji: '🤩', description: 'Excited' },
+                  { type: 'grateful', emoji: '🙏', description: 'Grateful' },
+                  { type: 'loved', emoji: '💕', description: 'Loved' },
+                  { type: 'sad', emoji: '😢', description: 'Sad' },
+                  { type: 'angry', emoji: '😠', description: 'Angry' },
+                  { type: 'surprised', emoji: '😮', description: 'Surprised' },
+                  { type: 'scared', emoji: '😨', description: 'Scared' },
+                  { type: 'calm', emoji: '😌', description: 'Calm' },
+                  { type: 'proud', emoji: '😎', description: 'Proud' },
+                  { type: 'tired', emoji: '😴', description: 'Tired' },
+                  { type: 'confused', emoji: '😕', description: 'Confused' }
+                ].map((feeling) => (
+                  <button
+                    key={feeling.type}
+                    onClick={() => {
+                      setSelectedFeeling(feeling);
+                      setShowFeelingsModal(false);
+                    }}
+                    className="flex flex-col items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    <span className="text-3xl mb-2">{feeling.emoji}</span>
+                    <span className="text-xs text-gray-700 dark:text-gray-300 text-center">{feeling.description}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sell Product Modal */}
+      {showSellModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Sell Product</h3>
+              <button
+                onClick={() => setShowSellModal(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4">
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Product name"
+                  value={sellFormData.productName || ''}
+                  onChange={(e) => setSellFormData(prev => ({ ...prev, productName: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+                <input
+                  type="number"
+                  placeholder="Price"
+                  value={sellFormData.price || ''}
+                  onChange={(e) => setSellFormData(prev => ({ ...prev, price: parseFloat(e.target.value) }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+                <select 
+                  value={sellFormData.condition || 'New'}
+                  onChange={(e) => setSellFormData(prev => ({ ...prev, condition: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="New">New</option>
+                  <option value="Used">Used</option>
+                  <option value="Refurbished">Refurbished</option>
+                </select>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="negotiable"
+                    checked={sellFormData.negotiable || false}
+                    onChange={(e) => setSellFormData(prev => ({ ...prev, negotiable: e.target.checked }))}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="negotiable" className="text-sm text-gray-700 dark:text-gray-300">Price negotiable</label>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      if (sellFormData.productName && sellFormData.price) {
+                        setSellData(sellFormData);
+                        setShowSellModal(false);
+                        setSellFormData({});
+                      } else {
+                        showPopup('error', 'Missing Information', 'Please fill in product name and price');
+                      }
+                    }}
+                    className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                  >
+                    Add Product
+                  </button>
+                  <button
+                    onClick={() => setShowSellModal(false)}
+                    className="flex-1 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Poll Modal */}
+      {showPollModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Create Poll</h3>
+              <button
+                onClick={() => setShowPollModal(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4">
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Poll question"
+                  value={pollFormData.question || ''}
+                  onChange={(e) => setPollFormData(prev => ({ ...prev, question: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+                <input
+                  type="text"
+                  placeholder="Option 1"
+                  value={pollFormData.option1 || ''}
+                  onChange={(e) => setPollFormData(prev => ({ ...prev, option1: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+                <input
+                  type="text"
+                  placeholder="Option 2"
+                  value={pollFormData.option2 || ''}
+                  onChange={(e) => setPollFormData(prev => ({ ...prev, option2: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+                <input
+                  type="text"
+                  placeholder="Option 3 (optional)"
+                  value={pollFormData.option3 || ''}
+                  onChange={(e) => setPollFormData(prev => ({ ...prev, option3: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+                <input
+                  type="text"
+                  placeholder="Option 4 (optional)"
+                  value={pollFormData.option4 || ''}
+                  onChange={(e) => setPollFormData(prev => ({ ...prev, option4: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="multipleChoice"
+                    checked={pollFormData.isMultipleChoice || false}
+                    onChange={(e) => setPollFormData(prev => ({ ...prev, isMultipleChoice: e.target.checked }))}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="multipleChoice" className="text-sm text-gray-700 dark:text-gray-300">Allow multiple choices</label>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      if (pollFormData.question && pollFormData.option1 && pollFormData.option2) {
+                        const options = [pollFormData.option1, pollFormData.option2];
+                        if (pollFormData.option3) options.push(pollFormData.option3);
+                        if (pollFormData.option4) options.push(pollFormData.option4);
+                        
+                        setPollData({
+                          question: pollFormData.question,
+                          options: options,
+                          isMultipleChoice: pollFormData.isMultipleChoice || false
+                        });
+                        setShowPollModal(false);
+                        setPollFormData({});
+                      } else {
+                        showPopup('error', 'Missing Information', 'Please fill in question and at least 2 options');
+                      }
+                    }}
+                    className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                  >
+                    Create Poll
+                  </button>
+                  <button
+                    onClick={() => setShowPollModal(false)}
+                    className="flex-1 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Location Modal */}
+      {showLocationModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4 bg-black bg-opacity-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Add Location</h3>
+              <button
+                onClick={() => setShowLocationModal(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4">
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  placeholder="Location name"
+                  value={locationFormData.name || ''}
+                  onChange={(e) => setLocationFormData(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+                <input
+                  type="text"
+                  placeholder="Address"
+                  value={locationFormData.address || ''}
+                  onChange={(e) => setLocationFormData(prev => ({ ...prev, address: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                />
+                <select
+                  value={locationFormData.category || ''}
+                  onChange={(e) => setLocationFormData(prev => ({ ...prev, category: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                >
+                  <option value="">Select category</option>
+                  <option value="restaurant">Restaurant</option>
+                  <option value="cafe">Cafe</option>
+                  <option value="park">Park</option>
+                  <option value="shopping">Shopping</option>
+                  <option value="entertainment">Entertainment</option>
+                  <option value="other">Other</option>
+                </select>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      if (locationFormData.name && locationFormData.address) {
+                        setLocationData(locationFormData);
+                        setShowLocationModal(false);
+                        setLocationFormData({});
+                      } else {
+                        showPopup('error', 'Missing Information', 'Please fill in location name and address');
+                      }
+                    }}
+                    className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                  >
+                    Add Location
+                  </button>
+                  <button
+                    onClick={() => setShowLocationModal(false)}
+                    className="flex-1 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

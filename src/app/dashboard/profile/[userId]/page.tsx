@@ -4,66 +4,20 @@ import { useParams, useRouter } from 'next/navigation';
 import { Edit, Trash2, MoreVertical, Search, Filter, Camera, Video, Music, FileText, Plus, Heart, MessageCircle, Share2, Bookmark, Settings, Camera as CameraIcon, MapPin, Globe, Calendar, Users, Eye, ThumbsUp, X, ShoppingBag, UserPlus, UserCheck, Phone, BarChart3, Clock, Link as LinkIcon, Gift } from 'lucide-react';
 import PostDisplay from '@/components/PostDisplay';
 import Popup, { PopupState } from '@/components/Popup';
-
-interface User {
-  id: string;
-  name: string;
-  username: string;
-  avatar: string;
-  coverPhoto?: string;
-  email: string;
-  followers: string[];
-  following: string[];
-  bio?: string;
-  location?: string;
-  website?: string;
-  workplace?: string;
-  address?: string;
-  country?: string;
-  education?: string;
-  isOnline?: boolean;
-  joinedDate?: string;
-  isFollowing?: boolean;
-  isBlocked?: boolean;
-  isVerified?: boolean;
-  lastSeen?: string;
-  phone?: string;
-  dateOfBirth?: string;
-  gender?: string;
-  followingList?: Array<{
-    _id: string;
-    name: string;
-    username?: string;
-    avatar?: string;
-  }>;
-  followersList?: Array<{
-    _id: string;
-    name: string;
-    username?: string;
-    avatar?: string;
-  }>;
-}
-
-interface UserImages {
-  avatar: string | null;
-  cover: string | null;
-}
+import FeedPost from '@/components/FeedPost';
 
 interface Post {
   _id: string;
   content: string;
   title?: string;
-  media: any[];
-  likes: string[];
-  comments: any[];
-  shares: string[];
-  views: string[];
+  media?: any[];
   createdAt: string;
-  user: {
-    name: string;
-    avatar: string;
-    userId: string;
-  };
+  user: string;
+  likes?: string[];
+  comments?: any[];
+  shares?: string[];
+  savedBy?: string[];
+  reactions?: any[];
 }
 
 interface Album {
@@ -72,6 +26,41 @@ interface Album {
   media: any[];
   createdAt: string;
   user: string;
+  likes?: string[];
+  comments?: any[];
+  shares?: string[];
+}
+
+type ContentItem = Post | (Album & { type: 'album' });
+
+interface User {
+  _id: string;
+  name: string;
+  username: string;
+  email: string;
+  avatar?: string;
+  cover?: string;
+  bio?: string;
+  isOnline?: boolean;
+  gender?: string;
+  workplace?: string;
+  education?: string;
+  location?: string;
+  address?: string;
+  country?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  joinedDate?: string;
+  website?: string;
+  followers?: string[];
+  following?: string[];
+  followersList?: string[];
+  followingList?: string[];
+}
+
+interface UserImages {
+  avatar: string | null;
+  cover: string | null;
 }
 
 interface Group {
@@ -89,9 +78,9 @@ interface Group {
     avatar?: string;
   };
   members: Array<{
-    user: {
-      _id: string;
-      name: string;
+  user: {
+    _id: string;
+    name: string;
       username?: string;
       avatar?: string;
     };
@@ -153,8 +142,10 @@ const UserProfile: React.FC = () => {
   const [isCurrentUser, setIsCurrentUser] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
-  const [editingPost, setEditingPost] = useState<Post | null>(null);
+  const [editingPost, setEditingPost] = useState<any>(null);
   const [editContent, setEditContent] = useState('');
+  const [editTitle, setEditTitle] = useState('');
+  const [editMediaFiles, setEditMediaFiles] = useState<File[]>([]);
   const [showEditModal, setShowEditModal] = useState(false);
   const [newAvatar, setNewAvatar] = useState<File | null>(null);
   const [newCoverPhoto, setNewCoverPhoto] = useState<File | null>(null);
@@ -169,6 +160,9 @@ const UserProfile: React.FC = () => {
     title: '',
     message: ''
   });
+
+  // Add post dropdown state
+  const [postDropdownOpen, setPostDropdownOpen] = useState<string | null>(null);
 
   // Tabs configuration
   const tabs = [
@@ -187,6 +181,15 @@ const UserProfile: React.FC = () => {
     { id: 'sounds', label: 'Sounds', icon: <Music className="w-4 h-4" /> },
     { id: 'files', label: 'Files', icon: <FileText className="w-4 h-4" /> }
   ];
+
+  // Type guard functions
+  const isAlbum = (item: ContentItem): item is Album & { type: 'album' } => {
+    return 'type' in item && item.type === 'album';
+  };
+
+  const isPost = (item: ContentItem): item is Post => {
+    return !('type' in item) || item.type !== 'album';
+  };
 
   // Get the actual userId string
   const actualUserId = Array.isArray(userId) ? userId[0] : userId;
@@ -462,7 +465,7 @@ const UserProfile: React.FC = () => {
       const token = localStorage.getItem('token');
       if (!token || !user) return;
 
-              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${user.id}/follow`, { 
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${user._id}/follow`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -485,7 +488,7 @@ const UserProfile: React.FC = () => {
       const token = localStorage.getItem('token');
       if (!token || !user) return;
 
-              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${user.id}/block`, { 
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${user._id}/block`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -505,7 +508,7 @@ const UserProfile: React.FC = () => {
 
   const handleMessage = () => {
     // Navigate to messages or open chat
-    router.push(`/dashboard/messages/${user?.id}`);
+    router.push(`/dashboard/messages/${user?._id}`);
   };
 
   const handleEditPost = (post: Post) => {
@@ -624,10 +627,10 @@ const UserProfile: React.FC = () => {
   };
 
   const handleDeletePost = async (postId: string) => {
+    if (!confirm('Are you sure you want to delete this post?')) return;
+    
     try {
       const token = localStorage.getItem('token');
-      if (!token) return;
-
               const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}`, { 
         method: 'DELETE',
         headers: {
@@ -636,15 +639,202 @@ const UserProfile: React.FC = () => {
       });
 
       if (response.ok) {
+        setPosts(posts.filter(post => post._id !== postId));
         showPopup('success', 'Post Deleted', 'Post has been deleted successfully');
-        fetchUserContent();
       } else {
-        showPopup('error', 'Delete Failed', 'Failed to delete post');
+        showPopup('error', 'Error', 'Failed to delete post');
       }
     } catch (error) {
       console.error('Error deleting post:', error);
-      showPopup('error', 'Delete Failed', 'Failed to delete post');
+      showPopup('error', 'Error', 'Failed to delete post');
     }
+  };
+
+  const getFilteredContent = () => {
+    let filtered: ContentItem[] = [
+      ...posts, 
+      ...albums.map(album => ({ ...album, type: 'album' as const }))
+    ];
+    
+    if (activeFilter !== 'all') {
+      filtered = filtered.filter(item => {
+        if (isAlbum(item)) {
+          return activeFilter === 'photos';
+        }
+        
+        // For posts, check media type
+        if (item.media && item.media.length > 0) {
+          const mediaTypes = item.media.map((media: any) => media.type);
+          switch (activeFilter) {
+            case 'photos':
+              return mediaTypes.some((type: any) => type === 'image');
+            case 'videos':
+              return mediaTypes.some((type: any) => type === 'video');
+            case 'sounds':
+              return mediaTypes.some((type: any) => type === 'audio');
+            case 'files':
+              return mediaTypes.some((type: any) => type === 'file');
+            case 'text':
+              return !item.media || item.media.length === 0;
+            default:
+              return true;
+          }
+        } else {
+          // Posts without media are considered text posts
+          return activeFilter === 'text';
+        }
+      });
+    }
+    
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(item => {
+        if (isAlbum(item)) {
+          return item.name?.toLowerCase().includes(query);
+        }
+        return item.content?.toLowerCase().includes(query) || item.title?.toLowerCase().includes(query);
+      });
+    }
+    
+    return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  };
+
+  // Handler functions for FeedPost component
+  const handleLike = async (postId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        setPosts(posts.map(post => {
+          if (post._id === postId) {
+            const isLiked = post.likes?.includes(user?._id || '');
+            return {
+              ...post,
+              likes: isLiked 
+                ? post.likes?.filter(id => id !== (user?._id || '')) || []
+                : [...(post.likes || []), user?._id || '']
+            };
+          }
+          return post;
+        }));
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+    }
+  };
+
+  const handleReaction = async (postId: string, reactionType: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/react`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reactionType })
+      });
+
+      if (response.ok) {
+        // Update posts state with new reaction
+        setPosts(posts.map(post => {
+          if (post._id === postId) {
+            return { ...post, reactions: [...(post.reactions || []), { userId: user?._id || '', type: reactionType, createdAt: new Date().toISOString() }] };
+          }
+          return post;
+        }));
+      }
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+    }
+  };
+
+  const handleComment = async (postId: string, comment: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/comment`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ content: comment })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPosts(posts.map(post => post._id === postId ? data.post : post));
+        showPopup('success', 'Comment Added', 'Comment posted successfully!');
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      showPopup('error', 'Error', 'Failed to post comment');
+    }
+  };
+
+  const handleShare = async (postId: string, shareOptions: any) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/share`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(shareOptions)
+      });
+
+      if (response.ok) {
+        showPopup('success', 'Post Shared', 'Post shared successfully!');
+      }
+    } catch (error) {
+      console.error('Error sharing post:', error);
+      showPopup('error', 'Error', 'Failed to share post');
+    }
+  };
+
+  const handleSave = async (postId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/save`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        setPosts(posts.map(post => {
+          if (post._id === postId) {
+            const isSaved = post.savedBy?.includes(user?._id || '');
+            return {
+              ...post,
+              savedBy: isSaved 
+                ? post.savedBy?.filter(id => id !== (user?._id || '')) || []
+                : [...(post.savedBy || []), user?._id || '']
+            };
+          }
+          return post;
+        }));
+        showPopup('success', 'Post Saved', 'Post saved to your collection!');
+      }
+    } catch (error) {
+      console.error('Error saving post:', error);
+      showPopup('error', 'Error', 'Failed to save post');
+    }
+  };
+
+  const handleEdit = (post: any) => {
+    setEditingPost(post);
+    setEditContent(post.content || '');
+    setEditTitle(post.title || '');
+    setEditMediaFiles([]);
   };
 
   const handleSaveEdit = async () => {
@@ -691,6 +881,23 @@ const UserProfile: React.FC = () => {
     setPopup(prev => ({ ...prev, isOpen: false }));
   };
 
+  // Toggle post dropdown
+  const togglePostDropdown = (postId: string) => {
+    setPostDropdownOpen(postDropdownOpen === postId ? null : postId);
+  };
+
+  // Close post dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (postDropdownOpen && !(event.target as Element).closest('.post-dropdown')) {
+        setPostDropdownOpen(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [postDropdownOpen]);
+
   const getMediaUrl = (url: string) => {
     if (!url) return '/default-avatar.svg';
     if (url.startsWith('http')) return url;
@@ -709,90 +916,6 @@ const UserProfile: React.FC = () => {
     }
     
           return `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}${url}`;
-  };
-
-  const getFilteredContent = () => {
-    // Combine posts and albums and sort by creation date
-    let combinedContent = [
-      ...posts.map((post: any) => ({ ...post, type: 'post' })),
-      ...albums.map((album: any) => ({ ...album, type: 'album' }))
-    ].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-    // Apply search filter
-    if (searchQuery) {
-      combinedContent = combinedContent.filter(item => {
-        if (item.type === 'post') {
-          return item.content.toLowerCase().includes(searchQuery.toLowerCase());
-        } else if (item.type === 'album') {
-          return item.name.toLowerCase().includes(searchQuery.toLowerCase());
-        }
-        return false;
-      });
-    }
-
-    // Apply content type filter
-    switch (activeFilter) {
-      case 'text':
-        combinedContent = combinedContent.filter(item => {
-          if (item.type === 'post') {
-            return !item.media || item.media.length === 0;
-          }
-          return false;
-        });
-        break;
-      case 'photos':
-        combinedContent = combinedContent.filter(item => {
-          if (item.type === 'post') {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return item.media && item.media.some((media: any) => 
-              media.type?.startsWith('image/') || media.url?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
-            );
-          } else if (item.type === 'album') {
-            return item.media && item.media.length > 0;
-          }
-          return false;
-        });
-        break;
-      case 'videos':
-        combinedContent = combinedContent.filter(item => {
-          if (item.type === 'post') {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return item.media && item.media.some((media: any) => 
-              media.type?.startsWith('video/') || media.url?.match(/\.(mp4|avi|mov|wmv|flv|webm)$/i)
-            );
-          }
-          return false;
-        });
-        break;
-      case 'sounds':
-        combinedContent = combinedContent.filter(item => {
-          if (item.type === 'post') {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return item.media && item.media.some((media: any) => 
-              media.type?.startsWith('audio/') || media.url?.match(/\.(mp3|wav|ogg|aac|flac)$/i)
-            );
-          }
-          return false;
-        });
-        break;
-      case 'files':
-        combinedContent = combinedContent.filter(item => {
-          if (item.type === 'post') {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return item.media && item.media.some((media: any) => 
-              media.type?.startsWith('application/') || media.url?.match(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|zip|rar)$/i)
-            );
-          }
-          return false;
-        });
-        break;
-      case 'all':
-      default:
-        // Show all content
-        break;
-    }
-
-    return combinedContent;
   };
 
   if (loading) {
@@ -818,6 +941,43 @@ const UserProfile: React.FC = () => {
 
   return (
     <div className="w-full min-h-screen bg-gray-50 dark:bg-dark-900 overflow-x-hidden max-w-full transition-colors duration-200 pb-4 sm:pb-6">
+      {/* Add CSS for line-clamp */}
+      <style jsx>{`
+        .line-clamp-3 {
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        .post-content-full {
+          display: block;
+        }
+        .post-dropdown {
+          position: relative;
+        }
+        .post-dropdown-menu {
+          animation: fadeIn 0.2s ease-in-out;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .read-more-btn {
+          transition: all 0.2s ease;
+        }
+        .read-more-btn:hover {
+          color: #2563eb;
+          text-decoration: underline;
+        }
+        .filter-scroll::-webkit-scrollbar {
+          display: none;
+        }
+        .filter-scroll {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
+      
       {/* Cover Photo Section */}
       <div className="relative h-32 sm:h-48 md:h-64 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-800 overflow-hidden">
         {userImages.cover ? (
@@ -1170,12 +1330,7 @@ const UserProfile: React.FC = () => {
               <div className="lg:col-span-3 space-y-4">
                 {/* Content Filter Buttons */}
                 <div className="bg-white rounded-xl shadow-sm p-4">
-                  <div className="flex items-center gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                    <style jsx>{`
-                      .filter-scroll::-webkit-scrollbar {
-                        display: none;
-                      }
-                    `}</style>
+                  <div className="flex items-center gap-2 overflow-x-auto">
                     <div className="filter-scroll flex items-center gap-2">
                   <button
                         onClick={() => setActiveFilter('all')}
@@ -1275,8 +1430,8 @@ const UserProfile: React.FC = () => {
                   );
                 }
 
-                return filteredContent.map((item: any) => {
-                  if (item.type === 'album') {
+                return filteredContent.map((item: ContentItem) => {
+                  if (isAlbum(item)) {
                     return (
                       <div key={item._id} className="bg-white rounded-xl shadow-sm overflow-hidden">
                         <div className="p-4">
@@ -1332,126 +1487,21 @@ const UserProfile: React.FC = () => {
                       </div>
                     );
                   } else {
+                    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+                    const isOwnPost = item.user === currentUser._id || item.user === currentUser.id;
+                    
                     return (
-                      <PostDisplay
+                      <FeedPost
                         key={item._id}
                         post={item}
-                        onLike={async (postId) => {
-                          try {
-                            const token = localStorage.getItem('token');
-                            if (!token) return;
-                            
-                            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/like`, {
-                              method: 'POST',
-                              headers: {
-                                'Authorization': `Bearer ${token}`
-                              }
-                            });
-                            
-                            if (response.ok) {
-                              // Refresh posts to show updated like count
-                              fetchUserContent();
-                            }
-                          } catch (error) {
-                            console.error('Error liking post:', error);
-                          }
-                        }}
-                        onReaction={async (postId, reactionType) => {
-                          try {
-                            const token = localStorage.getItem('token');
-                            if (!token) return;
-                            
-                            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/reaction`, {
-                              method: 'POST',
-                              headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Content-Type': 'application/json'
-                              },
-                              body: JSON.stringify({ reactionType })
-                            });
-                            
-                            if (response.ok) {
-                              // Refresh posts to show updated reaction
-                              fetchUserContent();
-                            }
-                          } catch (error) {
-                            console.error('Error adding reaction:', error);
-                          }
-                        }}
-                        onComment={async (postId, comment) => {
-                          try {
-                            const token = localStorage.getItem('token');
-                            if (!token) return;
-                            
-                            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/comment`, {
-                              method: 'POST',
-                              headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Content-Type': 'application/json'
-                              },
-                              body: JSON.stringify({ content: comment })
-                            });
-                            
-                            if (response.ok) {
-                              // Refresh posts to show new comment
-                              fetchUserContent();
-                            }
-                          } catch (error) {
-                            console.error('Error commenting on post:', error);
-                          }
-                        }}
-                        onSave={async (postId) => {
-                          try {
-                            const token = localStorage.getItem('token');
-                            if (!token) return;
-                            
-                            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/save`, {
-                              method: 'POST',
-                              headers: {
-                                'Authorization': `Bearer ${token}`
-                              }
-                            });
-                            
-                            if (response.ok) {
-                              // Refresh posts to show updated save status
-                              fetchUserContent();
-                            }
-                          } catch (error) {
-                            console.error('Error saving post:', error);
-                          }
-                        }}
-                        onShare={async (postId, shareOptions) => {
-                          try {
-                            const token = localStorage.getItem('token');
-                            if (!token) return;
-                            
-                            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/share`, {
-                              method: 'POST',
-                              headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Content-Type': 'application/json'
-                              },
-                              body: JSON.stringify(shareOptions)
-                            });
-                            
-                            if (response.ok) {
-                              showPopup('success', 'Post Shared', 'Post has been shared successfully!');
-                              // Refresh posts to show updated share count
-                              fetchUserContent();
-                            }
-                          } catch (error) {
-                            console.error('Error sharing post:', error);
-                            showPopup('error', 'Share Failed', 'Failed to share post');
-                          }
-                        }}
+                        onLike={handleLike}
+                        onReaction={handleReaction}
+                        onComment={handleComment}
+                        onShare={handleShare}
+                        onSave={handleSave}
                         onDelete={handleDeletePost}
-                        onEdit={handleEditPost}
-                        onToggleComments={async (postId) => {
-                          // This will be handled by the PostDisplay component internally
-                          console.log('Toggle comments for post:', postId);
-                        }}
-                        isOwner={isCurrentUser}
-                        showEditDelete={isCurrentUser}
+                        onEdit={handleEdit}
+                        isOwnPost={isOwnPost}
                       />
                     );
                   }

@@ -193,12 +193,12 @@ export default function PostDisplay({
   const totalReactions = (post.likes?.length || 0) + (post.reactions?.length || 0);
 
   return (
-    <div className="bg-white rounded-xl shadow p-3 sm:p-4 mb-4 sm:mb-6">
-      <div className="flex items-center gap-2 mb-3">
+    <div className="bg-white rounded-xl shadow p-2 sm:p-3 md:p-4 mb-3 sm:mb-4 md:mb-6">
+      <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
         <img 
           src={post.user?.avatar ? getMediaUrl(post.user.avatar) : '/default-avatar.svg'} 
           alt="avatar" 
-          className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0 object-cover" 
+          className="w-7 h-7 sm:w-8 sm:h-8 md:w-10 md:h-10 rounded-full flex-shrink-0 object-cover" 
           onError={(e) => {
             console.log('❌ Avatar load failed for user:', post.user?.name, 'URL:', post.user?.avatar);
             e.currentTarget.src = '/default-avatar.svg';
@@ -214,25 +214,25 @@ export default function PostDisplay({
                 }
                 return String(post.user.userId || post.user._id || post.user.id || 'unknown');
               })()}`} 
-              className="font-semibold hover:underline cursor-pointer text-sm sm:text-base truncate block text-blue-600"
+              className="font-semibold hover:underline cursor-pointer text-xs sm:text-sm md:text-base truncate block text-blue-600"
             >
               {post.user?.name || 'Unknown User'}
             </a>
           ) : (
-            <div className="font-semibold text-sm sm:text-base truncate">{post.user?.name || 'Unknown User'}</div>
+            <div className="font-semibold text-xs sm:text-sm md:text-base truncate">{post.user?.name || 'Unknown User'}</div>
           )}
           <div className="text-xs text-gray-400">
             {new Date(post.createdAt).toLocaleString()}
             {post.isShared && (
-              <span className="ml-2 text-blue-600">📤 Shared</span>
+              <span className="ml-1 sm:ml-2 text-blue-600 text-xs">📤 Shared</span>
             )}
           </div>
         </div>
       </div>
 
-      <div className="mb-3">
+      <div className="mb-2 sm:mb-3">
         {/* Content with word limit and Read More */}
-        <div className="text-gray-800 text-sm sm:text-base leading-relaxed">
+        <div className="text-gray-800 text-xs sm:text-sm md:text-base leading-relaxed">
           {(() => {
             const content = post.content || '';
             const wordCount = content.split(/\s+/).filter((word: string) => word && word.length > 0).length;
@@ -295,9 +295,155 @@ export default function PostDisplay({
         </div>
       </div>
 
+      {/* Poll Display - Only show if poll was actually created */}
+      {post.poll && post.poll.question && post.poll.options && post.poll.options.length > 0 && (
+        <div className="mb-2 sm:mb-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div className="mb-2">
+            <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-2">
+              📊 {post.poll.question}
+            </h4>
+            <div className="space-y-2">
+              {post.poll.options.map((option: any, index: number) => {
+                const totalVotes = post.poll.totalVotes || 0;
+                const optionVotes = option.voteCount || 0;
+                const percentage = totalVotes > 0 ? Math.round((optionVotes / totalVotes) * 100) : 0;
+                
+                return (
+                  <div key={index} className="relative">
+                    <div className="w-full text-left p-2 rounded-lg border bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">{option.text}</span>
+                        <span className="text-xs">
+                          {optionVotes} votes ({percentage}%)
+                        </span>
+                      </div>
+                      {/* Progress bar */}
+                      <div className="mt-1 w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                        <div 
+                          className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              Total votes: {post.poll.totalVotes || 0}
+              {post.poll.expiresAt && (
+                <span className="ml-2">
+                  • Expires: {new Date(post.poll.expiresAt).toLocaleDateString()}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Feeling Display - Only show if feeling was actually selected */}
+      {post.feeling && post.feeling.type && post.feeling.emoji && post.feeling.description && (
+        <div className="mb-2 sm:mb-3 p-3 bg-pink-50 dark:bg-pink-900/20 rounded-lg border border-pink-200 dark:border-pink-800">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">{post.feeling.emoji}</span>
+            <div>
+              <h4 className="text-sm font-semibold text-pink-900 dark:text-pink-100">
+                Feeling {post.feeling.description}
+              </h4>
+              <p className="text-xs text-pink-700 dark:text-pink-300">
+                Intensity: {post.feeling.intensity}/10
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Location Display - Only show if location was actually added */}
+      {post.location && post.location.name && post.location.address && (
+        <div className="mb-2 sm:mb-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">📍</span>
+            <div>
+              <h4 className="text-sm font-semibold text-green-900 dark:text-green-100">
+                {post.location.name}
+              </h4>
+              <p className="text-xs text-green-700 dark:text-green-300">
+                {post.location.address}
+                {post.location.category && (
+                  <span className="ml-2">• {post.location.category}</span>
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Sell Info Display - Only show if sell info was actually added */}
+      {post.sell && post.sell.productName && post.sell.price && (
+        <div className="mb-2 sm:mb-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🏪</span>
+              <div>
+                <h4 className="text-sm font-semibold text-orange-900 dark:text-orange-100">
+                  {post.sell.productName}
+                </h4>
+                <p className="text-xs text-orange-700 dark:text-orange-300">
+                  Condition: {post.sell.condition}
+                  {post.sell.negotiable && <span className="ml-2">• Price negotiable</span>}
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-lg font-bold text-orange-900 dark:text-orange-100">
+                ${post.sell.price}
+              </div>
+              <div className="text-xs text-orange-700 dark:text-orange-300">
+                {post.sell.currency || 'USD'}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* GIF Display - Only show if GIF was actually selected */}
+      {post.gif && post.gif.url && post.gif.url !== 'undefined' && (
+        <div className="mb-2 sm:mb-3">
+          <img 
+            src={post.gif.url} 
+            alt="GIF"
+            className="w-full max-h-96 rounded-lg object-contain"
+          />
+        </div>
+      )}
+      
+      {/* Voice Recording Display - Only show if voice was actually recorded */}
+      {post.voice && post.voice.url && post.voice.duration && (
+        <div className="mb-2 sm:mb-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🎤</span>
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-purple-900 dark:text-purple-100 mb-2">
+                Voice Message
+              </h4>
+              <audio controls className="w-full">
+                <source src={post.voice.url} type="audio/wav" />
+                Your browser does not support the audio element.
+              </audio>
+              <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">
+                Duration: {post.voice.duration}s
+                {post.voice.transcription && (
+                  <span className="ml-2">• Transcription: {post.voice.transcription}</span>
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Show media if present */}
       {post.media && post.media.length > 0 && (
-        <div className="mb-3">
+        <div className="mb-2 sm:mb-3">
           {(() => {
             console.log('📸 PostDisplay media:', post.media);
             console.log('📸 Post ID:', post._id);
@@ -308,14 +454,14 @@ export default function PostDisplay({
                   <video 
                     src={getMediaUrl(media.url)} 
                     controls 
-                    className="w-full h-48 sm:h-96 object-cover rounded-lg shadow-lg"
+                    className="w-full h-32 sm:h-48 md:h-96 object-cover rounded-lg shadow-lg"
                     style={{ maxHeight: '70vh' }}
                   />
                 ) : (
                   <img
                     src={getMediaUrl(media.url)}
                     alt="media"
-                    className="w-full h-48 sm:h-96 object-cover rounded-lg shadow-lg"
+                    className="w-full h-32 sm:h-48 md:h-96 object-cover rounded-lg shadow-lg"
                     style={{ maxHeight: '70vh' }}
                   />
                 )}
@@ -327,31 +473,31 @@ export default function PostDisplay({
 
       {/* Engagement Metrics Section - Upper Section */}
       <div className="py-2 border-b border-gray-200">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
           {/* Reactions - Left Side */}
           <div className="flex items-center space-x-2">
-            <span className="text-pink-500 text-lg">❤️</span>
-            <span className="text-blue-500 text-lg">👍</span>
-            <span className="text-yellow-500 text-lg">😊</span>
-            <span className="text-gray-600 text-sm font-medium ml-1">
+            <span className="text-pink-500 text-base sm:text-lg">❤️</span>
+            <span className="text-blue-500 text-base sm:text-lg">👍</span>
+            <span className="text-yellow-500 text-base sm:text-lg">😊</span>
+            <span className="text-gray-600 text-xs sm:text-sm font-medium ml-1">
               {totalReactions}
             </span>
             {/* Removed showReactionDetails indicator */}
           </div>
           
           {/* Content Statistics - Right Side */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm">
             <div className="flex items-center space-x-1 text-gray-500">
-              <span className="text-lg">💬</span>
-              <span className="text-sm">{post.comments?.length || 0} Comments</span>
+              <span className="text-base sm:text-lg">💬</span>
+              <span className="text-xs sm:text-sm">{post.comments?.length || 0} Comments</span>
             </div>
             <div className="flex items-center space-x-1 text-gray-500">
-              <span className="text-lg">👁️</span>
-              <span className="text-sm">{post.views?.length || post.views || 0} Views</span>
+              <span className="text-base sm:text-lg">👁️</span>
+              <span className="text-xs sm:text-sm">{post.views?.length || post.views || 0} Views</span>
             </div>
             <div className="flex items-center space-x-1 text-gray-500">
-              <span className="text-lg">⭐</span>
-              <span className="text-sm">{post.reviews?.length || 0} Reviews</span>
+              <span className="text-base sm:text-lg">⭐</span>
+              <span className="text-xs sm:text-sm">{post.reviews?.length || 0} Reviews</span>
             </div>
           </div>
         </div>
@@ -403,24 +549,24 @@ export default function PostDisplay({
       </div>
 
       {/* Action Buttons Section - Lower Section */}
-      <div className="py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-6">
+      <div className="py-2 sm:py-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 md:gap-0">
+          <div className="flex items-center justify-center sm:justify-start space-x-3 sm:space-x-3 md:space-x-6">
             {/* React Button */}
           <div className="relative">
             <button 
               onMouseEnter={handleReactionButtonMouseEnter}
               onMouseLeave={handleReactionButtonMouseLeave}
               onClick={() => onLike && onLike(post._id)}
-                className={`flex items-center space-x-2 transition-colors touch-manipulation ${
+                className={`flex items-center space-x-1 sm:space-x-2 transition-colors touch-manipulation text-xs sm:text-sm ${
                   getCurrentReaction() ? 'text-red-500' : 'text-gray-600 hover:text-red-500'
               }`}
               style={{ touchAction: 'manipulation' }}
             >
-                <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
-                  <span className="text-sm">😊</span>
+                <div className="w-6 h-6 sm:w-5 sm:h-5 md:w-6 md:h-6 rounded-full bg-gray-200 flex items-center justify-center">
+                  <span className="text-sm sm:text-sm md:text-base">😊</span>
                 </div>
-                <span className="text-sm font-medium">React</span>
+                <span className="font-medium">React</span>
             </button>
             
             {/* Reaction Popup */}
@@ -441,36 +587,36 @@ export default function PostDisplay({
             {/* Comment Button */}
           <button 
             onClick={() => setShowCommentInput(!showCommentInput)}
-              className="flex items-center space-x-2 text-gray-600 hover:text-blue-500 transition-colors touch-manipulation"
+              className="flex items-center space-x-1 sm:space-x-2 text-gray-600 hover:text-blue-500 transition-colors touch-manipulation text-xs sm:text-sm"
             style={{ touchAction: 'manipulation' }}
           >
-              <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
-                <span className="text-lg">💬</span>
+              <div className="w-6 h-6 sm:w-5 sm:h-5 md:w-6 md:h-6 rounded-full bg-gray-200 flex items-center justify-center">
+                <span className="text-base sm:text-lg">💬</span>
               </div>
-              <span className="text-sm font-medium">Comment</span>
+              <span className="font-medium">Comment</span>
           </button>
           
             {/* Share Button */}
           <button 
             onClick={() => setShowSharePopup(true)}
-              className="flex items-center space-x-2 text-gray-600 hover:text-green-500 transition-colors touch-manipulation"
+              className="flex items-center space-x-1 sm:space-x-2 text-gray-600 hover:text-green-500 transition-colors touch-manipulation text-xs sm:text-sm"
               style={{ touchAction: 'manipulation' }}
             >
-              <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
-                <span className="text-lg">📤</span>
+              <div className="w-6 h-6 sm:w-5 sm:h-5 md:w-6 md:h-6 rounded-full bg-gray-200 flex items-center justify-center">
+                <span className="text-base sm:text-lg">📤</span>
               </div>
-              <span className="text-sm font-medium">Share</span>
+              <span className="font-medium">Share</span>
             </button>
             
             {/* Review Button */}
             <button 
-              className="flex items-center space-x-2 text-gray-600 hover:text-yellow-500 transition-colors touch-manipulation"
+              className="flex items-center space-x-1 sm:space-x-2 text-gray-600 hover:text-yellow-500 transition-colors touch-manipulation text-xs sm:text-sm"
             style={{ touchAction: 'manipulation' }}
           >
-              <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center">
-                <span className="text-lg">⭐</span>
+              <div className="w-6 h-6 sm:w-5 sm:h-5 md:w-6 md:h-6 rounded-full bg-gray-200 flex items-center justify-center">
+                <span className="text-base sm:text-lg">⭐</span>
               </div>
-              <span className="text-sm font-medium">Review</span>
+              <span className="font-medium">Review</span>
           </button>
         </div>
         
