@@ -119,7 +119,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   // Search function
   const handleSearch = async (query: string) => {
-    if (!query.trim() || query.length < 3) {
+    if (!query.trim() || query.length < 2) {
       setSearchResults([]);
       setShowSearchResults(false);
       setIsSearching(false);
@@ -133,7 +133,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/search?q=${encodeURIComponent(query)}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/search/quick?q=${encodeURIComponent(query)}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -141,12 +141,14 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
       if (response.ok) {
         const data = await response.json();
+        console.log('🔍 Search results:', data);
         setSearchResults(data.results || []);
       } else {
+        console.error('❌ Search response not ok:', response.status);
         setSearchResults([]);
       }
     } catch (error) {
-      console.error('Search error:', error);
+      console.error('❌ Search error:', error);
       setSearchResults([]);
     } finally {
       setIsSearching(false);
@@ -156,9 +158,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   // Debounced search effect
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (searchQuery.trim() && searchQuery.length >= 3) {
+      if (searchQuery.trim() && searchQuery.length >= 2) {
         handleSearch(searchQuery);
-      } else if (searchQuery.trim().length < 3) {
+      } else if (searchQuery.trim().length < 2) {
         setSearchResults([]);
         setShowSearchResults(false);
       }
@@ -949,11 +951,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
                       onClick={() => {
                         if (result.type === 'user') {
-                          router.push(`/dashboard/profile/${result._id || result.id}`);
+                          router.push(`/dashboard/profile/${result.id}`);
                         } else if (result.type === 'post') {
-                          router.push(`/dashboard/post/${result._id || result.id}`);
+                          router.push(`/dashboard/post/${result.id}`);
+                        } else if (result.type === 'group') {
+                          router.push(`/dashboard/groups/${result.id}`);
                         } else if (result.type === 'album') {
-                          router.push(`/dashboard/albums/${result._id || result.id}`);
+                          router.push(`/dashboard/albums/${result.id}`);
                         }
                         setShowSearchResults(false);
                         setSearchQuery('');
@@ -962,25 +966,32 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       <div className="flex items-center space-x-3">
                         <div className="flex-shrink-0">
                           {result.type === 'user' ? (
-                            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-                              <span className="text-white font-medium text-sm">
-                                {result.username?.charAt(0)?.toUpperCase() || result.name?.charAt(0)?.toUpperCase() || 'U'}
-                              </span>
-                            </div>
+                            <img 
+                              src={result.avatar || '/default-avatar.svg'} 
+                              alt={result.title}
+                              className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                              onError={(e) => {
+                                e.currentTarget.src = '/default-avatar.svg';
+                              }}
+                            />
                           ) : (
-                            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                              result.type === 'post' ? 'bg-blue-500' : 
+                              result.type === 'group' ? 'bg-green-500' : 
+                              'bg-purple-500'
+                            }`}>
                               <span className="text-white font-medium text-sm">
-                                {result.type === 'post' ? 'P' : 'A'}
+                                {result.type === 'post' ? 'P' : result.type === 'group' ? 'G' : 'A'}
                               </span>
                             </div>
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                            {result.type === 'user' ? (result.username || result.name) : (result.title || result.content?.substring(0, 50))}
+                            {result.title}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                            {result.type === 'user' ? 'User' : result.type === 'post' ? 'Post' : 'Album'}
+                            {result.subtitle}
                           </p>
                         </div>
                       </div>
@@ -991,7 +1002,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             )}
             
             {/* No Results Message */}
-            {showSearchResults && searchQuery.trim().length >= 3 && searchResults.length === 0 && !isSearching && (
+            {showSearchResults && searchQuery.trim().length >= 2 && searchResults.length === 0 && !isSearching && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50">
                 <div className="p-4 text-center">
                   <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -1052,11 +1063,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                             className="p-3 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
                             onClick={() => {
                               if (result.type === 'user') {
-                                router.push(`/dashboard/profile/${result._id || result.id}`);
+                                router.push(`/dashboard/profile/${result.id}`);
                               } else if (result.type === 'post') {
-                                router.push(`/dashboard/post/${result._id || result.id}`);
+                                router.push(`/dashboard/post/${result.id}`);
+                              } else if (result.type === 'group') {
+                                router.push(`/dashboard/groups/${result.id}`);
                               } else if (result.type === 'album') {
-                                router.push(`/dashboard/albums/${result._id || result.id}`);
+                                router.push(`/dashboard/albums/${result.id}`);
                               }
                               setShowSearchResults(false);
                               setSearchQuery('');
@@ -1065,25 +1078,32 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                             <div className="flex items-center space-x-3">
                               <div className="flex-shrink-0">
                                 {result.type === 'user' ? (
-                                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
-                                    <span className="text-white font-medium text-sm">
-                                      {result.username?.charAt(0)?.toUpperCase() || result.name?.charAt(0)?.toUpperCase() || 'U'}
-                                    </span>
-                                  </div>
+                                  <img 
+                                    src={result.avatar || '/default-avatar.svg'} 
+                                    alt={result.title}
+                                    className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                                    onError={(e) => {
+                                      e.currentTarget.src = '/default-avatar.svg';
+                                    }}
+                                  />
                                 ) : (
-                                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                    result.type === 'post' ? 'bg-blue-500' : 
+                                    result.type === 'group' ? 'bg-green-500' : 
+                                    'bg-purple-500'
+                                  }`}>
                                     <span className="text-white font-medium text-sm">
-                                      {result.type === 'post' ? 'P' : 'A'}
+                                      {result.type === 'post' ? 'P' : result.type === 'group' ? 'G' : 'A'}
                                     </span>
                                   </div>
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                  {result.type === 'user' ? (result.username || result.name) : (result.title || result.content?.substring(0, 50))}
+                                  {result.title}
                                 </p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                  {result.type === 'user' ? 'User' : result.type === 'post' ? 'Post' : 'Album'}
+                                  {result.subtitle}
                                 </p>
                               </div>
                             </div>

@@ -54,6 +54,11 @@ export interface Reel {
   };
   likes: string[];
   views: string[];
+  reactions: Array<{
+    user: string;
+    type: 'like' | 'love' | 'haha' | 'wow' | 'sad' | 'angry';
+    createdAt: string;
+  }>;
   comments: Array<{
     _id: string;
     user: {

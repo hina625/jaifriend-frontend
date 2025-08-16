@@ -524,6 +524,20 @@ const FeedPost: React.FC<FeedPostProps> = ({
     return null;
   };
 
+  // Get emoji for specific reaction type
+  const getReactionEmoji = (reactionType: ReactionType): string => {
+    const reactionEmojis: { [key: string]: string } = {
+      'like': '👍',
+      'love': '❤️',
+      'haha': '😂',
+      'wow': '😮',
+      'sad': '😢',
+      'angry': '😠'
+    };
+    
+    return reactionEmojis[reactionType] || '👍';
+  };
+
   const getMostCommonReactionEmoji = (): string => {
     if (!post.reactions || post.reactions.length === 0) return '👍';
     
@@ -536,16 +550,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
       reactionCounts[a] > reactionCounts[b] ? a : b
     );
     
-    const reactionEmojis: { [key: string]: string } = {
-      'like': '👍',
-      'love': '❤️',
-      'haha': '😂',
-      'wow': '😮',
-      'sad': '😢',
-      'angry': '😠'
-    };
-    
-    return reactionEmojis[mostCommon] || '👍';
+    return getReactionEmoji(mostCommon as ReactionType);
   };
 
   // Get reaction count
@@ -1461,28 +1466,50 @@ const FeedPost: React.FC<FeedPostProps> = ({
             {/* Reaction Button */}
             <div className="relative">
             <button
-              onClick={() => setShowReactionPopup(!showReactionPopup)}
+              onClick={() => {
+                // Single click = basic like/unlike
+                if (onLike) {
+                  onLike(post._id);
+                }
+              }}
+              onMouseEnter={() => setShowReactionPopup(true)}
+              onMouseLeave={() => {
+                // Delay hiding to allow moving to popup
+                setTimeout(() => {
+                  if (!reactionButtonRef.current?.matches(':hover')) {
+                    setShowReactionPopup(false);
+                  }
+                }, 100);
+              }}
                 disabled={isReacting}
-                className="flex flex-col items-center space-y-1 sm:space-y-2 md:space-y-3 text-gray-600 hover:text-yellow-600 transition-colors touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed"
+                className={`flex flex-col items-center space-y-1 sm:space-y-2 md:space-y-3 transition-colors touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed ${
+                  getCurrentReaction() === 'like' || isLiked 
+                    ? 'text-red-500 hover:text-red-600' 
+                    : 'text-gray-600 hover:text-red-500'
+                }`}
               style={{ touchAction: 'manipulation' }}
                 ref={reactionButtonRef}
               >
-                <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-colors ${
+                  getCurrentReaction() === 'like' || isLiked 
+                    ? 'bg-red-100 dark:bg-red-900/20' 
+                    : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}>
                   {isReacting ? (
-                    <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 border-b-2 border-yellow-500"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 border-b-2 border-red-500"></div>
                   ) : (
-                    <span className="text-lg sm:text-xl md:text-2xl">{getMostCommonReactionEmoji()}</span>
+                    <span className="text-lg sm:text-xl md:text-2xl">{getCurrentReaction() ? getReactionEmoji(getCurrentReaction()!) : getMostCommonReactionEmoji()}</span>
                   )}
               </div>
                 <span className="text-xs sm:text-sm md:text-base font-medium">
-                  {isReacting ? 'Processing...' : 'React'}
+                  {isReacting ? 'Processing...' : (getCurrentReaction() === 'like' || isLiked ? 'Liked' : 'React')}
                 </span>
                 {/* Show reaction count if any reactions exist */}
-                {post.reactions && post.reactions.length > 0 && (
+                {(post.reactions && post.reactions.length > 0) || (post.likes && post.likes.length > 0) ? (
                   <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {post.reactions.length}
+                    {(post.reactions?.length || 0) + (post.likes?.length || 0)}
                   </span>
-                )}
+                ) : null}
             </button>
               
               {/* Reaction Popup */}

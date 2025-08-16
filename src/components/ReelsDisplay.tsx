@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { Reel, getReels, toggleLike, toggleSave, addComment, shareReel, formatDuration, formatViewCount, formatLikeCount, hasUserLiked, hasUserSaved } from '@/utils/reelsApi';
+import ReactionPopup, { ReactionType } from './ReactionPopup';
 import ReelsCreationModal from './ReelsCreationModal';
 
 interface ReelsDisplayProps {
@@ -18,6 +19,13 @@ export default function ReelsDisplay({
 }: ReelsDisplayProps) {
   const [reels, setReels] = useState<Reel[]>([]);
   const [currentReelIndex, setCurrentReelIndex] = useState(0);
+  
+  // Function to safely update current reel index
+  const setCurrentReelIndexSafely = (index: number) => {
+    if (index !== currentReelIndex && index >= 0 && index < reels.length) {
+      setCurrentReelIndex(index);
+    }
+  };
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [hasNextPage, setHasNextPage] = useState(false);
@@ -25,13 +33,98 @@ export default function ReelsDisplay({
   const [commentText, setCommentText] = useState('');
   const [showComments, setShowComments] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showReactionPopup, setShowReactionPopup] = useState<string | null>(null);
+  const [reactionButtonHovered, setReactionButtonHovered] = useState<string | null>(null);
+  const [showReactionsTemporarily, setShowReactionsTemporarily] = useState<string | null>(null);
+  const [isReacting, setIsReacting] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
 
+
+  const currentReelRef = useRef(0);
+
   useEffect(() => {
     loadReels();
   }, [initialCategory, userId, hashtag, trending]);
+
+  // Auto-play first video when reels are loaded
+  useEffect(() => {
+    if (reels.length > 0 && currentReelIndex === 0) {
+      const firstVideo = videoRefs.current[reels[0]._id || 'reel-0'];
+      if (firstVideo) {
+        // Small delay to ensure video is ready
+        setTimeout(() => {
+          firstVideo.play().then(() => {
+            console.log('🎬 Auto-playing first reel:', reels[0].title || reels[0]._id);
+          }).catch((error) => {
+            console.error('❌ Error auto-playing first reel:', error);
+            // Try muted play as fallback
+            firstVideo.muted = true;
+            firstVideo.play().catch(() => {});
+          });
+        }, 500);
+      }
+    }
+  }, [reels]); // Remove currentReelIndex dependency
+
+  // Auto-play current video when currentReelIndex changes
+  useEffect(() => {
+    if (reels.length > 0 && currentReelIndex >= 0 && currentReelIndex < reels.length) {
+      console.log(`🎯 Switching to reel ${currentReelIndex}, total reels: ${reels.length}`);
+      
+      // Update the ref to match state
+      currentReelRef.current = currentReelIndex;
+      
+      // Use the simplified audio function with a small delay to prevent conflicts
+      setTimeout(() => {
+        playReelWithAudio(currentReelIndex);
+      }, 100);
+    }
+  }, [currentReelIndex]); // Remove reels dependency to prevent unnecessary re-renders
+
+  // Intersection Observer to detect when reels come into view
+  useEffect(() => {
+    if (!containerRef.current || reels.length === 0) return;
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const reelIndex = parseInt(entry.target.getAttribute('data-reel-index') || '0');
+            console.log(`👁️ Reel ${reelIndex} is now visible`);
+            
+            // Only update if it's different from current
+            if (reelIndex !== currentReelRef.current) {
+              console.log(`🔄 Intersection Observer: switching to reel ${reelIndex}`);
+              currentReelRef.current = reelIndex;
+              setCurrentReelIndexSafely(reelIndex);
+              
+              // Use our simplified audio function with delay to prevent conflicts
+              setTimeout(() => {
+                playReelWithAudio(reelIndex);
+              }, 200);
+            }
+          }
+        });
+      },
+      {
+        root: containerRef.current,
+        rootMargin: '0px',
+        threshold: 0.8 // Increase threshold to 80% to prevent rapid switching
+      }
+    );
+    
+    // Observe all reel containers
+    const reelContainers = containerRef.current.querySelectorAll('[data-reel-index]');
+    reelContainers.forEach((container) => {
+      observer.observe(container);
+    });
+    
+    return () => {
+      observer.disconnect();
+    };
+  }, [reels]); // Remove currentReelIndex dependency to prevent loops
 
   const loadReels = async (page = 1) => {
     try {
@@ -81,6 +174,36 @@ export default function ReelsDisplay({
       setCurrentPage(page);
       
       console.log('✅ Reels loaded successfully, total:', reelsArray.length);
+      
+        // Debug: Log video URLs for troubleshooting
+  reelsArray.forEach((reel, index) => {
+    console.log(`🎬 Reel ${index}:`, {
+      id: reel._id,
+      title: reel.title,
+      videoUrl: reel.videoUrl,
+      validatedUrl: getValidVideoUrl(reel.videoUrl || ''),
+      hasVideo: !!reel.videoUrl,
+      duration: reel.duration
+    });
+  });
+  
+  // Debug: Log current video states
+  setTimeout(() => {
+    console.log('🔍 Current video states:');
+    reelsArray.forEach((reel, index) => {
+      const video = videoRefs.current[reel._id || `reel-${index}`];
+      if (video) {
+        console.log(`🎬 Reel ${index}:`, {
+          paused: video.paused,
+          muted: video.muted,
+          volume: video.volume,
+          currentTime: video.currentTime,
+          readyState: video.readyState,
+          networkState: video.networkState
+        });
+      }
+    });
+  }, 1000);
     } catch (err: any) {
       console.error('❌ Error loading reels:', err);
       setError(err.message || 'Failed to load reels');
@@ -101,20 +224,16 @@ export default function ReelsDisplay({
     const newIndex = Math.round(scrollTop / reelHeight);
     
     if (newIndex !== currentReelIndex && newIndex >= 0 && newIndex < reels.length) {
-      setCurrentReelIndex(newIndex);
+      console.log(`🔄 Scrolling from reel ${currentReelIndex} to ${newIndex}`);
       
-      // Pause all videos except current one
-      reels.forEach((reel, index) => {
-        const video = videoRefs.current[reel._id];
-        if (video) {
-          if (index === newIndex) {
-            video.play().catch(() => {}); // Auto-play current video
-          } else {
-            video.pause();
-            video.currentTime = 0; // Reset to beginning
-          }
-        }
-      });
+      // Store the old index before updating state
+      const oldIndex = currentReelIndex;
+      setCurrentReelIndexSafely(newIndex);
+      
+      // Use the simplified audio function with delay to prevent conflicts
+      setTimeout(() => {
+        playReelWithAudio(newIndex);
+      }, 150);
     }
     
     // Load more reels when near the end
@@ -198,12 +317,206 @@ export default function ReelsDisplay({
     }
   };
 
+  // Handle reactions (like, love, haha, wow, sad, angry)
+  const handleReaction = async (reelId: string, reactionType: ReactionType) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please login to add a reaction.');
+        return;
+      }
+
+      setIsReacting(true);
+
+      // Call backend API directly
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/reels/${reelId}/reaction`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          reactionType: reactionType
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Reaction added successfully:', data);
+        
+        // Show success feedback
+        const reactionEmojis: { [key: string]: string } = {
+          'like': '👍',
+          'love': '❤️',
+          'haha': '😂',
+          'wow': '😮',
+          'sad': '😢',
+          'angry': '😠'
+        };
+        
+        const emoji = reactionEmojis[reactionType] || '😊';
+        alert(`${emoji} Reaction added successfully!`);
+        
+        // Update local state to reflect the new reaction
+        // For now, we'll refresh the page to get updated data
+        // In a real app, you'd update the local state
+        window.location.reload();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to add reaction:', errorData);
+        alert(`Failed to add reaction: ${errorData.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+      alert('Error adding reaction. Please try again.');
+    } finally {
+      setIsReacting(false);
+      // Automatically close the popup after reaction selection
+      setShowReactionPopup(null);
+    }
+  };
+
+  // Helper functions for reactions
+  const getCurrentReaction = (reel: Reel) => {
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const userReaction = reel.reactions?.find(r => 
+      r.user === currentUser._id || r.user === currentUser.id
+    );
+    return userReaction?.type || null;
+  };
+
+  const getMostCommonReactionEmoji = (reel: Reel) => {
+    if (!reel.reactions || reel.reactions.length === 0) return '👍';
+    
+    const reactionCounts: { [key: string]: number } = {};
+    reel.reactions.forEach(reaction => {
+      reactionCounts[reaction.type] = (reactionCounts[reaction.type] || 0) + 1;
+    });
+    
+    const mostCommon = Object.entries(reactionCounts).reduce((a, b) => 
+      reactionCounts[a[0]] > reactionCounts[b[0]] ? a : b
+    )[0];
+    
+    const reactionEmojis: { [key: string]: string } = {
+      'like': '👍',
+      'love': '❤️',
+      'haha': '😂',
+      'wow': '😮',
+      'sad': '😢',
+      'angry': '😠'
+    };
+    
+    return reactionEmojis[mostCommon] || '👍';
+  };
+
+  const getReactionCount = (reel: Reel) => {
+    return reel.reactions?.length || 0;
+  };
+
+  // Reaction popup handlers
+  const handleReactionButtonMouseEnter = (reelId: string) => {
+    setReactionButtonHovered(reelId);
+    setShowReactionPopup(reelId);
+  };
+
+  const handleReactionButtonMouseLeave = (reelId: string) => {
+    setReactionButtonHovered(null);
+    // Delay hiding to allow moving to popup
+    setTimeout(() => {
+      if (!showReactionPopup) {
+        setShowReactionPopup(null);
+      }
+    }, 100);
+  };
+
+  const handleReactionPopupMouseEnter = () => {
+    setShowReactionPopup(showReactionPopup);
+  };
+
+  const handleReactionPopupMouseLeave = () => {
+    setShowReactionPopup(null);
+    setReactionButtonHovered(null);
+  };
+
+  // Validate video URL and add fallback extensions if needed
+  const getValidVideoUrl = (url: string) => {
+    if (!url) return '';
+    
+    // If URL already has a video extension, return as is
+    if (url.match(/\.(mp4|webm|ogg|mov|avi|mkv)$/i)) {
+      return url;
+    }
+    
+    // If no extension, try to add .mp4 as fallback
+    if (url.includes('uploads/') || url.includes('media/')) {
+      return `${url}.mp4`;
+    }
+    
+    return url;
+  };
+
+
+
+  // Simplified audio management - only one function to rule them all
+  const playReelWithAudio = (reelIndex: number) => {
+    if (reelIndex < 0 || reelIndex >= reels.length) return;
+    
+    console.log(`🎬 Playing reel ${reelIndex} with audio`);
+    
+    // Check if this is already the current playing reel
+    const currentVideo = videoRefs.current[reels[currentReelIndex]?._id || `reel-${currentReelIndex}`];
+    if (currentVideo && !currentVideo.muted && !currentVideo.paused) {
+      console.log(`⏭️ Reel ${reelIndex} is already playing with audio, skipping`);
+      return;
+    }
+    
+    // Immediately mute all videos
+    reels.forEach((reel, index) => {
+      const video = videoRefs.current[reel._id || `reel-${index}`];
+      if (video) {
+        video.muted = true;
+        video.volume = 0;
+        if (index !== reelIndex) {
+          video.pause();
+          video.currentTime = 0;
+        }
+      }
+    });
+    
+    // Play the target reel with audio
+    const targetVideo = videoRefs.current[reels[reelIndex]._id || `reel-${reelIndex}`];
+    if (targetVideo) {
+      targetVideo.volume = 0.5;
+      targetVideo.muted = false;
+      targetVideo.currentTime = 0;
+      targetVideo.play().then(() => {
+        console.log(`✅ Successfully playing reel ${reelIndex} with audio`);
+      }).catch((error) => {
+        console.error(`❌ Error playing reel ${reelIndex}:`, error);
+        // Fallback to muted play
+        targetVideo.muted = true;
+        targetVideo.play().catch(() => {});
+      });
+    }
+  };
+
   const handleVideoClick = (reelId: string) => {
     const video = videoRefs.current[reelId];
     if (video) {
       if (video.paused) {
-        video.play().catch(() => {});
+        console.log(`🎬 Manually playing video for reel:`, reelId);
+        video.volume = 0.5;
+        video.muted = false;
+        video.play().then(() => {
+          console.log(`✅ Successfully played video for reel:`, reelId);
+        }).catch((error) => {
+          console.error(`❌ Error playing video for reel:`, reelId, error);
+          // Fallback to muted play
+          video.muted = true;
+          video.play().catch(() => {});
+        });
       } else {
+        console.log(`⏸️ Pausing video for reel:`, reelId);
         video.pause();
       }
     }
@@ -269,6 +582,24 @@ export default function ReelsDisplay({
           </p>
         </div>
         
+        {/* Test Button - Only show in development */}
+        {process.env.NODE_ENV === 'development' && (
+          <button
+            onClick={() => {
+              const nextIndex = (currentReelIndex + 1) % reels.length;
+              console.log(`🧪 Testing audio to reel ${nextIndex}`);
+              setCurrentReelIndexSafely(nextIndex);
+            }}
+            className="px-3 py-1 bg-purple-500 text-white text-xs rounded hover:bg-purple-600"
+          >
+            Test Next Reel
+          </button>
+        )}
+        
+
+        
+
+        
 
       </div>
 
@@ -297,6 +628,7 @@ export default function ReelsDisplay({
           <div 
             key={reel._id || `reel-${index}`}
             data-reel-id={reel._id || `reel-${index}`}
+            data-reel-index={index}
             className="h-[580px] sm:h-screen snap-start relative bg-black overflow-hidden"
             onDoubleClick={() => handleDoubleTap(reel._id || `reel-${index}`)}
           >
@@ -305,26 +637,151 @@ export default function ReelsDisplay({
               className="relative w-full h-full flex items-center justify-center"
               onDoubleClick={() => handleDoubleTap(reel._id || `reel-${index}`)}
             >
+                          {/* Loading Indicator - only show when there's a video */}
+            {reel.videoUrl && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/20 z-10">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-white border-t-transparent"></div>
+              </div>
+            )}
+            
+            {/* Video Placeholder - shown when no video URL */}
+            {!reel.videoUrl && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-800 text-white text-center p-4">
+                <div>
+                  <div className="text-4xl mb-2">🎬</div>
+                  <div className="text-sm">No video available</div>
+                  <div className="text-xs text-gray-300 mt-1">This reel has no video content</div>
+                </div>
+              </div>
+            )}
+                          {reel.videoUrl && (
               <video
                 ref={(el) => {
-                  if (el) videoRefs.current[reel._id || `reel-${index}`] = el;
+                  if (el) {
+                    videoRefs.current[reel._id || `reel-${index}`] = el;
+                    console.log(`🎬 Video ref set for reel ${index}:`, reel._id || `reel-${index}`);
+                    
+                    // If this is the current reel, use the simplified audio function
+                    if (index === currentReelIndex) {
+                      setTimeout(() => {
+                        playReelWithAudio(index);
+                      }, 100);
+                    } else {
+                      // Mute non-current videos immediately
+                      el.muted = true;
+                      el.volume = 0;
+                    }
+                  }
                 }}
-                src={reel.videoUrl || ''}
+                src={getValidVideoUrl(reel.videoUrl)}
                 className="w-full h-full object-cover"
                 loop
-                muted
                 playsInline
+                preload="metadata"
+                onLoadStart={() => {
+                  console.log(`🎬 Video loading started for reel ${index}:`, reel.videoUrl);
+                }}
+                onLoadedMetadata={() => {
+                  console.log(`🎬 Video metadata loaded for reel ${index}:`, reel.title || reel._id);
+                  console.log(`📹 Video details:`, {
+                    duration: reel.duration,
+                    url: reel.videoUrl
+                  });
+                  
+                  // Auto-play if this is the current reel
+                  if (index === currentReelIndex) {
+                    playReelWithAudio(index);
+                  }
+                }}
+                onCanPlay={() => {
+                  console.log(`🎬 Video can play for reel ${index}:`, reel.title || reel._id);
+                  
+                  // Hide loading indicator
+                  const loadingIndicator = document.querySelector(`[data-reel-id="${reel._id || `reel-${index}`}"] .animate-spin`);
+                  if (loadingIndicator) {
+                    loadingIndicator.parentElement!.style.display = 'none';
+                  }
+                  
+                  // Auto-play if this is the current reel
+                  if (index === currentReelIndex) {
+                    playReelWithAudio(index);
+                  }
+                }}
+                onLoad={() => {
+                  console.log(`✅ Video loaded successfully for reel ${index}:`, reel.title || reel._id);
+                }}
                 onClick={() => handleVideoClick(reel._id || `reel-${index}`)}
+                onError={(e) => {
+                  const video = e.currentTarget;
+                  console.error(`❌ Video error for reel ${index}:`, {
+                    error: e,
+                    videoElement: video,
+                    videoUrl: reel.videoUrl,
+                    videoSrc: video?.src,
+                    videoCurrentSrc: video?.currentSrc,
+                    videoNetworkState: video?.networkState,
+                    videoReadyState: video?.readyState,
+                    videoError: video?.error,
+                    errorCode: video?.error?.code,
+                    errorMessage: video?.error?.message,
+                    reelId: reel._id,
+                    reelTitle: reel.title,
+                    timestamp: new Date().toISOString()
+                  });
+                  
+                  // Hide loading indicator
+                  const loadingIndicator = document.querySelector(`[data-reel-id="${reel._id || `reel-${index}`}"] .animate-spin`);
+                  if (loadingIndicator) {
+                    loadingIndicator.parentElement!.style.display = 'none';
+                  }
+                  
+                  // Show detailed error message
+                  const errorDiv = document.createElement('div');
+                  errorDiv.className = 'absolute inset-0 flex items-center justify-center bg-black/50 text-white text-center p-4 z-20';
+                  errorDiv.innerHTML = `
+                    <div>
+                      <div class="text-2xl mb-2">⚠️</div>
+                      <div class="text-sm mb-2">Video could not be loaded</div>
+                      <div class="text-xs text-gray-300 mb-3">${reel.videoUrl ? 'Check video URL or format' : 'No video URL provided'}</div>
+                      <div class="text-xs text-gray-400 mb-2">Click to retry</div>
+                      <div class="text-xs text-gray-500">URL: ${reel.videoUrl || 'None'}</div>
+                    </div>
+                  `;
+                  errorDiv.onclick = () => {
+                    const video = videoRefs.current[reel._id || `reel-${index}`];
+                    if (video) {
+                      console.log(`🔄 Retrying video for reel ${index}:`, reel.videoUrl);
+                      video.load();
+                      errorDiv.remove();
+                    }
+                  };
+                  e.currentTarget.parentElement?.appendChild(errorDiv);
+                }}
               />
+            )}
               
               {/* Play/Pause Overlay */}
               <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                 <div className="bg-black/50 rounded-full p-4">
-                  <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M8 5v10l8-5-8-5z" />
-                  </svg>
+                  {(() => {
+                    const video = videoRefs.current[reel._id || `reel-${index}`];
+                    const isPlaying = video && !video.paused;
+                    return isPlaying ? (
+                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M6 4h4v12H6V4zm8 0h4v12h-4V4z" />
+                      </svg>
+                    ) : (
+                      <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M8 5v10l8-5-8-5z" />
+                      </svg>
+                    );
+                  })()}
                 </div>
               </div>
+
+              
+              
+
               
               {/* Music Indicator */}
               {reel.music && (
@@ -338,31 +795,91 @@ export default function ReelsDisplay({
                 </div>
               )}
               
-              {/* Trending Badge */}
-              {reel.isTrending && (
-                <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-full flex items-center gap-1 sm:gap-2">
-                  <span>🔥</span>
-                  <span>Trending</span>
-                </div>
-              )}
+                          {/* Trending Badge */}
+            {reel.isTrending && (
+              <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-full flex items-center gap-1 sm:gap-2">
+                <span>🔥</span>
+                <span>Trending</span>
+              </div>
+            )}
+
+            {/* Currently Playing Indicator */}
+            {index === currentReelIndex && (
+              <div className="absolute top-2 sm:top-4 left-2 sm:left-4 bg-green-500 text-white text-xs px-2 sm:px-3 py-1 sm:py-1.5 rounded-full flex items-center gap-1 sm:gap-2">
+                <span>▶️</span>
+                <span>Playing</span>
+              </div>
+            )}
             </div>
 
             {/* Right Side Actions */}
             <div className="absolute right-2 sm:right-4 bottom-16 sm:bottom-20 flex flex-col items-center gap-4 sm:gap-6">
-              {/* Like Button */}
+              {/* Volume Control Button */}
               <button
-                onClick={() => handleLike(reel._id || `reel-${index}`)}
+                onClick={() => {
+                  const video = videoRefs.current[reel._id || `reel-${index}`];
+                  if (video) {
+                    if (video.muted) {
+                      video.muted = false;
+                      video.volume = 0.5;
+                    } else {
+                      video.muted = true;
+                    }
+                  }
+                }}
                 className="flex flex-col items-center gap-1 text-white"
               >
-                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-colors ${
-                  hasUserLiked(reel, undefined) ? 'bg-red-500' : 'bg-black/30 hover:bg-black/50'
-                }`}>
-                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill={hasUserLiked(reel, undefined) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-black/30 hover:bg-black/50 rounded-full flex items-center justify-center transition-colors">
+                  {(() => {
+                    const video = videoRefs.current[reel._id || `reel-${index}`];
+                    const isMuted = video && video.muted;
+                    return isMuted ? (
+                      <svg className="w-5 h-5 sm:w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5 sm:w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                      </svg>
+                    );
+                  })()}
                 </div>
-                <span className="text-xs sm:text-sm font-medium">{formatLikeCount(reel.likes?.length || 0)}</span>
+                <span className="text-xs sm:text-sm font-medium">Sound</span>
               </button>
+
+              {/* Reaction Button with Popup */}
+              <div className="relative">
+                <button 
+                  onMouseEnter={() => handleReactionButtonMouseEnter(reel._id || `reel-${index}`)}
+                  onMouseLeave={() => handleReactionButtonMouseLeave(reel._id || `reel-${index}`)}
+                  onClick={() => handleLike(reel._id || `reel-${index}`)}
+                  className={`flex flex-col items-center gap-1 text-white ${
+                    getCurrentReaction(reel) ? 'text-red-500' : ''
+                  }`}
+                >
+                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-colors ${
+                    getCurrentReaction(reel) ? 'bg-red-500' : 'bg-black/30 hover:bg-black/50'
+                  }`}>
+                    <span className="text-lg sm:text-xl">{getMostCommonReactionEmoji(reel)}</span>
+                  </div>
+                  <span className="text-xs sm:text-sm font-medium">{getReactionCount(reel)}</span>
+                </button>
+                
+                {/* Reaction Popup */}
+                <div
+                  onMouseEnter={handleReactionPopupMouseEnter}
+                  onMouseLeave={handleReactionPopupMouseLeave}
+                >
+                  <ReactionPopup
+                    isOpen={showReactionPopup === (reel._id || `reel-${index}`)}
+                    onClose={() => setShowReactionPopup(null)}
+                    onReaction={(reactionType) => handleReaction(reel._id || `reel-${index}`, reactionType)}
+                    currentReaction={getCurrentReaction(reel)}
+                    position="top"
+                  />
+                </div>
+              </div>
 
               {/* Comment Button */}
               <button

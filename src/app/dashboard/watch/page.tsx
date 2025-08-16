@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Play, ThumbsUp, MessageCircle, Share2, MoreHorizontal, Plus, Settings, Users, User, FileText, Heart, Bookmark } from 'lucide-react';
 import axios from 'axios';
+import ReactionPopup, { ReactionType } from '@/components/ReactionPopup';
+import { getCurrentUserId } from '@/utils/auth';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
 
@@ -38,6 +40,11 @@ interface Video {
   category?: string;
   likes: string[];
   views: string[];
+  reactions?: Array<{
+    user: string;
+    type: 'like' | 'love' | 'haha' | 'wow' | 'sad' | 'angry';
+    createdAt: string;
+  }>;
   comments: Comment[];
   shares: string[];
   savedBy: string[];
@@ -83,6 +90,10 @@ const WatchPage: React.FC = () => {
   const [commentText, setCommentText] = useState<{ [key: string]: string }>({});
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [showReactionPopup, setShowReactionPopup] = useState<string | null>(null);
+  const [reactionButtonHovered, setReactionButtonHovered] = useState<string | null>(null);
+  const [showReactionsTemporarily, setShowReactionsTemporarily] = useState<string | null>(null);
+  const [isReacting, setIsReacting] = useState(false);
 
   // Get current user ID from localStorage
   useEffect(() => {
@@ -288,6 +299,36 @@ const WatchPage: React.FC = () => {
     }
   };
 
+  // Handle review video
+  const handleReview = async (videoId: string, rating: number, category: string = 'video') => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please login to review videos');
+        return;
+      }
+
+      let endpoint = `${API_URL}/api/videos/${videoId}/review`;
+      if (category === 'post') {
+        endpoint = `${API_URL}/api/posts/${videoId}/review`;
+      } else if (category === 'album') {
+        const albumId = videoId.split('_')[0];
+        endpoint = `${API_URL}/api/albums/${albumId}/review`;
+      }
+
+      const response = await axios.post(
+        endpoint,
+        { rating, text: `Rated ${rating} stars` },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      alert(`Review submitted successfully! You rated this ${rating} stars.`);
+    } catch (err) {
+      console.error('Error reviewing video:', err);
+      alert('Failed to submit review');
+    }
+  };
+
   // Handle save/unsave video
   const handleSave = async (videoId: string, category: string = 'video') => {
     try {
@@ -322,6 +363,153 @@ const WatchPage: React.FC = () => {
       console.error('Error saving video:', err);
       alert('Failed to save video');
     }
+  };
+
+  // Handle reactions (like, love, haha, wow, sad, angry)
+  const handleReaction = async (videoId: string, reactionType: ReactionType, category: string = 'video') => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please login to add a reaction.');
+        return;
+      }
+
+      setIsReacting(true);
+
+      let endpoint = `${API_URL}/api/videos/${videoId}/reaction`;
+      if (category === 'post') {
+        endpoint = `${API_URL}/api/posts/${videoId}/reaction`;
+      } else if (category === 'album') {
+        const albumId = videoId.split('_')[0];
+        endpoint = `${API_URL}/api/albums/${albumId}/reaction`;
+      }
+
+      // Call backend API directly
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          reactionType: reactionType
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Reaction added successfully:', data);
+        
+        // Show success feedback
+        const reactionEmojis: { [key: string]: string } = {
+          'like': '👍',
+          'love': '❤️',
+          'haha': '😂',
+          'wow': '😮',
+          'sad': '😢',
+          'angry': '😠'
+        };
+        
+        const emoji = reactionEmojis[reactionType] || '😊';
+        alert(`${emoji} Reaction added successfully!`);
+        
+        // Update local state to reflect the new reaction
+        // For now, we'll refresh the page to get updated data
+        // In a real app, you'd update the local state
+        window.location.reload();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to add reaction:', errorData);
+        alert(`Failed to add reaction: ${errorData.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+      alert('Error adding reaction. Please try again.');
+    } finally {
+      setIsReacting(false);
+      // Automatically close the popup after reaction selection
+      setShowReactionPopup(null);
+    }
+  };
+
+  // Helper functions for reactions - Exact same as FeedPost
+  const getCurrentReaction = (video: Video) => {
+    // Check if user has any reaction on this video
+    if (video.reactions && video.reactions.length > 0) {
+      // Find user's reaction
+      const userReaction = video.reactions.find((r: any) => 
+        r.user === getCurrentUserId() || r.userId === getCurrentUserId()
+      );
+      return userReaction ? userReaction.type : null;
+    }
+    return null;
+  };
+
+  const getMostCommonReactionEmoji = (video: Video) => {
+    if (!video.reactions || video.reactions.length === 0) return '👍';
+    
+    const reactionCounts: { [key: string]: number } = {};
+    video.reactions.forEach((reaction: any) => {
+      reactionCounts[reaction.type] = (reactionCounts[reaction.type] || 0) + 1;
+    });
+    
+    const mostCommon = Object.keys(reactionCounts).reduce((a, b) => 
+      reactionCounts[a] > reactionCounts[b] ? a : b
+    );
+    
+    const reactionEmojis: { [key: string]: string } = {
+      'like': '👍',
+      'love': '❤️',
+      'haha': '😂',
+      'wow': '😮',
+      'sad': '😢',
+      'angry': '😠'
+    };
+    
+    return reactionEmojis[mostCommon] || '👍';
+  };
+
+  // Get reaction count - Exact same as FeedPost
+  const getReactionCount = (video: Video): number => {
+    if (video.reactions && Array.isArray(video.reactions)) {
+      return video.reactions.length;
+    }
+    // Fallback to likes count for backward compatibility
+    return video.likes ? (Array.isArray(video.likes) ? video.likes.length : video.likes) : 0;
+  };
+
+  // Function to update reaction count locally (for future use) - Exact same as FeedPost
+  const updateReactionCount = (newCount: number) => {
+    // This function can be used to update the reaction count without refreshing
+    // For now, we'll keep the page refresh approach
+    console.log('Reaction count updated to:', newCount);
+  };
+
+
+
+  // Reaction popup handlers
+  const handleReactionButtonMouseEnter = (videoId: string) => {
+    setReactionButtonHovered(videoId);
+    setShowReactionPopup(videoId);
+  };
+
+  const handleReactionButtonMouseLeave = (videoId: string) => {
+    setReactionButtonHovered(null);
+    // Delay hiding to allow moving to popup
+    setTimeout(() => {
+      if (!showReactionPopup) {
+        setShowReactionPopup(null);
+      }
+    }, 100);
+  };
+
+  const handleReactionPopupMouseEnter = () => {
+    setShowReactionPopup(showReactionPopup);
+  };
+
+  const handleReactionPopupMouseLeave = () => {
+    setShowReactionPopup(null);
+    setReactionButtonHovered(null);
   };
 
   const VideoPost: React.FC<VideoPostProps> = ({ video, onLike, onComment, onShare, onSave, currentUserId, playingVideoId, setPlayingVideoId }) => {
@@ -425,6 +613,16 @@ const WatchPage: React.FC = () => {
                 controls
                 autoPlay
                 className="w-full h-full object-cover"
+                onClick={() => {
+                  const videoElement = document.querySelector(`video[src="${getMediaUrl(video.videoUrl)}"]`) as HTMLVideoElement;
+                  if (videoElement) {
+                    if (videoElement.paused) {
+                      videoElement.play();
+                    } else {
+                      videoElement.pause();
+                    }
+                  }
+                }}
               />
             )
           ) : (
@@ -451,7 +649,30 @@ const WatchPage: React.FC = () => {
           <div className="absolute inset-0 flex items-center justify-center">
                 <button
                   className="w-16 h-16 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center shadow-lg transition-colors"
-                  onClick={() => setPlayingVideoId(video._id)}
+                  onClick={async () => {
+                    setPlayingVideoId(video._id);
+                    
+                    // Track view when video is played
+                    try {
+                      const token = localStorage.getItem('token');
+                      if (token) {
+                        let endpoint = `${API_URL}/api/videos/${video._id}/view`;
+                        if (video.category === 'post') {
+                          endpoint = `${API_URL}/api/posts/${video._id}/view`;
+                        } else if (video.category === 'album') {
+                          const albumId = video._id.split('_')[0];
+                          endpoint = `${API_URL}/api/albums/${albumId}/view`;
+                        }
+                        
+                        await fetch(endpoint, {
+                          method: 'POST',
+                          headers: { Authorization: `Bearer ${token}` }
+                        });
+                      }
+                    } catch (error) {
+                      console.error('Error tracking view:', error);
+                    }
+                  }}
                 >
               <Play className="w-8 h-8 text-white ml-1" />
             </button>
@@ -475,57 +696,159 @@ const WatchPage: React.FC = () => {
           )}
         </div>
 
-        {/* Post Actions */}
+                {/* Post Actions - Same as Feed Posts */}
         <div className="px-4 pb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-6">
+          <div className="flex items-center justify-center space-x-8">
+            {/* React Button */}
+            <div className="relative flex flex-col items-center">
               <button 
-                className={`flex items-center transition-colors ${isLiked ? 'text-red-500' : 'text-gray-600 hover:text-red-500'}`}
+                onMouseEnter={() => handleReactionButtonMouseEnter(video._id)}
+                onMouseLeave={() => handleReactionButtonMouseLeave(video._id)}
                 onClick={() => onLike(video._id, video.category || 'video')}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+                  getCurrentReaction(video) ? 'bg-red-100 text-red-500' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
               >
-                {isLiked ? <Heart className="w-5 h-5 mr-2 fill-current" /> : <ThumbsUp className="w-5 h-5 mr-2" />}
-                <span className="text-sm font-medium">Like</span>
+                <span className="text-xl">{getMostCommonReactionEmoji(video)}</span>
               </button>
-              <button className="flex items-center text-gray-600 hover:text-blue-600 transition-colors">
-                <MessageCircle className="w-5 h-5 mr-2" />
-                <span className="text-sm font-medium">Comment</span>
-              </button>
+              <span className="text-xs text-gray-600 mt-1">React</span>
+              
+              {/* Reaction Popup */}
+              <div
+                onMouseEnter={handleReactionPopupMouseEnter}
+                onMouseLeave={handleReactionPopupMouseLeave}
+              >
+                <ReactionPopup
+                  isOpen={showReactionPopup === video._id}
+                  onClose={() => setShowReactionPopup(null)}
+                  onReaction={(reactionType) => handleReaction(video._id, reactionType, video.category || 'video')}
+                  currentReaction={getCurrentReaction(video)}
+                  position="top"
+                />
+              </div>
             </div>
-            <div className="flex items-center space-x-3">
-              {video.category !== 'post' && (
+            
+            {/* Comment Button */}
+            <div className="flex flex-col items-center">
+              <button 
+                className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors"
+                onClick={() => {
+                  const commentInput = document.querySelector(`input[placeholder="Add a comment..."]`) as HTMLInputElement;
+                  if (commentInput) {
+                    commentInput.focus();
+                  }
+                }}
+              >
+                <MessageCircle className="w-5 h-5" />
+              </button>
+              <span className="text-xs text-gray-600 mt-1">Comment</span>
+            </div>
+            
+            {/* Share Button */}
+            <div className="flex flex-col items-center">
                 <button 
-                  className={`transition-colors ${isShared ? 'text-green-500' : 'text-gray-600 hover:text-green-500'}`}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+                  isShared ? 'bg-green-100 text-green-500' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
                   onClick={() => onShare(video._id, video.category || 'video')}
                 >
                   <Share2 className="w-5 h-5" />
                 </button>
-              )}
+              <span className="text-xs text-gray-600 mt-1">Share</span>
+            </div>
+            
+            {/* Review Button */}
+            <div className="flex flex-col items-center">
               <button 
-                className={`transition-colors ${isSaved ? 'text-blue-500' : 'text-gray-600 hover:text-blue-500'}`}
+                className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-yellow-500 hover:bg-gray-200 transition-colors"
+                onClick={() => {
+                  const rating = prompt('Rate this video (1-5 stars):', '5');
+                  if (rating && !isNaN(Number(rating)) && Number(rating) >= 1 && Number(rating) <= 5) {
+                    handleReview(video._id, Number(rating), video.category || 'video');
+                  }
+                }}
+              >
+                <span className="text-xl">⭐</span>
+              </button>
+              <span className="text-xs text-gray-600 mt-1">Review</span>
+            </div>
+            
+            {/* Save Button */}
+            <div className="flex flex-col items-center">
+              <button 
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+                  isSaved ? 'bg-blue-100 text-blue-500' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
                 onClick={() => onSave(video._id, video.category || 'video')}
               >
                 <Bookmark className="w-5 h-5" />
               </button>
+              <span className="text-xs text-gray-600 mt-1">Save</span>
             </div>
           </div>
+
+          {/* Temporary Reaction Display - Shows briefly after adding reaction */}
+          {showReactionsTemporarily === video._id && (
+            <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-600">
+              <div className="flex flex-wrap gap-2">
+                {(() => {
+                  if (video.reactions && Array.isArray(video.reactions) && video.reactions.length > 0) {
+                    const reactionCounts: { [key: string]: number } = {};
+                    video.reactions.forEach((reaction: any) => {
+                      reactionCounts[reaction.type] = (reactionCounts[reaction.type] || 0) + 1;
+                    });
+                    
+                    const reactionEmojis: { [key: string]: string } = {
+                      'like': '👍',
+                      'love': '❤️',
+                      'haha': '😂',
+                      'wow': '😮',
+                      'sad': '😢',
+                      'angry': '😠'
+                    };
+                    
+                    return Object.entries(reactionCounts).map(([type, count]) => (
+                      <div key={type} className="flex items-center space-x-1 bg-blue-50 dark:bg-blue-900/20 rounded-full px-3 py-1 border border-blue-200 dark:border-blue-700">
+                        <span className="text-lg">{reactionEmojis[type] || '😊'}</span>
+                        <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">{count}</span>
+                      </div>
+                    ));
+                  } else if (video.likes && Array.isArray(video.likes) && video.likes.length > 0) {
+                    return (
+                      <div className="flex items-center space-x-1 bg-blue-50 dark:bg-blue-900/20 rounded-full px-3 py-1 border border-blue-200 dark:border-blue-700">
+                        <span className="text-lg">👍</span>
+                        <span className="text-sm text-blue-600 dark:text-blue-400 font-medium">{video.likes.length}</span>
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <div className="text-blue-500 dark:text-blue-400 text-sm font-medium">
+                        Reaction added! 🎉
+                      </div>
+                    );
+                  }
+                })()}
+              </div>
+            </div>
+          )}
 
           {/* Engagement Stats */}
           <div className="flex items-center justify-between mt-3 text-sm text-gray-500">
             <div className="flex items-center space-x-4">
               <div className="flex items-center">
-                {video.likes.length > 0 && (
+                {getReactionCount(video) > 0 && (
                   <>
                     <div className="flex -space-x-1 mr-2">
                       <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                        <ThumbsUp className="w-3 h-3 text-white" />
+                        <span className="text-white text-xs">{getMostCommonReactionEmoji(video)}</span>
                       </div>
-                      {video.likes.length > 1 && (
+                      {getReactionCount(video) > 1 && (
                         <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
                           <span className="text-white text-xs">❤</span>
                         </div>
                       )}
                     </div>
-                    <span>{video.likes.length}</span>
+                    <span>{getReactionCount(video)}</span>
                   </>
                 )}
               </div>
