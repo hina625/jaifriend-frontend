@@ -1,0 +1,1737 @@
+"use client";
+import React, { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { Edit, Trash2, MoreVertical, Search, Filter, Camera, Video, Music, FileText, Plus, Heart, MessageCircle, Share2, Bookmark, Settings, Camera as CameraIcon, MapPin, Globe, Calendar, Users, Eye, ThumbsUp, X, ShoppingBag, UserPlus, UserCheck, Phone, BarChart3, Clock, Link as LinkIcon, Gift } from 'lucide-react';
+import PostDisplay from '@/components/PostDisplay';
+import Popup, { PopupState } from '@/components/Popup';
+import FeedPost from '@/components/FeedPost';
+
+interface Post {
+  _id: string;
+  content: string;
+  title?: string;
+  media?: any[];
+  createdAt: string;
+  user: string;
+  likes?: string[];
+  comments?: any[];
+  shares?: string[];
+  savedBy?: string[];
+  reactions?: any[];
+}
+
+interface Album {
+  _id: string;
+  name: string;
+  media: any[];
+  createdAt: string;
+  user: string;
+  likes?: string[];
+  comments?: any[];
+  shares?: string[];
+}
+
+type ContentItem = Post | (Album & { type: 'album' });
+
+interface User {
+  _id: string;
+  name: string;
+  username: string;
+  email: string;
+  avatar?: string;
+  cover?: string;
+  bio?: string;
+  isOnline?: boolean;
+  gender?: string;
+  workplace?: string;
+  education?: string;
+  location?: string;
+  address?: string;
+  country?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  joinedDate?: string;
+  website?: string;
+  followers?: string[];
+  following?: string[];
+  followersList?: string[];
+  followingList?: string[];
+}
+
+interface UserImages {
+  avatar: string | null;
+  cover: string | null;
+}
+
+interface Group {
+  _id: string;
+  name: string;
+  description: string;
+  category: string;
+  privacy: 'public' | 'private' | 'secret';
+  avatar?: string;
+  coverPhoto?: string;
+  creator: {
+    _id: string;
+    name: string;
+    username?: string;
+    avatar?: string;
+  };
+  members: Array<{
+  user: {
+    _id: string;
+    name: string;
+      username?: string;
+      avatar?: string;
+    };
+    role: 'member' | 'moderator' | 'admin';
+    joinedAt: string;
+    isActive: boolean;
+  }>;
+  stats: {
+    memberCount: number;
+    postCount: number;
+    eventCount: number;
+  };
+  isActive: boolean;
+  website?: string;
+  email?: string;
+  phone?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Product {
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
+  type: string;
+  category: string;
+  location: string;
+  imageUrl?: string;
+  totalItemUnits: number;
+  seller: {
+    _id: string;
+    name: string;
+    username?: string;
+    avatar?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+const UserProfile: React.FC = () => {
+  const { userId } = useParams();
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [userImages, setUserImages] = useState<UserImages>({
+    avatar: null,
+    cover: null
+  });
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [albums, setAlbums] = useState<Album[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('timeline');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [isCurrentUser, setIsCurrentUser] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [editingPost, setEditingPost] = useState<any>(null);
+  const [editContent, setEditContent] = useState('');
+  const [editTitle, setEditTitle] = useState('');
+  const [editMediaFiles, setEditMediaFiles] = useState<File[]>([]);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [newAvatar, setNewAvatar] = useState<File | null>(null);
+  const [newCoverPhoto, setNewCoverPhoto] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>('');
+  const [coverPreview, setCoverPreview] = useState<string>('');
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
+  const [popup, setPopup] = useState<PopupState>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
+
+  // Add post dropdown state
+  const [postDropdownOpen, setPostDropdownOpen] = useState<string | null>(null);
+
+  // Tabs configuration
+  const tabs = [
+    { id: 'timeline', label: 'Timeline', count: posts.length },
+    { id: 'albums', label: 'Albums', count: albums.length },
+    { id: 'groups', label: 'Groups', count: groups.length },
+    { id: 'products', label: 'Products', count: products.length }
+  ];
+
+  // Filters configuration
+  const filters = [
+    { id: 'all', label: 'All', icon: <FileText className="w-4 h-4" /> },
+    { id: 'text', label: 'Text', icon: <FileText className="w-4 h-4" /> },
+    { id: 'photos', label: 'Photos', icon: <Camera className="w-4 h-4" /> },
+    { id: 'videos', label: 'Videos', icon: <Video className="w-4 h-4" /> },
+    { id: 'sounds', label: 'Sounds', icon: <Music className="w-4 h-4" /> },
+    { id: 'files', label: 'Files', icon: <FileText className="w-4 h-4" /> }
+  ];
+
+  // Type guard functions
+  const isAlbum = (item: ContentItem): item is Album & { type: 'album' } => {
+    return 'type' in item && item.type === 'album';
+  };
+
+  const isPost = (item: ContentItem): item is Post => {
+    return !('type' in item) || item.type !== 'album';
+  };
+
+  // Get the actual userId string
+  const actualUserId = Array.isArray(userId) ? userId[0] : userId;
+
+  useEffect(() => {
+    if (actualUserId) {
+      fetchUserProfile();
+      fetchUserImages();
+      fetchUserContent();
+      fetchUserAlbums();
+      fetchUserGroups();
+      fetchUserProducts();
+    }
+  }, [actualUserId]);
+
+  // Event listeners for updates
+  useEffect(() => {
+    const handleImagesUpdated = () => {
+      fetchUserImages();
+    };
+
+    const handlePrivacySettingsUpdated = () => {
+      fetchUserProfile();
+    };
+
+    const handlePasswordChanged = () => {
+      fetchUserProfile();
+    };
+
+    window.addEventListener('imagesUpdated', handleImagesUpdated);
+    window.addEventListener('privacySettingsUpdated', handlePrivacySettingsUpdated);
+    window.addEventListener('passwordChanged', handlePasswordChanged);
+
+    return () => {
+      window.removeEventListener('imagesUpdated', handleImagesUpdated);
+      window.removeEventListener('privacySettingsUpdated', handlePrivacySettingsUpdated);
+      window.removeEventListener('passwordChanged', handlePasswordChanged);
+    };
+  }, []);
+
+  // Listen for profile updates from settings pages
+  useEffect(() => {
+    const handleProfileUpdated = () => {
+      fetchUserProfile();
+    };
+
+    window.addEventListener('profileUpdated', handleProfileUpdated);
+
+    return () => {
+      window.removeEventListener('profileUpdated', handleProfileUpdated);
+    };
+  }, []);
+
+  // Add missing event handlers
+  const handleAlbumCreated = () => {
+    fetchUserAlbums();
+  };
+
+  const handleAlbumUpdated = () => {
+    fetchUserAlbums();
+  };
+
+  const handleAlbumDeleted = () => {
+    fetchUserAlbums();
+  };
+
+  const handleGroupCreated = () => {
+    fetchUserGroups();
+  };
+
+  const handleGroupUpdated = () => {
+    fetchUserGroups();
+  };
+
+  const handleGroupDeleted = () => {
+    fetchUserGroups();
+  };
+
+  const handleProductCreated = () => {
+    fetchUserProducts();
+  };
+
+  const handleProductUpdated = () => {
+    fetchUserProducts();
+  };
+
+  const handleProductDeleted = () => {
+    fetchUserProducts();
+  };
+
+  const fetchUserProfile = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        router.push('/register');
+        return;
+      }
+
+      // Handle "me" case - get current user's ID first
+      let targetUserId = actualUserId;
+      if (actualUserId === 'me') {
+        try {
+          const currentUserResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (currentUserResponse.ok) {
+            const currentUser = await currentUserResponse.json();
+            targetUserId = currentUser.id;
+            // Redirect to the actual user ID to avoid "me" in URL
+            router.replace(`/dashboard/profile/${targetUserId}`);
+            return;
+          } else {
+            setError('Failed to get current user information');
+            showPopup('error', 'Error', 'Failed to get current user information');
+            return;
+          }
+        } catch (error) {
+          console.error('Error fetching current user:', error);
+          setError('Failed to get current user information');
+          showPopup('error', 'Error', 'Failed to get current user information');
+          return;
+        }
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${targetUserId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+          const userData = await response.json();
+          setUser(userData);
+          setIsFollowing(userData.isFollowing);
+          setIsBlocked(userData.isBlocked);
+        
+        // Check if this is the current user's profile
+        const currentUserResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, { 
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (currentUserResponse.ok) {
+            const currentUser = await currentUserResponse.json();
+            setIsCurrentUser(currentUser.id === actualUserId);
+        }
+      } else {
+          const errorData = await response.json();
+        setError(errorData.error || 'Failed to load user profile');
+        showPopup('error', 'Error', errorData.error || 'Failed to load user profile');
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      setError('Failed to load user profile');
+      showPopup('error', 'Error', 'Failed to load user profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUserImages = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/userimages/${actualUserId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUserImages(data);
+      }
+    } catch (error) {
+      console.error('Error fetching user images:', error);
+    }
+  };
+
+  const fetchUserContent = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      
+      // Skip content fetching if userId is "me" (will be handled after redirect)
+      if (actualUserId === 'me') return;
+      
+      // Fetch posts
+      const postsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${actualUserId}/posts`, { 
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (postsResponse.ok) {
+          const postsData = await postsResponse.json();
+          setPosts(postsData);
+        }
+    } catch (error) {
+      console.error('Error fetching user content:', error);
+    }
+  };
+
+  const fetchUserAlbums = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${actualUserId}/albums`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAlbums(data);
+      }
+    } catch (error) {
+      console.error('Error fetching user albums:', error);
+    }
+  };
+
+  const fetchUserGroups = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups/user/${actualUserId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setGroups(data);
+      }
+    } catch (error) {
+      console.error('Error fetching user groups:', error);
+    }
+  };
+
+  const fetchUserProducts = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${actualUserId}/products`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setProducts(data);
+      }
+    } catch (error) {
+      console.error('Error fetching user products:', error);
+    }
+  };
+
+  const handleFollow = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token || !user) return;
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${user._id}/follow`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        setIsFollowing(!isFollowing);
+        showPopup('success', 'Success', isFollowing ? 'Unfollowed successfully' : 'Followed successfully');
+        fetchUserProfile();
+      }
+    } catch (error) {
+      console.error('Error following/unfollowing user:', error);
+      showPopup('error', 'Error', 'Failed to follow/unfollow user');
+    }
+  };
+
+  const handleBlock = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token || !user) return;
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${user._id}/block`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        setIsBlocked(!isBlocked);
+        showPopup('success', 'Success', isBlocked ? 'Unblocked successfully' : 'Blocked successfully');
+        fetchUserProfile();
+      }
+    } catch (error) {
+      console.error('Error blocking/unblocking user:', error);
+      showPopup('error', 'Error', 'Failed to block/unblock user');
+    }
+  };
+
+  const handleMessage = () => {
+    // Navigate to messages or open chat
+    router.push(`/dashboard/messages/${user?._id}`);
+  };
+
+  const handleEditPost = (post: Post) => {
+    setEditingPost(post);
+    setEditContent(post.content);
+    setShowEditModal(true);
+  };
+
+  const handleEditProfile = () => {
+    router.push('/dashboard/settings/profile');
+  };
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNewAvatar(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleCoverPhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNewCoverPhoto(file);
+      setCoverPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSaveAvatar = async () => {
+    if (!newAvatar) return;
+    
+    try {
+      setUploadingAvatar(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showPopup('error', 'Authentication Error', 'Please log in again');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('avatar', newAvatar);
+
+              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/userimages/avatar`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUserImages(prev => ({
+          ...prev,
+          avatar: data.avatar
+        }));
+        setNewAvatar(null);
+        setAvatarPreview('');
+        showPopup('success', 'Avatar Updated!', 'Your profile picture has been updated successfully!');
+        window.dispatchEvent(new CustomEvent('profileUpdated'));
+        fetchUserImages();
+      } else {
+        const errorData = await response.json();
+        showPopup('error', 'Upload Failed', errorData.error || 'Failed to upload avatar');
+      }
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      showPopup('error', 'Upload Failed', 'Failed to upload avatar. Please try again.');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleSaveCoverPhoto = async () => {
+    if (!newCoverPhoto) return;
+    
+    try {
+      setUploadingCover(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showPopup('error', 'Authentication Error', 'Please log in again');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('cover', newCoverPhoto);
+
+              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/userimages/cover`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUserImages(prev => ({
+          ...prev,
+          cover: data.cover
+        }));
+        setNewCoverPhoto(null);
+        setCoverPreview('');
+        showPopup('success', 'Cover Updated!', 'Your cover photo has been updated successfully!');
+        fetchUserImages();
+      } else {
+        const errorData = await response.json();
+        showPopup('error', 'Upload Failed', errorData.error || 'Failed to upload cover photo');
+      }
+    } catch (error) {
+      console.error('Error uploading cover photo:', error);
+      showPopup('error', 'Upload Failed', 'Failed to upload cover photo. Please try again.');
+    } finally {
+      setUploadingCover(false);
+    }
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    if (!confirm('Are you sure you want to delete this post?')) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}`, { 
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        setPosts(posts.filter(post => post._id !== postId));
+        showPopup('success', 'Post Deleted', 'Post has been deleted successfully');
+      } else {
+        showPopup('error', 'Error', 'Failed to delete post');
+      }
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      showPopup('error', 'Error', 'Failed to delete post');
+    }
+  };
+
+  const getFilteredContent = () => {
+    let filtered: ContentItem[] = [
+      ...posts, 
+      ...albums.map(album => ({ ...album, type: 'album' as const }))
+    ];
+    
+    if (activeFilter !== 'all') {
+      filtered = filtered.filter(item => {
+        if (isAlbum(item)) {
+          return activeFilter === 'photos';
+        }
+        
+        // For posts, check media type
+        if (item.media && item.media.length > 0) {
+          const mediaTypes = item.media.map((media: any) => media.type);
+          switch (activeFilter) {
+            case 'photos':
+              return mediaTypes.some((type: any) => type === 'image');
+            case 'videos':
+              return mediaTypes.some((type: any) => type === 'video');
+            case 'sounds':
+              return mediaTypes.some((type: any) => type === 'audio');
+            case 'files':
+              return mediaTypes.some((type: any) => type === 'file');
+            case 'text':
+              return !item.media || item.media.length === 0;
+            default:
+              return true;
+          }
+        } else {
+          // Posts without media are considered text posts
+          return activeFilter === 'text';
+        }
+      });
+    }
+    
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(item => {
+        if (isAlbum(item)) {
+          return item.name?.toLowerCase().includes(query);
+        }
+        return item.content?.toLowerCase().includes(query) || item.title?.toLowerCase().includes(query);
+      });
+    }
+    
+    return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  };
+
+  // Handler functions for FeedPost component
+  const handleLike = async (postId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        setPosts(posts.map(post => {
+          if (post._id === postId) {
+            const isLiked = post.likes?.includes(user?._id || '');
+            return {
+              ...post,
+              likes: isLiked 
+                ? post.likes?.filter(id => id !== (user?._id || '')) || []
+                : [...(post.likes || []), user?._id || '']
+            };
+          }
+          return post;
+        }));
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+    }
+  };
+
+  const handleReaction = async (postId: string, reactionType: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/react`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reactionType })
+      });
+
+      if (response.ok) {
+        // Update posts state with new reaction
+        setPosts(posts.map(post => {
+          if (post._id === postId) {
+            return { ...post, reactions: [...(post.reactions || []), { userId: user?._id || '', type: reactionType, createdAt: new Date().toISOString() }] };
+          }
+          return post;
+        }));
+      }
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+    }
+  };
+
+  const handleComment = async (postId: string, comment: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/comment`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ content: comment })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPosts(posts.map(post => post._id === postId ? data.post : post));
+        showPopup('success', 'Comment Added', 'Comment posted successfully!');
+      }
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      showPopup('error', 'Error', 'Failed to post comment');
+    }
+  };
+
+  const handleShare = async (postId: string, shareOptions: any) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/share`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(shareOptions)
+      });
+
+      if (response.ok) {
+        showPopup('success', 'Post Shared', 'Post shared successfully!');
+      }
+    } catch (error) {
+      console.error('Error sharing post:', error);
+      showPopup('error', 'Error', 'Failed to share post');
+    }
+  };
+
+  const handleSave = async (postId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/save`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        setPosts(posts.map(post => {
+          if (post._id === postId) {
+            const isSaved = post.savedBy?.includes(user?._id || '');
+            return {
+              ...post,
+              savedBy: isSaved 
+                ? post.savedBy?.filter(id => id !== (user?._id || '')) || []
+                : [...(post.savedBy || []), user?._id || '']
+            };
+          }
+          return post;
+        }));
+        showPopup('success', 'Post Saved', 'Post saved to your collection!');
+      }
+    } catch (error) {
+      console.error('Error saving post:', error);
+      showPopup('error', 'Error', 'Failed to save post');
+    }
+  };
+
+  const handleEdit = (post: any) => {
+    setEditingPost(post);
+    setEditContent(post.content || '');
+    setEditTitle(post.title || '');
+    setEditMediaFiles([]);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingPost || !editContent.trim()) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${editingPost._id}`, { 
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ content: editContent })
+      });
+
+      if (response.ok) {
+        showPopup('success', 'Post Updated', 'Post has been updated successfully');
+        setShowEditModal(false);
+        setEditingPost(null);
+        setEditContent('');
+        fetchUserContent();
+      } else {
+        showPopup('error', 'Update Failed', 'Failed to update post');
+      }
+    } catch (error) {
+      console.error('Error updating post:', error);
+      showPopup('error', 'Update Failed', 'Failed to update post');
+    }
+  };
+
+  const showPopup = (type: 'success' | 'error' | 'info' | 'warning', title: string, message: string) => {
+    setPopup({
+      isOpen: true,
+      type,
+      title,
+      message
+    });
+  };
+
+  const closePopup = () => {
+    setPopup(prev => ({ ...prev, isOpen: false }));
+  };
+
+  // Toggle post dropdown
+  const togglePostDropdown = (postId: string) => {
+    setPostDropdownOpen(postDropdownOpen === postId ? null : postId);
+  };
+
+  // Close post dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (postDropdownOpen && !(event.target as Element).closest('.post-dropdown')) {
+        setPostDropdownOpen(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [postDropdownOpen]);
+
+  const getMediaUrl = (url: string) => {
+    if (!url) return '/default-avatar.svg';
+    if (url.startsWith('http')) return url;
+    
+    // Handle localhost URLs that might be stored incorrectly
+    if (url.includes('localhost:3000')) {
+              const correctedUrl = url.replace('http://localhost:3000', 'https://jaifriend-backend-production.up.railway.app');
+      console.log('🔗 getMediaUrl - Fixed localhost URL:', { original: url, corrected: correctedUrl });
+      return correctedUrl;
+    }
+    
+    // Handle hardcoded placeholder avatars that don't exist
+    if (url.includes('/avatars/') || url.includes('/covers/')) {
+      console.log('🔗 getMediaUrl - Placeholder avatar detected:', url);
+      return '/default-avatar.svg';
+    }
+    
+          return `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/${url}`;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-dark-900 flex items-center justify-center p-4 transition-colors duration-200">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-3 sm:mt-4 text-gray-600 dark:text-gray-400 text-sm sm:text-base">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-dark-900 flex items-center justify-center p-4 transition-colors duration-200">
+        <div className="text-center">
+          <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">User not found</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full min-h-screen bg-gray-50 dark:bg-dark-900 overflow-x-hidden max-w-full transition-colors duration-200 pb-4 sm:pb-6">
+      {/* Add CSS for line-clamp */}
+      <style jsx>{`
+        .line-clamp-3 {
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        .post-content-full {
+          display: block;
+        }
+        .post-dropdown {
+          position: relative;
+        }
+        .post-dropdown-menu {
+          animation: fadeIn 0.2s ease-in-out;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .read-more-btn {
+          transition: all 0.2s ease;
+        }
+        .read-more-btn:hover {
+          color: #2563eb;
+          text-decoration: underline;
+        }
+        .filter-scroll::-webkit-scrollbar {
+          display: none;
+        }
+        .filter-scroll {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
+      
+      {/* Cover Photo Section */}
+      <div className="relative h-32 sm:h-48 md:h-64 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-800 overflow-hidden">
+        {userImages.cover ? (
+        <img
+            src={getMediaUrl(userImages.cover)} 
+          alt="Cover"
+          className="w-full h-full object-cover"
+        />
+        ) : (
+          /* Particle effect overlay */
+          <div className="absolute inset-0" style={{
+            backgroundImage: `radial-gradient(circle at 20% 20%, rgba(255,255,255,0.1) 1px, transparent 1px),
+                             radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 1px, transparent 1px),
+                             radial-gradient(circle at 40% 40%, rgba(255,255,255,0.05) 1px, transparent 1px)`,
+            backgroundSize: '100px 100px, 80px 80px, 60px 60px'
+          }}></div>
+        )}
+      
+        {/* Cover actions - only show for current user */}
+        {isCurrentUser && (
+          <div className="absolute top-2 sm:top-4 right-2 sm:right-4 flex gap-1 sm:gap-2">
+            <label className="px-2 py-1 sm:px-3 sm:py-2 bg-black bg-opacity-20 text-white rounded-lg backdrop-blur-sm hover:bg-opacity-30 transition-all flex items-center gap-1 text-xs sm:text-sm cursor-pointer">
+              <span className="text-sm">📷</span>
+              <span className="hidden xs:inline">Cover</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleCoverPhotoUpload}
+                  className="hidden"
+                />
+            </label>
+            <button className="p-1 sm:p-2 bg-black bg-opacity-20 text-white rounded-lg backdrop-blur-sm hover:bg-opacity-30 transition-all">
+              <span className="text-sm">➕</span>
+              </button>
+          </div>
+        )}
+      </div>
+
+      {/* Profile Header */}
+      <div className="relative px-3 pb-4 -mt-12 sm:-mt-20">
+        <div className="w-full max-w-full">
+          {/* Profile Picture and Actions */}
+          <div className="flex flex-col items-center gap-3 mb-4">
+              {/* Profile Picture */}
+              <div className="relative">
+                <img
+                  src={avatarPreview || (userImages.avatar ? getMediaUrl(userImages.avatar) : (user.avatar && user.avatar !== '/avatars/1.png.png' ? getMediaUrl(user.avatar) : '/default-avatar.svg'))}
+                  alt={user.name}
+                  className="w-24 h-24 sm:w-32 sm:h-32 rounded-full border-4 border-white shadow-xl object-cover bg-gray-200"
+                  onError={(e) => {
+                    console.log('❌ Avatar load failed for user:', user.name, 'URL:', user.avatar);
+                    e.currentTarget.src = '/default-avatar.svg';
+                  }}
+                />
+                {isCurrentUser && (
+                <label className="absolute bottom-1 right-1 w-6 h-6 sm:w-8 sm:h-8 bg-blue-500 text-white rounded-full flex items-center justify-center cursor-pointer hover:bg-blue-600 transition-colors shadow-lg">
+                  {uploadingAvatar ? (
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <span className="text-sm">📷</span>
+                  )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        className="hidden"
+                    disabled={uploadingAvatar}
+                      />
+                    </label>
+                )}
+                {user.isOnline && (
+                <div className="absolute bottom-3 right-3 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                )}
+              </div>
+
+              {/* User Info */}
+              <div className="text-center">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-1 break-words">{user.name}</h1>
+              <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base mb-2">@{user.username}</p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-1 flex-wrap justify-center">
+              {!isCurrentUser && (
+                <>
+                  <button 
+                    onClick={handleFollow}
+                    className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-colors text-sm ${
+                      isFollowing 
+                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                        : 'bg-blue-500 text-white hover:bg-blue-600'
+                    }`}
+                  >
+                    {isFollowing ? <UserCheck className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
+                    <span>{isFollowing ? 'Following' : 'Follow'}</span>
+                  </button>
+                  <button 
+                    onClick={handleMessage}
+                    className="flex items-center gap-1 px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    <span>Message</span>
+                  </button>
+                  <button 
+                    onClick={handleBlock}
+                    className={`flex items-center gap-1 px-3 py-2 rounded-lg transition-colors text-sm ${
+                      isBlocked 
+                        ? 'bg-red-200 text-red-700 hover:bg-red-300' 
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    <span>{isBlocked ? 'Unblock' : 'Block'}</span>
+                  </button>
+                </>
+              )}
+              {isCurrentUser && (
+                <>
+                  <button className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition-colors">
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                    <button 
+                      onClick={handleEditProfile}
+                      className="flex items-center gap-1 px-3 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors text-sm"
+                    >
+                      <Edit className="w-4 h-4" />
+                    <span>Edit</span>
+                    </button>
+                  <button className="flex items-center gap-1 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm">
+                    <Eye className="w-4 h-4" />
+                    <span>Activities</span>
+                  </button>
+                </>
+              )}
+            </div>
+            </div>
+
+          {/* User Details */}
+          <div className="mb-4 text-center">
+            {user.bio && (
+              <p className="text-gray-700 mb-3 text-sm sm:text-base max-w-full mx-auto px-2">{user.bio}</p>
+            )}
+
+            <div className="flex flex-wrap gap-1 text-xs sm:text-sm text-gray-600 mb-3 justify-center px-2">
+              {user.location && (
+                <div className="flex items-center gap-1">
+                  <MapPin className="w-3 h-3 flex-shrink-0" />
+                  <span className="truncate">{user.location}</span>
+            </div>
+              )}
+              {user.website && (
+                <div className="flex items-center gap-1">
+                  <Globe className="w-3 h-3 flex-shrink-0" />
+                  <a href={user.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate">
+                    {user.website}
+                  </a>
+          </div>
+              )}
+              {user.joinedDate && (
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-3 h-3 flex-shrink-0" />
+                  <span>Joined {new Date(user.joinedDate).toLocaleDateString()}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="bg-white border-b sticky top-0 z-30">
+        <div className="w-full px-3">
+          <div className="flex overflow-x-auto scrollbar-hide">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 py-3 px-4 border-b-2 transition-colors whitespace-nowrap min-w-fit ${
+                  activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600 font-medium'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                }`}
+              >
+                <span className="text-sm font-medium">{tab.label}</span>
+                {tab.count !== undefined && (
+                  <span className="bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full text-xs">
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="w-full px-3 py-4">
+        {activeTab === 'timeline' && (
+          <div className="space-y-4">
+            {/* Content Layout - Two Column Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+              {/* Left Sidebar - User Information */}
+              <div className="lg:col-span-1 space-y-4">
+                {/* Search Box */}
+                <div className="bg-white rounded-xl shadow-sm p-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                      placeholder="Search for posts"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 bg-gray-100 border-0 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                />
+              </div>
+                </div>
+
+                {/* User Details Card */}
+                <div className="bg-white rounded-xl shadow-sm p-3 space-y-3">
+                  {/* Status */}
+                  <div className="text-center">
+                    <p className="text-gray-800 font-medium">{user.bio || 'No bio added yet'}</p>
+                  </div>
+
+                  {/* Online Status */}
+                  <div className="flex items-center justify-center gap-2">
+                    <div className={`w-3 h-3 rounded-full ${user.isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                    <span className="text-sm text-gray-600">{user.isOnline ? 'Online' : 'Offline'}</span>
+                  </div>
+
+                  {/* Connections */}
+                  <div className="space-y-3">
+                    <div className="text-center mb-3">
+                      <h4 className="text-sm font-semibold text-gray-700">Connections</h4>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors">
+                      <div className="flex items-center gap-2 text-blue-700">
+                        <Users className="w-5 h-5 flex-shrink-0 text-blue-500" />
+                        <span className="text-lg font-bold">
+                          {user.following?.length || user.followingList?.length || 0}
+                        </span>
+                        <span className="text-sm text-blue-600">Following</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200 hover:bg-green-100 transition-colors">
+                      <div className="flex items-center gap-2 text-green-700">
+                        <Users className="w-5 h-5 flex-shrink-0 text-green-500" />
+                        <span className="text-lg font-bold">
+                          {user.followers?.length || user.followersList?.length || 0}
+                        </span>
+                        <span className="text-sm text-green-600">Followers</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Posts Count */}
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <FileText className="w-4 h-4 flex-shrink-0" />
+                    <span>{posts.length} posts</span>
+                  </div>
+
+                  {/* Gender */}
+                  {user.gender && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <span className="text-lg">👤</span>
+                      <span>{user.gender}</span>
+                  </div>
+                  )}
+
+                  {/* Work */}
+                  {user.workplace && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <span className="text-lg">💼</span>
+                      <span>{user.workplace}</span>
+                </div>
+                  )}
+
+                  {/* Education */}
+                  {user.education && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <span className="text-lg">🎓</span>
+                      <span>{user.education}</span>
+                            </div>
+                  )}
+
+                  {/* Location */}
+                  {user.location && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <span className="text-lg">🏠</span>
+                      <span>{user.location}</span>
+                  </div>
+                  )}
+
+                  {/* Specific Location */}
+                  {user.address && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <MapPin className="w-4 h-4 flex-shrink-0" />
+                      <span>{user.address}</span>
+                  </div>
+                  )}
+
+                  {/* Country */}
+                  {user.country && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <span className="text-lg">🌍</span>
+                      <span>{user.country}</span>
+                </div>
+                  )}
+
+                  {/* Phone */}
+                  {user.phone && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Phone className="w-4 h-4 flex-shrink-0" />
+                      <span>{user.phone}</span>
+                      </div>
+                  )}
+
+                  {/* Date of Birth */}
+                  {user.dateOfBirth && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <span className="text-lg">🎂</span>
+                      <span>{new Date(user.dateOfBirth).toLocaleDateString()}</span>
+                        </div>
+                  )}
+
+                  {/* Joined Date */}
+                  {user.joinedDate && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Calendar className="w-4 h-4 flex-shrink-0" />
+                      <span>Joined {new Date(user.joinedDate).toLocaleDateString()}</span>
+                    </div>
+                  )}
+
+                  {/* Website */}
+                  {user.website && (
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Globe className="w-4 h-4 flex-shrink-0" />
+                      <a 
+                        href={user.website.startsWith('http') ? user.website : `https://${user.website}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline truncate"
+                      >
+                        {user.website}
+                      </a>
+              </div>
+                        )}
+            </div>
+              </div>
+
+              {/* Right Content Area - Posts and Content */}
+              <div className="lg:col-span-3 space-y-4">
+                {/* Content Filter Buttons */}
+                <div className="bg-white rounded-xl shadow-sm p-4">
+                  <div className="flex items-center gap-2 overflow-x-auto">
+                    <div className="filter-scroll flex items-center gap-2">
+                  <button
+                        onClick={() => setActiveFilter('all')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+                          activeFilter === 'all'
+                            ? 'bg-red-100 text-red-600 border border-red-200'
+                            : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span className="text-sm font-medium">All</span>
+                  </button>
+                      
+                      <button
+                        onClick={() => setActiveFilter('text')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+                          activeFilter === 'text'
+                            ? 'bg-red-100 text-red-600 border border-red-200'
+                            : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="w-4 h-4 flex items-center justify-center">
+                          <div className="w-3 h-0.5 bg-current rounded-full"></div>
+                          <div className="w-3 h-0.5 bg-current rounded-full mt-1"></div>
+                          <div className="w-3 h-0.5 bg-current rounded-full mt-1"></div>
+                      </div>
+                        <span className="text-sm font-medium">Text</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => setActiveFilter('photos')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+                          activeFilter === 'photos'
+                            ? 'bg-red-100 text-red-600 border border-red-200'
+                            : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <Camera className="w-4 h-4" />
+                        <span className="text-sm font-medium">Photos</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => setActiveFilter('videos')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+                          activeFilter === 'videos'
+                            ? 'bg-red-100 text-red-600 border border-red-200'
+                            : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <Video className="w-4 h-4" />
+                        <span className="text-sm font-medium">Videos</span>
+                  </button>
+
+                      <button
+                        onClick={() => setActiveFilter('sounds')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+                          activeFilter === 'sounds'
+                            ? 'bg-red-100 text-red-600 border border-red-200'
+                            : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <Music className="w-4 h-4" />
+                        <span className="text-sm font-medium">Sounds</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => setActiveFilter('files')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors whitespace-nowrap ${
+                          activeFilter === 'files'
+                            ? 'bg-red-100 text-red-600 border border-red-200'
+                            : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span className="text-sm font-medium">Files</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Posts Feed */}
+                <div className="space-y-4">
+              {(() => {
+                const filteredContent = getFilteredContent();
+
+                if (filteredContent.length === 0) {
+                  return (
+                    <div className="bg-white rounded-xl shadow-sm p-6 text-center">
+                      <div className="text-gray-400 mb-3">
+                        <FileText className="w-16 h-16 mx-auto" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No content found</h3>
+                      <p className="text-gray-600 text-sm">
+                        {searchQuery ? 'Try adjusting your search terms' : 'This user hasn\'t shared anything yet'}
+                      </p>
+                    </div>
+                  );
+                }
+
+                return filteredContent.map((item: ContentItem) => {
+                  if (isAlbum(item)) {
+                    return (
+                      <div key={item._id} className="bg-white rounded-xl shadow-sm overflow-hidden">
+                        <div className="p-4">
+                          <div className="flex items-center gap-3 mb-3">
+                            <img
+                              src={user?.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/${user.avatar}`) : '/default-avatar.svg'}
+                              alt={user?.name || 'User'}
+                              className="w-10 h-10 rounded-full border-2 border-blue-400"
+                              onError={(e) => {
+                                console.log('❌ Avatar load failed for user:', user?.name, 'URL:', user?.avatar);
+                                e.currentTarget.src = '/default-avatar.svg';
+                              }}
+                            />
+                            <div>
+                              <h4 className="font-semibold text-gray-900">{user?.name || 'User'}</h4>
+                              <p className="text-sm text-gray-500">Created an album • {new Date(item.createdAt).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                          
+                          <h3 className="text-lg font-semibold text-gray-900 mb-3">{item.name}</h3>
+                          
+                          {/* Album Media Grid */}
+                          {item.media && item.media.length > 0 && (
+                            <div className="grid grid-cols-3 gap-2 mb-3">
+                              {item.media.slice(0, 6).map((media: any, index: number) => (
+                                <img
+                                  key={index}
+                                  src={getMediaUrl(media.url)}
+                                  alt={`Album media ${index + 1}`}
+                                  className="w-full aspect-square object-cover rounded-lg"
+                                />
+                              ))}
+                              {item.media.length > 6 && (
+                                <div className="aspect-square bg-gray-200 rounded-lg flex items-center justify-center text-sm text-gray-500">
+                                  +{item.media.length - 6}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Album Actions */}
+                          <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
+                            <button className="flex items-center gap-2 text-gray-500 hover:text-red-500 transition-colors">
+                              <span>❤️</span>
+                              <span className="text-sm">{item.likes?.length || 0}</span>
+                            </button>
+                            <button className="flex items-center gap-2 text-gray-500 hover:text-blue-500 transition-colors">
+                              <span>💬</span>
+                              <span className="text-sm">{item.comments?.length || 0}</span>
+                            </button>
+                            <button className="flex items-center gap-2 text-gray-500 hover:text-green-500 transition-colors">
+                              <span>📤</span>
+                              <span className="text-sm">{item.shares?.length || 0}</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  } else {
+                    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+                    const isOwnPost = item.user === currentUser._id || item.user === currentUser.id;
+                    
+                    return (
+                      <FeedPost
+                        key={item._id}
+                        post={{
+                          ...item,
+                          user: {
+                            _id: user._id,
+                            name: user.name,
+                            username: user.username,
+                            avatar: userImages.avatar || user.avatar
+                          }
+                        }}
+                        onLike={handleLike}
+                        onReaction={handleReaction}
+                        onComment={handleComment}
+                        onShare={handleShare}
+                        onSave={handleSave}
+                        onDelete={handleDeletePost}
+                        onEdit={handleEdit}
+                        isOwnPost={isOwnPost}
+                      />
+                    );
+                  }
+                });
+              })()}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Other Tabs */}
+        {activeTab !== 'timeline' && (
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            {activeTab === 'albums' ? (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold">Albums</h3>
+                  {isCurrentUser && (
+                    <button
+                      onClick={() => router.push('/dashboard/albums')}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Create Album
+                    </button>
+                  )}
+                </div>
+                
+                {albums.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {albums.map((album) => (
+                      <div key={album._id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <h4 className="font-semibold text-gray-900 mb-2">{album.name}</h4>
+                        <div className="grid grid-cols-3 gap-1 mb-2">
+                          {album.media && album.media.length > 0 ? (
+                            album.media.slice(0, 6).map((media: any, index: number) => (
+                              <img
+                                key={index}
+                                src={getMediaUrl(media.url)}
+                                alt="album media"
+                                className="w-full aspect-square object-cover rounded"
+                              />
+                            ))
+                          ) : (
+                            <div className="col-span-3 text-xs text-gray-400 py-4 text-center">No media</div>
+                          )}
+                          {album.media && album.media.length > 6 && (
+                            <div className="aspect-square bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">
+                              +{album.media.length - 6}
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          Created: {new Date(album.createdAt).toLocaleDateString()}
+                        </p>
+                </div>
+              ))}
+            </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Camera className="w-8 h-8 text-gray-400" />
+          </div>
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">No albums yet</h4>
+                    <p className="text-gray-600 mb-4">No albums to display</p>
+                    {isCurrentUser && (
+                      <button
+                        onClick={() => router.push('/dashboard/albums')}
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                      >
+                        Create Album
+                      </button>
+                    )}
+          </div>
+        )}
+          </div>
+            ) : activeTab === 'groups' ? (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold">Groups</h3>
+                  {isCurrentUser && (
+                    <button
+                      onClick={() => router.push('/dashboard/groups')}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Create Group
+                    </button>
+                  )}
+                </div>
+                
+                {groups.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {groups.map((group) => (
+                      <div key={group._id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <h4 className="font-semibold text-gray-900 mb-2">{group.name}</h4>
+                        <p className="text-sm text-gray-600 mb-2">{group.description}</p>
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <Users className="w-3 h-3" />
+                          <span>{group.stats.memberCount} members</span>
+          </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Users className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">No groups yet</h4>
+                    <p className="text-gray-600 mb-4">No groups to display</p>
+                    {isCurrentUser && (
+                      <button
+                        onClick={() => router.push('/dashboard/groups')}
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                      >
+                        Create Group
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : activeTab === 'products' ? (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-semibold">Products</h3>
+                  {isCurrentUser && (
+                    <button
+                      onClick={() => router.push('/dashboard/products')}
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                    >
+                      Add Product
+                    </button>
+                  )}
+                </div>
+                
+                {products.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {products.map((product) => (
+                      <div key={product._id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <h4 className="font-semibold text-gray-900 mb-2">{product.name}</h4>
+                        <p className="text-sm text-gray-600 mb-2">{product.description}</p>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-medium text-green-600">
+                            {product.currency} {product.price}
+                          </span>
+                          <span className="text-gray-500">{product.category}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <ShoppingBag className="w-8 h-8 text-gray-400" />
+                    </div>
+                    <h4 className="text-lg font-medium text-gray-900 mb-2">No products yet</h4>
+                    <p className="text-gray-600 mb-4">No products to display</p>
+                    {isCurrentUser && (
+                      <button
+                        onClick={() => router.push('/dashboard/products')}
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+                      >
+                        Add Product
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              {tabs.find(tab => tab.id === activeTab)?.label}
+                </h3>
+                <p className="text-gray-600">This section is coming soon!</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Edit Post Modal */}
+      {showEditModal && editingPost && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-3 sm:p-4 bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-4 sm:p-6 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Edit Post</h3>
+            <textarea
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              className="w-full h-24 sm:h-32 p-2 sm:p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base"
+              placeholder="What's on your mind?"
+            />
+            <div className="flex space-x-2 sm:space-x-3 mt-3 sm:mt-4">
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingPost(null);
+                  setEditContent('');
+                }}
+                className="flex-1 px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="flex-1 px-3 sm:px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm sm:text-base"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Popup */}
+      <Popup popup={popup} onClose={closePopup} />
+    </div>
+  );
+};
+
+export default UserProfile;
