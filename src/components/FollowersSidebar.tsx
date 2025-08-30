@@ -212,7 +212,6 @@ const FollowersSidebar: React.FC<FollowersSidebarProps> = ({ isAdminPage = false
           >
             <Settings className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </button>
-          
           {/* Status Dropdown */}
           {showStatusMenu && (
             <div className="absolute right-12 top-0 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-2 min-w-[120px]">
@@ -233,16 +232,7 @@ const FollowersSidebar: React.FC<FollowersSidebarProps> = ({ isAdminPage = false
             </div>
           )}
         </div>
-
-        {/* Add User Icon */}
-        <button className="w-10 h-10 bg-white dark:bg-gray-700 rounded-full shadow-sm flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors mb-4">
-          <UserPlus className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-        </button>
-
-        {/* Brand Logo */}
-        <div className="w-10 h-10 bg-red-500 rounded-full shadow-sm flex items-center justify-center mb-4">
-          <span className="text-white text-xs font-bold">J</span>
-        </div>
+        {/* Removed Add User Icon and Brand Logo (red J avatar) from right sidebar */}
 
         {/* Followers List */}
         <div className="flex-1 overflow-y-auto space-y-3 px-2">

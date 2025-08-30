@@ -48,7 +48,7 @@ export default function ReelsPage() {
   };
 
     return (
-    <div className="min-h-screen bg-gray-50 w-full max-w-[310px] mx-auto sm:max-w-none">
+  <div className="min-h-screen bg-black flex items-center justify-center w-full">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="px-2 sm:px-4 py-3 sm:py-4">
@@ -115,12 +115,16 @@ export default function ReelsPage() {
       </div>
 
       {/* Reels Display */}
-      <div className="relative">
-        {showTrending ? (
-          <ReelsDisplay key={refreshKey} trending={true} />
-        ) : (
-          <ReelsDisplay key={refreshKey} initialCategory={selectedCategory} />
-        )}
+      <div className="relative flex items-center justify-center w-full h-[calc(100vh-120px)]">
+        <div className="flex items-center justify-center w-full max-w-[400px] h-full bg-black rounded-xl shadow-xl overflow-hidden relative">
+          {/* Reel Content */}
+          {showTrending ? (
+            <ReelsDisplay key={refreshKey} trending={true} />
+          ) : (
+            <ReelsDisplay key={refreshKey} initialCategory={selectedCategory} />
+          )}
+          {/* Right-side action buttons (like, comment, etc.) should be handled inside ReelsDisplay for best UX */}
+        </div>
       </div>
 
       {/* Create Reel Modal */}

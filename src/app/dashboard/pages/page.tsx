@@ -1237,12 +1237,7 @@ const PagesInterface: React.FC = () => {
               </button>
               
               {/* Action Buttons */}
-              <button className="p-3 bg-gray-50 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-colors">
-                <Camera className="w-5 h-5 text-gray-600" />
-              </button>
-              <button className="p-3 bg-gray-50 rounded-xl flex items-center justify-center hover:bg-gray-100 transition-colors">
-                <Users className="w-5 h-5 text-gray-600" />
-              </button>
+              {/* Removed camera and users icon buttons from mobile menu */}
               
               {/* Mobile Menu Button */}
               <button
@@ -1273,22 +1268,7 @@ const PagesInterface: React.FC = () => {
             </div>
             
             <div className="p-6 space-y-3">
-              {tabs.map((tab: Tab) => (
-                <button
-                  key={tab.name}
-                  onClick={() => {
-                    setActiveTab(tab.name);
-                    setShowMobileMenu(false);
-                  }}
-                  className={`w-full text-left p-4 rounded-xl transition-all duration-200 ${
-                    activeTab === tab.name
-                      ? 'bg-blue-50 text-blue-600 border border-blue-200'
-                      : 'hover:bg-gray-50 text-gray-700'
-                  }`}
-                >
-                  <span className="font-semibold">{tab.name}</span>
-                </button>
-              ))}
+              {/* Removed camera and users icon buttons from pages dashboard */}
             </div>
           </div>
         </div>

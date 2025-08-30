@@ -147,8 +147,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
         // Dispatch event to refresh feed
         window.dispatchEvent(new CustomEvent('albumCreated'));
         
-        // Redirect to dashboard feed immediately
-        window.location.href = '/dashboard';
+  // Stay on the album page so user can create more albums
       } else if (response.status === 401) {
         console.error('Authentication failed');
         setIsAuthenticated(false);
@@ -366,17 +365,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
         <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-30">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">My Albums</h1>
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
-                <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-              <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
-                <Users className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-              <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
-                <User className="w-5 h-5 sm:w-6 sm:h-6" />
-              </button>
-            </div>
+            {/* Removed icon buttons from header */}
           </div>
         </div>
 
@@ -629,7 +618,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
               <input
                 type="file"
                 multiple
-                accept="image/*,video/*"
+                accept="image/*"
                 onChange={handlePhotoUpload}
                 className="hidden"
                 id="photo-upload"
@@ -642,10 +631,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
                   </div>
                 </div>
                 <p className="text-gray-700 dark:text-gray-300 text-sm sm:text-base px-2 sm:px-4 font-medium">
-                  Tap to upload photos or videos
+                  Tap to upload photos
                 </p>
                 <p className="text-gray-500 dark:text-gray-400 text-xs mt-1 sm:mt-2">
-                  Supports: JPG, PNG, GIF, MP4, MOV, AVI
+                  Supports: JPG, PNG, GIF
                 </p>
               </label>
             </div>

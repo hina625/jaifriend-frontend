@@ -472,7 +472,6 @@ const MarketplaceSeller: React.FC = () => {
               <h2 className="text-lg sm:text-xl font-semibold text-gray-900">My Products</h2>
               <p className="text-sm text-gray-600">{products.length} product{products.length !== 1 ? 's' : ''}</p>
             </div>
-            
             <div className="flex items-center gap-2">
               <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                 <Search className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
@@ -480,7 +479,6 @@ const MarketplaceSeller: React.FC = () => {
               <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                 <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
               </button>
-              
               {/* View Mode Toggle */}
               <div className="hidden sm:flex bg-gray-100 rounded-lg p-1">
                 <button
@@ -496,6 +494,13 @@ const MarketplaceSeller: React.FC = () => {
                   <Menu className="w-4 h-4" />
                 </button>
               </div>
+              {/* Sell new product button always visible */}
+              <button
+                onClick={() => setShowSellModal(true)}
+                className="bg-blue-500 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors text-sm sm:text-base"
+              >
+                Sell new product
+              </button>
             </div>
           </div>
 
@@ -532,7 +537,10 @@ const MarketplaceSeller: React.FC = () => {
       </div>
       <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Explore marketplace</h3>
       <p className="text-gray-600 text-sm sm:text-base mb-4 sm:mb-6">Discover products from other sellers.</p>
-      <button className="bg-blue-500 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors text-sm sm:text-base">
+      <button 
+        className="bg-blue-500 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-medium hover:bg-blue-600 transition-colors text-sm sm:text-base"
+        onClick={() => setActiveTab('Market')}
+      >
         Browse Products
       </button>
     </div>
@@ -657,12 +665,6 @@ const MarketplaceSeller: React.FC = () => {
             position: 'relative',
             width: '3rem',
             height: '3rem',
-            borderRadius: '50%',
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-            display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',

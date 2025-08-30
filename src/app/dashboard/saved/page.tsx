@@ -458,36 +458,7 @@ export default function SavedPosts() {
               </div>
             </div>
             
-            <div className="flex items-center gap-2">
-              {/* Search Toggle */}
-              <button
-                onClick={() => setShowSearch(!showSearch)}
-                className={`p-2 rounded-lg transition-colors ${showSearch ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'}`}
-              >
-                <Search className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-              
-              {/* View Mode Toggle - Desktop Only */}
-              <div className="hidden sm:flex bg-gray-100 rounded-lg p-1">
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-1.5 rounded transition-colors ${viewMode === 'list' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'}`}
-                >
-                  <List className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-1.5 rounded transition-colors ${viewMode === 'grid' ? 'bg-white shadow-sm' : 'hover:bg-gray-200'}`}
-                >
-                  <Grid className="w-4 h-4" />
-                </button>
-              </div>
-              
-              {/* More Options */}
-              <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <MoreHorizontal className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
-              </button>
-            </div>
+            {/* Removed search, view mode toggle, and more options from header */}
           </div>
 
           {/* Search Bar */}
@@ -509,33 +480,7 @@ export default function SavedPosts() {
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="px-4 sm:px-6 lg:px-8 py-3">
-          <div className="flex gap-1 overflow-x-auto scrollbar-hide">
-            {filters.map((filter) => (
-              <button
-                key={filter.id}
-                onClick={() => setActiveFilter(filter.id)}
-                className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg whitespace-nowrap transition-all text-sm sm:text-base ${
-                  activeFilter === filter.id
-                    ? 'bg-blue-500 text-white shadow-md'
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                }`}
-              >
-                <span>{filter.label}</span>
-                <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                  activeFilter === filter.id 
-                    ? 'bg-blue-400 text-blue-100' 
-                    : 'bg-gray-200 text-gray-600'
-                }`}>
-                  {filter.count}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+  {/* Removed filter tabs (All, Albums, Posts, Recent) from Saved page */}
 
       {/* Stats Bar */}
       <div className="bg-white border-b border-gray-200">

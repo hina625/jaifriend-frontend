@@ -2120,7 +2120,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="bg-[#f4f7fb] dark:bg-gray-900 min-h-screen pt-2 sm:pt-4 pb-24 sm:pb-6 w-full scrollbar-hide overflow-x-hidden transition-colors duration-200 touch-manipulation">
+  <div className="bg-[#f4f7fb] dark:bg-gray-900 min-h-screen pt-2 sm:pt-4 pb-24 sm:pb-6 w-full max-w-[1200px] mx-auto scrollbar-hide overflow-x-hidden transition-colors duration-200 touch-manipulation">
       <Popup popup={popup} onClose={closePopup} />
       
       <SharePopup
@@ -2415,8 +2415,8 @@ export default function Dashboard() {
         </div>
 
         <div className="flex flex-col xl:flex-row gap-3 sm:gap-4 w-full scrollbar-hide">
-          <div className="w-full xl:flex-1 max-w-none xl:max-w-2xl xl:mx-0 scrollbar-hide">
-            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 mb-3 sm:mb-4 transition-colors duration-200">
+          <div className="w-full xl:flex-1 max-w-none xl:max-w-[700px] xl:mx-0 scrollbar-hide">
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-2 sm:p-3 mb-3 sm:mb-4 transition-colors duration-200">
               {/* Top Section: Content Type Selection */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
