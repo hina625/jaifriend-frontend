@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, FileText, ArrowLeft, ArrowRight, ThumbsUp, Camera, Users, Menu, X, Search, Heart, MessageCircle, Share2, Globe, Calendar, Users2, Star } from 'lucide-react';
@@ -557,7 +558,7 @@ const PagesInterface: React.FC = () => {
       
       const [allPagesResponse, userPagesResponse] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/pages`),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/pages/user`, {
+  fetch(`${API_URL}/api/pages/user`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }

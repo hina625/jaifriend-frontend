@@ -38,7 +38,7 @@ const OnlineUsersPage: React.FC = () => {
       if (!token) return;
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/admin/users/online?page=${page}&limit=20&sortBy=${sortField}&sortOrder=${sortOrder}`,
+  `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/admin/users/online?page=${page}&limit=20&sortBy=${sortField}&sortOrder=${sortOrder}`,
         {
           headers: { 'Authorization': `Bearer ${token}` }
         }
@@ -100,7 +100,7 @@ const OnlineUsersPage: React.FC = () => {
       if (!token) return;
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/admin/users/bulk/${bulkAction}`,
+  `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/admin/users/bulk/${bulkAction}`,
         {
           method: 'POST',
           headers: {
@@ -131,7 +131,7 @@ const OnlineUsersPage: React.FC = () => {
       if (!token) return;
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/admin/users/${userId}/${action}`,
+  `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/admin/users/${userId}/${action}`,
         {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` }

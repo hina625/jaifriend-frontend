@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
 import React, { useState } from 'react';
 import { Plus, Tag, Search, Users, ArrowLeft, Filter, Bell, Menu, X } from 'lucide-react';
 

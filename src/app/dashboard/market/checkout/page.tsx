@@ -73,7 +73,7 @@ export default function CheckoutPage() {
   };
 
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
   const handleOrder = async (e: any) => {
     e.preventDefault();
     setOrderError(null);

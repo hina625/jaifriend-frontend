@@ -29,7 +29,8 @@ export default function ProfileNavigation({ className = '' }: ProfileNavigationP
       const token = localStorage.getItem('token');
       if (!token) return;
 
-                             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+                             const API_URL = process.env.NEXT_PUBLIC_API_URL;
+                             const response = await fetch(`${API_URL}/api/profile/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -113,7 +114,7 @@ export default function ProfileNavigation({ className = '' }: ProfileNavigationP
       {/* Dropdown Menu */}
       {showDropdown && (
         <>
-          {/* Backdrop */}
+          src={user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL}/${user.avatar}`) : '/default-avatar.svg'}
           <div
             className="fixed inset-0 z-10"
             onClick={() => setShowDropdown(false)}
@@ -126,7 +127,7 @@ export default function ProfileNavigation({ className = '' }: ProfileNavigationP
               <div className="px-3 py-2 border-b border-gray-100 dark:border-dark-700">
                 <div className="flex items-center gap-3">
                   <img
-                    src={user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/${user.avatar}`) : '/default-avatar.svg'}
+                      src={user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL}/${user.avatar}`) : '/default-avatar.svg'}
                     alt={user.name}
                     className="w-10 h-10 rounded-full object-cover"
                     onError={(e) => {

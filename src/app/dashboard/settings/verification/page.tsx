@@ -49,7 +49,7 @@ const ProfileVerificationPage = () => {
           return;
         }
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/verification/status`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/verification/status`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -167,7 +167,7 @@ const ProfileVerificationPage = () => {
       console.log('Passport file:', verificationData.passportDocument?.name);
       console.log('Picture file:', verificationData.personalPicture?.name);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/verification`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/verification`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

@@ -1,4 +1,5 @@
 'use client';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Bookmark, Grid, List, Search, Filter, Share2, Heart, MessageCircle, Download, Settings, MoreHorizontal } from 'lucide-react';
@@ -34,7 +35,7 @@ export default function SavedPosts() {
       setLoading(true);
       
       // Fetch saved albums
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+  const apiUrl = API_URL;
       
       const savedAlbumsRes = await fetch(`${apiUrl}/api/albums/saved`, {
         headers: {
@@ -175,7 +176,7 @@ export default function SavedPosts() {
   const handleAlbumLike = async (albumId: string) => {
     const token = localStorage.getItem('token');
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+  const apiUrl = API_URL;
       const res = await fetch(`${apiUrl}/api/albums/${albumId}/like`, {
         method: 'POST',
         headers: {
@@ -197,7 +198,7 @@ export default function SavedPosts() {
   const handleAlbumComment = async (albumId: string, comment: string) => {
     const token = localStorage.getItem('token');
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+  const apiUrl = API_URL;
       const res = await fetch(`${apiUrl}/api/albums/${albumId}/comment`, {
         method: 'POST',
         headers: {
@@ -222,7 +223,7 @@ export default function SavedPosts() {
     const token = localStorage.getItem('token');
     
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+  const apiUrl = API_URL;
       const url = `${apiUrl}/api/albums/${albumId}/save`;
       
       const res = await fetch(url, {
@@ -263,7 +264,7 @@ export default function SavedPosts() {
   const handleAlbumShare = async (albumId: string, shareOptions?: any) => {
     const token = localStorage.getItem('token');
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+  const apiUrl = API_URL;
       const res = await fetch(`${apiUrl}/api/albums/${albumId}/share`, {
         method: 'POST',
         headers: {
@@ -287,7 +288,7 @@ export default function SavedPosts() {
   const handlePostLike = async (postId: string) => {
     const token = localStorage.getItem('token');
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+  const apiUrl = API_URL;
       const res = await fetch(`${apiUrl}/api/posts/${postId}/like`, {
         method: 'POST',
         headers: {
@@ -310,7 +311,7 @@ export default function SavedPosts() {
     const token = localStorage.getItem('token');
     
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+  const apiUrl = API_URL;
       const url = `${apiUrl}/api/posts/${postId}/save`;
       
       const res = await fetch(url, {
@@ -351,7 +352,7 @@ export default function SavedPosts() {
   const handlePostComment = async (postId: string, comment: string) => {
     const token = localStorage.getItem('token');
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+  const apiUrl = API_URL;
       const res = await fetch(`${apiUrl}/api/posts/${postId}/comment`, {
         method: 'POST',
         headers: {
@@ -374,7 +375,7 @@ export default function SavedPosts() {
   const handlePostShare = async (postId: string, shareOptions?: any) => {
     const token = localStorage.getItem('token');
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+      const apiUrl = API_URL;
       const res = await fetch(`${apiUrl}/api/posts/${postId}/share`, {
         method: 'POST',
         headers: {
@@ -397,7 +398,7 @@ export default function SavedPosts() {
   const handlePostView = async (postId: string) => {
     const token = localStorage.getItem('token');
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+      const apiUrl = API_URL;
       const res = await fetch(`${apiUrl}/api/posts/${postId}/view`, {
         method: 'POST',
         headers: {
@@ -417,7 +418,7 @@ export default function SavedPosts() {
 
   const handleReaction = async (postId: string, reactionType: string) => {
     const token = localStorage.getItem('token');
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+  const apiUrl = API_URL;
     const res = await fetch(`${apiUrl}/api/posts/${postId}/reaction`, {
       method: 'POST',
       headers: {

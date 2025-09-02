@@ -369,7 +369,8 @@ export const searchGifsApi = async (query: string, limit: number = 20) => {
     throw new Error('GIPHY API key not configured');
   }
   
-  const res = await axios.get(`https://api.giphy.com/v1/gifs/search`, {
+  const GIPHY_BASE_URL = process.env.NEXT_PUBLIC_GIPHY_BASE_URL || 'https://api.giphy.com/v1/gifs';
+  const res = await axios.get(`${GIPHY_BASE_URL}/search`, {
     params: {
       api_key: GIPHY_API_KEY,
       q: query,
@@ -386,7 +387,8 @@ export const getTrendingGifsApi = async (limit: number = 20) => {
     throw new Error('GIPHY API key not configured');
   }
   
-  const res = await axios.get(`https://api.giphy.com/v1/gifs/trending`, {
+  const GIPHY_BASE_URL = process.env.NEXT_PUBLIC_GIPHY_BASE_URL || 'https://api.giphy.com/v1/gifs';
+  const res = await axios.get(`${GIPHY_BASE_URL}/trending`, {
     params: {
       api_key: GIPHY_API_KEY,
       limit: limit,

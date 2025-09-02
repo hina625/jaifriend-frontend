@@ -60,7 +60,7 @@ const PeopleYouMayKnow: React.FC<PeopleYouMayKnowProps> = ({ onFollow }) => {
         return;
       }
 
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/suggested`;
+  const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/users/suggested`;
 
       const response = await fetch(apiUrl, {
         headers: {
@@ -122,7 +122,7 @@ const PeopleYouMayKnow: React.FC<PeopleYouMayKnowProps> = ({ onFollow }) => {
         return newSet;
       });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${userId}/follow`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/${userId}/follow`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

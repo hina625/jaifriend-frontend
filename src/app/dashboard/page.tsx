@@ -16,6 +16,7 @@ import LocationDetector from '@/components/LocationDetector';
 import LocationDisplay from '@/components/LocationDisplay';
 
 import { isAuthenticated, clearAuth, getCurrentUserId } from '@/utils/auth';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
 import { 
   searchGifsApi, 
   getTrendingGifsApi,
@@ -30,14 +31,14 @@ function getUserAvatar() {
     
     if (userImages.avatar) {
       if (userImages.avatar.includes('localhost:3000')) {
-        const correctedUrl = userImages.avatar.replace('http://localhost:3000', 'https://jaifriend-frontend-n6zr.vercel.app');
+        const correctedUrl = userImages.avatar.replace('http://localhost:3000', 'https://jaifriend.hgdjlive.com');
         return correctedUrl;
       }
       
       // Handle avatar URLs properly
       if (userImages.avatar.includes('/avatars/') || userImages.avatar.includes('/covers/')) {
         // For avatar paths, construct the full URL
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+  const baseUrl = API_URL;
         if (userImages.avatar.startsWith('http')) {
           return userImages.avatar;
         }
@@ -45,7 +46,7 @@ function getUserAvatar() {
         return fullUrl;
       }
       
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+  const baseUrl = API_URL;
       if (userImages.avatar.startsWith('http')) {
         return userImages.avatar;
       }
@@ -65,7 +66,7 @@ function getUserAvatar() {
       // Handle avatar URLs properly
       if (user.avatar.includes('/avatars/') || user.avatar.includes('/covers/')) {
         // For avatar paths, construct the full URL
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
         if (user.avatar.startsWith('http')) {
           return user.avatar;
         }
@@ -73,7 +74,7 @@ function getUserAvatar() {
         return fullUrl;
       }
       
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+  const baseUrl = API_URL;
       if (user.avatar.startsWith('http')) {
         return user.avatar;
       }
@@ -259,7 +260,7 @@ export default function Dashboard() {
     
     editMediaFiles.forEach(file => formData.append('media', file));
     
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}`, {
+  const res = await fetch(`${API_URL}/api/posts/${postId}`, {
       method: 'PUT',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -282,7 +283,7 @@ export default function Dashboard() {
     setDeletingComments(prev => ({ ...prev, [commentKey]: true }));
     
     try {
-      const url = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/comment/${commentId}`;
+  const url = `${API_URL}/api/posts/${postId}/comment/${commentId}`;
       
       const res = await fetch(url, {
         method: 'DELETE',
@@ -313,7 +314,7 @@ export default function Dashboard() {
     setDeletingComments(prev => ({ ...prev, [commentKey]: true }));
     
     try {
-      const url = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/comment/${commentId}`;
+  const url = `${API_URL}/api/albums/${albumId}/comment/${commentId}`;
       
       const res = await fetch(url, {
         method: 'DELETE',
@@ -344,7 +345,7 @@ export default function Dashboard() {
       // Use the correct posts endpoint that populates user data
       let postsData = [];
       try {
-        const postsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`, token ? { headers: { 'Authorization': `Bearer ${token}` } } : {});
+  const postsResponse = await fetch(`${API_URL}/api/posts`, token ? { headers: { 'Authorization': `Bearer ${token}` } } : {});
         if (postsResponse.ok) {
           postsData = await postsResponse.json();
         }
@@ -352,7 +353,7 @@ export default function Dashboard() {
         console.log('Error fetching posts:', error);
       }
       
-      const albumsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums`, token ? { headers: { 'Authorization': `Bearer ${token}` } } : {});
+  const albumsResponse = await fetch(`${API_URL}/api/albums`, token ? { headers: { 'Authorization': `Bearer ${token}` } } : {});
       const albumsData = albumsResponse.ok ? await albumsResponse.json() : [];
       
       // If posts don't have populated user data, try to fetch user info for each post
@@ -363,7 +364,7 @@ export default function Dashboard() {
               // Check if post has user ID (could be in user field as string or userId field)
               const userId = post.user || post.userId;
               if (userId && typeof userId === 'string') {
-                const userResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${userId}`, {
+                const userResponse = await fetch(`${API_URL}/api/users/${userId}`, {
                   headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (userResponse.ok) {
@@ -469,7 +470,7 @@ export default function Dashboard() {
         const postsToTrack = posts.slice(0, 5);
         for (const post of postsToTrack) {
           try {
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${post._id}/view`, {
+            await fetch(`${API_URL}/api/posts/${post._id}/view`, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${token}`
@@ -494,7 +495,7 @@ export default function Dashboard() {
         const albumsToTrack = albums.slice(0, 3);
         for (const album of albumsToTrack) {
           try {
-            await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${album._id}/view`, {
+            await fetch(`${API_URL}/api/albums/${album._id}/view`, {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${token}`
@@ -555,7 +556,7 @@ export default function Dashboard() {
         formData.append('media', file);
       });
       
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`, {
+  const res = await fetch(`${API_URL}/api/posts`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -572,7 +573,7 @@ export default function Dashboard() {
           try {
             const token = localStorage.getItem('token');
             if (token && post.userId) {
-              const userResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${post.userId}`, {
+              const userResponse = await fetch(`${API_URL}/api/users/${post.userId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
               });
               if (userResponse.ok) {
@@ -657,7 +658,7 @@ export default function Dashboard() {
     }
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/toggle-comments`, {
+  const res = await fetch(`${API_URL}/api/posts/${postId}/toggle-comments`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -692,7 +693,7 @@ export default function Dashboard() {
     }
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/pin`, {
+  const res = await fetch(`${API_URL}/api/posts/${postId}/pin`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -722,7 +723,7 @@ export default function Dashboard() {
     }
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/boost`, {
+  const res = await fetch(`${API_URL}/api/posts/${postId}/boost`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -756,7 +757,7 @@ export default function Dashboard() {
         const deletePostId = postToDelete;
         showPopup('info', 'Deleting Post', 'Please wait while we delete your post...');
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${deletePostId}`, {
+  const res = await fetch(`${API_URL}/api/posts/${deletePostId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -812,7 +813,7 @@ export default function Dashboard() {
     });
 
     try {
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/like`;
+  const apiUrl = `${API_URL}/api/posts/${postId}/like`;
       
       const res = await fetch(apiUrl, {
         method: 'POST',
@@ -873,7 +874,7 @@ export default function Dashboard() {
     }
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/reaction`, {
+  const res = await fetch(`${API_URL}/api/posts/${postId}/reaction`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -904,7 +905,7 @@ export default function Dashboard() {
     }
     
     try {
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/save`;
+  const apiUrl = `${API_URL}/api/posts/${postId}/save`;
       
       const res = await fetch(apiUrl, {
         method: 'POST',
@@ -950,7 +951,7 @@ export default function Dashboard() {
     if (!commentText.trim()) return;
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/comment`, {
+  const res = await fetch(`${API_URL}/api/posts/${postId}/comment`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -991,7 +992,7 @@ export default function Dashboard() {
   const handleView = async (postId: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL || `https://jaifriend-backend-production.up.railway.app/api/posts/${postId}/view`, {
+  const res = await fetch(`${API_URL}/api/posts/${postId}/view`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -1011,7 +1012,7 @@ export default function Dashboard() {
   const handleAlbumDelete = async (albumId: string) => {
     if (!window.confirm('Delete this album?')) return;
     const token = localStorage.getItem('token');
-    const res = await fetch(process.env.NEXT_PUBLIC_API_URL || `https://jaifriend-backend-production.up.railway.app/api/albums/${albumId}`, {
+  const res = await fetch(`${API_URL}/api/albums/${albumId}`, {
       method: 'DELETE',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -1031,7 +1032,7 @@ export default function Dashboard() {
     }
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/like`, {
+  const res = await fetch(`${API_URL}/api/albums/${albumId}/like`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1059,7 +1060,7 @@ export default function Dashboard() {
     }
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/reaction`, {
+  const res = await fetch(`${API_URL}/api/albums/${albumId}/reaction`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1082,7 +1083,7 @@ export default function Dashboard() {
   const handleAlbumComment = async (albumId: string, comment: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/comment`, { 
+  const res = await fetch(`${API_URL}/api/albums/${albumId}/comment`, { 
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -1104,7 +1105,7 @@ export default function Dashboard() {
   const handleAlbumSave = async (albumId: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/save`, {
+  const res = await fetch(`${API_URL}/api/albums/${albumId}/save`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -1126,7 +1127,7 @@ export default function Dashboard() {
   const handleAlbumShare = async (albumId: string, shareOptions?: ShareOptions) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums/${albumId}/share`, {
+  const res = await fetch(`${API_URL}/api/albums/${albumId}/share`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -1162,22 +1163,12 @@ export default function Dashboard() {
 
   const getMediaUrl = (url: string) => {
     if (!url) {
-      return '/default-avatar.svg'; // Return default avatar instead of empty string
+      return '/default-avatar.svg';
     }
-    
     if (url.startsWith('http')) {
       return url;
     }
-    
-    // Handle avatar URLs properly
-    if (url.includes('/avatars/') || url.includes('/covers/')) {
-      // For avatar paths, construct the full URL
-      const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/${url.startsWith('/') ? url.substring(1) : url}`;
-      return fullUrl;
-    }
-    
-    const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/${url.startsWith('/') ? url.substring(1) : url}`;
-    return fullUrl;
+    return `${API_URL}/${url}`;
   };
 
   const [userEmail, setUserEmail] = useState("");

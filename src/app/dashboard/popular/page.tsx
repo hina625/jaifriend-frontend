@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Filter, Search, TrendingUp, Grid, List, Bookmark, Share2, Heart, MessageCircle } from 'lucide-react';
 import PostDisplay from '@/components/PostDisplay';
@@ -31,8 +32,8 @@ export default function PopularPostsPage() {
       console.log('Fetching popular content...');
       
       const [postsResponse, albumsResponse] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/albums`)
+        fetch(`${API_URL}/api/posts`),
+        fetch(`${API_URL}/api/albums`)
       ]);
       
       if (!postsResponse.ok) {
@@ -153,7 +154,7 @@ export default function PopularPostsPage() {
   const handlePostShare = async (postId: string, shareOptions?: any) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/share`, {
+    const res = await fetch(`${API_URL}/api/posts/${postId}/share`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -176,7 +177,7 @@ export default function PopularPostsPage() {
   const handlePostView = async (postId: string) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app '}/api/posts/${postId}/view`, {
+    const res = await fetch(`${API_URL}/api/posts/${postId}/view`, {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -195,7 +196,7 @@ export default function PopularPostsPage() {
 
   const handleLike = async (postId: string) => {
     const token = localStorage.getItem('token');
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/like`, { 
+  const res = await fetch(`${API_URL}/api/posts/${postId}/like`, { 
       method: 'POST',
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -211,7 +212,7 @@ export default function PopularPostsPage() {
 
   const handleReaction = async (postId: string, reactionType: string) => {
     const token = localStorage.getItem('token');
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/reaction`, { 
+  const res = await fetch(`${API_URL}/api/posts/${postId}/reaction`, { 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

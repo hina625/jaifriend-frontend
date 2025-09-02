@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Camera, Edit, Search, Video, Image, Hash, AtSign, Link, Plus, Heart, MessageCircle, Share2, MoreHorizontal, Users, FileText, Diamond, X, Upload, Smile, MapPin, Globe } from 'lucide-react';
@@ -147,7 +148,7 @@ const PageView: React.FC = () => {
   const fetchPage = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/pages/${pageId}`, {
+  const response = await fetch(`${API_URL}/api/pages/${pageId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -169,7 +170,7 @@ const PageView: React.FC = () => {
   const fetchPagePosts = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/pages/${pageId}/posts`, {
+  const response = await fetch(`${API_URL}/api/pages/${pageId}/posts`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -189,7 +190,7 @@ const PageView: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`, {
+  const response = await fetch(`${API_URL}/api/posts`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -258,7 +259,7 @@ const PageView: React.FC = () => {
         formData.append('media', file);
       });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`, {
+  const response = await fetch(`${API_URL}/api/posts`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -326,7 +327,7 @@ const PageView: React.FC = () => {
   const fetchJobs = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/jobs/page/${pageId}`, {
+  const response = await fetch(`${API_URL}/api/jobs/page/${pageId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -389,7 +390,7 @@ const PageView: React.FC = () => {
         const imageFormData = new FormData();
         imageFormData.append('media', jobImage);
 
-        const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/upload`, {
+  const uploadResponse = await fetch(`${API_URL}/api/upload`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -413,7 +414,7 @@ const PageView: React.FC = () => {
       // Debug: Log the data being sent
       console.log('Sending job data:', jobData);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/jobs`, {
+  const response = await fetch(`${API_URL}/api/jobs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -502,7 +503,7 @@ const PageView: React.FC = () => {
         const thumbnailFormData = new FormData();
         thumbnailFormData.append('media', offerThumbnail);
 
-        const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/upload`, {
+  const uploadResponse = await fetch(`${API_URL}/api/upload`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -524,7 +525,7 @@ const PageView: React.FC = () => {
       }
 
       // Create the offer (you'll need to implement this API endpoint)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/offers`, {
+  const response = await fetch(`${API_URL}/api/offers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -630,7 +631,7 @@ const PageView: React.FC = () => {
       const formData = new FormData();
       formData.append('media', profileImage);
 
-      const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/upload`, {
+  const uploadResponse = await fetch(`${API_URL}/api/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -646,7 +647,7 @@ const PageView: React.FC = () => {
       const imageUrl = uploadData.media[0].url;
 
      
-      const updateResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/pages/${pageId}/images`, {
+  const updateResponse = await fetch(`${API_URL}/api/pages/${pageId}/images`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -688,7 +689,7 @@ const PageView: React.FC = () => {
       const formData = new FormData();
       formData.append('media', coverImage);
 
-      const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/upload`, {
+  const uploadResponse = await fetch(`${API_URL}/api/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -704,7 +705,7 @@ const PageView: React.FC = () => {
       const imageUrl = uploadData.media[0].url;
 
       // Now update the page with the new cover image
-      const updateResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/pages/${pageId}/images`, {
+  const updateResponse = await fetch(`${API_URL}/api/pages/${pageId}/images`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

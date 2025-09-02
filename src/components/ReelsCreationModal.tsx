@@ -229,7 +229,7 @@ export default function ReelsCreationModal({ isOpen, onClose, onSuccess }: Reels
     
     console.log('📤 Calling createPost API...');
     
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/posts`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`

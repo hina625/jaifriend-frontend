@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Camera, Edit, Search, Video, Image, Plus, Heart, MessageCircle, Share2, Users, FileText, X, ChevronDown, UserPlus, Globe2, Users2, Car, File, Smile, Hash, AtSign, Link, Upload, MapPin, Calendar, ThumbsUp, MoreHorizontal, Bookmark, Flag, Bell, BellOff } from 'lucide-react';
@@ -135,7 +136,7 @@ const GroupPage: React.FC = () => {
       
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups/${groupId}`, {
+  const response = await fetch(`${API_URL}/api/groups/${groupId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -160,7 +161,7 @@ const GroupPage: React.FC = () => {
       
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups/${groupId}/posts`, {
+  const response = await fetch(`${API_URL}/api/groups/${groupId}/posts`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -213,7 +214,7 @@ const GroupPage: React.FC = () => {
         formData.append('media', file);
       });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups/${groupId}/posts`, {
+  const response = await fetch(`${API_URL}/api/groups/${groupId}/posts`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -285,7 +286,7 @@ const GroupPage: React.FC = () => {
       const formData = new FormData();
       formData.append('postMedia', profileImage);
 
-      const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/upload`, {
+  const uploadResponse = await fetch(`${API_URL}/api/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -306,7 +307,7 @@ const GroupPage: React.FC = () => {
 
       // Now update the group with the new profile image
       console.log('🔄 Updating group with image URL:', imageUrl);
-      const updateResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups/${groupId}/images`, {
+  const updateResponse = await fetch(`${API_URL}/api/groups/${groupId}/images`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -354,7 +355,7 @@ const GroupPage: React.FC = () => {
       const formData = new FormData();
       formData.append('postMedia', coverImage);
 
-      const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/upload`, {
+  const uploadResponse = await fetch(`${API_URL}/api/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -375,7 +376,7 @@ const GroupPage: React.FC = () => {
 
       // Now update the group with the new cover image
       console.log('🔄 Updating group with cover image URL:', imageUrl);
-      const updateResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups/${groupId}/images`, {
+  const updateResponse = await fetch(`${API_URL}/api/groups/${groupId}/images`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Play, Clock, Globe, Eye, Star } from 'lucide-react';
 import Popup from '@/components/Popup';
@@ -57,7 +58,7 @@ export default function MoviesPage() {
   const fetchMovies = async () => {
     try {
       setLoading(true);
-      const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app/api/movies');
+  const response = await fetch(`${API_URL}/api/movies`);
       if (response.ok) {
         const data = await response.json();
         setMovies(data);

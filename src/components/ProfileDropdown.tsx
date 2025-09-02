@@ -13,7 +13,7 @@ export default function ProfileDropdown({ profile }: ProfileDropdownProps) {
       {/* Profile Section */}
       <div className="flex items-center gap-2 sm:gap-3 mb-2">
         <img
-          src={profile.avatar ? (profile.avatar.startsWith('http') ? profile.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/${profile.avatar}`) : "/default-avatar.svg"}
+          src={profile.avatar ? (profile.avatar.startsWith('http') ? profile.avatar : `${process.env.NEXT_PUBLIC_API_URL}/${profile.avatar}`) : "/default-avatar.svg"}
           alt="avatar"
           className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border border-gray-200 dark:border-dark-600 object-cover"
           onError={(e) => {

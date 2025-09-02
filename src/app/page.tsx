@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { loginApi } from '../utils/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
 import { setToken } from '../utils/auth';
 import AuthGuard from '../components/AuthGuard';
 

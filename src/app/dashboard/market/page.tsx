@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from "next/navigation";
 import { Search, ChevronLeft, ChevronRight, MapPin, ChevronDown, ShoppingCart, Heart, Plus, Users, X } from 'lucide-react';
@@ -50,7 +51,7 @@ const MarketplacePage: React.FC = () => {
       }
       console.log('Fetching products from market...');
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/products`);
+  const response = await fetch(`${API_URL}/api/products`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -209,7 +210,7 @@ const MarketplacePage: React.FC = () => {
                 placeholder="Search for products"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>

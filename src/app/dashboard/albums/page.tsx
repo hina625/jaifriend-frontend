@@ -22,7 +22,7 @@ const PhotoAlbumManager: React.FC = () => {
     title: '',
     message: ''
   });
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
   // Fetch real albums from API
   useEffect(() => {
     const fetchAlbums = async () => {
@@ -37,7 +37,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
           return;
         }
         
-        const response = await fetch(`${API_URL}/api/albums/user`, {
+  const response = await fetch(`${API_URL}/api/albums/user`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -129,7 +129,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
         }
       });
 
-      const response = await fetch(`${API_URL}/api/albums`, {
+  const response = await fetch(`${API_URL}/api/albums`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -193,8 +193,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
 
   const getMediaUrl = (url: string) => {
     if (!url) return '';
-    if (url.startsWith('http')) return url;
-    return `${API_URL}/${url}`;
+  if (url.startsWith('http')) return url;
+  return `${API_URL}/${url}`;
   };
 
   // Edit album handlers
@@ -236,7 +236,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-pr
         }
       });
 
-      const response = await fetch(`${API_URL}/api/albums/${albumId}`, {
+  const response = await fetch(`${API_URL}/api/albums/${albumId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`

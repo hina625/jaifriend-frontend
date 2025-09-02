@@ -54,7 +54,8 @@ export default function PostDisplay({
       const token = localStorage.getItem('token');
       if (token && post._id) {
         try {
-          await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${post._id}/view`, {
+          const API_URL = process.env.NEXT_PUBLIC_API_URL;
+          await fetch(`${API_URL}/api/posts/${post._id}/view`, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`
@@ -91,7 +92,7 @@ export default function PostDisplay({
       // Continue to construct the full URL instead of returning default
     }
     
-            const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/${url}`;
+            const fullUrl = `${process.env.NEXT_PUBLIC_API_URL}/${url}`;
     console.log('📸 getMediaUrl - Original:', url, 'Full:', fullUrl);
     return fullUrl;
   };
@@ -121,7 +122,8 @@ export default function PostDisplay({
       // Check if user has already voted
       if (post.poll.userVote && post.poll.userVote.includes(optionIndex)) {
         // Remove vote
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${post._id}/poll/vote`, {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const response = await fetch(`${API_URL}/api/posts/${post._id}/poll/vote`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -143,7 +145,8 @@ export default function PostDisplay({
         }
       } else {
         // Add vote
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${post._id}/poll/vote`, {
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const response = await fetch(`${API_URL}/api/posts/${post._id}/poll/vote`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,

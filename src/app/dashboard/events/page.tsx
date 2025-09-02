@@ -4,6 +4,7 @@ import { Calendar, Users, Plus, Search, Upload, ArrowLeft, Menu, X } from 'lucid
 import Popup, { PopupState } from '../../../components/Popup';
 import { useRouter } from 'next/navigation';
 import { isAuthenticated, getToken } from '../../../utils/auth';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
 
 interface FormData {
   eventName: string;
@@ -72,11 +73,11 @@ const EventManagement: React.FC = () => {
         return;
       }
 
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`;
+  const apiUrl = `${API_URL}/api/events`;
       console.log('🔐 Making request to:', apiUrl);
       console.log('🔐 Authorization header:', `Bearer ${token.substring(0, 20)}...`);
 
-      fetch(apiUrl, {
+  fetch(apiUrl, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -278,7 +279,7 @@ const EventManagement: React.FC = () => {
       console.log('Token exists:', !!token);
       console.log('Token length:', token.length);
       console.log('Form data:', formData);
-              console.log('API URL:', process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app');
+          console.log('API URL:', API_URL);
 
       const form = new FormData();
       form.append('title', formData.eventName.trim());
@@ -326,7 +327,7 @@ const EventManagement: React.FC = () => {
       console.log('Start date valid:', !isNaN(startDateTime.getTime()));
       console.log('End date valid:', !isNaN(endDateTime.getTime()));
 
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`;
+  const apiUrl = `${API_URL}/api/events`;
       console.log('Making request to:', apiUrl);
       
       const res = await fetch(apiUrl, {
@@ -363,7 +364,7 @@ const EventManagement: React.FC = () => {
         closeCreateModal();
         
         // Refresh events list
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`, {
+  fetch(`${API_URL}/api/events`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -435,7 +436,7 @@ const EventManagement: React.FC = () => {
 
       console.log('Deleting event:', id);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events/${id}`, { 
+  const response = await fetch(`${API_URL}/api/events/${id}`, { 
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -449,7 +450,7 @@ const EventManagement: React.FC = () => {
         showPopup('success', 'Event Deleted!', 'Event deleted successfully!');
         
         // Refresh events list
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`, {
+  fetch(`${API_URL}/api/events`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -595,7 +596,7 @@ const EventManagement: React.FC = () => {
         }
       }
       
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events/${editingEvent._id}`;
+  const apiUrl = `${API_URL}/api/events/${editingEvent._id}`;
       console.log('Making request to:', apiUrl);
       
       const res = await fetch(apiUrl, {
@@ -620,7 +621,7 @@ const EventManagement: React.FC = () => {
         closeEditModal();
         
         // Refresh events list
-          fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/events`, {
+  fetch(`${API_URL}/api/events`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

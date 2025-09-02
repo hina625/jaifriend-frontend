@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
 import React, { useState, useEffect } from 'react';
 import { Package, ShoppingCart, Plus, Camera, Users, X, Upload, ArrowLeft, Menu, Search, Filter, Eye, Edit, Trash2, Star } from 'lucide-react';
 
@@ -45,7 +46,7 @@ const MarketplaceSeller: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'My Products') {
       setLoading(true);
-              fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/products`)
+              fetch(`${API_URL}/api/products`)
         .then(res => {
           if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
@@ -143,7 +144,7 @@ const MarketplaceSeller: React.FC = () => {
       console.log('Token exists:', !!token);
       console.log('Token length:', token.length);
       console.log('Form data:', formData);
-              console.log('API URL:', process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app');
+          console.log('API URL:', API_URL);
 
       const form = new FormData();
       form.append('name', formData.name.trim());
@@ -171,7 +172,7 @@ const MarketplaceSeller: React.FC = () => {
         }
       }
       
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/products`;
+  const apiUrl = `${API_URL}/api/products`;
       console.log('Making request to:', apiUrl);
       
       const res = await fetch(apiUrl, {
@@ -195,7 +196,7 @@ const MarketplaceSeller: React.FC = () => {
         resetForm();
         
         // Refresh products list
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/products`)
+  fetch(`${API_URL}/api/products`)
           .then(res => res.json())
           .then(data => {
             setProducts(data);
@@ -264,7 +265,7 @@ const MarketplaceSeller: React.FC = () => {
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/products/${productId}`, {
+  const response = await fetch(`${API_URL}/api/products/${productId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -326,7 +327,7 @@ const MarketplaceSeller: React.FC = () => {
       
       // If it's a relative path (local uploads), prefix with API URL
       // Always use HTTPS to avoid mixed content errors
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+  const apiUrl = API_URL;
       
       // Ensure we're using HTTPS
       const secureUrl = apiUrl.replace('http://', 'https://');

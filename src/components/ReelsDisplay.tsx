@@ -291,7 +291,7 @@ export default function ReelsDisplay({
   const handleShare = async (reelId: string) => {
     try {
       console.log('🔄 Sharing reel:', reelId);
-      console.log('🔗 API URL:', `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/reels/${reelId}/share`);
+  console.log('🔗 API URL:', `${process.env.NEXT_PUBLIC_API_URL}/api/reels/${reelId}/share`);
       
       const response = await shareReel(reelId);
       console.log('✅ Share response:', response);
@@ -329,7 +329,7 @@ export default function ReelsDisplay({
       setIsReacting(true);
 
       // Call backend API directly
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/reels/${reelId}/reaction`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/reels/${reelId}/reaction`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

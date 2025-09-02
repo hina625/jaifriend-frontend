@@ -1,4 +1,5 @@
 'use client';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
 import { useState, useEffect } from 'react';
 import ReelsCreationModal from '@/components/ReelsCreationModal';
 import ReelsDisplay from '@/components/ReelsDisplay';

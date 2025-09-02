@@ -1,4 +1,5 @@
 "use client";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Search, Filter, Users, Settings, MessageCircle, Calendar, MapPin, Globe, Lock, Eye, EyeOff, UserPlus, UserMinus, Crown, Shield, Trash2, Edit3, MoreHorizontal, ChevronDown, Check, X, Star, Heart, Share2, Bookmark, Flag, Bell, BellOff, Menu as MenuIcon, ArrowLeft, FileText, Upload, Smile } from 'lucide-react';
@@ -107,7 +108,7 @@ const GroupsPage: React.FC = () => {
         return;
       }
 
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups`;
+  const apiUrl = `${API_URL}/api/groups`;
 
       const response = await fetch(apiUrl, {
         headers: {
@@ -190,11 +191,11 @@ const GroupsPage: React.FC = () => {
         formDataToSend.append('tags', JSON.stringify(tagsArray));
       }
 
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups`;
+  const apiUrl = `${API_URL}/api/groups`;
 
       console.log('Sending group creation request to:', apiUrl);
 
-      const response = await fetch(apiUrl, {
+  const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -234,8 +235,7 @@ const GroupsPage: React.FC = () => {
           setShowSuccessMessage(false);
         }, 3000);
         
-        // Stay on groups page to show the updated list
-        // router.push(`/dashboard/groups/${newGroup._id}`);
+       
       } else {
         console.error('Failed to create group:', response.status);
         let errorMessage = 'Failed to create group. Please try again.';
@@ -289,7 +289,7 @@ const GroupsPage: React.FC = () => {
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups/${groupId}/leave`, {
+  const response = await fetch(`${API_URL}/api/groups/${groupId}/leave`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -311,7 +311,7 @@ const GroupsPage: React.FC = () => {
         }, 3000);
         
         // Refresh groups to update the UI
-        const groupsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups`, {
+  const groupsResponse = await fetch(`${API_URL}/api/groups`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -350,7 +350,7 @@ const GroupsPage: React.FC = () => {
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups/${groupId}/join`, {
+  const response = await fetch(`${API_URL}/api/groups/${groupId}/join`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -372,7 +372,7 @@ const GroupsPage: React.FC = () => {
         }, 3000);
         
         // Refresh groups to update the UI
-          const groupsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups`, {
+          const groupsResponse = await fetch(`${API_URL}/api/groups`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -448,7 +448,7 @@ const GroupsPage: React.FC = () => {
         formDataToSend.append('tags', JSON.stringify(tagsArray));
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway/app'}/api/groups/${editingGroup._id}`, {
+  const response = await fetch(`${API_URL}/api/groups/${editingGroup._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -498,7 +498,7 @@ const GroupsPage: React.FC = () => {
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups/${groupId}`, {
+  const response = await fetch(`${API_URL}/api/groups/${groupId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

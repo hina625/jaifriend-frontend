@@ -119,14 +119,14 @@ const PricingPage = () => {
     }
   ];
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const handleUpgrade = async (planName: string) => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const userId = user._id || user.id;
     if (!userId) return alert('User not found!');
     
     try {
-      const res = await fetch(`${API_URL}/api/upgrade`, {
+  const res = await fetch(`${API_URL}/api/upgrade`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

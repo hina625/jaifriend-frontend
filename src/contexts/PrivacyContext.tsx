@@ -43,7 +43,7 @@ export const PrivacyProvider: React.FC<PrivacyProviderProps> = ({ children }) =>
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/privacy/settings`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/privacy/settings`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -82,7 +82,7 @@ export const PrivacyProvider: React.FC<PrivacyProviderProps> = ({ children }) =>
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile/me`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -139,7 +139,7 @@ export const PrivacyProvider: React.FC<PrivacyProviderProps> = ({ children }) =>
       const token = localStorage.getItem('token');
       
       if (token) {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/privacy/settings`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/privacy/settings`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -207,7 +207,7 @@ export const PrivacyProvider: React.FC<PrivacyProviderProps> = ({ children }) =>
           workplace: newSettings.workingAt || profileSettings?.workingAt || '',
         };
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/update`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/profile/update`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

@@ -1,10 +1,10 @@
 // Centralized configuration for the application
 export const config = {
   // API Configuration
-  API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app',
+  API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com',
   
   // Frontend URL
-  FRONTEND_URL: process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://jaifriend-frontend-n6zr.vercel.app',
+  FRONTEND_URL: process.env.NEXT_PUBLIC_FRONTEND_URL || 'https://jaifriend.hgdjlive.com',
   
   // Development settings
   IS_DEVELOPMENT: process.env.NODE_ENV === 'development',
