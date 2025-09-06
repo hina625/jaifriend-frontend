@@ -102,7 +102,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/notifications/stats`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/notifications/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -133,7 +133,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/search/quick?q=${encodeURIComponent(query)}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/search/quick?q=${encodeURIComponent(query)}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -360,7 +360,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-              fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+              fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/profile/me`, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
@@ -380,7 +380,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       console.log('Images updated event received in DashboardLayout, refreshing profile...');
       const token = localStorage.getItem('token');
       if (token) {
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/profile/me`, {
           headers: { Authorization: `Bearer ${token}` },
         })
           .then((res) => res.json())
@@ -398,7 +398,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       console.log('Privacy settings updated event received in DashboardLayout, refreshing profile...');
       const token = localStorage.getItem('token');
       if (token) {
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/profile/me`, {
           headers: { Authorization: `Bearer ${token}` },
         })
           .then((res) => res.json())
@@ -411,7 +411,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       console.log('Password changed event received in DashboardLayout, refreshing profile...');
       const token = localStorage.getItem('token');
       if (token) {
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/profile/me`, {
           headers: { Authorization: `Bearer ${token}` },
         })
           .then((res) => res.json())
@@ -437,7 +437,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       console.log('Profile updated event received in DashboardLayout, refreshing profile...');
       const token = localStorage.getItem('token');
       if (token) {
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/profile/me`, {
           headers: { Authorization: `Bearer ${token}` },
         })
           .then((res) => res.json())
@@ -456,7 +456,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   // Menu sections for sidebar
   const menuSections: MenuSections = {
     me: [],
-    community: [],
+    community: [
+      { name: "Notifications", icon: "🔔", color: "bg-red-100", href: "/dashboard/notifications" }
+    ],
     explore: [
       { name: "News Feed", icon: "📰", color: "bg-blue-100", href: "/dashboard" },
       { name: "Albums", icon: "📸", color: "bg-green-100", href: "/dashboard/albums" },
@@ -609,7 +611,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       const token = localStorage.getItem('token');
       if (token) {
         // Get current user's profile to get their ID
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/profile/me`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -677,8 +679,18 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               }`}
               title={item.name}
             >
-              <div className={`w-8 h-8 rounded-lg ${item.color} flex items-center justify-center text-sm group-hover:scale-110 transition-transform leading-none`}>
+              <div className={`w-8 h-8 rounded-lg ${item.color} flex items-center justify-center text-sm group-hover:scale-110 transition-transform leading-none relative`}>
                 {item.icon}
+                {/* Notification badge for notifications item in collapsed view */}
+                {item.name === "Notifications" && notificationCount > 0 && (
+                  <span className={`absolute -top-1 -right-1 min-w-3 h-3 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold transition-all duration-300 shadow-lg ${
+                    notificationCount > lastNotificationCount && lastNotificationCount > 0 
+                      ? 'animate-bounce scale-110 ring-1 ring-red-300 ring-opacity-50' 
+                      : 'animate-pulse'
+                  }`}>
+                    {notificationCount > 9 ? '9+' : notificationCount}
+                  </span>
+                )}
               </div>
               <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
                 {item.name}
@@ -723,10 +735,20 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               }
             }}
           >
-            <div className={`w-8 h-8 rounded-md flex items-center justify-center text-base group-hover:scale-110 transition-transform leading-none ${
+            <div className={`w-8 h-8 rounded-md flex items-center justify-center text-base group-hover:scale-110 transition-transform leading-none relative ${
               pathname === item.href ? 'bg-white/20' : 'bg-gray-100'
             }`}>
               {item.icon}
+              {/* Notification badge for notifications item */}
+              {item.name === "Notifications" && notificationCount > 0 && (
+                <span className={`absolute -top-1 -right-1 min-w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold transition-all duration-300 shadow-lg ${
+                  notificationCount > lastNotificationCount && lastNotificationCount > 0 
+                    ? 'animate-bounce scale-110 ring-2 ring-red-300 ring-opacity-50' 
+                    : 'animate-pulse'
+                }`}>
+                  {notificationCount > 9 ? '9+' : notificationCount}
+                </span>
+              )}
             </div>
             <span className="text-xs font-medium">
               {item.name}
@@ -962,7 +984,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       )}
 
       {/* Navbar */}
-      <nav className={`w-full flex justify-center items-center px-4 py-2 z-[70] fixed top-0 left-0 shadow-md border-b transition-colors duration-200 ${
+      <nav className={`w-full flex justify-center items-center px-4 py-3 z-[70] fixed top-0 left-0 shadow-md border-b transition-colors duration-200 ${
         isAdminPage 
           ? 'bg-gray-800 border-gray-700' 
           : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
@@ -1328,13 +1350,22 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   
                   {/* Notification count badge */}
                   {notificationCount > 0 && (
-                    <span className={`absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium transition-all duration-300 ${
+                    <span className={`absolute -top-1 -right-1 min-w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold transition-all duration-300 shadow-lg ${
                       notificationCount > lastNotificationCount && lastNotificationCount > 0 
-                        ? 'animate-bounce scale-110 ring-2 ring-red-300' 
+                        ? 'animate-bounce scale-110 ring-4 ring-red-300 ring-opacity-50' 
                         : 'animate-pulse'
                     }`}>
                       {notificationCount > 99 ? '99+' : notificationCount}
                     </span>
+                  )}
+                  
+                  {/* Pulsing dot for new notifications */}
+                  {notificationCount > 0 && (
+                    <div className={`absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full transition-all duration-300 ${
+                      notificationCount > lastNotificationCount && lastNotificationCount > 0 
+                        ? 'animate-ping scale-150' 
+                        : 'opacity-0'
+                    }`}></div>
                   )}
                 </div>
               </>
@@ -2153,7 +2184,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
       {/* Mobile Bottom Navigation */}
       {isMobile && (
         <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 z-[65] overflow-x-hidden transition-colors duration-200">
-          <div className="flex justify-around items-center py-2 w-full max-w-full">
+          <div className="flex justify-around items-center py-3 w-full max-w-full">
             <Link
               href="/dashboard"
               className={`flex flex-col items-center p-2 rounded-lg transition-colors ${
@@ -2192,13 +2223,34 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             
             <Link
               href="/dashboard/notifications"
-              className={`flex flex-col items-center p-2 rounded-lg transition-colors ${
+              className={`flex flex-col items-center p-2 rounded-lg transition-colors relative ${
                 pathname === '/dashboard/notifications' 
                   ? 'text-blue-600 dark:text-blue-400' 
                   : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
               }`}
             >
-              <span className="text-xl mb-1">🔔</span>
+              <div className="relative">
+                <span className="text-xl mb-1">🔔</span>
+                {/* Notification count badge for mobile */}
+                {notificationCount > 0 && (
+                  <span className={`absolute -top-1 -right-1 min-w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold transition-all duration-300 shadow-lg ${
+                    notificationCount > lastNotificationCount && lastNotificationCount > 0 
+                      ? 'animate-bounce scale-110 ring-2 ring-red-300 ring-opacity-50' 
+                      : 'animate-pulse'
+                  }`}>
+                    {notificationCount > 9 ? '9+' : notificationCount}
+                  </span>
+                )}
+                
+                {/* Pulsing dot for new notifications on mobile */}
+                {notificationCount > 0 && (
+                  <div className={`absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full transition-all duration-300 ${
+                    notificationCount > lastNotificationCount && lastNotificationCount > 0 
+                      ? 'animate-ping scale-150' 
+                      : 'opacity-0'
+                  }`}></div>
+                )}
+              </div>
               <span className="text-xs font-medium">Notifications</span>
             </Link>
             

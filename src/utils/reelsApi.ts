@@ -15,6 +15,21 @@ const getAuthHeaders = () => {
   return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+// Health check function
+export const checkReelsApiHealth = async (): Promise<boolean> => {
+  try {
+    console.log('🏥 Checking reels API health...');
+    const response = await axios.get(`${API_URL}/api/reels/health`, {
+      headers: getAuthHeaders(),
+      timeout: 5000
+    });
+    console.log('✅ Reels API health check passed:', response.data);
+    return true;
+  } catch (error: any) {
+    console.error('❌ Reels API health check failed:', error.message);
+    return false;
+  }
+};
 export interface Reel {
   _id: string;
   user: {
@@ -197,38 +212,71 @@ export const createReel = async (
 ): Promise<Reel> => {
   console.log('🎬 createReel called with:', { reelData, videoFile });
   
-  const formData = new FormData();
-  
-  // Add video file
-  formData.append('video', videoFile);
-  console.log('📁 Video file added to FormData:', videoFile.name, videoFile.type, videoFile.size);
-  
-  // Add other data
-  Object.entries(reelData).forEach(([key, value]) => {
-    if (value !== undefined && value !== null) {
-      if (key === 'hashtags' && Array.isArray(value)) {
-        formData.append(key, value.join(','));
-      } else if (typeof value === 'object') {
-        formData.append(key, JSON.stringify(value));
-      } else {
-        formData.append(key, value.toString());
+  try {
+    const formData = new FormData();
+    
+    // Add video file
+    formData.append('video', videoFile);
+    console.log('📁 Video file added to FormData:', videoFile.name, videoFile.type, videoFile.size);
+    
+    // Add other data
+    Object.entries(reelData).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        if (key === 'hashtags' && Array.isArray(value)) {
+          formData.append(key, value.join(','));
+        } else if (typeof value === 'object') {
+          formData.append(key, JSON.stringify(value));
+        } else {
+          formData.append(key, value.toString());
+        }
+        console.log(`📋 Added ${key}:`, value);
       }
-      console.log(`📋 Added ${key}:`, value);
+    });
+    
+    const apiUrl = `${API_URL}/api/reels`;
+    console.log('🔗 Making POST request to:', apiUrl);
+    console.log('🔐 Auth headers:', getAuthHeaders());
+    console.log('🌐 API_URL from config:', API_URL);
+    
+    // Test if the API URL is reachable
+    try {
+      const testResponse = await axios.get(`${API_URL}/api/reels/health`, {
+        headers: getAuthHeaders(),
+        timeout: 5000
+      });
+      console.log('✅ API health check passed:', testResponse.data);
+    } catch (healthError: any) {
+      console.error('❌ API health check failed:', healthError.message);
+      throw new Error(`Cannot reach API server at ${API_URL}. Please check if the server is running.`);
     }
-  });
-  
-  console.log('🔗 Making POST request to:', `${API_URL}/api/reels`);
-  console.log('🔐 Auth headers:', getAuthHeaders());
-  
-  const response = await axios.post(`${API_URL}/api/reels`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-      ...getAuthHeaders(),
-    },
-  });
-  
-  console.log('✅ API response:', response.data);
-  return response.data;
+    
+    const response = await axios.post(apiUrl, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        ...getAuthHeaders(),
+      },
+      timeout: 60000, // 60 seconds timeout for file upload
+    });
+    
+    console.log('✅ API response:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ Error in createReel:', error);
+    
+    if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
+      throw new Error(`Network error: Cannot connect to server at ${API_URL}. Please check your internet connection and try again.`);
+    } else if (error.response) {
+      // Server responded with error status
+      const errorMessage = error.response.data?.message || error.response.data?.error || 'Server error';
+      throw new Error(`Server error (${error.response.status}): ${errorMessage}`);
+    } else if (error.request) {
+      // Request was made but no response received
+      throw new Error(`No response from server at ${API_URL}. Please check if the server is running.`);
+    } else {
+      // Something else happened
+      throw new Error(`Unexpected error: ${error.message}`);
+    }
+  }
 };
 
 // Update reel

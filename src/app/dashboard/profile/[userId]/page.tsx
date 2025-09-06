@@ -295,7 +295,7 @@ const UserProfile: React.FC = () => {
       let targetUserId = actualUserId;
       if (actualUserId === 'me') {
         try {
-          const currentUserResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+          const currentUserResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/profile/me`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -320,7 +320,7 @@ const UserProfile: React.FC = () => {
         }
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${targetUserId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/users/${targetUserId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -333,7 +333,7 @@ const UserProfile: React.FC = () => {
           setIsBlocked(userData.isBlocked);
         
         // Check if this is the current user's profile
-        const currentUserResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, { 
+        const currentUserResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/profile/me`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -362,7 +362,7 @@ const UserProfile: React.FC = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/userimages/${actualUserId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/userimages/${actualUserId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -386,7 +386,7 @@ const UserProfile: React.FC = () => {
       if (actualUserId === 'me') return;
       
       // Fetch posts
-      const postsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${actualUserId}/posts`, { 
+      const postsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/users/${actualUserId}/posts`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -406,7 +406,7 @@ const UserProfile: React.FC = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${actualUserId}/albums`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/users/${actualUserId}/albums`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -426,7 +426,7 @@ const UserProfile: React.FC = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/groups/user/${actualUserId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/groups/user/${actualUserId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -446,7 +446,7 @@ const UserProfile: React.FC = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${actualUserId}/products`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/users/${actualUserId}/products`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -466,7 +466,7 @@ const UserProfile: React.FC = () => {
       const token = localStorage.getItem('token');
       if (!token || !user) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${user._id}/follow`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/users/${user._id}/follow`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -489,7 +489,7 @@ const UserProfile: React.FC = () => {
       const token = localStorage.getItem('token');
       if (!token || !user) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${user._id}/block`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/users/${user._id}/block`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -552,7 +552,7 @@ const UserProfile: React.FC = () => {
       const formData = new FormData();
       formData.append('avatar', newAvatar);
 
-              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/userimages/avatar`, {
+              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/userimages/avatar`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -597,7 +597,7 @@ const UserProfile: React.FC = () => {
       const formData = new FormData();
       formData.append('cover', newCoverPhoto);
 
-              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/userimages/cover`, {
+              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/userimages/cover`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -632,7 +632,7 @@ const UserProfile: React.FC = () => {
     
     try {
       const token = localStorage.getItem('token');
-              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}`, { 
+              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/posts/${postId}`, { 
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -704,7 +704,7 @@ const UserProfile: React.FC = () => {
   const handleLike = async (postId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/like`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/posts/${postId}/like`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -733,7 +733,7 @@ const UserProfile: React.FC = () => {
   const handleReaction = async (postId: string, reactionType: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/react`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/posts/${postId}/react`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -759,7 +759,7 @@ const UserProfile: React.FC = () => {
   const handleComment = async (postId: string, comment: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/comment`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/posts/${postId}/comment`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -782,7 +782,7 @@ const UserProfile: React.FC = () => {
   const handleShare = async (postId: string, shareOptions: any) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/share`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/posts/${postId}/share`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -803,7 +803,7 @@ const UserProfile: React.FC = () => {
   const handleSave = async (postId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/save`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/posts/${postId}/save`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -845,7 +845,7 @@ const UserProfile: React.FC = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${editingPost._id}`, { 
+              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/posts/${editingPost._id}`, { 
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -905,7 +905,7 @@ const UserProfile: React.FC = () => {
     
     // Handle localhost URLs that might be stored incorrectly
     if (url.includes('localhost:3000')) {
-              const correctedUrl = url.replace('http://localhost:3000', 'https://jaifriend-backend-production.up.railway.app');
+              const correctedUrl = url.replace('http://localhost:3000', 'https://jaifriend-backend.hgdjlive.com');
       console.log('🔗 getMediaUrl - Fixed localhost URL:', { original: url, corrected: correctedUrl });
       return correctedUrl;
     }
@@ -1439,7 +1439,7 @@ const UserProfile: React.FC = () => {
                         <div className="p-4">
                           <div className="flex items-center gap-3 mb-3">
                             <img
-                              src={user?.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/${user.avatar}`) : '/default-avatar.svg'}
+                              src={user?.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.comp'}/${user.avatar}`) : '/default-avatar.svg'}
                               alt={user?.name || 'User'}
                               className="w-10 h-10 rounded-full border-2 border-blue-400"
                               onError={(e) => {

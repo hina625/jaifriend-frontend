@@ -1,5 +1,5 @@
 "use client";
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
 import React, { useState, useRef, useEffect } from 'react';
 import { Heart, MessageCircle, Share2, ChevronDown, Smile, Paperclip, Send, MoreHorizontal, Globe } from 'lucide-react';
 import { getCurrentUserId } from '@/utils/auth';
@@ -102,7 +102,7 @@ export default function AlbumDisplay({
     console.log('Constructed URL:', {
       original: url,
       constructed: constructedUrl,
-      baseUrl: process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'
+      baseUrl: process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'
     });
     
     return constructedUrl;
@@ -221,7 +221,7 @@ export default function AlbumDisplay({
         <video 
           key={`${mediaItem.url}-${index}`}
           className="w-full object-contain rounded-lg shadow-lg hover:opacity-90 transition-opacity"
-          style={{ maxHeight: '80vh' }}
+          style={{ maxHeight: '40vh' }}
           preload="metadata"
           poster={mediaItem.thumbnail || ''}
           controls
@@ -563,9 +563,14 @@ export default function AlbumDisplay({
                   src={getMediaUrl(mediaItem.url)}
                   alt={`Media ${index + 1}`}
                   className="w-full object-contain rounded-lg shadow-lg hover:opacity-90 transition-opacity"
-                  style={{ maxHeight: '80vh' }}
+                  style={{ maxHeight: '40vh' }}
                         onError={(e) => {
-                          console.error('Image loading error:', e);
+                          console.error('Image loading error for album media:', {
+                            albumId: album._id,
+                            mediaIndex: index,
+                            mediaUrl: mediaItem.url,
+                            fullUrl: getMediaUrl(mediaItem.url)
+                          });
                           const img = e.currentTarget;
                           img.style.display = 'none';
                           // Show fallback content

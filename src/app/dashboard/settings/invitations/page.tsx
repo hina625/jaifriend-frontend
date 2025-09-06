@@ -43,7 +43,7 @@ const InvitationLinksPage = () => {
           return;
         }
 
-        const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app/api/invitations/stats', { 
+        const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com/api/invitations/stats', { 
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -94,7 +94,7 @@ const InvitationLinksPage = () => {
       
       if (token) {
         // Try backend API first
-        const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app/api/invitations/generate', { 
+        const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com/api/invitations/generate', { 
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

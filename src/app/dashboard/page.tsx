@@ -420,6 +420,7 @@ export default function Dashboard() {
       fetchFeedData();
       fetchStories();
       fetchLatestPages();
+      fetchSuggestedPages();
     };
     
     checkAuth();
@@ -1228,7 +1229,7 @@ export default function Dashboard() {
         const token = localStorage.getItem('token');
         if (!token) return;
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/me`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/users/me`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -1239,7 +1240,7 @@ export default function Dashboard() {
           localStorage.setItem('user', JSON.stringify(userData));
           
           // Also fetch user images
-          const imagesResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/userimages`, {
+          const imagesResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/userimages`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           
@@ -1307,7 +1308,7 @@ export default function Dashboard() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/stories/feed`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/stories/feed`, {
         headers: {
           'Authorization': `Bearer ${token}` }
       });
@@ -1324,7 +1325,7 @@ export default function Dashboard() {
                 // Check if story has user ID (could be in user field as string or userId field)
                 const userId = story.user || story.userId;
                 if (userId && typeof userId === 'string') {
-                  const userResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${userId}`, {
+                  const userResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/users/${userId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                   });
                   if (userResponse.ok) {
@@ -1371,7 +1372,7 @@ export default function Dashboard() {
       if (!token) return;
 
       setLoadingPages(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/pages/latest`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/pages/latest`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -1391,6 +1392,32 @@ export default function Dashboard() {
     }
   };
 
+  const fetchSuggestedPages = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      setLoadingSuggestedPages(true);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/pages`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSuggestedPages(data.pages || data || []);
+      }
+    } catch (error) {
+      // Only log errors in development
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching suggested pages:', error);
+      }
+    } finally {
+      setLoadingSuggestedPages(false);
+    }
+  };
+
   const handleStorySuccess = (storyData: any) => {
     setStories(prev => [storyData, ...prev]);
     showPopup('success', 'Story Created!', 'Your story has been shared successfully!');
@@ -1401,7 +1428,7 @@ export default function Dashboard() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/stories/${storyId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/stories/${storyId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -1426,7 +1453,7 @@ export default function Dashboard() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/stories/${storyId}/react`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/stories/${storyId}/react`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1458,7 +1485,7 @@ export default function Dashboard() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/stories/${storyId}/reply`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/stories/${storyId}/reply`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1505,7 +1532,9 @@ export default function Dashboard() {
   }, []);
 
   const [latestPages, setLatestPages] = useState<any[]>([]);
+  const [suggestedPages, setSuggestedPages] = useState<any[]>([]);
   const [loadingPages, setLoadingPages] = useState(false);
+  const [loadingSuggestedPages, setLoadingSuggestedPages] = useState(false);
 
   const navigateToProfile = (userId: string) => {
     window.location.href = `/dashboard/profile/${userId}`;
@@ -1737,7 +1766,7 @@ export default function Dashboard() {
         formData.append('media', file);
       });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/posts`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -1759,7 +1788,7 @@ export default function Dashboard() {
             try {
               const token = localStorage.getItem('token');
               if (token && newPostData.userId) {
-                const userResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/users/${newPostData.userId}`, {
+                const userResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/users/${newPostData.userId}`, {
                   headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (userResponse.ok) {
@@ -2111,7 +2140,7 @@ export default function Dashboard() {
   };
 
   return (
-  <div className="bg-[#f4f7fb] dark:bg-gray-900 min-h-screen pt-2 sm:pt-4 pb-24 sm:pb-6 w-full max-w-[1200px] mx-auto scrollbar-hide overflow-x-hidden transition-colors duration-200 touch-manipulation">
+  <div className="bg-[#f4f7fb] dark:bg-gray-900 min-h-screen pt-2 sm:pt-4 pb-24 sm:pb-6 w-full overflow-hidden transition-colors duration-200 touch-manipulation md:mr-20">
       <Popup popup={popup} onClose={closePopup} />
       
       <SharePopup
@@ -2405,8 +2434,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="flex flex-col xl:flex-row gap-3 sm:gap-4 w-full scrollbar-hide">
-          <div className="w-full xl:flex-1 max-w-none xl:max-w-[700px] xl:mx-0 scrollbar-hide">
+        <div className="flex flex-col xl:flex-row gap-3 sm:gap-4 w-full">
+          <div className="w-full xl:w-[65%] max-w-2xl xl:mx-0 overflow-y-auto h-screen scrollbar-hide">
             <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-2 sm:p-3 mb-3 sm:mb-4 transition-colors duration-200">
               {/* Top Section: Content Type Selection */}
               <div className="flex items-center justify-between mb-4">
@@ -2645,6 +2674,7 @@ export default function Dashboard() {
                   const renderFeed = () => {
                     const feedItems: React.ReactNode[] = [];
                     let postCount = 0;
+                    let peopleSuggestionsAdded = false;
                     
                     // Show message if no posts found for current filter
                     if (combinedFeed.length === 0) {
@@ -2708,7 +2738,7 @@ export default function Dashboard() {
                       }
 
                       // Add "People you may know" component only once after the first 3 posts
-                      if (postCount === 3) {
+                      if (postCount === 3 && !peopleSuggestionsAdded) {
                         feedItems.push(
                           <PeopleYouMayKnow
                             key="people-suggestions"
@@ -2717,6 +2747,7 @@ export default function Dashboard() {
                             }}
                           />
                         );
+                        peopleSuggestionsAdded = true;
                       }
                     });
 
@@ -2729,20 +2760,21 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div className="w-full xl:w-1/4 flex flex-col gap-3 sm:gap-4 scrollbar-hide">
+          <div className="w-full xl:w-[30%] flex flex-col gap-3 sm:gap-4">
+            <div className="sticky top-4 space-y-3 sm:gap-4 h-[calc(100vh-2rem)] overflow-hidden flex flex-col justify-start">
             {/* Pro Members Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 transition-colors duration-200">
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-2 sm:p-3 transition-colors duration-200">
               <div className="font-semibold mb-2 text-sm text-gray-900 dark:text-white transition-colors duration-200">Pro Members</div>
               <button className="bg-orange-400 text-white px-3 py-2 rounded-full w-full mb-2 text-sm">Upgrade To Pro</button>
             </div>
 
             {/* Latest Products Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 transition-colors duration-200">
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-2 sm:p-3 transition-colors duration-200">
               <LatestProducts />
                 </div>
 
             {/* Latest Pages Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-3 sm:p-4 transition-colors duration-200">
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-2 sm:p-3 transition-colors duration-200">
               <div className="font-semibold mb-3 text-sm text-gray-900 dark:text-white transition-colors duration-200">Latest Pages</div>
               
               {loadingPages ? (
@@ -2759,7 +2791,91 @@ export default function Dashboard() {
                 </div>
               ) : latestPages.length > 0 ? (
                 <div className="space-y-3">
-                  {latestPages.slice(0, 5).map((page) => (
+                  {latestPages.slice(0, 3).map((page) => (
+                    <div 
+                      key={page._id} 
+                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer group"
+                      onClick={() => router.push(`/dashboard/pages/${page._id}`)}
+                    >
+                      {/* Page Avatar */}
+                      <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 border-2 border-gray-200 dark:border-gray-600">
+                        {page.profileImage ? (
+                          <img
+                            src={page.profileImage}
+                            alt={page.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.src = '/default-avatar.svg';
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                            <span className="text-white text-sm font-bold">
+                              {page.name?.charAt(0) || 'P'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Page Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-gray-900 dark:text-white text-sm truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                          {page.name}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {page.category}
+                        </div>
+                      </div>
+                      
+                      {/* Followers Count */}
+                      <div className="text-xs text-gray-500 dark:text-gray-400 text-right">
+                        <div className="font-medium">{page.followers?.length || 0}</div>
+                        <div>followers</div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* View All Pages Button */}
+                  <button 
+                    onClick={() => router.push('/dashboard/pages')}
+                    className="w-full mt-3 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium hover:bg-blue-50 dark:hover:bg-blue-900/20 py-2 rounded-lg transition-colors"
+                  >
+                    View All Pages
+                  </button>
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <div className="text-gray-400 dark:text-gray-500 text-2xl mb-2">📄</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">No pages yet</div>
+                  <button 
+                    onClick={() => router.push('/dashboard/pages')}
+                    className="mt-2 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
+                  >
+                    Create Page
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Suggested Pages Section */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-2 sm:p-3 transition-colors duration-200">
+              <div className="font-semibold mb-3 text-sm text-gray-900 dark:text-white transition-colors duration-200">Suggested Pages</div>
+              
+              {loadingSuggestedPages ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full animate-pulse" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded animate-pulse" />
+                        <div className="h-2 bg-gray-200 dark:bg-gray-600 rounded w-2/3 animate-pulse" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : suggestedPages.length > 0 ? (
+                <div className="space-y-3">
+                  {suggestedPages.slice(0, 5).map((page) => (
                     <div 
                       key={page._id} 
                       className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer group"
@@ -2827,9 +2943,21 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Floating Action Button - Create Post */}
+      <button
+        onClick={() => setShowPostModal(true)}
+        className="fixed bottom-6 right-6 z-40 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white p-4 rounded-full shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 group"
+        title="Create Post"
+      >
+        <svg className="w-6 h-6 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
 
       <Popup 
         popup={popup} 
@@ -2867,104 +2995,166 @@ export default function Dashboard() {
         />
       )}
       
-      {/* Watch Modal - Instagram/Facebook Style */}
+      {/* Watch Modal - Enhanced Jaifriend Style */}
       {showWatchModal && selectedPostForWatch && (
-        <div className="fixed inset-0 flex items-center justify-center z-40 p-2 sm:p-4 bg-black bg-opacity-90" style={{ top: '80px' }}>
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-3">
+        <>
+          {console.log('🔍 Watch Modal - Post Data:', {
+            id: selectedPostForWatch._id || selectedPostForWatch.id,
+            content: selectedPostForWatch.content,
+            media: selectedPostForWatch.media,
+            mediaCount: selectedPostForWatch.media?.length || 0,
+            user: selectedPostForWatch.user,
+            type: selectedPostForWatch.type
+          })}
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4 bg-black bg-opacity-98 backdrop-blur-md" style={{ top: '60px' }}>
+          <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden border border-gray-200 dark:border-gray-700 transform transition-all duration-300 scale-100">
+            {/* Modal Header - Enhanced */}
+            <div className="flex items-center justify-between p-6 sm:p-8 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-600">
+              <div className="flex items-center gap-4">
+                <div className="relative">
                 <img
                   src={selectedPostForWatch.user?.avatar || selectedPostForWatch.createdBy?.avatar || '/default-avatar.svg'}
                   alt="User avatar"
-                  className="w-8 h-8 rounded-full"
+                    className="w-12 h-12 rounded-full border-2 border-white dark:border-gray-600 shadow-lg ring-1 ring-blue-200 dark:ring-blue-800"
                 />
+                  <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white dark:border-gray-900 rounded-full shadow-md"></div>
+                </div>
                 <div>
-                  <div className="font-semibold text-gray-900 dark:text-white">
+                  <div className="font-bold text-lg text-gray-900 dark:text-white mb-1">
                     {selectedPostForWatch.user?.name || selectedPostForWatch.user?.username || selectedPostForWatch.createdBy?.name || 'User'}
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    {new Date(selectedPostForWatch.createdAt).toLocaleDateString()}
+                  <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-3">
+                    <span className="flex items-center gap-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded-full text-xs font-medium">
+                      🌍 Public
+                    </span>
+                    <span className="w-1 h-1 bg-gray-400 rounded-full"></span>
+                    <span className="font-medium">{new Date(selectedPostForWatch.createdAt).toLocaleDateString('en-US', { 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}</span>
                   </div>
                 </div>
               </div>
               <button
                 onClick={() => setShowWatchModal(false)}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-all duration-200 p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-500 hover:scale-110 group"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 group-hover:rotate-90 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
-            {/* Modal Content */}
-            <div className="flex flex-col lg:flex-row h-[calc(90vh-80px)]">
-              {/* Left Side - Media/Content */}
-              <div className="flex-1 p-4">
-                {/* Post Content */}
+            {/* Modal Content - Enhanced Layout */}
+            <div className="flex flex-col lg:flex-row h-[calc(95vh-120px)]">
+              {/* Left Side - Media/Content - Enhanced */}
+              <div className="flex-1 bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-800 dark:to-gray-700 p-4 overflow-y-auto lg:pr-80 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+                {/* Post Content - Enhanced */}
                 {selectedPostForWatch.content && (
-                  <div className="mb-4 text-gray-900 dark:text-white">
+                  <div className="mb-6 p-4 bg-white dark:bg-gray-700 rounded-xl shadow-md border border-gray-200 dark:border-gray-600 hover:shadow-lg transition-all duration-300">
+                    <div className="text-gray-900 dark:text-white text-lg leading-relaxed font-medium">
                     {selectedPostForWatch.content}
+                    </div>
                   </div>
                 )}
 
-                {/* Media Display */}
-                {selectedPostForWatch.media && selectedPostForWatch.media.length > 0 && (
-                  <div className="mb-4">
-                    {selectedPostForWatch.media.map((media: any, index: number) => (
-                      <div key={index} className="mb-4">
+                {/* Media Display - Enhanced */}
+                {selectedPostForWatch.media && selectedPostForWatch.media.length > 0 ? (
+                  <div className="space-y-4">
+                    {selectedPostForWatch.media.map((media: any, index: number) => {
+                      console.log('🖼️ Watch Modal - Rendering media:', {
+                        index,
+                        type: media.type,
+                        url: media.url,
+                        fullUrl: getMediaUrl(media.url),
+                        mimetype: media.mimetype
+                      });
+                      return (
+                      <div key={index} className="bg-white dark:bg-gray-700 rounded-xl shadow-md border border-gray-200 dark:border-gray-600 overflow-hidden hover:shadow-lg transition-all duration-300 group">
                         {media.type === 'image' ? (
+                          <div className="relative group">
                           <img
-                            src={media.url}
+                              src={getMediaUrl(media.url)}
                             alt="Post media"
-                            className="w-full max-h-96 object-contain rounded-lg"
-                          />
+                              className="w-full max-h-[50vh] object-contain rounded-t-xl transition-transform duration-300 group-hover:scale-105"
+                              onError={(e) => {
+                                console.error('Image loading error:', media.url);
+                                e.currentTarget.src = '/default-avatar.svg';
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                <div className="bg-white bg-opacity-90 rounded-full p-2">
+                                  <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                  </svg>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         ) : media.type === 'video' ? (
+                          <div className="relative group">
                           <video
-                            src={media.url}
+                              src={getMediaUrl(media.url)}
                             controls
-                            className="w-full max-h-96 object-contain rounded-lg"
-                          />
+                              className="w-full max-h-[60vh] object-contain rounded-t-xl"
+                              poster={media.thumbnail ? getMediaUrl(media.thumbnail) : ''}
+                              onError={(e) => {
+                                console.error('Video loading error:', media.url);
+                              }}
+                            />
+                            <div className="absolute top-3 right-3 bg-black bg-opacity-70 text-white px-2 py-1 rounded-full text-xs">
+                              🎥 Video
+                            </div>
+                          </div>
                         ) : (
                           <div 
-                            className="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg text-center cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                            className="p-6 text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors group"
                             onClick={() => {
-                              // For PDFs and other files, open in new tab
                               if (media.mimetype?.includes('pdf') || media.mimetype?.includes('text') || media.mimetype?.includes('image')) {
                                 try {
-                                  window.open(media.url, '_blank');
+                                  window.open(getMediaUrl(media.url), '_blank');
                                 } catch (error) {
-                                  // Fallback to download
                                   const link = document.createElement('a');
-                                  link.href = media.url;
+                                  link.href = getMediaUrl(media.url);
                                   link.download = media.originalName || media.filename || media.name || 'download';
                                   link.click();
                                 }
                               }
                             }}
                           >
-                            <span className="text-gray-500 dark:text-gray-400">
-                              File: {media.originalName || media.filename || media.name || 'Document'}
-                            </span>
+                            <div className="w-12 h-12 mx-auto mb-3 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                              <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                            </div>
+                            <div className="text-gray-700 dark:text-gray-300 font-medium">
+                              {media.originalName || media.filename || media.name || 'Document'}
+                            </div>
                             {media.size && (
-                              <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                                Size: {(media.size / 1024 / 1024).toFixed(1)}MB
+                              <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                {(media.size / 1024 / 1024).toFixed(1)} MB
                               </div>
                             )}
                             {media.extension && (
-                              <div className="text-xs text-gray-400 dark:text-gray-500">
-                                Type: {media.extension.toUpperCase()}
+                              <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                                {media.extension.toUpperCase()} File
                               </div>
                             )}
-                            
-
                           </div>
                         )}
-                        
-
                       </div>
-                    ))}
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="bg-white dark:bg-gray-700 rounded-xl shadow-sm border border-gray-200 dark:border-gray-600 p-6 text-center">
+                    <div className="text-4xl mb-3">📷</div>
+                    <div className="text-gray-500 dark:text-gray-400 text-base">No media in this post</div>
+                    <div className="text-gray-400 dark:text-gray-500 text-sm mt-2">This post contains only text content</div>
                   </div>
                 )}
 
@@ -2990,11 +3180,12 @@ export default function Dashboard() {
                 )}
               </div>
 
-              {/* Right Side - Actions & Comments */}
-              <div className="w-full lg:w-80 border-l border-gray-200 dark:border-gray-700 p-4">
-                {/* Action Buttons */}
-                <div className="flex items-center gap-4 mb-6">
-                  {/* Like Button */}
+              {/* Right Side - Enhanced Actions & Comments */}
+              <div className="w-full lg:w-80 border-l border-gray-200 dark:border-gray-700 bg-gradient-to-b from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 p-4 fixed right-0 top-[120px] h-[calc(100vh-120px)] overflow-hidden">
+                {/* Action Buttons - Enhanced */}
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-3">
+                    {/* Like Button - Enhanced */}
                   <button
                     onClick={() => {
                       if (selectedPostForWatch.type === 'album') {
@@ -3002,35 +3193,32 @@ export default function Dashboard() {
                       } else {
                         handleLike(selectedPostForWatch._id || selectedPostForWatch.id);
                       }
-                      // Close modal after like
-                      setTimeout(() => setShowWatchModal(false), 500);
                     }}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors ${
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 transform hover:scale-105 font-medium text-sm ${
                       (selectedPostForWatch.likes?.includes(getCurrentUserId()) || selectedPostForWatch.likedBy?.includes(getCurrentUserId()))
-                        ? 'bg-red-500 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg shadow-red-200 dark:shadow-red-900'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-900/20 dark:hover:to-pink-900/20 hover:text-red-500'
                     }`}
                   >
-                    <span className="text-lg">❤️</span>
-                    <span className="text-sm font-medium">
+                      <span className="text-lg">❤️</span>
+                      <span className="font-medium">
                       {(selectedPostForWatch.likes?.includes(getCurrentUserId()) || selectedPostForWatch.likedBy?.includes(getCurrentUserId())) ? 'Liked' : 'Like'}
                     </span>
                   </button>
 
-                  {/* Comment Button */}
+                    {/* Comment Button - Enhanced */}
                   <button
                     onClick={() => {
-                      // Focus on comment input
                       const commentInput = document.getElementById('watch-comment-input');
                       if (commentInput) commentInput.focus();
                     }}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 dark:hover:from-blue-900/20 dark:hover:to-cyan-900/20 hover:text-blue-500 transition-all duration-300 transform hover:scale-105 font-medium text-sm"
                   >
-                    <span className="text-lg">💬</span>
-                    <span className="font-medium">Comment</span>
+                      <span className="text-lg">💬</span>
+                      <span className="font-medium">Comment</span>
                   </button>
 
-                  {/* Share Button */}
+                    {/* Share Button - Enhanced */}
                   <button
                     onClick={() => {
                       handleShare(selectedPostForWatch._id || selectedPostForWatch.id, {
@@ -3041,33 +3229,51 @@ export default function Dashboard() {
                       });
                       setShowWatchModal(false);
                     }}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 dark:hover:from-green-900/20 dark:hover:to-emerald-900/20 hover:text-green-500 transition-all duration-300 transform hover:scale-105 font-medium text-sm"
                   >
-                    <span className="text-lg">📤</span>
-                    <span className="font-medium">Share</span>
+                      <span className="text-lg">📤</span>
+                      <span className="font-medium">Share</span>
                   </button>
+                  </div>
                 </div>
 
-                {/* Like Count */}
+                {/* Like Count - Enhanced */}
                 {(selectedPostForWatch.likes?.length > 0 || selectedPostForWatch.likedBy?.length > 0) && (
-                  <div className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-                    ❤️ {selectedPostForWatch.likes?.length || selectedPostForWatch.likedBy?.length} likes
+                  <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
+                    <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
+                      <span className="text-lg">❤️</span>
+                      <span className="font-semibold">
+                        {selectedPostForWatch.likes?.length || selectedPostForWatch.likedBy?.length} likes
+                      </span>
+                    </div>
                   </div>
                 )}
 
-                {/* Comments Section */}
-                <div className="mb-4">
-                  <div className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                {/* Comments Section - Enhanced */}
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                     Comments ({selectedPostForWatch.comments?.length || 0})
+                    </h3>
+                    <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                      <span className="text-blue-600 dark:text-blue-400 text-sm">💬</span>
+                    </div>
                   </div>
                   
-                  {/* Comment Input */}
-                  <div className="flex gap-2 mb-4">
+                  {/* Comment Input - Enhanced */}
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 border border-gray-200 dark:border-gray-700">
+                    <div className="flex gap-3">
+                      <img
+                        src={JSON.parse(localStorage.getItem('user') || '{}')?.avatar || '/default-avatar.svg'}
+                        alt="Your avatar"
+                        className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-600"
+                      />
+                      <div className="flex-1 flex gap-2">
                     <input
                       id="watch-comment-input"
                       type="text"
                       placeholder="Add a comment..."
-                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                          className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all duration-200"
                     />
                     <button
                       onClick={() => {
@@ -3077,42 +3283,67 @@ export default function Dashboard() {
                           input.value = '';
                         }
                       }}
-                      className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                          className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all duration-200 transform hover:scale-105 font-semibold shadow-lg"
                     >
                       Post
                     </button>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Comments List */}
-                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {/* Comments List - Enhanced */}
+                  <div className="space-y-4 max-h-80 overflow-hidden">
                     {selectedPostForWatch.comments?.map((comment: any, index: number) => (
-                      <div key={index} className="flex gap-3">
+                      <div key={index} className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow duration-200">
+                        <div className="flex gap-3">
                         <img
                           src={comment.user?.avatar || '/default-avatar.svg'}
                           alt="User avatar"
-                          className="w-6 h-6 rounded-full flex-shrink-0"
+                            className="w-10 h-10 rounded-full border-2 border-gray-200 dark:border-gray-600 flex-shrink-0"
                         />
                         <div className="flex-1">
-                          <div className="text-sm">
-                            <span className="font-semibold text-gray-900 dark:text-white">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="font-bold text-gray-900 dark:text-white">
                               {comment.user?.name || comment.user?.username || 'User'}
                             </span>
-                            <span className="text-gray-700 dark:text-gray-300 ml-2">
-                              {comment.text || comment.content}
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {new Date(comment.createdAt).toLocaleDateString('en-US', { 
+                                  month: 'short', 
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
                             </span>
                           </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {new Date(comment.createdAt).toLocaleDateString()}
+                            <div className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                              {comment.text || comment.content}
+                            </div>
+                            <div className="flex items-center gap-4 mt-3">
+                              <button className="text-gray-500 hover:text-red-500 transition-colors duration-200 text-sm">
+                                ❤️ Like
+                              </button>
+                              <button className="text-gray-500 hover:text-blue-500 transition-colors duration-200 text-sm">
+                                💬 Reply
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
                     ))}
+                    
+                    {(!selectedPostForWatch.comments || selectedPostForWatch.comments.length === 0) && (
+                      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                        <div className="text-4xl mb-2">💬</div>
+                        <div className="text-sm">No comments yet. Be the first to comment!</div>
                   </div>
+                    )}
                 </div>
               </div>
             </div>
           </div>
         </div>
+        </div>
+        </>
       )}
 
       {/* Post Creation Modal */}

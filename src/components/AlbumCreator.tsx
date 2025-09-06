@@ -58,7 +58,7 @@ export default function AlbumCreator({ onAlbumCreated }: AlbumCreatorProps) {
         formData.append('photos', mediaFile.file);
       });
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
   const response = await fetch(`${API_URL}/api/albums`, {
         method: 'POST',
         headers: {

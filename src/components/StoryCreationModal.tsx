@@ -35,7 +35,7 @@ const StoryCreationModal: React.FC<StoryCreationModalProps> = ({
       return '/default-avatar.svg';
     }
     
-  return `${process.env.NEXT_PUBLIC_API_URL}/${avatarUrl}`;
+  return `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/${avatarUrl}`;
   };
 
   useEffect(() => {
@@ -110,7 +110,7 @@ const StoryCreationModal: React.FC<StoryCreationModalProps> = ({
       formData.append('content', content.trim());
       formData.append('privacy', privacy);
 
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/stories`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/stories`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

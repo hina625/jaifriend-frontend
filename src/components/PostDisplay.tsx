@@ -81,7 +81,7 @@ export default function PostDisplay({
     
     // Handle localhost URLs that might be stored incorrectly
     if (url.includes('localhost:3000')) {
-              const correctedUrl = url.replace('http://localhost:3000', 'https://jaifriend-backend-production.up.railway.app');
+              const correctedUrl = url.replace('http://localhost:3000', 'https://jaifriend-backend.hgdjlive.com');
       console.log('🔗 getMediaUrl - Fixed localhost URL:', { original: url, corrected: correctedUrl });
       return correctedUrl;
     }

@@ -62,7 +62,7 @@ const NotificationSettingsPage = () => {
           return;
         }
 
-        const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app/api/notifications/settings', { 
+        const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com/api/notifications/settings', { 
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -122,7 +122,7 @@ const NotificationSettingsPage = () => {
       
       if (token) {
         // Try backend API first
-        const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app/api/notifications/settings', { 
+        const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com/api/notifications/settings', { 
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

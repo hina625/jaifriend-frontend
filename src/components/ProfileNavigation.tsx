@@ -97,7 +97,7 @@ export default function ProfileNavigation({ className = '' }: ProfileNavigationP
         className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors"
       >
         <img
-          src={user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/${user.avatar}`) : '/default-avatar.svg'}
+          src={user.avatar ? (user.avatar.startsWith('http') ? user.avatar : `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/${user.avatar}`) : '/default-avatar.svg'}
           alt={user.name}
           className="w-8 h-8 rounded-full object-cover"
           onError={(e) => {

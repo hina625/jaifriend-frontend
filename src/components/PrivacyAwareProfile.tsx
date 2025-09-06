@@ -73,7 +73,7 @@ const PrivacyAwareProfile: React.FC<PrivacyAwareProfileProps> = ({
         const token = localStorage.getItem('token');
         if (!token) return;
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
   const response = await fetch(`${API_URL}/api/users/${user.id}/stats`, {
           headers: {
             'Authorization': `Bearer ${token}`

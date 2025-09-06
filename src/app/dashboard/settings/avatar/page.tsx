@@ -53,7 +53,7 @@ const AvatarCoverSettingsPage = () => {
   const getMediaUrl = (url: string | null) => {
     if (!url) return '';
     if (url.startsWith('http')) return url;
-    return `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/${url}`;
+    return `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/${url}`;
   };
 
   const handlePopupConfirm = () => {
@@ -82,7 +82,7 @@ const AvatarCoverSettingsPage = () => {
           return;
         }
 
-        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/userimages`;
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/userimages`;
         console.log('Fetching from:', apiUrl);
 
         const response = await fetch(apiUrl, { 
@@ -143,7 +143,7 @@ const AvatarCoverSettingsPage = () => {
       const formData = new FormData();
       formData.append(type, file);
 
-              const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/userimages/${type}`;
+              const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/userimages/${type}`;
       console.log('Upload URL:', apiUrl);
       console.log('File being uploaded:', file.name, file.size, file.type);
 
@@ -227,7 +227,7 @@ const AvatarCoverSettingsPage = () => {
         return;
       }
 
-              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/userimages/${type}`, {
+              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/userimages/${type}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

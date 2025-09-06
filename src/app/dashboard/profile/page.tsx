@@ -726,7 +726,7 @@ const ProfilePage = () => {
                                   const token = localStorage.getItem('token');
                                   if (!token) return;
                                   
-                                  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/like`, {
+                                  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/posts/${postId}/like`, {
                                     method: 'POST',
                                     headers: {
                                       'Authorization': `Bearer ${token}`
@@ -745,7 +745,7 @@ const ProfilePage = () => {
                                   const token = localStorage.getItem('token');
                                   if (!token) return;
                                   
-                                  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/reaction`, {
+                                  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/posts/${postId}/reaction`, {
                                     method: 'POST',
                                     headers: {
                                       'Authorization': `Bearer ${token}`,
@@ -766,7 +766,7 @@ const ProfilePage = () => {
                                   const token = localStorage.getItem('token');
                                   if (!token) return;
                                   
-                                  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/comment`, {
+                                  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/posts/${postId}/comment`, {
                                     method: 'POST',
                                     headers: {
                                       'Authorization': `Bearer ${token}`,
@@ -787,7 +787,7 @@ const ProfilePage = () => {
                                   const token = localStorage.getItem('token');
                                   if (!token) return;
                                   
-                                  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/save`, {
+                                  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/posts/${postId}/save`, {
                                     method: 'POST',
                                     headers: {
                                       'Authorization': `Bearer ${token}`
@@ -806,7 +806,7 @@ const ProfilePage = () => {
                                   const token = localStorage.getItem('token');
                                   if (!token) return;
                                   
-                                  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${postId}/share`, {
+                                  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/posts/${postId}/share`, {
                                     method: 'POST',
                                     headers: {
                                       'Authorization': `Bearer ${token}`,

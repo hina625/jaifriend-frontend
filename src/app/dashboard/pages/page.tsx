@@ -557,7 +557,7 @@ const PagesInterface: React.FC = () => {
       console.log('Fetching pages...');
       
       const [allPagesResponse, userPagesResponse] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/pages`),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/pages`),
   fetch(`${API_URL}/api/pages/user`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -677,7 +677,7 @@ const PagesInterface: React.FC = () => {
       setCreating(true);
       console.log('Creating page with data:', formData);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/pages`, { 
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/pages`, { 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

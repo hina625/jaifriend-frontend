@@ -1,5 +1,5 @@
 // Use the Railway backend URL
-const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL}/api`;
+const API_BASE_URL = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api`;
 
 export const adminApi = {
   // Get dashboard statistics

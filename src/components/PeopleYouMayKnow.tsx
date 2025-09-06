@@ -55,12 +55,16 @@ const PeopleYouMayKnow: React.FC<PeopleYouMayKnowProps> = ({ onFollow }) => {
       setLoading(true);
       const token = localStorage.getItem('token');
       
+      console.log('🔍 Fetching suggested users...', { token: !!token });
+      
       if (!token) {
+        console.log('❌ No token found');
         setUsers([]);
         return;
       }
 
-  const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/users/suggested`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/users/suggested`;
+      console.log('🌐 API URL:', apiUrl);
 
       const response = await fetch(apiUrl, {
         headers: {
@@ -69,31 +73,53 @@ const PeopleYouMayKnow: React.FC<PeopleYouMayKnowProps> = ({ onFollow }) => {
         }
       });
 
+      console.log('📡 Response status:', response.status, response.statusText);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ Raw API response:', data);
         
         // Backend returns users directly, not wrapped in data.users
         const usersArray = Array.isArray(data) ? data : (data.users || []);
+        console.log('👥 Processed users array:', usersArray);
         
         if (usersArray && usersArray.length > 0) {
+          // Map and normalize user data
+          const mappedUsers = usersArray.map((user: any) => ({
+            _id: user._id,
+            name: user.name || user.fullName || 'User',
+            username: user.username || `@${user._id?.toString().slice(-8) || 'user'}`,
+            avatar: user.avatar || '/avatars/1.png.png',
+            bio: user.bio || '',
+            isOnline: user.isOnline || false,
+            lastSeen: user.lastSeen,
+            isVerified: user.isVerified || false,
+            followers: Array.isArray(user.followers) ? user.followers.length : (user.followers || 0),
+            following: Array.isArray(user.following) ? user.following.length : (user.following || 0)
+          }));
+
           // Sort users by verification status first, then by followers count for consistent sequence
-          const sortedUsers = usersArray.sort((a: any, b: any) => {
+          const sortedUsers = mappedUsers.sort((a: any, b: any) => {
             // Sort by verification status first (verified users first)
             if (a.isVerified && !b.isVerified) return -1;
             if (!a.isVerified && b.isVerified) return 1;
             // Then sort by followers count (higher first)
             return (b.followers || 0) - (a.followers || 0);
           });
+          console.log('🔄 Mapped and sorted users:', sortedUsers);
           setUsers(sortedUsers);
           setLastUpdated(new Date());
         } else {
+          console.log('⚠️ No users found in response');
           setUsers([]);
         }
       } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('❌ API Error:', response.status, errorData);
         setUsers([]);
       }
     } catch (error) {
-      console.error('Error fetching suggested users:', error);
+      console.error('❌ Error fetching suggested users:', error);
       setUsers([]);
     } finally {
       setLoading(false);
@@ -295,7 +321,7 @@ const PeopleYouMayKnow: React.FC<PeopleYouMayKnowProps> = ({ onFollow }) => {
                   {/* Avatar */}
                   <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 mb-3 ring-2 ring-gray-200 dark:ring-gray-600 group-hover:ring-blue-300 dark:group-hover:ring-blue-600 transition-all duration-200">
                   <img
-                      src={user.avatar ? `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/${user.avatar}` : '/default-avatar.svg'}
+                      src={user.avatar ? `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/${user.avatar}` : '/default-avatar.svg'}
                     alt={user.name}
                     className="w-full h-full object-cover"
                     onError={(e) => {

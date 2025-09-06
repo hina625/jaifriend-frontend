@@ -35,7 +35,7 @@ const FileMonitorPage: React.FC = () => {
   const fetchStatus = async () => {
     try {
       setLoading(true);
-      const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/filemonitor/status');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/filemonitor/status`);
       const data = await response.json();
       
       if (data.success) {
@@ -53,7 +53,7 @@ const FileMonitorPage: React.FC = () => {
   const startMonitoring = async () => {
     try {
       setLoading(true);
-      const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/filemonitor/start', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/filemonitor/start`, {
         method: 'POST'
       });
       const data = await response.json();
@@ -74,7 +74,7 @@ const FileMonitorPage: React.FC = () => {
   const stopMonitoring = async () => {
     try {
       setLoading(true);
-      const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/filemonitor/stop', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/filemonitor/stop`, {
         method: 'POST'
       });
       const data = await response.json();
@@ -95,7 +95,7 @@ const FileMonitorPage: React.FC = () => {
   const runCleanup = async () => {
     try {
       setLoading(true);
-      const response = await fetch(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/filemonitor/cleanup', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/filemonitor/cleanup`, {
         method: 'POST'
       });
       const data = await response.json();

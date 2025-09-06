@@ -112,11 +112,11 @@ const FeedPost: React.FC<FeedPostProps> = ({
     // Handle avatar URLs properly
     if (url.includes('/avatars/') || url.includes('/covers/')) {
       // For avatar paths, construct the full URL
-      const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/${url}`;
+      const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/${url}`;
       return fullUrl;
     }
     
-    const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/${url}`;
+    const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/${url}`;
     return fullUrl;
   };
 
@@ -132,14 +132,14 @@ const FeedPost: React.FC<FeedPostProps> = ({
         // Handle avatar URLs properly
         if (user.avatar.includes('/avatars/') || user.avatar.includes('/covers/')) {
           // For avatar paths, construct the full URL
-          const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+          const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
           if (user.avatar.startsWith('http')) {
             return user.avatar;
           }
           return `${baseUrl}/${user.avatar}`;
         }
         
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
         if (user.avatar.startsWith('http')) {
           return user.avatar;
         }
@@ -183,41 +183,10 @@ const FeedPost: React.FC<FeedPostProps> = ({
         return;
       }
 
-      // Check if user already has this reaction - if so, remove it
-      const currentReaction = getCurrentReaction();
-      if (currentReaction === reactionType) {
-        // Remove reaction (toggle off)
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${post._id}/reaction`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            reactionType: reactionType
-          })
-        });
-
-        if (response.ok) {
-          // Update local state to remove reaction
-          if (onPostUpdate) {
-            const currentUserId = getCurrentUserId();
-            const updatedPost = {
-              ...post,
-              reactions: (post.reactions || []).filter((r: any) => {
-                return r.user !== currentUserId && r.userId !== currentUserId && r.user?._id !== currentUserId;
-              })
-            };
-            onPostUpdate(updatedPost);
-          }
-          return; // Exit early
-        }
-      }
-
       setIsReacting(true);
 
-      // Call backend API directly
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${post._id}/reaction`, {
+      // Call backend API directly - the backend handles both add and remove logic
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/posts/${post._id}/reaction`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -230,55 +199,37 @@ const FeedPost: React.FC<FeedPostProps> = ({
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Reaction added successfully:', data);
+        console.log('Reaction updated successfully:', data);
         
-        // Show success feedback (no alert - just visual feedback)
-        const reactionEmojis: { [key: string]: string } = {
-          'like': '👍',
-          'love': '❤️',
-          'haha': '😂',
-          'wow': '😮',
-          'sad': '😢',
-          'angry': '😠'
-        };
-        
-        // No alert - just visual feedback through the button update
-        
-        // Update local state to reflect the new reaction
+        // Update local state with the updated post from the API
         if (onPostUpdate) {
-          // Create updated post with new reaction
-          const currentUserId = getCurrentUserId();
-          
-          // Remove existing reaction from this user if any
-          const existingReactions = (post.reactions || []).filter((r: any) => {
-            return r.user !== currentUserId && r.userId !== currentUserId && r.user?._id !== currentUserId;
-          });
-          
-          // Add new reaction
-          const updatedPost = {
-            ...post,
-            reactions: [
-              ...existingReactions,
-              {
-                user: currentUserId,
-                userId: currentUserId,
-                type: reactionType,
-                createdAt: new Date().toISOString()
-              }
-            ]
-          };
-          
-          // Call the update function to refresh the post data
-          onPostUpdate(updatedPost);
+          if (data.post) {
+            onPostUpdate(data.post);
+          } else {
+            // Fallback: refresh the page if API doesn't return updated post
+            console.log('API response missing post data, refreshing page...');
+            window.location.reload();
+          }
         }
-    } else {
+      } else {
         const errorData = await response.json().catch(() => ({}));
-        console.error('Failed to add reaction:', errorData);
-        alert(`Failed to add reaction: ${errorData.message || 'Unknown error'}`);
+        console.error('Failed to update reaction:', errorData);
+        alert(`Failed to update reaction: ${errorData.message || 'Unknown error'}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding reaction:', error);
-      alert('Error adding reaction. Please try again.');
+      
+      let errorMessage = 'Error adding reaction. Please try again.';
+      
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+      
+      alert(errorMessage);
     } finally {
       setIsReacting(false);
       // Automatically close the popup after reaction selection
@@ -507,7 +458,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
       if (rating && !isNaN(Number(rating)) && Number(rating) >= 1 && Number(rating) <= 5) {
         const reviewText = prompt('Write your review (optional):');
         
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${post._id}/review`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/posts/${post._id}/review`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -547,7 +498,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
       // Check if user has already voted
       if (post.poll.userVote && post.poll.userVote.includes(optionIndex)) {
         // Remove vote
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${post._id}/poll/vote`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/posts/${post._id}/poll/vote`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -569,7 +520,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
         }
       } else {
         // Add vote
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${post._id}/poll/vote`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/posts/${post._id}/poll/vote`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -686,7 +637,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
 
       console.log('Editing comment:', { commentId, editCommentText, postId: post._id });
       
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${post._id}/comment/${commentId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/posts/${post._id}/comment/${commentId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -737,7 +688,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
 
       console.log('Deleting comment:', { commentId, postId: post._id });
       
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/posts/${post._id}/comment/${commentId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/posts/${post._id}/comment/${commentId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -848,7 +799,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
         return;
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/upload/post-media`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/upload/post-media`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

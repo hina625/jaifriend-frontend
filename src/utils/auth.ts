@@ -1,6 +1,4 @@
-/**
- * Authentication utility functions
- */
+
 
 export interface User {
   id?: string;

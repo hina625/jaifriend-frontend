@@ -151,7 +151,18 @@ export default function ReelsCreationModal({ isOpen, onClose, onSuccess }: Reels
       }
     } catch (error: any) {
       console.error(`❌ Error creating ${contentType}:`, error);
-      setError(error.response?.data?.message || `Failed to create ${contentType}. Please try again.`);
+      
+      let errorMessage = `Failed to create ${contentType}. Please try again.`;
+      
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsUploading(false);
     }
@@ -229,7 +240,7 @@ export default function ReelsCreationModal({ isOpen, onClose, onSuccess }: Reels
     
     console.log('📤 Calling createPost API...');
     
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/posts`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/posts`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`

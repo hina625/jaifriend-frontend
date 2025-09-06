@@ -131,7 +131,7 @@ const DownloadMyInformationPage = () => {
       
       if (token) {
         // Try backend API first
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
         const response = await fetch(`${apiUrl}/api/dataexports`, { 
           method: 'POST',
           headers: {

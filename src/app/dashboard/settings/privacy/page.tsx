@@ -73,7 +73,7 @@ const PrivacySettingsPage = () => {
       try {
         const token = localStorage.getItem('token');
         if (token) {
-          const currentUserResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend-production.up.railway.app'}/api/profile/me`, {
+          const currentUserResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/profile/me`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }

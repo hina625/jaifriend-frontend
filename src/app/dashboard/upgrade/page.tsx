@@ -119,7 +119,7 @@ const PricingPage = () => {
     }
   ];
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
   const handleUpgrade = async (planName: string) => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const userId = user._id || user.id;
