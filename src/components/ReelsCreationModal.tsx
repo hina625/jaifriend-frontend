@@ -369,8 +369,8 @@ export default function ReelsCreationModal({ isOpen, onClose, onSuccess }: Reels
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-3 animate-in fade-in duration-200" style={{ top: '0', left: '0', right: '0', bottom: '0' }}>
-      <div className="bg-white rounded-xl w-full max-w-5xl h-[90vh] max-h-[600px] overflow-hidden shadow-2xl border border-gray-100 animate-in slide-in-from-bottom-4 duration-300 flex flex-col" style={{ marginTop: '20px' }}>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-3 animate-in fade-in duration-200" style={{ top: '60px', left: '0', right: '0', bottom: '80px' }}>
+      <div className="bg-white rounded-xl w-full max-w-5xl h-[calc(100vh-140px)] max-h-[600px] overflow-hidden shadow-2xl border border-gray-100 animate-in slide-in-from-bottom-4 duration-300 flex flex-col">
         
         {/* Header - Fixed with higher z-index */}
         <div className="flex items-center justify-between px-5 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200 flex-shrink-0 relative z-[10000]">

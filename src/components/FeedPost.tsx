@@ -1694,7 +1694,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
         )}
 
         {/* Bottom Section: Action Buttons */}
-        <div className="flex items-center justify-between py-3 sm:py-4 md:py-6 px-2 sm:px-4 md:px-6">
+        <div className="flex items-center justify-start md:justify-between py-3 sm:py-4 md:py-6 px-2 sm:px-4 md:px-6">
           <div className="flex items-center space-x-4 sm:space-x-8 md:space-x-16">
             {/* Reaction Button */}
             <div className="relative">
@@ -1772,7 +1772,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
             {/* Review Button */}
             <button
               onClick={handleReview}
-              className="flex flex-col items-center space-y-1 sm:space-y-2 md:space-y-3 text-gray-600 hover:text-yellow-600 transition-colors touch-manipulation"
+              className="flex flex-col items-center space-y-1 sm:space-y-2 md:space-y-3 text-gray-600 hover:text-yellow-600 transition-colors touch-manipulation px-1"
               style={{ touchAction: 'manipulation' }}
             >
               <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
@@ -1780,7 +1780,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
                   <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-.1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                 </svg>
               </div>
-              <span className="text-xs sm:text-sm md:text-base font-medium">Review</span>
+              <span className="text-xs sm:text-sm md:text-base font-medium whitespace-nowrap">Review</span>
             </button>
             
             {/* Save Button */}
@@ -1802,8 +1802,8 @@ const FeedPost: React.FC<FeedPostProps> = ({
             </button>
           </div>
           
-          {/* Right side - Empty for balance */}
-          <div className="w-16 sm:w-20"></div>
+          {/* Right side - Empty for balance on desktop */}
+          <div className="hidden md:block w-16 sm:w-20"></div>
         </div>
 
         {/* Remove the old reaction popup section since we moved it above */}

@@ -2140,7 +2140,7 @@ export default function Dashboard() {
   };
 
   return (
-  <div className="bg-[#f4f7fb] dark:bg-gray-900 min-h-screen pt-2 sm:pt-4 pb-24 sm:pb-6 w-full overflow-hidden transition-colors duration-200 touch-manipulation md:mr-20">
+  <div className="bg-[#f4f7fb] dark:bg-gray-900 min-h-screen pt-1 xs:pt-2 sm:pt-4 pb-20 xs:pb-24 sm:pb-6 w-full overflow-x-hidden transition-colors duration-200 touch-manipulation md:mr-20">
       <Popup popup={popup} onClose={closePopup} />
       
       <SharePopup
@@ -2159,13 +2159,13 @@ export default function Dashboard() {
         isAlbum={selectedPostForShare?.type === 'album'}
       />
       
-      <div className="px-2 sm:px-4 lg:px-6 w-full">
+      <div className="px-1 xs:px-2 sm:px-4 lg:px-6 w-full">
         <h1 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 text-gray-900 dark:text-white transition-colors duration-200">
           {userEmail ? `Hello, ${userEmail}! 👋` : "Hello!"}
         </h1>
 
-        <div className="w-full pt-2 mb-3 sm:mb-4">
-          <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 scrollbar-hide touch-pan-x">
+        <div className="w-full pt-1 xs:pt-2 mb-2 xs:mb-3 sm:mb-4">
+          <div className="flex gap-2 sm:gap-3 md:gap-4 overflow-x-auto pb-2 scrollbar-hide touch-pan-x">
             {/* Your Story */}
             <div 
               className="flex-shrink-0 flex flex-col items-center group cursor-pointer touch-manipulation" 
@@ -2182,18 +2182,18 @@ export default function Dashboard() {
                 userStory.startsWith('data:video') ? (
                   <video
                     src={userStory}
-                    className="w-20 h-28 sm:w-24 sm:h-36 md:w-32 md:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-blue-500 mb-2 sm:mb-3 shadow-lg sm:shadow-xl object-cover transition-transform group-hover:scale-105"
+                    className="w-16 h-24 xs:w-20 xs:h-28 sm:w-24 sm:h-36 md:w-28 md:h-40 lg:w-32 lg:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-blue-500 mb-2 sm:mb-3 shadow-lg sm:shadow-xl object-cover transition-transform group-hover:scale-105"
                     controls
                   />
                 ) : (
                   <img
                     src={userStory}
-                    className="w-20 h-28 sm:w-24 sm:h-36 md:w-32 md:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-blue-500 mb-2 sm:mb-3 shadow-lg sm:shadow-xl object-cover transition-transform group-hover:scale-105"
+                    className="w-16 h-24 xs:w-20 xs:h-28 sm:w-24 sm:h-36 md:w-28 md:h-40 lg:w-32 lg:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-blue-500 mb-2 sm:mb-3 shadow-lg sm:shadow-xl object-cover transition-transform group-hover:scale-105"
                     alt="Your Story"
                   />
                 )
               ) : (
-                <div className="w-20 h-28 sm:w-24 sm:h-36 md:w-32 md:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-gray-300 mb-2 sm:mb-3 shadow-lg sm:shadow-xl bg-gray-100 dark:bg-gray-200 relative overflow-hidden transition-transform group-hover:scale-105">
+                <div className="w-16 h-24 xs:w-20 xs:h-28 sm:w-24 sm:h-36 md:w-28 md:h-40 lg:w-32 lg:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-gray-300 mb-2 sm:mb-3 shadow-lg sm:shadow-xl bg-gray-100 dark:bg-gray-200 relative overflow-hidden transition-transform group-hover:scale-105">
                   {/* User Profile Picture */}
                   {(() => {
                     const avatarUrl = getUserAvatar();
@@ -2222,7 +2222,7 @@ export default function Dashboard() {
                   </div>
                 </div>
               )}
-              <span className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 font-medium transition-colors duration-200">Create new story</span>
+              <span className="text-xs xs:text-sm text-gray-700 dark:text-gray-300 font-medium transition-colors duration-200">Create new story</span>
             </div>
 
             {/* Other Users' Stories */}
@@ -2230,7 +2230,7 @@ export default function Dashboard() {
               // Loading skeleton
               Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="flex-shrink-0 flex flex-col items-center">
-                  <div className="w-20 h-28 sm:w-24 sm:h-36 md:w-32 md:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-gray-300 mb-2 sm:mb-3 shadow-lg sm:shadow-xl bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse" />
+                  <div className="w-16 h-24 xs:w-20 xs:h-28 sm:w-24 sm:h-36 md:w-28 md:h-40 lg:w-32 lg:h-48 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-gray-300 mb-2 sm:mb-3 shadow-lg sm:shadow-xl bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse" />
                   <div className="w-16 h-4 bg-gray-200 rounded animate-pulse" />
                 </div>
               ))
@@ -2249,7 +2249,7 @@ export default function Dashboard() {
                   style={{ touchAction: 'manipulation' }}
                 >
                   {/* Story Container with Professional Styling */}
-                  <div className="relative w-20 h-28 sm:w-24 sm:h-36 md:w-32 md:h-48 rounded-xl sm:rounded-2xl overflow-hidden shadow-lg sm:shadow-xl border-2 border-white dark:border-gray-700 group-hover:shadow-2xl transition-all duration-300">
+                  <div className="relative w-16 h-24 xs:w-20 xs:h-28 sm:w-24 sm:h-36 md:w-28 md:h-40 lg:w-32 lg:h-48 rounded-xl sm:rounded-2xl overflow-hidden shadow-lg sm:shadow-xl border-2 border-white dark:border-gray-700 group-hover:shadow-2xl transition-all duration-300">
                     {/* Media Content */}
                   {groupedStory.latestStory.mediaType === 'video' ? (
                     <video
@@ -2279,7 +2279,7 @@ export default function Dashboard() {
                     <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
                       <div className="flex items-center justify-center">
                         {/* User Avatar */}
-                        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-white overflow-hidden flex-shrink-0">
+                        <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full border-2 border-white overflow-hidden flex-shrink-0">
                           {groupedStory.user.avatar ? (
                             <img
                               src={groupedStory.user.avatar}
@@ -2302,7 +2302,7 @@ export default function Dashboard() {
                                       </div>
                   
                   {/* Username Below (for better visibility) */}
-                  <span className="text-xs sm:text-sm text-[#34495e] dark:text-gray-300 group-hover:text-[#022e8a] dark:group-hover:text-blue-400 font-medium transition-colors duration-200 truncate max-w-[80px] text-center mt-2">
+                  <span className="text-xs xs:text-sm text-[#34495e] dark:text-gray-300 group-hover:text-[#022e8a] dark:group-hover:text-blue-400 font-medium transition-colors duration-200 truncate max-w-[60px] xs:max-w-[80px] text-center mt-2">
                     {groupedStory.user.fullName || groupedStory.user.username}
                   </span>
                 </div>
@@ -2324,9 +2324,9 @@ export default function Dashboard() {
             </div>
           </div>
           
-          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center gap-1 xs:gap-2 sm:gap-3 overflow-x-auto scrollbar-hide touch-pan-x pb-2">
             {/* Filter Button */}
-            <button className="flex-shrink-0 w-10 h-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-full flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
+            <button className="flex-shrink-0 w-8 h-8 xs:w-10 xs:h-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-full flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
               <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
               </svg>
@@ -2335,129 +2335,129 @@ export default function Dashboard() {
             {/* Content Category Buttons */}
             <button 
               onClick={() => setActiveFilter('all')}
-              className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full border transition-colors ${
+              className={`flex-shrink-0 flex items-center gap-1 xs:gap-2 px-3 xs:px-4 py-2 xs:py-2.5 rounded-full border transition-colors min-w-fit ${
                 activeFilter === 'all' 
                   ? 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700' 
                   : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
               }`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 xs:w-4 h-3 xs:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <span className="text-sm font-medium">All</span>
+              <span className="text-xs xs:text-xs xs:text-sm font-medium">All</span>
             </button>
             
             <button 
               onClick={() => setActiveFilter('text')}
-              className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full border transition-colors ${
+              className={`flex-shrink-0 flex items-center gap-1 xs:gap-2 px-3 xs:px-4 py-2 xs:py-2.5 rounded-full border transition-colors min-w-fit ${
                 activeFilter === 'text' 
                   ? 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700' 
                   : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
               }`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 xs:w-4 h-3 xs:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
-              <span className="text-sm font-medium">Text</span>
+              <span className="text-xs xs:text-sm font-medium">Text</span>
             </button>
             
             <button 
               onClick={() => setActiveFilter('photos')}
-              className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full border transition-colors ${
+              className={`flex-shrink-0 flex items-center gap-1 xs:gap-2 px-3 xs:px-4 py-2 xs:py-2.5 rounded-full border transition-colors min-w-fit ${
                 activeFilter === 'photos' 
                   ? 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700' 
                   : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
               }`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 xs:w-4 h-3 xs:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              <span className="text-sm font-medium">Photos</span>
+              <span className="text-xs xs:text-sm font-medium">Photos</span>
             </button>
             
             <button 
               onClick={() => setActiveFilter('videos')}
-              className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full border transition-colors ${
+              className={`flex-shrink-0 flex items-center gap-1 xs:gap-2 px-3 xs:px-4 py-2 xs:py-2.5 rounded-full border transition-colors min-w-fit ${
                 activeFilter === 'videos' 
                   ? 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700' 
                   : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
               }`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 xs:w-4 h-3 xs:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
-              <span className="text-sm font-medium">Videos</span>
+              <span className="text-xs xs:text-sm font-medium">Videos</span>
             </button>
             
             <button 
               onClick={() => setActiveFilter('sounds')}
-              className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full border transition-colors ${
+              className={`flex-shrink-0 flex items-center gap-1 xs:gap-2 px-3 xs:px-4 py-2 xs:py-2.5 rounded-full border transition-colors min-w-fit ${
                 activeFilter === 'sounds' 
                   ? 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700' 
                   : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
               }`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 xs:w-4 h-3 xs:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
               </svg>
-              <span className="text-sm font-medium">Sounds</span>
+              <span className="text-xs xs:text-sm font-medium">Sounds</span>
             </button>
             
             <button 
               onClick={() => setActiveFilter('files')}
-              className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full border transition-colors ${
+              className={`flex-shrink-0 flex items-center gap-1 xs:gap-2 px-3 xs:px-4 py-2 xs:py-2.5 rounded-full border transition-colors min-w-fit ${
                 activeFilter === 'files' 
                   ? 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700' 
                   : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
               }`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 xs:w-4 h-3 xs:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <span className="text-sm font-medium">Files</span>
+              <span className="text-xs xs:text-sm font-medium">Files</span>
             </button>
             
             <button 
               onClick={() => setActiveFilter('maps')}
-              className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-full border transition-colors ${
+              className={`flex-shrink-0 flex items-center gap-1 xs:gap-2 px-3 xs:px-4 py-2 xs:py-2.5 rounded-full border transition-colors min-w-fit ${
                 activeFilter === 'maps' 
                   ? 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700' 
                   : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
               }`}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-3 xs:w-4 h-3 xs:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m0 0L9 7" />
               </svg>
-              <span className="text-sm font-medium">Maps</span>
+              <span className="text-xs xs:text-sm font-medium">Maps</span>
             </button>
           </div>
         </div>
 
-        <div className="flex flex-col xl:flex-row gap-3 sm:gap-4 w-full">
-          <div className="w-full xl:w-[65%] max-w-2xl xl:mx-0 overflow-y-auto h-screen scrollbar-hide">
-            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-2 sm:p-3 mb-3 sm:mb-4 transition-colors duration-200">
+        <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 w-full">
+          <div className="w-full lg:w-[65%] xl:w-[70%] max-w-2xl lg:mx-0 lg:overflow-y-auto lg:h-[calc(100vh-120px)] scrollbar-hide">
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-1 xs:p-2 sm:p-3 mb-3 sm:mb-4 transition-colors duration-200">
               {/* Top Section: Content Type Selection */}
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1 xs:gap-2 sm:gap-3">
                   <button
                     onClick={() => setShowReelsModal(true)}
-                    className="flex items-center gap-2 bg-pink-50 dark:bg-pink-900/20 px-3 py-2 rounded-lg border border-pink-200 dark:border-pink-700 hover:bg-pink-100 dark:hover:bg-pink-900/30 transition-colors cursor-pointer"
+                    className="flex items-center gap-1 xs:gap-2 bg-pink-50 dark:bg-pink-900/20 px-2 xs:px-3 py-1.5 xs:py-2 rounded-lg border border-pink-200 dark:border-pink-700 hover:bg-pink-100 dark:hover:bg-pink-900/30 transition-colors cursor-pointer"
                   >
                     <span className="text-pink-500 text-lg">💎</span>
-                    <span className="text-sm font-medium text-pink-700 dark:text-pink-300">Reels Video</span>
+                    <span className="text-xs xs:text-sm font-medium text-pink-700 dark:text-pink-300">Reels Video</span>
                   </button>
-                  <div className="flex items-center gap-2 bg-pink-50 dark:bg-pink-900/20 px-3 py-2 rounded-lg border border-pink-200 dark:border-pink-700">
+                  <div className="flex items-center gap-1 xs:gap-2 bg-pink-50 dark:bg-pink-900/20 px-2 xs:px-3 py-1.5 xs:py-2 rounded-lg border border-pink-200 dark:border-pink-700">
                     <span className="text-pink-500 text-lg">🕐</span>
-                    <span className="text-sm font-medium text-pink-700 dark:text-pink-300">Free live streams</span>
+                    <span className="text-xs xs:text-sm font-medium text-pink-700 dark:text-pink-300">Free live streams</span>
                   </div>
                 </div>
               </div>
 
               {/* Content Creation Area */}
               <div className="relative mb-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <div className="flex items-start gap-2 xs:gap-3">
+                  <div className="w-8 h-8 xs:w-10 xs:h-10 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
                     {(() => {
                       const avatarUrl = getUserAvatar();
                       return avatarUrl && avatarUrl !== '/default-avatar.svg' ? (
@@ -2482,8 +2482,8 @@ export default function Dashboard() {
                     {/* Content Textarea */}
                     <textarea
                       placeholder="Click to create a new post..."
-                      className={`w-full border border-gray-300 dark:border-gray-600 rounded-xl px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none cursor-pointer ${
-                        newPost.trim() ? 'min-h-[80px]' : 'min-h-[40px]'
+                      className={`w-full border border-gray-300 dark:border-gray-600 rounded-xl px-2 xs:px-4 py-1.5 xs:py-2 text-xs xs:text-sm bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none cursor-pointer ${
+                        newPost.trim() ? 'min-h-[60px] xs:min-h-[80px]' : 'min-h-[32px] xs:min-h-[40px]'
                       }`}
                       value=""
                       readOnly
@@ -2498,9 +2498,9 @@ export default function Dashboard() {
                   </div>
                   
                   {/* Camera Icon - Positioned to the right of textarea */}
-                  <div className="flex items-center justify-center w-10 h-10 flex-shrink-0">
+                  <div className="flex items-center justify-center w-8 h-8 xs:w-10 xs:h-10 flex-shrink-0">
                     <button
-                      className="flex items-center justify-center w-10 h-10 text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                      className="flex items-center justify-center w-8 h-8 xs:w-10 xs:h-10 text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
                       onClick={() => fileInputRef.current && fileInputRef.current.click()}
                       disabled={posting}
                       title="Add photos or videos"
@@ -2625,7 +2625,7 @@ export default function Dashboard() {
                                 className="text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20 p-1.5 rounded-full transition-colors flex-shrink-0"
                                 title="Remove file"
                               >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-3 xs:w-4 h-3 xs:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                               </button>
@@ -2760,21 +2760,21 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div className="w-full xl:w-[30%] flex flex-col gap-3 sm:gap-4">
-            <div className="sticky top-4 space-y-3 sm:gap-4 h-[calc(100vh-2rem)] overflow-hidden flex flex-col justify-start">
+          <div className="w-full lg:w-[35%] xl:w-[30%] flex flex-col gap-3 sm:gap-4">
+            <div className="lg:sticky lg:top-4 space-y-3 sm:gap-4 lg:h-[calc(100vh-4rem)] lg:overflow-hidden lg:flex lg:flex-col lg:justify-start">
             {/* Pro Members Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-2 sm:p-3 transition-colors duration-200">
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-1 xs:p-2 sm:p-3 transition-colors duration-200">
               <div className="font-semibold mb-2 text-sm text-gray-900 dark:text-white transition-colors duration-200">Pro Members</div>
-              <button className="bg-orange-400 text-white px-3 py-2 rounded-full w-full mb-2 text-sm">Upgrade To Pro</button>
+              <button className="bg-orange-400 text-white px-2 xs:px-3 py-1.5 xs:py-2 rounded-full w-full mb-2 text-xs xs:text-sm">Upgrade To Pro</button>
             </div>
 
             {/* Latest Products Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-2 sm:p-3 transition-colors duration-200">
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-1 xs:p-2 sm:p-3 transition-colors duration-200">
               <LatestProducts />
                 </div>
 
             {/* Latest Pages Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-2 sm:p-3 transition-colors duration-200">
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-1 xs:p-2 sm:p-3 transition-colors duration-200">
               <div className="font-semibold mb-3 text-sm text-gray-900 dark:text-white transition-colors duration-200">Latest Pages</div>
               
               {loadingPages ? (
@@ -2858,7 +2858,7 @@ export default function Dashboard() {
             </div>
 
             {/* Suggested Pages Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-2 sm:p-3 transition-colors duration-200">
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl shadow p-1 xs:p-2 sm:p-3 transition-colors duration-200">
               <div className="font-semibold mb-3 text-sm text-gray-900 dark:text-white transition-colors duration-200">Suggested Pages</div>
               
               {loadingSuggestedPages ? (
@@ -3088,7 +3088,7 @@ export default function Dashboard() {
                             <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
                               <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                 <div className="bg-white bg-opacity-90 rounded-full p-2">
-                                  <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <svg className="w-3 xs:w-4 h-3 xs:h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
                                   </svg>
                                 </div>
@@ -3348,8 +3348,8 @@ export default function Dashboard() {
 
       {/* Post Creation Modal */}
       {showPostModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4 bg-black bg-opacity-50">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md max-h-[90vh] sm:max-h-[80vh] overflow-hidden">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4 bg-black bg-opacity-50" style={{ paddingTop: '60px', paddingBottom: '80px' }}>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md max-h-[calc(100vh-140px)] sm:max-h-[80vh] overflow-hidden">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700">
               <button
@@ -3366,7 +3366,7 @@ export default function Dashboard() {
                 <button
                   onClick={handleModalPost}
                   disabled={posting || (!newPost.trim() && modalMediaFiles.length === 0 && !selectedGif && !voiceRecording && !selectedFeeling && !sellData && !pollData && !locationData)}
-                  className="bg-red-500 hover:bg-red-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-red-500 hover:bg-red-600 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-xs xs:text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {posting ? 'Sharing...' : 'Share'}
                 </button>
@@ -3374,7 +3374,7 @@ export default function Dashboard() {
             </div>
 
             {/* Modal Content - Scrollable */}
-            <div className="p-3 sm:p-4 overflow-y-auto max-h-[calc(90vh-120px)] sm:max-h-[calc(80vh-120px)] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div className="p-3 sm:p-4 overflow-y-auto max-h-[calc(100vh-200px)] sm:max-h-[calc(80vh-120px)] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {/* Post Input */}
               <textarea
                 placeholder="What's happening?"
@@ -3455,7 +3455,7 @@ export default function Dashboard() {
                                 className="text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20 p-1.5 rounded-full transition-colors flex-shrink-0"
                                 title="Remove file"
                               >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-3 xs:w-4 h-3 xs:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                               </button>
@@ -3479,7 +3479,7 @@ export default function Dashboard() {
               {/* Selected Features Preview */}
               {(selectedGif || voiceRecording || selectedFeeling || sellData || pollData || locationData) && (
                 <div className="mt-3 sm:mt-4 p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                  <div className="text-xs sm:text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">Selected features:</div>
+                  <div className="text-xs sm:text-xs xs:text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">Selected features:</div>
                   <div className="space-y-2">
                     {selectedGif && (
                       <div className="flex items-center gap-2 text-xs sm:text-sm">
@@ -3554,7 +3554,7 @@ export default function Dashboard() {
               {/* Audience Selector */}
               <div className="flex items-center gap-2 mt-3 sm:mt-4 p-2 sm:p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
                 <span className="text-sm sm:text-base">🌐</span>
-                <span className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Everyone</span>
+                <span className="text-xs sm:text-xs xs:text-sm font-medium text-gray-700 dark:text-gray-300">Everyone</span>
                 <svg className="w-3 h-3 sm:w-4 sm:h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
@@ -3709,7 +3709,7 @@ export default function Dashboard() {
                   
                   {emojiCategories.map((category, categoryIndex) => (
                     <div key={categoryIndex} className="mb-3 sm:mb-4">
-                      <h4 className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{category.name}</h4>
+                      <h4 className="text-xs sm:text-xs xs:text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">{category.name}</h4>
                       <div className="grid grid-cols-8 sm:grid-cols-10 gap-1 sm:gap-2">
                         {category.emojis.map((emoji, emojiIndex) => (
                           <button
@@ -4013,7 +4013,7 @@ export default function Dashboard() {
                     id="negotiable"
                     checked={sellFormData.negotiable || false}
                     onChange={(e) => setSellFormData(prev => ({ ...prev, negotiable: e.target.checked }))}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                    className="w-3 xs:w-4 h-3 xs:h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
                   />
                   <label htmlFor="negotiable" className="text-sm text-gray-700 dark:text-gray-300">Price negotiable</label>
                 </div>
@@ -4103,7 +4103,7 @@ export default function Dashboard() {
                     id="multipleChoice"
                     checked={pollFormData.isMultipleChoice || false}
                     onChange={(e) => setPollFormData(prev => ({ ...prev, isMultipleChoice: e.target.checked }))}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                    className="w-3 xs:w-4 h-3 xs:h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
                   />
                   <label htmlFor="multipleChoice" className="text-sm text-gray-700 dark:text-gray-300">Allow multiple choices</label>
                 </div>
@@ -4162,7 +4162,7 @@ export default function Dashboard() {
               <div className="space-y-3">
                 {/* Worldwide Location Search */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="text-xs xs:text-sm font-medium text-gray-700 dark:text-gray-300">
                     🌍 Search Worldwide Location
                   </label>
                   <div className="relative">
@@ -4260,7 +4260,7 @@ export default function Dashboard() {
                 
                 {/* Manual Location Input */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <label className="text-xs xs:text-sm font-medium text-gray-700 dark:text-gray-300">
                     📝 Manual Location Input
                   </label>
                   <input
@@ -4294,7 +4294,7 @@ export default function Dashboard() {
                   {/* Map Preview */}
                   {locationFormData.coordinates && (
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <label className="text-xs xs:text-sm font-medium text-gray-700 dark:text-gray-300">
                         🗺️ Location Preview
                       </label>
                       <div className="w-full h-32 bg-gray-100 dark:bg-gray-600 rounded-lg flex items-center justify-center">

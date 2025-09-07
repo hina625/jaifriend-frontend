@@ -890,13 +890,13 @@ export default function PostDisplay({
             
             {/* Review Button */}
             <button 
-              className="flex flex-col items-center justify-center text-gray-600 hover:text-yellow-500 transition-colors touch-manipulation min-h-[60px]"
+              className="flex flex-col items-center justify-center text-gray-600 hover:text-yellow-500 transition-colors touch-manipulation min-h-[70px] px-2"
             style={{ touchAction: 'manipulation' }}
           >
-                <span className="font-medium text-xs mb-2 text-center">Review</span>
-            <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center">
+            <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center mb-2">
               <span className="text-sm">⭐</span>
-              </div>
+            </div>
+            <span className="font-medium text-xs text-center whitespace-nowrap">Review</span>
           </button>
         </div>
         

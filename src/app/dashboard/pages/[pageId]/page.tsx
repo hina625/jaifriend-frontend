@@ -629,7 +629,7 @@ const PageView: React.FC = () => {
 
       // First upload the image to get the URL
       const formData = new FormData();
-      formData.append('media', profileImage);
+      formData.append('postMedia', profileImage);
 
   const uploadResponse = await fetch(`${API_URL}/api/upload`, {
         method: 'POST',
@@ -687,7 +687,7 @@ const PageView: React.FC = () => {
 
       // First upload the image to get the URL
       const formData = new FormData();
-      formData.append('media', coverImage);
+      formData.append('postMedia', coverImage);
 
   const uploadResponse = await fetch(`${API_URL}/api/upload`, {
         method: 'POST',
@@ -1222,8 +1222,8 @@ const PageView: React.FC = () => {
 
       {/* Post Creation Modal */}
       {showPostModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" style={{ paddingTop: '60px', paddingBottom: '80px' }}>
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[calc(100vh-140px)] overflow-y-auto">
             <div className="p-6">
               {/* Modal Header */}
               <div className="flex items-center justify-between mb-6">

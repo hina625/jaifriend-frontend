@@ -16,6 +16,7 @@ const PhotoAlbumManager: React.FC = () => {
   const [editPhotos, setEditPhotos] = useState<File[]>([]);
   const [photoUrlInput, setPhotoUrlInput] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [showCreatePopup, setShowCreatePopup] = useState<boolean>(false);
   const [popup, setPopup] = useState<PopupState>({
     isOpen: false,
     type: 'success',
@@ -65,8 +66,32 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hg
   }, []);
 
   const handleCreateAlbum = (): void => {
-    setCurrentView('create');
+    setShowCreatePopup(true);
   };
+
+  const handleCloseCreatePopup = (): void => {
+    setShowCreatePopup(false);
+    setAlbumName('');
+    setSelectedPhotos([]);
+    setPhotoUrlInput('');
+  };
+
+  // Handle ESC key to close popup
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showCreatePopup) {
+        handleCloseCreatePopup();
+      }
+    };
+
+    if (showCreatePopup) {
+      document.addEventListener('keydown', handleEscKey);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [showCreatePopup]);
 
   const handleGoBack = (): void => {
     setCurrentView('albums');
@@ -140,14 +165,18 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hg
       if (response.ok) {
         const newAlbum = await response.json();
         setAlbums(prev => [newAlbum, ...prev]);
-        showPopup('success', 'Album Created!', `Album "${albumName}" created successfully!`);
         setAlbumName('');
         setSelectedPhotos([]);
+        setPhotoUrlInput('');
+        setShowCreatePopup(false);
+        
+        // Show success message after popup closes
+        setTimeout(() => {
+          showPopup('success', 'Album Created!', `Album "${albumName}" created successfully!`);
+        }, 100);
         
         // Dispatch event to refresh feed
         window.dispatchEvent(new CustomEvent('albumCreated'));
-        
-  // Stay on the album page so user can create more albums
       } else if (response.status === 401) {
         console.error('Authentication failed');
         setIsAuthenticated(false);
@@ -361,6 +390,176 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hg
       <div className="h-full overflow-y-auto scrollbar-hide">
       {/* Popup Modal */}
       <Popup popup={popup} onClose={closePopup} />
+      
+      {/* Album Creation Popup */}
+      {showCreatePopup && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4"
+          onClick={handleCloseCreatePopup}
+        >
+          <div 
+            className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                  <Plus className="w-4 h-4 text-white" />
+                </div>
+                <h2 className="text-xl font-semibold text-gray-900">Create New Album</h2>
+              </div>
+              <button
+                onClick={handleCloseCreatePopup}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Form Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+              {/* Album Name Field */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-3">Album Name</label>
+                <input
+                  type="text"
+                  value={albumName}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAlbumName(e.target.value)}
+                  placeholder="Choose your album name"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-gray-900 placeholder-gray-400"
+                />
+              </div>
+
+              {/* Photos Section */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-4">Photos</label>
+                
+                {/* Photo URL Input */}
+                <div className="mb-4 flex gap-2">
+                  <input
+                    type="text"
+                    value={photoUrlInput}
+                    onChange={e => setPhotoUrlInput(e.target.value)}
+                    placeholder="Paste image URL (e.g. from Cloudinary)"
+                    className="border px-3 py-2 rounded flex-1 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddPhotoUrl}
+                    className="bg-blue-500 text-white px-4 py-2 rounded whitespace-nowrap text-sm"
+                  >
+                    Add URL
+                  </button>
+                </div>
+                
+                {/* Photo Upload Area */}
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-gray-400 transition-colors">
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                    id="photo-upload-popup"
+                  />
+                  <label htmlFor="photo-upload-popup" className="cursor-pointer">
+                    <div className="w-16 h-16 bg-gray-100 rounded-lg mx-auto mb-4 flex items-center justify-center relative">
+                      <Camera className="w-8 h-8 text-gray-400" />
+                      <div className="absolute -top-1 -right-1">
+                        <Plus className="w-4 h-4 text-gray-600" />
+                      </div>
+                    </div>
+                    <p className="text-gray-700 text-base font-medium">
+                      Click to upload photos
+                    </p>
+                    <p className="text-gray-500 text-sm mt-1">
+                      Supports: JPG, PNG, GIF
+                    </p>
+                  </label>
+                </div>
+                
+                {/* Selected Photos Preview */}
+                {selectedPhotos.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm text-gray-600 mb-2">{selectedPhotos.length} file(s) selected</p>
+                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                      {selectedPhotos.map((media: any, index: number) => (
+                        <div key={index} className="relative group">
+                          <button
+                            onClick={() => removePhoto(index)}
+                            className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                          {(() => {
+                            if (typeof media === 'string') {
+                              if (/\.(mp4|webm|ogg|mov|avi)$/i.test(media)) {
+                                return (
+                                  <video 
+                                    src={media} 
+                                    className="w-full aspect-square object-cover rounded-lg border" 
+                                    controls
+                                    muted
+                                    preload="metadata"
+                                  />
+                                );
+                              }
+                              return (
+                                <img src={media} alt="media url" className="w-full aspect-square object-cover rounded-lg border" />
+                              );
+                            } else if (media.type && media.type.startsWith('video')) {
+                              const videoUrl = URL.createObjectURL(media);
+                              return (
+                                <video 
+                                  src={videoUrl} 
+                                  className="w-full aspect-square object-cover rounded-lg border" 
+                                  controls
+                                  muted
+                                  preload="metadata"
+                                />
+                              );
+                            } else if (media.type && media.type.startsWith('image')) {
+                              const imageUrl = URL.createObjectURL(media);
+                              return (
+                                <img src={imageUrl} alt="media file" className="w-full aspect-square object-cover rounded-lg border" />
+                              );
+                            } else {
+                              return (
+                                <div className="w-full aspect-square bg-gray-200 rounded-lg flex items-center justify-center">
+                                  <Camera className="w-4 h-4 text-gray-400" />
+                                </div>
+                              );
+                            }
+                          })()}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200">
+              <button
+                onClick={handleCloseCreatePopup}
+                className="px-6 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePublish}
+                disabled={!albumName.trim() || selectedPhotos.length === 0 || creatingAlbum}
+                className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-6 py-2 rounded-lg font-medium transition-colors"
+              >
+                {creatingAlbum ? 'Creating...' : 'Create Album'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-30">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
@@ -377,8 +576,20 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hg
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-400 mx-auto mb-4"></div>
               Loading albums...
             </div>
-          ) : albums.length > 0 ? (
+          ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-12">
+              {/* Create New Album Card */}
+              <div 
+                onClick={handleCreateAlbum}
+                className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 hover:bg-gray-50 transition-colors cursor-pointer group"
+              >
+                <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3 group-hover:bg-gray-300 transition-colors">
+                  <Plus className="w-8 h-8 text-gray-500" />
+                </div>
+                <p className="text-gray-600 font-medium text-sm">Create New Album</p>
+              </div>
+              
+              {/* Existing Albums */}
               {albums.map((album, idx) => (
                 <div key={album._id || idx} className="bg-white rounded-lg shadow border border-gray-200 p-3 sm:p-4 relative">
                   {/* Dropdown menu button */}
@@ -500,9 +711,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hg
                 </div>
               ))}
             </div>
-          ) : null}
+          )}
 
-          {/* Empty State */}
+          {/* Empty State - Only show when no albums exist and not loading */}
           {(!loading && albums.length === 0) && (
             <div className="text-center px-4">
               {/* Empty State Icon */}
@@ -531,197 +742,13 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hg
           )}
         </div>
 
-        {/* Floating Action Button - Only show when albums exist */}
-        {albums.length > 0 && (
-          <button
-            onClick={handleCreateAlbum}
-            className="fixed bottom-6 right-4 sm:right-6 w-12 h-12 sm:w-14 sm:h-14 bg-blue-500 hover:bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center transition-colors z-30"
-          >
-            <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
-          </button>
-        )}
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="w-full h-full overflow-y-auto scrollbar-hide">
-      {/* Popup Modal */}
-      <Popup popup={popup} onClose={closePopup} />
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-30">
-        <div className="flex items-center justify-between max-w-4xl mx-auto">
-          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Create Album</h1>
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
-              <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-            <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
-              <Users className="w-4 h-4 sm:w-5 sm:h-5" />
-            </button>
-            <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
-              <User className="w-5 h-5 sm:w-6 sm:h-6" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Create Album Form */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-8 pb-24 sm:pb-8">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-8">
-          {/* Form Header */}
-          <div className="flex items-center mb-6 sm:mb-8">
-            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-500 rounded-full flex items-center justify-center mr-3">
-              <Plus className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
-            </div>
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Create album</h2>
-          </div>
-
-          {/* Album Name Field */}
-          <div className="mb-6 sm:mb-8">
-            <label className="block text-sm font-medium text-gray-700 mb-3">Album name</label>
-            <input
-              type="text"
-              value={albumName}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAlbumName(e.target.value)}
-              placeholder="Choose your album name"
-              className="w-full px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors text-gray-900 placeholder-gray-400"
-            />
-          </div>
-
-          {/* Photos Section */}
-          <div className="mb-8 sm:mb-12">
-            <label className="block text-sm font-medium text-gray-700 mb-4">Photos</label>
-            
-            {/* Photo URL Input */}
-            <div className="mb-4 flex flex-col sm:flex-row gap-2">
-              <input
-                type="text"
-                value={photoUrlInput}
-                onChange={e => setPhotoUrlInput(e.target.value)}
-                placeholder="Paste image URL (e.g. from Cloudinary)"
-                className="border px-3 py-2 rounded flex-1 text-sm"
-              />
-              <button
-                type="button"
-                onClick={handleAddPhotoUrl}
-                className="bg-blue-500 text-white px-4 py-2 rounded whitespace-nowrap text-sm touch-manipulation"
-                style={{ touchAction: 'manipulation' }}
-              >
-                Add URL
-              </button>
-            </div>
-            
-            {/* Photo Upload Area */}
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6 md:p-12 text-center hover:border-gray-400 transition-colors">
-              <input
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handlePhotoUpload}
-                className="hidden"
-                id="photo-upload"
-              />
-              <label htmlFor="photo-upload" className="cursor-pointer touch-manipulation" style={{ touchAction: 'manipulation' }}>
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-lg mx-auto mb-3 sm:mb-4 flex items-center justify-center relative">
-                  <Camera className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
-                  <div className="absolute -top-1 -right-1">
-                    <Plus className="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
-                  </div>
-                </div>
-                <p className="text-gray-700 dark:text-gray-300 text-sm sm:text-base px-2 sm:px-4 font-medium">
-                  Tap to upload photos
-                </p>
-                <p className="text-gray-500 dark:text-gray-400 text-xs mt-1 sm:mt-2">
-                  Supports: JPG, PNG, GIF
-                </p>
-              </label>
-            </div>
-            
-            {/* Selected Photos Preview */}
-            {selectedPhotos.length > 0 && (
-              <div className="mt-4">
-                <p className="text-sm text-gray-600 mb-2">{selectedPhotos.length} file(s) selected</p>
-                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
-                  {selectedPhotos.map((media: any, index: number) => (
-                    <div key={index} className="relative group">
-                      <button
-                        onClick={() => removePhoto(index)}
-                        className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                      {(() => {
-                        if (typeof media === 'string') {
-                          if (/\.(mp4|webm|ogg|mov|avi)$/i.test(media)) {
-                            return (
-                              <video 
-                                src={media} 
-                                className="w-full aspect-square object-cover rounded-lg border" 
-                                controls
-                                muted
-                                preload="metadata"
-                              />
-                            );
-                          }
-                          return (
-                            <img src={media} alt="media url" className="w-full aspect-square object-cover rounded-lg border" />
-                          );
-                        } else if (media.type && media.type.startsWith('video')) {
-                          const videoUrl = URL.createObjectURL(media);
-                          return (
-                            <video 
-                              src={videoUrl} 
-                              className="w-full aspect-square object-cover rounded-lg border" 
-                              controls
-                              muted
-                              preload="metadata"
-                            />
-                          );
-                        } else if (media.type && media.type.startsWith('image')) {
-                          const imageUrl = URL.createObjectURL(media);
-                          return (
-                            <img src={imageUrl} alt="media file" className="w-full aspect-square object-cover rounded-lg border" />
-                          );
-                        } else {
-                          return (
-                            <div className="w-full aspect-square bg-gray-200 rounded-lg flex items-center justify-center">
-                              <Camera className="w-4 h-4 text-gray-400" />
-                            </div>
-                          );
-                        }
-                      })()}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mt-6 sm:mt-8">
-            <button
-              onClick={handleGoBack}
-              className="flex items-center justify-center px-6 py-3 text-gray-600 hover:text-gray-800 font-medium transition-colors w-full sm:w-auto touch-manipulation border border-gray-300 rounded-lg hover:bg-gray-50"
-              style={{ touchAction: 'manipulation' }}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Go back
-            </button>
-            <button
-              onClick={handlePublish}
-              disabled={!albumName.trim() || selectedPhotos.length === 0 || creatingAlbum}
-              className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-8 py-3 rounded-lg font-medium transition-colors shadow-sm w-full sm:w-auto touch-manipulation"
-              style={{ touchAction: 'manipulation' }}
-            >
-              {creatingAlbum ? 'Creating...' : 'Publish'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  // This view is no longer needed as we use popup instead
+  return null;
 };
 
 export default PhotoAlbumManager;

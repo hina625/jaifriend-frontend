@@ -4,6 +4,24 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, FileText, ArrowLeft, ArrowRight, ThumbsUp, Camera, Users, Menu, X, Search, Heart, MessageCircle, Share2, Globe, Calendar, Users2, Star } from 'lucide-react';
 
+// Helper function to get proper image URL
+const getImageUrl = (url: string) => {
+  if (!url) return '/default-avatar.svg';
+  if (url.startsWith('http')) return url;
+  
+  // Handle localhost URLs that might be stored incorrectly
+  if (url.includes('localhost:3000')) {
+    return url.replace('http://localhost:3000', API_URL);
+  }
+  
+  // Handle hardcoded placeholder avatars that don't exist
+  if (url.includes('/avatars/') || url.includes('/covers/')) {
+    return '/default-avatar.svg';
+  }
+  
+  return `${API_URL}/${url}`;
+};
+
 interface Tab {
   name: string;
   active: boolean;
@@ -159,11 +177,11 @@ const MyPagesView: React.FC<MyPagesComponentProps> = ({ loading, userPages, onCr
                 <div className="flex items-center gap-6 text-sm text-gray-500">
                   <div className="flex items-center gap-2">
                     <Heart className="w-4 h-4 text-red-400" />
-                    <span className="font-medium">{page.likes.length}</span>
+                    <span className="font-medium">{page.likes?.length || 0}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Users2 className="w-4 h-4 text-blue-400" />
-                    <span className="font-medium">{page.followers.length}</span>
+                    <span className="font-medium">{page.followers?.length || 0}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -395,83 +413,329 @@ const CreatePageFormView: React.FC<CreatePageFormProps> = ({ formData, categorie
   </div>
 );
 
-const SuggestedPagesView: React.FC<SuggestedPagesComponentProps> = ({ suggestedPages, onLike }) => (
-  <div className="space-y-8">
-    {/* Promoted Section */}
-    <div>
-      <h3 className="text-xl font-bold text-gray-900 mb-6">Promoted Pages</h3>
-      <div className="bg-white rounded-2xl border border-gray-100 min-h-32 flex flex-col items-center justify-center p-8">
-        <div className="w-16 h-16 bg-gradient-to-br from-orange-50 to-red-100 rounded-2xl flex items-center justify-center mb-4">
-          <FileText className="w-8 h-8 text-orange-500" />
-        </div>
-        <p className="text-gray-500 text-lg font-medium">No promoted pages available</p>
-      </div>
-    </div>
+const SuggestedPagesView: React.FC<{ 
+  promotedPages: Page[], 
+  otherPages: Page[], 
+  onLike: (pageId: string) => void, 
+  onJoin: (pageId: string) => void,
+  loading: boolean 
+}> = ({ promotedPages, otherPages, onLike, onJoin, loading }) => {
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  
+  const isLiked = (page: Page) => {
+    return page.likes && Array.isArray(page.likes) && 
+           (page.likes.includes(currentUser._id) || page.likes.includes(currentUser.id));
+  };
+  
+  const isJoined = (page: Page) => {
+    return page.followers && Array.isArray(page.followers) && 
+           (page.followers.includes(currentUser._id) || page.followers.includes(currentUser.id));
+  };
 
-    {/* Suggested Pages List */}
-    <div>
-      <h3 className="text-xl font-bold text_gray-900 mb-6">Suggested Pages</h3>
-      <p className="text-gray-500 mb-4">Click any page to view details</p>
-      <div className="space-y-4">
-        {suggestedPages.map((page: SuggestedPage) => (
-          <div 
-            key={page.id} 
-            onClick={() => {
-              alert(`Page: ${page.name}\nCategory: ${page.category}\nLikes: ${page.likes}`);
-            }}
-            className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-blue-200"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4 min-w-0 flex-1">
-                <div className={`${'w-14 h-14'} ${page.color} rounded-xl flex items-center justify-center flex-shrink-0`}>
-                  {page.icon === '🅿️' ? (
-                    <span className="text-white font-bold text-lg">P</span>
-                  ) : page.icon === '🎨' ? (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 via-purple-500 to-yellow-500"></div>
-                  ) : (
-                    <FileText className="w-7 h-7 text-orange-600" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h4 className="font-bold text-gray-900 text-lg truncate mb-1">{page.name}</h4>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-gray-600">
-                    <span className="flex items-center gap-2">
-                      <ThumbsUp className="w-4 h-4 text-blue-500" />
-                      <span className="font-medium">{page.likes} people like this</span>
-                    </span>
-                    <span className="text-blue-600 font-medium bg-blue-50 px-3 py-1 rounded-lg">{page.category}</span>
+  return (
+    <div className="space-y-8">
+      {/* Promoted Section */}
+      <div>
+        <h3 className="text-xl font-bold text-gray-900 mb-6">Promoted Pages</h3>
+        {loading ? (
+          <div className="bg-white rounded-2xl border border-gray-100 min-h-32 flex flex-col items-center justify-center p-8">
+            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-500 text-lg font-medium">Loading promoted pages...</p>
+          </div>
+        ) : promotedPages.length > 0 ? (
+          <div className="space-y-4">
+            {promotedPages.map((page: Page) => (
+              <div 
+                key={page._id}
+                onClick={() => {
+                  // Navigate to page details or open page
+                  window.open(`https://jaifriend.com/${page.url}`, '_blank');
+                }}
+                className="bg-gradient-to-r from-orange-50 to-red-50 rounded-2xl border border-orange-200 p-6 hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-orange-300"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 min-w-0 flex-1">
+                    <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {page.createdBy?.avatar ? (
+                        <img
+                          src={getImageUrl(page.createdBy.avatar)}
+                          alt={page.createdBy.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = '/default-avatar.svg';
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
+                          <FileText className="w-7 h-7 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-bold text-gray-900 text-lg truncate">{page.name}</h4>
+                        {page.isVerified && <Star className="w-5 h-5 text-blue-500" />}
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-gray-600">
+                        <span className="flex items-center gap-2">
+                          <ThumbsUp className="w-4 h-4 text-blue-500" />
+                          <span className="font-medium">{page.likes?.length || 0} people like this</span>
+                        </span>
+                        <span className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-green-500" />
+                          <span className="font-medium">{page.followers?.length || 0} followers</span>
+                        </span>
+                        <span className="text-blue-600 font-medium bg-blue-50 px-3 py-1 rounded-lg">{page.category}</span>
+                      </div>
+                      <p className="text-gray-500 text-sm mt-2 truncate">{page.description}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 ml-4 flex-shrink-0">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onLike(page._id);
+                      }}
+                      className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 border ${
+                        isLiked(page) 
+                          ? 'bg-blue-500 text-white border-blue-500' 
+                          : 'bg-gray-50 hover:bg-blue-50 hover:text-blue-600 text-gray-700 border-gray-200 hover:border-blue-200'
+                      }`}
+                    >
+                      <ThumbsUp className="w-4 h-4" />
+                      <span className="hidden sm:inline">{isLiked(page) ? 'Liked' : 'Like'}</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onJoin(page._id);
+                      }}
+                      className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 border ${
+                        isJoined(page) 
+                          ? 'bg-green-500 text-white border-green-500' 
+                          : 'bg-gray-50 hover:bg-green-50 hover:text-green-600 text-gray-700 border-gray-200 hover:border-green-200'
+                      }`}
+                    >
+                      <Users className="w-4 h-4" />
+                      <span className="hidden sm:inline">{isJoined(page) ? 'Joined' : 'Join'}</span>
+                    </button>
                   </div>
                 </div>
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onLike(page.id);
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-gray-100 min-h-32 flex flex-col items-center justify-center p-8">
+            <div className="w-16 h-16 bg-gradient-to-br from-orange-50 to-red-100 rounded-2xl flex items-center justify-center mb-4">
+              <FileText className="w-8 h-8 text-orange-500" />
+            </div>
+            <p className="text-gray-500 text-lg font-medium">No promoted pages available</p>
+          </div>
+        )}
+      </div>
+
+      {/* Suggested Pages List */}
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-bold text-gray-900">Suggested Pages</h3>
+          <button
+            onClick={() => window.location.reload()}
+            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+          >
+            Refresh
+          </button>
+        </div>
+        <p className="text-gray-500 mb-4">Discover pages created by other users</p>
+        {loading ? (
+          <div className="bg-white rounded-2xl border border-gray-100 min-h-32 flex flex-col items-center justify-center p-8">
+            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-500 text-lg font-medium">Loading suggested pages...</p>
+          </div>
+        ) : otherPages.length > 0 ? (
+          <div className="space-y-4">
+            {otherPages.map((page: Page) => (
+              <div 
+                key={page._id}
+                onClick={() => {
+                  // Navigate to page details or open page
+                  window.open(`https://jaifriend.com/${page.url}`, '_blank');
                 }}
-                className="flex items-center gap-2 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 px-4 py-3 rounded-xl text-sm font-semibold text-gray-700 transition-all duration-200 ml-4 flex-shrink-0 border border-gray-200 hover:border-blue-200"
+                className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-blue-200"
               >
-                <ThumbsUp className="w-4 h-4" />
-                <span className="hidden sm:inline">Like</span>
-              </button>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4 min-w-0 flex-1">
+                    <div className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {page.createdBy?.avatar ? (
+                        <img
+                          src={getImageUrl(page.createdBy.avatar)}
+                          alt={page.createdBy.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = '/default-avatar.svg';
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                          <FileText className="w-7 h-7 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-bold text-gray-900 text-lg truncate">{page.name}</h4>
+                        {page.isVerified && <Star className="w-5 h-5 text-blue-500" />}
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-gray-600">
+                        <span className="flex items-center gap-2">
+                          <ThumbsUp className="w-4 h-4 text-blue-500" />
+                          <span className="font-medium">{page.likes?.length || 0} people like this</span>
+                        </span>
+                        <span className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-green-500" />
+                          <span className="font-medium">{page.followers?.length || 0} followers</span>
+                        </span>
+                        <span className="text-blue-600 font-medium bg-blue-50 px-3 py-1 rounded-lg">{page.category}</span>
+                      </div>
+                      <p className="text-gray-500 text-sm mt-2 truncate">{page.description}</p>
+                      <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
+                        <span>Created by {page.createdBy.name || page.createdBy.username}</span>
+                        <span>•</span>
+                        <span>{new Date(page.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 ml-4 flex-shrink-0">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onLike(page._id);
+                      }}
+                      className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 border ${
+                        isLiked(page) 
+                          ? 'bg-blue-500 text-white border-blue-500' 
+                          : 'bg-gray-50 hover:bg-blue-50 hover:text-blue-600 text-gray-700 border-gray-200 hover:border-blue-200'
+                      }`}
+                    >
+                      <ThumbsUp className="w-4 h-4" />
+                      <span className="hidden sm:inline">{isLiked(page) ? 'Liked' : 'Like'}</span>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onJoin(page._id);
+                      }}
+                      className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 border ${
+                        isJoined(page) 
+                          ? 'bg-green-500 text-white border-green-500' 
+                          : 'bg-gray-50 hover:bg-green-50 hover:text-green-600 text-gray-700 border-gray-200 hover:border-green-200'
+                      }`}
+                    >
+                      <Users className="w-4 h-4" />
+                      <span className="hidden sm:inline">{isJoined(page) ? 'Joined' : 'Join'}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-gray-100 min-h-32 flex flex-col items-center justify-center p-8">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl flex items-center justify-center mb-4">
+              <FileText className="w-8 h-8 text-blue-500" />
+            </div>
+            <p className="text-gray-500 text-lg font-medium">No suggested pages available</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const LikedPagesView: React.FC<{ likedPages: Page[], loading: boolean }> = ({ likedPages, loading }) => {
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-100 min-h-80 flex flex-col items-center justify-center p-8">
+        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-500 text-lg font-medium">Loading liked pages...</p>
+      </div>
+    );
+  }
+
+  if (likedPages.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-100 min-h-80 flex flex-col items-center justify-center p-8">
+        <div className="w-20 h-20 bg-gradient-to-br from-red-50 to-pink-100 rounded-2xl flex items-center justify-center mb-6">
+          <Heart className="w-10 h-10 text-red-500" />
+        </div>
+        <h3 className="text-xl font-semibold text-gray-900 mb-3">No liked pages yet</h3>
+        <p className="text-gray-500 text-center max-w-md">
+          Start exploring and like pages that interest you to see them here.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-2xl font-bold text-gray-900 mb-2">Your Liked Pages</h3>
+        <p className="text-gray-500">{likedPages.length} page{likedPages.length !== 1 ? 's' : ''} you've liked</p>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {likedPages.map((page: Page) => (
+          <div 
+            key={page._id}
+            onClick={() => {
+              window.open(`https://jaifriend.com/${page.url}`, '_blank');
+            }}
+            className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-red-200"
+          >
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
+                {page.createdBy?.avatar ? (
+                  <img
+                    src={getImageUrl(page.createdBy.avatar)}
+                    alt={page.createdBy.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = '/default-avatar.svg';
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-red-400 to-pink-500 flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-white" />
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h4 className="font-bold text-gray-900 text-lg truncate">{page.name}</h4>
+                  {page.isVerified && <Star className="w-4 h-4 text-blue-500" />}
+                </div>
+                <p className="text-gray-500 text-sm truncate">{page.description}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <div className="flex items-center gap-4">
+                <span className="flex items-center gap-1">
+                  <ThumbsUp className="w-4 h-4 text-blue-500" />
+                  <span>{page.likes?.length || 0}</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <Users className="w-4 h-4 text-green-500" />
+                  <span>{page.followers?.length || 0}</span>
+                </span>
+              </div>
+              <span className="text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-lg text-xs">{page.category}</span>
             </div>
           </div>
         ))}
       </div>
     </div>
-  </div>
-);
-
-const LikedPagesView: React.FC = () => (
-  <div className="bg-white rounded-2xl border border-gray-100 min-h-80 flex flex-col items-center justify-center p-8">
-    <div className="w-20 h-20 bg-gradient-to-br from-red-50 to-pink-100 rounded-2xl flex items_center justify-center mb-6">
-      <Heart className="w-10 h-10 text-red-500" />
-    </div>
-    <h3 className="text-xl font-semibold text-gray-900 mb-3">No liked pages yet</h3>
-    <p className="text-gray-500 text-center max-w-md">
-      Start exploring and like pages that interest you to see them here.
-    </p>
-  </div>
-);
+  );
+};
 
 const PagesInterface: React.FC = () => {
   const router = useRouter();
@@ -480,7 +744,11 @@ const PagesInterface: React.FC = () => {
   const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
   const [pages, setPages] = useState<Page[]>([]);
   const [userPages, setUserPages] = useState<Page[]>([]);
+  const [otherPages, setOtherPages] = useState<Page[]>([]);
+  const [promotedPages, setPromotedPages] = useState<Page[]>([]);
+  const [likedPages, setLikedPages] = useState<Page[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingOtherPages, setLoadingOtherPages] = useState(false);
   const [creating, setCreating] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     pageName: '',
@@ -507,48 +775,6 @@ const PagesInterface: React.FC = () => {
     'Other'
   ];
 
-  const suggestedPages: SuggestedPage[] = [
-    {
-      id: 1,
-      name: 'Apnademand',
-      likes: 0,
-      category: 'Cars and Vehicles',
-      icon: '📄',
-      color: 'bg-orange-100'
-    },
-    {
-      id: 2,
-      name: 'BookMyEssay Official',
-      likes: 0,
-      category: 'Education',
-      icon: '🎨',
-      color: 'bg-blue-100'
-    },
-    {
-      id: 3,
-      name: 'Paperub Official',
-      likes: 0,
-      category: 'Other',
-      icon: '🅿️',
-      color: 'bg-orange-500'
-    },
-    {
-      id: 4,
-      name: 'jaifriend',
-      likes: 0,
-      category: 'Other',
-      icon: '📄',
-      color: 'bg-orange-100'
-    },
-    {
-      id: 5,
-      name: 'zorkea',
-      likes: 0,
-      category: 'Other',
-      icon: '📄',
-      color: 'bg-orange-100'
-    }
-  ];
 
   // Fetch pages from backend
   const fetchPages = async () => {
@@ -558,7 +784,7 @@ const PagesInterface: React.FC = () => {
       
       const [allPagesResponse, userPagesResponse] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/pages`),
-  fetch(`${API_URL}/api/pages/user`, {
+        fetch(`${API_URL}/api/pages/user`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -569,6 +795,48 @@ const PagesInterface: React.FC = () => {
         const allPagesData = await allPagesResponse.json();
         console.log('All pages fetched:', allPagesData.length);
         setPages(allPagesData);
+        
+        // Filter other users' pages - show all pages except current user's own pages
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        console.log('Current user:', currentUser);
+        console.log('All pages data:', allPagesData);
+        
+        const otherUsersPages = allPagesData.filter((page: Page) => {
+          // Check if page has createdBy object and it's not null/undefined
+          if (!page.createdBy || !page.createdBy._id) {
+            console.log(`Page ${page.name} - createdBy is missing or invalid, skipping`);
+            return false;
+          }
+          
+          const isNotOwnPage = page.createdBy._id !== currentUser._id && 
+                              page.createdBy._id !== currentUser.id;
+          console.log(`Page ${page.name} - createdBy: ${page.createdBy._id}, currentUser: ${currentUser._id}, isNotOwnPage: ${isNotOwnPage}`);
+          return isNotOwnPage;
+        });
+        
+        console.log('Other users pages:', otherUsersPages.length);
+        
+        // If no other users' pages found, show all pages as fallback
+        if (otherUsersPages.length === 0 && allPagesData.length > 0) {
+          console.log('No other users pages found, showing all pages as fallback');
+          setOtherPages(allPagesData);
+        } else {
+          setOtherPages(otherUsersPages);
+        }
+        
+        // Filter promoted pages (pages with high likes or special flag)
+        const finalOtherPages = otherUsersPages.length > 0 ? otherUsersPages : allPagesData;
+        const promoted = finalOtherPages.filter((page: Page) => 
+          (page.likes && Array.isArray(page.likes) && page.likes.length > 10) || page.isVerified
+        );
+        setPromotedPages(promoted);
+        
+        // Filter liked pages
+        const liked = finalOtherPages.filter((page: Page) => 
+          page.likes && Array.isArray(page.likes) && 
+          (page.likes.includes(currentUser._id) || page.likes.includes(currentUser.id))
+        );
+        setLikedPages(liked);
       }
       
       if (userPagesResponse.ok) {
@@ -586,6 +854,13 @@ const PagesInterface: React.FC = () => {
   useEffect(() => {
     fetchPages();
   }, []);
+
+  // Refetch pages when switching to suggested pages tab
+  useEffect(() => {
+    if (activeTab === 'Suggested pages' && otherPages.length === 0) {
+      fetchPages();
+    }
+  }, [activeTab]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>): void => {
     const { name, value } = e.target;
@@ -744,8 +1019,85 @@ const PagesInterface: React.FC = () => {
     });
   };
 
-  const handleLikePage = (pageId: number): void => {
-    console.log('Liked page:', pageId);
+  const handleLikePage = async (pageId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${API_URL}/api/pages/${pageId}/like`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        // Update the page in the otherPages list
+        setOtherPages(prev => 
+          prev.map(page => 
+            page._id === pageId 
+              ? { ...page, likes: [...(page.likes || []), JSON.parse(localStorage.getItem('user') || '{}')._id] }
+              : page
+          )
+        );
+        
+        // Update promoted pages if this page is promoted
+        setPromotedPages(prev => 
+          prev.map(page => 
+            page._id === pageId 
+              ? { ...page, likes: [...(page.likes || []), JSON.parse(localStorage.getItem('user') || '{}')._id] }
+              : page
+          )
+        );
+        
+        // Add to liked pages if not already there
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        const likedPage = otherPages.find(page => page._id === pageId);
+        if (likedPage && !likedPages.some(page => page._id === pageId)) {
+          setLikedPages(prev => [...prev, likedPage]);
+        }
+      }
+    } catch (error) {
+      console.error('Error liking page:', error);
+    }
+  };
+
+  const handleJoinPage = async (pageId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch(`${API_URL}/api/pages/${pageId}/join`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        // Update the page in the otherPages list
+        setOtherPages(prev => 
+          prev.map(page => 
+            page._id === pageId 
+              ? { ...page, followers: [...(page.followers || []), JSON.parse(localStorage.getItem('user') || '{}')._id] }
+              : page
+          )
+        );
+        
+        // Update promoted pages if this page is promoted
+        setPromotedPages(prev => 
+          prev.map(page => 
+            page._id === pageId 
+              ? { ...page, followers: [...(page.followers || []), JSON.parse(localStorage.getItem('user') || '{}')._id] }
+              : page
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error joining page:', error);
+    }
   };
 
   // My Pages Component
@@ -839,11 +1191,11 @@ const PagesInterface: React.FC = () => {
                   <div className="flex items-center gap-6 text-sm text-gray-500">
                     <div className="flex items-center gap-2">
                       <Heart className="w-4 h-4 text-red-400" />
-                      <span className="font-medium">{page.likes.length}</span>
+                      <span className="font-medium">{page.likes?.length || 0}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Users2 className="w-4 h-4 text-blue-400" />
-                      <span className="font-medium">{page.followers.length}</span>
+                      <span className="font-medium">{page.followers?.length || 0}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1078,87 +1430,7 @@ const PagesInterface: React.FC = () => {
     </div>
   );
 
-  // Suggested Pages Component
-  const SuggestedPagesComponent: React.FC = () => (
-    <div className="space-y-8">
-      {/* Promoted Section */}
-      <div>
-        <h3 className="text-xl font-bold text-gray-900 mb-6">Promoted Pages</h3>
-        <div className="bg-white rounded-2xl border border-gray-100 min-h-32 flex flex-col items-center justify-center p-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-orange-50 to-red-100 rounded-2xl flex items-center justify-center mb-4">
-            <FileText className="w-8 h-8 text-orange-500" />
-          </div>
-          <p className="text-gray-500 text-lg font-medium">No promoted pages available</p>
-        </div>
-      </div>
 
-      {/* Suggested Pages List */}
-      <div>
-        <h3 className="text-xl font-bold text-gray-900 mb-6">Suggested Pages</h3>
-        <p className="text-gray-500 mb-4">Click any page to view details</p>
-        <div className="space-y-4">
-          {suggestedPages.map((page: SuggestedPage) => (
-            <div 
-              key={page.id} 
-              onClick={() => {
-                // For suggested pages, we can show a preview or navigate to a view page
-                // For now, let's show an alert with page details
-                alert(`Page: ${page.name}\nCategory: ${page.category}\nLikes: ${page.likes}`);
-              }}
-              className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-blue-200"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4 min-w-0 flex-1">
-                  <div className={`w-14 h-14 ${page.color} rounded-xl flex items-center justify-center flex-shrink-0`}>
-                    {page.icon === '🅿️' ? (
-                      <span className="text-white font-bold text-lg">P</span>
-                    ) : page.icon === '🎨' ? (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 via-purple-500 to-yellow-500"></div>
-                    ) : (
-                      <FileText className="w-7 h-7 text-orange-600" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h4 className="font-bold text-gray-900 text-lg truncate mb-1">{page.name}</h4>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-gray-600">
-                      <span className="flex items-center gap-2">
-                        <ThumbsUp className="w-4 h-4 text-blue-500" />
-                        <span className="font-medium">{page.likes} people like this</span>
-                      </span>
-                      <span className="text-blue-600 font-medium bg-blue-50 px-3 py-1 rounded-lg">{page.category}</span>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleLikePage(page.id);
-                  }}
-                  className="flex items-center gap-2 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 px-4 py-3 rounded-xl text-sm font-semibold text-gray-700 transition-all duration-200 ml-4 flex-shrink-0 border border-gray-200 hover:border-blue-200"
-                >
-                  <ThumbsUp className="w-4 h-4" />
-                  <span className="hidden sm:inline">Like</span>
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
-  // Liked Pages Component
-  const LikedPagesComponent: React.FC = () => (
-    <div className="bg-white rounded-2xl border border-gray-100 min-h-80 flex flex-col items-center justify-center p-8">
-      <div className="w-20 h-20 bg-gradient-to-br from-red-50 to-pink-100 rounded-2xl flex items-center justify-center mb-6">
-        <Heart className="w-10 h-10 text-red-500" />
-      </div>
-      <h3 className="text-xl font-semibold text-gray-900 mb-3">No liked pages yet</h3>
-      <p className="text-gray-500 text-center max-w-md">
-        Start exploring and like pages that interest you to see them here.
-      </p>
-    </div>
-  );
 
   const renderContent = (): React.ReactElement => {
     if (showCreateForm) {
@@ -1188,12 +1460,15 @@ const PagesInterface: React.FC = () => {
       case 'Suggested pages':
         return (
           <SuggestedPagesView
-            suggestedPages={suggestedPages}
-            onLike={(id) => handleLikePage(id)}
+            promotedPages={promotedPages}
+            otherPages={otherPages}
+            onLike={handleLikePage}
+            onJoin={handleJoinPage}
+            loading={loadingOtherPages}
           />
         );
       case 'Liked Pages':
-        return <LikedPagesView />;
+        return <LikedPagesView likedPages={likedPages} loading={loading} />;
       default:
         return (
           <MyPagesView

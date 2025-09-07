@@ -1043,8 +1043,8 @@ const GroupPage: React.FC = () => {
 
       {/* Post Creation Modal */}
       {showPostModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" style={{ paddingTop: '60px', paddingBottom: '80px' }}>
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full max-h-[calc(100vh-140px)] overflow-y-auto">
             <div className="p-4">
               {/* Modal Header */}
               <div className="flex items-center justify-between mb-4">

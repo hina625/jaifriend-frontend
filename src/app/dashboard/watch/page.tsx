@@ -757,7 +757,7 @@ const WatchPage: React.FC = () => {
             </div>
             
             {/* Review Button */}
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center px-1">
               <button 
                 className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-yellow-500 hover:bg-gray-200 transition-colors"
                 onClick={() => {
@@ -769,7 +769,7 @@ const WatchPage: React.FC = () => {
               >
                 <span className="text-xl">⭐</span>
               </button>
-              <span className="text-xs text-gray-600 mt-1">Review</span>
+              <span className="text-xs text-gray-600 mt-1 whitespace-nowrap">Review</span>
             </div>
             
             {/* Save Button */}

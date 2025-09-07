@@ -55,41 +55,48 @@ const PeopleYouMayKnow: React.FC<PeopleYouMayKnowProps> = ({ onFollow }) => {
       setLoading(true);
       const token = localStorage.getItem('token');
       
-      console.log('🔍 Fetching suggested users...', { token: !!token });
-      
       if (!token) {
-        console.log('❌ No token found');
         setUsers([]);
         return;
       }
 
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/users/suggested`;
-      console.log('🌐 API URL:', apiUrl);
-
-      const response = await fetch(apiUrl, {
+      // Try suggested users endpoint first
+      let apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/users/suggested`;
+      let response = await fetch(apiUrl, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
 
-      console.log('📡 Response status:', response.status, response.statusText);
+      // If suggested endpoint fails, try getting all users
+      if (!response.ok) {
+        apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/users`;
+        response = await fetch(apiUrl, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      }
 
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Raw API response:', data);
-        
-        // Backend returns users directly, not wrapped in data.users
         const usersArray = Array.isArray(data) ? data : (data.users || []);
-        console.log('👥 Processed users array:', usersArray);
         
         if (usersArray && usersArray.length > 0) {
-          // Map and normalize user data
-          const mappedUsers = usersArray.map((user: any) => ({
+          // Get current user to exclude from suggestions
+          const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+          const currentUserId = currentUser._id || currentUser.id;
+          
+          // Filter out current user and map user data
+          const filteredUsers = usersArray.filter((user: any) => user._id !== currentUserId);
+          
+          const mappedUsers = filteredUsers.map((user: any) => ({
             _id: user._id,
             name: user.name || user.fullName || 'User',
             username: user.username || `@${user._id?.toString().slice(-8) || 'user'}`,
-            avatar: user.avatar || '/avatars/1.png.png',
+            avatar: user.avatar || '/default-avatar.svg',
             bio: user.bio || '',
             isOnline: user.isOnline || false,
             lastSeen: user.lastSeen,
@@ -98,28 +105,25 @@ const PeopleYouMayKnow: React.FC<PeopleYouMayKnowProps> = ({ onFollow }) => {
             following: Array.isArray(user.following) ? user.following.length : (user.following || 0)
           }));
 
-          // Sort users by verification status first, then by followers count for consistent sequence
+          // Sort users by verification status first, then by followers count
           const sortedUsers = mappedUsers.sort((a: any, b: any) => {
-            // Sort by verification status first (verified users first)
             if (a.isVerified && !b.isVerified) return -1;
             if (!a.isVerified && b.isVerified) return 1;
-            // Then sort by followers count (higher first)
             return (b.followers || 0) - (a.followers || 0);
           });
-          console.log('🔄 Mapped and sorted users:', sortedUsers);
-          setUsers(sortedUsers);
+          
+          // Limit to 10 users
+          const limitedUsers = sortedUsers.slice(0, 10);
+          setUsers(limitedUsers);
           setLastUpdated(new Date());
         } else {
-          console.log('⚠️ No users found in response');
           setUsers([]);
         }
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('❌ API Error:', response.status, errorData);
         setUsers([]);
       }
     } catch (error) {
-      console.error('❌ Error fetching suggested users:', error);
+      console.error('Error fetching suggested users:', error);
       setUsers([]);
     } finally {
       setLoading(false);
@@ -148,7 +152,7 @@ const PeopleYouMayKnow: React.FC<PeopleYouMayKnowProps> = ({ onFollow }) => {
         return newSet;
       });
 
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/${userId}/follow`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/users/${userId}/follow`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -157,8 +161,17 @@ const PeopleYouMayKnow: React.FC<PeopleYouMayKnowProps> = ({ onFollow }) => {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        console.log('Follow/Unfollow response:', data);
+        // Update user followers count in the UI
+        setUsers(prev => prev.map(user => 
+          user._id === userId 
+            ? { 
+                ...user, 
+                followers: isFollowing 
+                  ? Math.max(0, (user.followers || 0) - 1) 
+                  : (user.followers || 0) + 1 
+              }
+            : user
+        ));
         
         if (onFollow) {
           onFollow(userId);
@@ -175,7 +188,6 @@ const PeopleYouMayKnow: React.FC<PeopleYouMayKnowProps> = ({ onFollow }) => {
           return newSet;
         });
         
-        const errorData = await response.json().catch(() => ({}));
         alert(isFollowing ? 'Failed to unfollow user' : 'Failed to follow user');
       }
     } catch (error) {
@@ -333,13 +345,20 @@ const PeopleYouMayKnow: React.FC<PeopleYouMayKnowProps> = ({ onFollow }) => {
                   {/* Name and Verification */}
                   <div className="text-center mb-3 min-w-0 w-full">
                     <h4 className="text-sm font-medium text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors mb-1 px-1">
-                    {user.name}
-                  </h4>
+                      {user.name}
+                    </h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate px-1">
+                      {user.username}
+                    </p>
                     {user.isVerified && (
-                      <div className="inline-flex items-center justify-center w-4 h-4 bg-red-500 rounded-full mx-auto">
+                      <div className="inline-flex items-center justify-center w-4 h-4 bg-red-500 rounded-full mx-auto mt-1">
                         <span className="text-white text-xs">✓</span>
                       </div>
                     )}
+                    {/* Follower count */}
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                      {user.followers} followers
+                    </p>
                 </div>
                 
                 {/* Follow Button */}
