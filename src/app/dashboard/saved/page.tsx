@@ -6,8 +6,10 @@ import { ArrowLeft, Bookmark, Grid, List, Search, Filter, Share2, Heart, Message
 import AlbumDisplay from '@/components/AlbumDisplay';
 import PostDisplay from '@/components/PostDisplay';
 import FeedPost from '@/components/FeedPost'; // Added FeedPost import
+import { useDarkMode } from '@/contexts/DarkModeContext';
 
 export default function SavedPosts() {
+  const { isDarkMode } = useDarkMode();
   const [savedAlbums, setSavedAlbums] = useState<any[]>([]);
   const [savedPosts, setSavedPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -438,22 +440,26 @@ export default function SavedPosts() {
   return (
     <div className="w-full h-full overflow-y-auto scrollbar-hide">
       {/* Header */}
-              <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
+              <div className={`border-b sticky top-0 z-30 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
         <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button 
                 onClick={() => router.back()}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors lg:hidden"
+                className={`p-2 rounded-full transition-colors lg:hidden ${
+                  isDarkMode 
+                    ? 'hover:bg-gray-700' 
+                    : 'hover:bg-gray-100'
+                }`}
               >
-                <ArrowLeft className="w-5 h-5 text-gray-600" />
+                <ArrowLeft className={`w-5 h-5 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`} />
               </button>
               <div>
-                <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 flex items-center gap-2">
+                <h1 className={`text-xl sm:text-2xl font-semibold flex items-center gap-2 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                   <Bookmark className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500" />
                   Saved Posts
                 </h1>
-                <p className="text-sm text-gray-500 hidden sm:block">
+                <p className={`text-sm hidden sm:block transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   Your saved albums and posts
                 </p>
               </div>
@@ -466,13 +472,17 @@ export default function SavedPosts() {
           {showSearch && (
             <div className="mt-3 sm:mt-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`} />
                 <input
                   type="text"
                   placeholder="Search saved content..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors duration-200 ${
+                    isDarkMode 
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                  }`}
                   autoFocus
                 />
               </div>
@@ -484,9 +494,9 @@ export default function SavedPosts() {
   {/* Removed filter tabs (All, Albums, Posts, Recent) from Saved page */}
 
       {/* Stats Bar */}
-      <div className="bg-white border-b border-gray-200">
+      <div className={`border-b transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
         <div className="px-4 sm:px-6 lg:px-8 py-2">
-          <div className="flex items-center justify-between text-sm text-gray-600">
+          <div className={`flex items-center justify-between text-sm transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
             <div className="flex items-center gap-4">
               <span>{filteredAlbums.length + filteredPosts.length} items</span>
               {searchQuery && (

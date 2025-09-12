@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Popup, { PopupState } from '@/components/Popup';
+import { useDarkMode } from '@/contexts/DarkModeContext';
 
 interface UserSettings {
   username: string;
@@ -19,6 +20,7 @@ interface UserSettings {
 }
 
 const GeneralSettings = () => {
+  const { isDarkMode } = useDarkMode();
   const router = useRouter();
   const [settings, setSettings] = useState<UserSettings>({
     username: '',
@@ -245,10 +247,10 @@ const GeneralSettings = () => {
   if (initialLoading) {
     return (
       <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className={`rounded-lg shadow-sm border p-6 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <div className="flex justify-center items-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-            <span className="ml-3 text-gray-600">Loading settings...</span>
+            <span className={`ml-3 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Loading settings...</span>
           </div>
         </div>
       </div>
@@ -257,13 +259,13 @@ const GeneralSettings = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">General Settings</h2>
+      <div className={`rounded-lg shadow-sm border p-6 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+        <h2 className={`text-xl font-semibold mb-6 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>General Settings</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Username */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Username <span className="text-red-500">*</span>
             </label>
             <input
@@ -271,13 +273,17 @@ const GeneralSettings = () => {
               value={settings.username}
               onChange={(e) => handleInputChange('username', e.target.value)}
               placeholder="Enter username"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+              }`}
             />
           </div>
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               E-mail <span className="text-red-500">*</span>
             </label>
             <input
@@ -285,13 +291,17 @@ const GeneralSettings = () => {
               value={settings.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
               placeholder="Enter email"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+              }`}
             />
           </div>
 
           {/* Full Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Full Name
             </label>
             <input
@@ -299,13 +309,17 @@ const GeneralSettings = () => {
               value={settings.fullName}
               onChange={(e) => handleInputChange('fullName', e.target.value)}
               placeholder="Enter full name"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+              }`}
             />
           </div>
 
           {/* Display Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Display Name
             </label>
             <input
@@ -313,26 +327,34 @@ const GeneralSettings = () => {
               value={settings.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
               placeholder="Enter display name"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+              }`}
             />
           </div>
 
           {/* Birthday */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Birthday
             </label>
             <input
               type="date"
               value={settings.birthday}
               onChange={(e) => handleInputChange('birthday', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
             />
           </div>
 
           {/* Phone */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Phone
             </label>
             <input
@@ -340,19 +362,27 @@ const GeneralSettings = () => {
               value={settings.phone}
               onChange={(e) => handleInputChange('phone', e.target.value)}
               placeholder="Enter phone number"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+              }`}
             />
           </div>
 
           {/* Gender */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Gender
             </label>
             <select
               value={settings.gender}
               onChange={(e) => handleInputChange('gender', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
             >
               <option value="">Select gender</option>
               <option value="Male">Male</option>
@@ -363,13 +393,17 @@ const GeneralSettings = () => {
 
           {/* Country */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Country
             </label>
             <select
               value={settings.country}
               onChange={(e) => handleInputChange('country', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white' 
+                  : 'bg-white border-gray-300 text-gray-900'
+              }`}
             >
               <option value="">Select country</option>
               <option value="Pakistan">Pakistan</option>
@@ -387,7 +421,7 @@ const GeneralSettings = () => {
 
           {/* Location */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Location
             </label>
             <input
@@ -395,13 +429,17 @@ const GeneralSettings = () => {
               value={settings.location}
               onChange={(e) => handleInputChange('location', e.target.value)}
               placeholder="Enter location"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+              }`}
             />
           </div>
 
           {/* Website */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Website
             </label>
             <input
@@ -409,13 +447,17 @@ const GeneralSettings = () => {
               value={settings.website}
               onChange={(e) => handleInputChange('website', e.target.value)}
               placeholder="Enter website URL"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+              }`}
             />
           </div>
 
           {/* Workplace */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Workplace
             </label>
             <input
@@ -423,14 +465,18 @@ const GeneralSettings = () => {
               value={settings.workplace}
               onChange={(e) => handleInputChange('workplace', e.target.value)}
               placeholder="Enter workplace"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+              }`}
             />
           </div>
         </div>
 
         {/* Bio - Full Width */}
         <div className="mt-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
             Bio
           </label>
           <textarea
@@ -438,7 +484,11 @@ const GeneralSettings = () => {
             onChange={(e) => handleInputChange('bio', e.target.value)}
             placeholder="Tell us about yourself..."
             rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400 resize-vertical"
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical transition-colors duration-200 ${
+              isDarkMode 
+                ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
+            }`}
           />
         </div>
 

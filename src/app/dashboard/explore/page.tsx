@@ -4,6 +4,7 @@ import { Search, ChevronDown, Users, FileText, Group, Gamepad2, Plus, Filter, X,
 import Popup, { PopupState } from '../../../components/Popup';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
 import { getToken } from '../../../utils/auth';
+import { useDarkMode } from '@/contexts/DarkModeContext';
 import { 
   searchUsersApi, 
   getSuggestedUsersApi, 
@@ -77,6 +78,7 @@ interface Filters {
 }
 
 const SocialExplorePage = () => {
+  const { isDarkMode } = useDarkMode();
   const [activeTab, setActiveTab] = useState<string>('Users');
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [showFilters, setShowFilters] = useState<boolean>(false);
@@ -392,7 +394,7 @@ const SocialExplorePage = () => {
 
   // User Card Component with real data
   const UserCard = ({ user }: { user: User }) => (
-    <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+    <div className={`rounded-lg shadow-sm border overflow-hidden transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
       {/* Galaxy Background with Avatar */}
       <div className="relative h-24 sm:h-32 bg-gradient-to-br from-purple-900 via-blue-900 to-black overflow-hidden">
         {/* Starry background effect */}
@@ -430,20 +432,22 @@ const SocialExplorePage = () => {
       {/* User Info */}
       <div className="p-3 sm:p-4 text-center">
         <div className="flex items-center justify-center gap-1 mb-2">
-          <h3 className="font-medium text-gray-900 text-xs sm:text-sm truncate">
+          <h3 className={`font-medium text-xs sm:text-sm truncate transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             {user.name}
           </h3>
           {user.isVerified && (
             <span className="text-blue-500 text-xs">✓</span>
           )}
         </div>
-        <p className="text-xs text-gray-600 mb-2">@{user.username}</p>
-        <p className="text-xs text-gray-500 mb-3">{user.followers} followers</p>
+        <p className={`text-xs mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>@{user.username}</p>
+        <p className={`text-xs mb-3 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{user.followers} followers</p>
         <button
           onClick={() => handleFollow(user.id)}
-          className={`w-full py-1.5 sm:py-2 px-3 sm:px-4 rounded-md text-xs sm:text-sm font-medium transition-colors ${
+          className={`w-full py-1.5 sm:py-2 px-3 sm:px-4 rounded-md text-xs sm:text-sm font-medium transition-colors duration-200 ${
             user.isFollowing 
-              ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' 
+              ? isDarkMode 
+                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
           }`}
         >
@@ -455,7 +459,11 @@ const SocialExplorePage = () => {
 
   // Page List Item Component with real data
   const PageListItem = ({ page }: { page: Page }) => (
-    <div className="bg-white border-b last:border-b-0 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-gray-50 transition-colors gap-3 sm:gap-4">
+    <div className={`border-b last:border-b-0 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between transition-colors gap-3 sm:gap-4 ${
+      isDarkMode 
+        ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' 
+        : 'bg-white border-gray-200 hover:bg-gray-50'
+    }`}>
       <div className="flex items-center gap-3 sm:gap-4">
         {/* Page Icon */}
         <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0 bg-orange-200">
@@ -466,14 +474,14 @@ const SocialExplorePage = () => {
         
         {/* Page Info */}
         <div className="min-w-0 flex-1">
-          <h3 className="font-medium text-gray-900 text-sm sm:text-base mb-1 truncate">{page.name}</h3>
-          <p className="text-xs text-gray-600 mb-2 line-clamp-2">{page.description}</p>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs sm:text-sm text-gray-600">
+          <h3 className={`font-medium text-sm sm:text-base mb-1 truncate transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{page.name}</h3>
+          <p className={`text-xs mb-2 line-clamp-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{page.description}</p>
+          <div className={`flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs sm:text-sm transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
             <span className="flex items-center gap-1">
               👍 {page.likes} people like this
             </span>
             <span className="text-blue-600">{page.category}</span>
-            <span className="text-gray-500">by @{page.createdBy.username}</span>
+            <span className={`transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>by @{page.createdBy.username}</span>
           </div>
         </div>
       </div>
@@ -481,10 +489,12 @@ const SocialExplorePage = () => {
       {/* Like Button */}
       <button
         onClick={() => handleLikePage(page.id)}
-        className={`flex items-center justify-center gap-1 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors flex-shrink-0 ${
+        className={`flex items-center justify-center gap-1 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors flex-shrink-0 duration-200 ${
           page.isLiked 
             ? 'bg-blue-100 text-blue-600 hover:bg-blue-200' 
-            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+            : isDarkMode 
+              ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
         }`}
       >
         👍 {page.isLiked ? 'Liked' : 'Like'}
@@ -494,7 +504,11 @@ const SocialExplorePage = () => {
 
   // Group List Item Component
   const GroupListItem = ({ group }: { group: Group }) => (
-    <div className="bg-white border-b last:border-b-0 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-gray-50 transition-colors gap-3 sm:gap-4">
+    <div className={`border-b last:border-b-0 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between transition-colors gap-3 sm:gap-4 ${
+      isDarkMode 
+        ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' 
+        : 'bg-white border-gray-200 hover:bg-gray-50'
+    }`}>
       <div className="flex items-center gap-3 sm:gap-4">
         {/* Group Avatar */}
         <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center flex-shrink-0 bg-blue-200">
@@ -517,14 +531,14 @@ const SocialExplorePage = () => {
         
         {/* Group Info */}
         <div className="min-w-0 flex-1">
-          <h3 className="font-medium text-gray-900 text-sm sm:text-base mb-1 truncate">{group.name}</h3>
-          <p className="text-xs text-gray-600 mb-2 line-clamp-2">{group.description}</p>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs sm:text-sm text-gray-600">
+          <h3 className={`font-medium text-sm sm:text-base mb-1 truncate transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{group.name}</h3>
+          <p className={`text-xs mb-2 line-clamp-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{group.description}</p>
+          <div className={`flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs sm:text-sm transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
             <span className="flex items-center gap-1">
               👥 {group.membersCount} members
             </span>
             <span className="text-blue-600">{group.category}</span>
-            <span className="text-gray-500">by @{group.creator.username}</span>
+            <span className={`transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>by @{group.creator.username}</span>
           </div>
         </div>
       </div>
@@ -532,9 +546,11 @@ const SocialExplorePage = () => {
       {/* Join Button */}
       <button
         onClick={() => handleJoinGroup(group.id)}
-        className={`flex items-center justify-center gap-1 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors flex-shrink-0 ${
+        className={`flex items-center justify-center gap-1 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors flex-shrink-0 duration-200 ${
           group.isMember 
-            ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' 
+            ? isDarkMode 
+              ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
         }`}
       >
@@ -545,11 +561,11 @@ const SocialExplorePage = () => {
 
   // Pages Tab Component
   const PagesComponent = () => (
-    <div className="bg-white rounded-lg shadow-sm border">
+    <div className={`rounded-lg shadow-sm border transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
       {pageLoading ? (
         <div className="p-8 text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-500" />
-          <p className="text-gray-600">Loading pages...</p>
+          <p className={`transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Loading pages...</p>
         </div>
       ) : pages.length > 0 ? (
         <>
@@ -570,8 +586,8 @@ const SocialExplorePage = () => {
         </>
       ) : (
         <div className="p-8 text-center">
-          <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">No pages found</p>
+          <FileText className={`w-12 h-12 mx-auto mb-4 transition-colors duration-200 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+          <p className={`transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>No pages found</p>
         </div>
       )}
     </div>
@@ -579,11 +595,11 @@ const SocialExplorePage = () => {
 
   // Groups Tab Component
   const GroupsComponent = () => (
-    <div className="bg-white rounded-lg shadow-sm border">
+    <div className={`rounded-lg shadow-sm border transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
       {groupLoading ? (
         <div className="p-8 text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-500" />
-          <p className="text-gray-600">Loading groups...</p>
+          <p className={`transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Loading groups...</p>
         </div>
       ) : groups.length > 0 ? (
         <>
@@ -604,8 +620,8 @@ const SocialExplorePage = () => {
         </>
       ) : (
         <div className="p-8 text-center">
-          <Group className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600">No groups found</p>
+          <Group className={`w-12 h-12 mx-auto mb-4 transition-colors duration-200 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+          <p className={`transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>No groups found</p>
         </div>
       )}
     </div>
@@ -613,7 +629,7 @@ const SocialExplorePage = () => {
 
   // Search and Filters Component
   const SearchFilters = () => (
-    <div className="bg-white rounded-lg shadow-sm border p-3 sm:p-4 mb-4 sm:mb-6">
+    <div className={`rounded-lg shadow-sm border p-3 sm:p-4 mb-4 sm:mb-6 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
       {/* Search Bar */}
       <div className="flex justify-center mb-3 sm:mb-4">
         <div className="relative max-w-md w-full">
@@ -622,7 +638,11 @@ const SocialExplorePage = () => {
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             placeholder="Search..."
-            className="w-full pl-3 sm:pl-4 pr-10 sm:pr-12 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-sm sm:text-base"
+            className={`w-full pl-3 sm:pl-4 pr-10 sm:pr-12 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-sm sm:text-base transition-colors duration-200 ${
+              isDarkMode 
+                ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                : 'bg-white border-gray-200 text-gray-900 placeholder-gray-500'
+            }`}
           />
           <button
             onClick={handleSearch}
@@ -637,7 +657,11 @@ const SocialExplorePage = () => {
       <div className="flex justify-center mb-3 sm:hidden">
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 transition-colors"
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${
+            isDarkMode 
+              ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+          }`}
         >
           <Filter className="w-4 h-4" />
           Filters
@@ -652,7 +676,11 @@ const SocialExplorePage = () => {
             <select
               value={value}
               onChange={(e) => handleFilterChange(key, e.target.value)}
-              className="appearance-none bg-white border border-gray-200 rounded-md px-2 sm:px-3 py-1 pr-5 sm:pr-6 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs min-w-0"
+              className={`appearance-none border rounded-md px-2 sm:px-3 py-1 pr-5 sm:pr-6 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs min-w-0 transition-colors duration-200 ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white' 
+                  : 'bg-white border-gray-200 text-gray-900'
+              }`}
             >
               <option value={value}>{value}</option>
               {key === 'all' && (
@@ -704,7 +732,7 @@ const SocialExplorePage = () => {
   );
 
   return (
-    <div className="w-full h-full overflow-y-auto scrollbar-hide">
+    <div className={`w-full h-full overflow-y-auto scrollbar-hide transition-colors duration-200 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       
       {/* Popup Modal */}
       <Popup popup={popup} onClose={closePopup} />
@@ -715,7 +743,7 @@ const SocialExplorePage = () => {
 
         {/* Navigation Tabs */}
         <div className="flex justify-center mb-4 sm:mb-6">
-          <div className="inline-flex bg-white rounded-lg shadow-sm border overflow-x-auto max-w-full">
+          <div className={`inline-flex rounded-lg shadow-sm border overflow-x-auto max-w-full transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
             {tabs.map((tab, index) => {
               const IconComponent = tab.icon;
               return (
@@ -729,7 +757,9 @@ const SocialExplorePage = () => {
                   } ${
                     activeTab === tab.name
                       ? 'text-orange-600 bg-orange-50 border-orange-200'
-                      : 'text-gray-600 hover:text-orange-600 hover:bg-gray-50'
+                      : isDarkMode 
+                        ? 'text-gray-300 hover:text-orange-600 hover:bg-gray-700' 
+                        : 'text-gray-600 hover:text-orange-600 hover:bg-gray-50'
                   }`}
                 >
                   <IconComponent className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -746,7 +776,7 @@ const SocialExplorePage = () => {
             {userLoading ? (
               <div className="text-center py-8">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-500" />
-                <p className="text-gray-600">Loading users...</p>
+                <p className={`transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Loading users...</p>
               </div>
             ) : users.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-4">
@@ -756,8 +786,8 @@ const SocialExplorePage = () => {
               </div>
             ) : (
               <div className="text-center py-8">
-                <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No users found</p>
+                <Users className={`w-12 h-12 mx-auto mb-4 transition-colors duration-200 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                <p className={`transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>No users found</p>
               </div>
             )}
           </div>
@@ -771,11 +801,11 @@ const SocialExplorePage = () => {
 
         {/* Games Tab Placeholder */}
         {activeTab === 'Games' && (
-          <div className="bg-white rounded-lg shadow-sm border min-h-64 sm:min-h-96 flex flex-col items-center justify-center p-6 sm:p-8">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-lg flex items-center justify-center mb-3 sm:mb-4">
-              <Gamepad2 className="w-6 h-6 sm:w-8 sm:h-8 text-gray-500" />
+          <div className={`rounded-lg shadow-sm border min-h-64 sm:min-h-96 flex flex-col items-center justify-center p-6 sm:p-8 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-lg flex items-center justify-center mb-3 sm:mb-4 transition-colors duration-200 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+              <Gamepad2 className={`w-6 h-6 sm:w-8 sm:h-8 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
             </div>
-            <p className="text-gray-600 font-medium text-sm sm:text-base">Games coming soon</p>
+            <p className={`font-medium text-sm sm:text-base transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Games coming soon</p>
           </div>
         )}
 

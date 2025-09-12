@@ -3,6 +3,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hg
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Camera, Edit, Search, Video, Image, Hash, AtSign, Link, Plus, Heart, MessageCircle, Share2, MoreHorizontal, Users, FileText, Diamond, X, Upload, Smile, MapPin, Globe } from 'lucide-react';
+import { useDarkMode } from '@/contexts/DarkModeContext';
 import FeedPost from '@/components/FeedPost';
 
 interface Page {
@@ -67,6 +68,7 @@ interface Job {
 }
 
 const PageView: React.FC = () => {
+  const { isDarkMode } = useDarkMode();
   const { pageId } = useParams();
   const router = useRouter();
   const [page, setPage] = useState<Page | null>(null);
@@ -190,7 +192,6 @@ const PageView: React.FC = () => {
       console.log('Reviews API not available, trying page data...');
     }
 
-    // If reviews API doesn't work, try to get reviews from page data
     try {
       if (page?.reviews && page.reviews.length > 0) {
         setReviews(page.reviews);
@@ -199,8 +200,6 @@ const PageView: React.FC = () => {
     } catch (error) {
       console.log('Page reviews not available, trying localStorage...');
     }
-
-    // Fallback: Load from localStorage
     try {
       const storedReviews = JSON.parse(localStorage.getItem('pageReviews') || '[]');
       const pageReviews = storedReviews.filter((review: any) => review.pageId === pageId);
@@ -290,7 +289,7 @@ const PageView: React.FC = () => {
           if (response.ok) {
             reviewSubmitted = true;
             console.log('Review submitted successfully via page update');
-            // Update local state
+           
             setPage(prev => prev ? { ...prev, reviews: [...(prev.reviews || []), newReview] } : null);
             setReviews(prev => [...prev, newReview]);
           } else {
@@ -1459,7 +1458,7 @@ const PageView: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className={`min-h-screen flex items-center justify-center transition-colors duration-200 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
@@ -1467,13 +1466,13 @@ const PageView: React.FC = () => {
 
   if (!page) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className={`min-h-screen flex items-center justify-center transition-colors duration-200 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Page Not Found</h1>
-          <p className="text-gray-600 mb-4">The page you're looking for doesn't exist.</p>
+          <h1 className={`text-2xl font-bold mb-2 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Page Not Found</h1>
+          <p className={`mb-4 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>The page you're looking for doesn't exist.</p>
           <button
             onClick={() => router.back()}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200"
           >
             Go Back
           </button>
@@ -1483,12 +1482,12 @@ const PageView: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen transition-colors duration-200 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Header with Back Button */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3">
+      <div className={`border-b px-4 py-3 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-gray-700 hover:text-gray-900"
+          className={`flex items-center gap-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}
         >
           <ArrowLeft className="w-5 h-5" />
           <span>Back</span>
@@ -1579,8 +1578,8 @@ const PageView: React.FC = () => {
           <div className="flex-1 ml-4">
             <div className="flex items-start justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-1">{page.name}</h1>
-                <p className="text-gray-600 text-lg">@{page.url}</p>
+                <h1 className={`text-3xl font-bold mb-1 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{page.name}</h1>
+                <p className={`text-lg transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>@{page.url}</p>
                 
                 {/* Reviews Summary */}
                 {reviews.length > 0 && (
@@ -1601,14 +1600,14 @@ const PageView: React.FC = () => {
                         </svg>
                       ))}
               </div>
-                    <span className="text-sm text-gray-600">
+                    <span className={`text-sm transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                       {reviews.length} review{reviews.length !== 1 ? 's' : ''}
                     </span>
                   </div>
                 )}
               </div>
               
-              <button className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">
+              <button className={`px-4 py-2 rounded-lg transition-colors duration-200 ${isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}>
                 Edit
               </button>
             </div>
@@ -1616,16 +1615,18 @@ const PageView: React.FC = () => {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="mt-6 border-b border-gray-200">
+        <div className={`mt-6 border-b transition-colors duration-200 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
           <div className="flex space-x-8">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`pb-3 px-1 border-b-2 font-medium text-sm ${
+                className={`pb-3 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    : isDarkMode 
+                      ? 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
                 {tab.label}
@@ -1643,7 +1644,7 @@ const PageView: React.FC = () => {
               {/* Left Column - Post Creation and Feed */}
               <div className="lg:col-span-2 space-y-6">
                 {/* Post Creation */}
-                <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <div className={`rounded-lg border p-4 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
                       {page.profileImage ? (
@@ -1659,7 +1660,7 @@ const PageView: React.FC = () => {
                     <div className="flex-1">
                       <button
                         onClick={() => setShowPostModal(true)}
-                        className="w-full text-left p-3 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors text-gray-500 hover:text-gray-700 min-h-[80px] flex items-start"
+                        className={`w-full text-left p-3 border rounded-lg transition-colors min-h-[80px] flex items-start ${isDarkMode ? 'border-gray-600 hover:border-gray-500 text-gray-400 hover:text-gray-300' : 'border-gray-200 hover:border-gray-300 text-gray-500 hover:text-gray-700'}`}
                       >
                         What's going on? #Hashtag.. @Mention.. Link..
                       </button>
@@ -1713,14 +1714,16 @@ const PageView: React.FC = () => {
                 </div>
 
                 {/* Post Filters */}
-                <div className="flex space-x-1 bg-white rounded-lg border border-gray-200 p-1">
+                <div className={`flex space-x-1 rounded-lg border p-1 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                   {postFilters.map((filter) => (
                     <button
                       key={filter.id}
-                      className={`px-4 py-2 rounded-md text-sm font-medium ${
+                      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
                         filter.id === 'all'
                           ? 'bg-blue-100 text-blue-700'
-                          : 'text-gray-600 hover:bg-gray-100'
+                          : isDarkMode 
+                            ? 'text-gray-400 hover:bg-gray-700'
+                            : 'text-gray-600 hover:bg-gray-100'
                       }`}
                     >
                       {filter.label}
@@ -1759,12 +1762,12 @@ const PageView: React.FC = () => {
                       />
                     ))
                   ) : (
-                    <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <FileText className="w-8 h-8 text-gray-400" />
+                    <div className={`rounded-lg border p-8 text-center transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                      <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-200 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                        <FileText className={`w-8 h-8 transition-colors duration-200 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                       </div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No posts yet</h3>
-                      <p className="text-gray-500">Be the first to share something on this page!</p>
+                      <h3 className={`text-lg font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>No posts yet</h3>
+                      <p className={`transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Be the first to share something on this page!</p>
                     </div>
                   )}
                 </div>
@@ -1773,36 +1776,36 @@ const PageView: React.FC = () => {
               {/* Right Sidebar */}
               <div className="space-y-4">
                 {/* Search */}
-                <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <div className={`rounded-lg border p-4 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-colors duration-200 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                     <input
                       type="text"
                       placeholder="Search for posts"
-                      className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' : 'border-gray-200 bg-white text-gray-900 placeholder-gray-500'}`}
                     />
                   </div>
                 </div>
 
                 {/* Boost Page */}
-                <div className="bg-white rounded-lg border border-gray-200 p-4">
-                  <h3 className="font-medium text-gray-900 mb-3">Boost Page</h3>
+                <div className={`rounded-lg border p-4 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                  <h3 className={`font-medium mb-3 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Boost Page</h3>
                   <div className="flex items-center gap-2 mb-2">
-                    <Heart className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">0 people like this</span>
+                    <Heart className={`w-4 h-4 transition-colors duration-200 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                    <span className={`text-sm transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>0 people like this</span>
                   </div>
                   <div className="text-sm text-green-600 font-medium">+0 This week</div>
                 </div>
 
                 {/* Page Stats */}
-                <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
+                <div className={`rounded-lg border p-4 space-y-3 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                   <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">{posts.length} posts</span>
+                    <FileText className={`w-4 h-4 transition-colors duration-200 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                    <span className={`text-sm transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{posts.length} posts</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Diamond className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">{page.category}</span>
+                    <Diamond className={`w-4 h-4 transition-colors duration-200 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                    <span className={`text-sm transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{page.category}</span>
                   </div>
                 </div>
               </div>
@@ -2298,27 +2301,27 @@ const PageView: React.FC = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                <div className={`flex items-center justify-between pt-4 border-t transition-colors duration-200 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                   <div className="flex items-center gap-2">
-                    <button className="p-2 text-red-500 hover:bg-red-50 rounded-full">
+                    <button className={`p-2 text-red-500 rounded-full transition-colors duration-200 ${isDarkMode ? 'hover:bg-red-900/20' : 'hover:bg-red-50'}`}>
                       <Video className="w-5 h-5" />
                     </button>
-                    <button className="p-2 text-green-500 hover:bg-green-50 rounded-full">
+                    <button className={`p-2 text-green-500 rounded-full transition-colors duration-200 ${isDarkMode ? 'hover:bg-green-900/20' : 'hover:bg-green-50'}`}>
                       <Image className="w-5 h-5" />
                     </button>
-                    <button className="p-2 text-blue-500 hover:bg-blue-50 rounded-full">
+                    <button className={`p-2 text-blue-500 rounded-full transition-colors duration-200 ${isDarkMode ? 'hover:bg-blue-900/20' : 'hover:bg-blue-50'}`}>
                       <Smile className="w-5 h-5" />
                     </button>
                     <button 
                       onClick={() => setShowLocationPicker(!showLocationPicker)}
-                      className="p-2 text-purple-500 hover:bg-purple-50 rounded-full transition-colors"
+                      className={`p-2 text-purple-500 rounded-full transition-colors duration-200 ${isDarkMode ? 'hover:bg-purple-900/20' : 'hover:bg-purple-50'}`}
                       title="Add Location"
                     >
                       <MapPin className="w-5 h-5" />
                     </button>
                     <button 
                       onClick={() => setShowTagInput(!showTagInput)}
-                      className="p-2 text-orange-500 hover:bg-orange-50 rounded-full transition-colors"
+                      className={`p-2 text-orange-500 rounded-full transition-colors duration-200 ${isDarkMode ? 'hover:bg-orange-900/20' : 'hover:bg-orange-50'}`}
                       title="Add Tags"
                     >
                       <Hash className="w-5 h-5" />
@@ -2328,14 +2331,14 @@ const PageView: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setShowPostModal(false)}
-                      className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                      className={`px-4 py-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-800'}`}
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleCreatePostWithModal}
                       disabled={posting || (!postContent.trim() && mediaFiles.length === 0)}
-                      className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                     >
                       {posting ? 'Creating...' : 'Create Post'}
                     </button>
@@ -2634,7 +2637,7 @@ const PageView: React.FC = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-between pt-6 border-t border-gray-200">
+                <div className={`flex items-center justify-between pt-6 border-t transition-colors duration-200 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                   <button
                     onClick={() => {
                       setShowJobModal(false);
@@ -2655,14 +2658,14 @@ const PageView: React.FC = () => {
                         questions: [] as string[]
                       });
                     }}
-                    className="px-6 py-2 text-gray-600 hover:text-gray-800"
+                    className={`px-6 py-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-800'}`}
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleJobSubmit}
                     disabled={creatingJob || !jobFormData.title || !jobFormData.location || !jobFormData.description}
-                    className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                   >
                     {creatingJob ? (editingJob ? 'Updating...' : 'Creating...') : (editingJob ? 'Update Job' : 'Publish')}
                   </button>
@@ -2815,17 +2818,17 @@ const PageView: React.FC = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-between pt-6 border-t border-gray-200">
+                <div className={`flex items-center justify-between pt-6 border-t transition-colors duration-200 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                   <button
                     onClick={() => setShowOfferModal(false)}
-                    className="px-6 py-2 text-gray-600 hover:text-gray-800"
+                    className={`px-6 py-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-800'}`}
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleCreateOffer}
                     disabled={creatingOffer || !offerFormData.discountedItems.trim() || !offerFormData.description.trim()}
-                    className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
                   >
                     {creatingOffer ? 'Creating...' : 'Publish'}
                   </button>
@@ -3000,18 +3003,18 @@ const PageView: React.FC = () => {
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-between pt-6 border-t border-gray-200 flex-shrink-0">
+                <div className={`flex items-center justify-between pt-6 border-t flex-shrink-0 transition-colors duration-200 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                   <div className="flex items-center gap-4">
                     <button 
                       onClick={handleApplyClick}
-                      className="bg-pink-500 text-white px-6 py-3 rounded-lg hover:bg-pink-600 flex items-center gap-2 transition-colors"
+                      className="bg-pink-500 text-white px-6 py-3 rounded-lg hover:bg-pink-600 flex items-center gap-2 transition-colors duration-200"
                     >
                       <Heart className="w-5 h-5" />
                       Apply Now
                     </button>
                     <button 
                       onClick={handleShareClick}
-                      className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 flex items-center gap-2 transition-colors"
+                      className={`px-6 py-3 rounded-lg flex items-center gap-2 transition-colors duration-200 ${isDarkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                     >
                       <Share2 className="w-5 h-5" />
                       Share
@@ -3208,7 +3211,7 @@ const PageView: React.FC = () => {
                 )}
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200 flex-shrink-0">
+                <div className={`flex items-center justify-end gap-3 pt-6 border-t flex-shrink-0 transition-colors duration-200 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                   <button
                     onClick={() => {
                       setShowApplyModal(false);
@@ -3221,14 +3224,14 @@ const PageView: React.FC = () => {
                         answers: []
                       });
                     }}
-                    className="px-6 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    className={`px-6 py-2 border rounded-lg transition-colors duration-200 ${isDarkMode ? 'text-gray-300 hover:text-white border-gray-600 hover:bg-gray-700' : 'text-gray-600 hover:text-gray-800 border-gray-300 hover:bg-gray-50'}`}
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleApplySubmit}
                     disabled={applying || !applyFormData.name.trim() || !applyFormData.email.trim() || !applyFormData.phone.trim()}
-                    className="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors duration-200"
                   >
                     {applying ? (
                       <>
@@ -3310,20 +3313,20 @@ const PageView: React.FC = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200 flex-shrink-0">
+                <div className={`flex items-center justify-end gap-3 pt-6 border-t flex-shrink-0 transition-colors duration-200 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                   <button
                     onClick={() => {
                       setShowReviewModal(false);
                       setReviewFormData({ rating: 5, comment: '' });
                     }}
-                    className="px-6 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    className={`px-6 py-2 border rounded-lg transition-colors duration-200 ${isDarkMode ? 'text-gray-300 hover:text-white border-gray-600 hover:bg-gray-700' : 'text-gray-600 hover:text-gray-800 border-gray-300 hover:bg-gray-50'}`}
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleReviewSubmit}
                     disabled={submittingReview || !reviewFormData.comment.trim()}
-                    className="bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors duration-200"
                   >
                     {submittingReview ? (
                       <>
@@ -3404,20 +3407,20 @@ const PageView: React.FC = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200 flex-shrink-0">
+                <div className={`flex items-center justify-end gap-3 pt-6 border-t flex-shrink-0 transition-colors duration-200 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                   <button
                     onClick={() => {
                       setShowInviteModal(false);
                       setInviteData({ email: '', message: '' });
                     }}
-                    className="px-6 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    className={`px-6 py-2 border rounded-lg transition-colors duration-200 ${isDarkMode ? 'text-gray-300 hover:text-white border-gray-600 hover:bg-gray-700' : 'text-gray-600 hover:text-gray-800 border-gray-300 hover:bg-gray-50'}`}
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleInviteSubmit}
                     disabled={sendingInvite || !inviteData.email.trim()}
-                    className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors duration-200"
                   >
                     {sendingInvite ? (
                       <>

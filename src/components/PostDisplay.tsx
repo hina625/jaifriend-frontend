@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Heart, MessageCircle, Share2, ChevronDown, Smile, Paperclip, Send, MoreHorizontal, Globe } from 'lucide-react';
 import { getCurrentUserId } from '@/utils/auth';
+import { useDarkMode } from '@/contexts/DarkModeContext';
 import SharePopup, { ShareOptions } from './SharePopup';
 import ReactionPopup, { ReactionType } from './ReactionPopup';
 import PostOptionsDropdown from './PostOptionsDropdown';
@@ -36,6 +37,7 @@ export default function PostDisplay({
   onPostUpdate,
   showEditDelete = false
 }: PostDisplayProps) {
+  const { isDarkMode } = useDarkMode();
   const [showCommentInput, setShowCommentInput] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [showSharePopup, setShowSharePopup] = useState(false);
@@ -262,7 +264,7 @@ export default function PostDisplay({
   const totalReactions = (post.likes?.length || 0) + (post.reactions?.length || 0);
 
   return (
-    <div className="bg-white rounded-xl shadow p-2 sm:p-3 md:p-4 mb-3 sm:mb-4 md:mb-6">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-2 sm:p-3 md:p-4 mb-3 sm:mb-4 md:mb-6 transition-colors duration-200">
       <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
         <img 
           src={post.user?.avatar ? getMediaUrl(post.user.avatar) : '/default-avatar.svg'} 
@@ -283,17 +285,17 @@ export default function PostDisplay({
                 }
                 return String(post.user.userId || post.user._id || post.user.id || 'unknown');
               })()}`} 
-              className="font-semibold hover:underline cursor-pointer text-xs sm:text-sm md:text-base truncate block text-blue-600"
+              className="font-semibold hover:underline cursor-pointer text-xs sm:text-sm md:text-base truncate block text-blue-600 dark:text-blue-400"
             >
               {post.user?.name || 'Unknown User'}
             </a>
           ) : (
-            <div className="font-semibold text-xs sm:text-sm md:text-base truncate">{post.user?.name || 'Unknown User'}</div>
+            <div className="font-semibold text-xs sm:text-sm md:text-base truncate text-gray-900 dark:text-white">{post.user?.name || 'Unknown User'}</div>
           )}
-          <div className="text-xs text-gray-400">
+          <div className="text-xs text-gray-400 dark:text-gray-500">
             {new Date(post.createdAt).toLocaleString()}
             {post.isShared && (
-              <span className="ml-1 sm:ml-2 text-blue-600 text-xs">📤 Shared</span>
+              <span className="ml-1 sm:ml-2 text-blue-600 dark:text-blue-400 text-xs">📤 Shared</span>
             )}
           </div>
         </div>
@@ -301,7 +303,7 @@ export default function PostDisplay({
 
       <div className="mb-2 sm:mb-3">
         {/* Content with word limit and Read More */}
-        <div className="text-gray-800 text-xs sm:text-sm md:text-base leading-relaxed">
+        <div className="text-gray-800 dark:text-white text-xs sm:text-sm md:text-base leading-relaxed">
           {(() => {
             const content = post.content || '';
             const preMatchForPreview = content.includes('<pre') ? content.match(/<pre[^>]*>([\s\S]*?)<\/pre>/) : null;
@@ -701,7 +703,7 @@ export default function PostDisplay({
             <span className="text-pink-500 text-base sm:text-lg">❤️</span>
             <span className="text-blue-500 text-base sm:text-lg">👍</span>
             <span className="text-yellow-500 text-base sm:text-lg">😊</span>
-            <span className="text-gray-600 text-xs sm:text-sm font-medium ml-1">
+            <span className="text-gray-600 dark:text-white text-xs sm:text-sm font-medium ml-1">
               {totalReactions}
             </span>
             {/* Removed showReactionDetails indicator */}
@@ -709,15 +711,15 @@ export default function PostDisplay({
           
           {/* Content Statistics - Right Side */}
           <div className="flex items-center space-x-2 sm:space-x-4 text-xs sm:text-sm">
-            <div className="flex items-center space-x-1 text-gray-500">
+            <div className="flex items-center space-x-1 text-gray-500 dark:text-gray-300">
               <span className="text-base sm:text-lg">💬</span>
               <span className="text-xs sm:text-sm">{post.comments?.length || 0} Comments</span>
             </div>
-            <div className="flex items-center space-x-1 text-gray-500">
+            <div className="flex items-center space-x-1 text-gray-500 dark:text-gray-300">
               <span className="text-base sm:text-lg">👁️</span>
               <span className="text-xs sm:text-sm">{post.views?.length || post.views || 0} Views</span>
             </div>
-            <div className="flex items-center space-x-1 text-gray-500">
+            <div className="flex items-center space-x-1 text-gray-500 dark:text-gray-300">
               <span className="text-base sm:text-lg">⭐</span>
               <span className="text-xs sm:text-sm">{post.reviews?.length || 0} Reviews</span>
             </div>
@@ -747,14 +749,14 @@ export default function PostDisplay({
                   return Object.entries(reactionCounts).map(([type, count]) => (
                     <div key={type} className="flex items-center space-x-1 bg-gray-50 dark:bg-gray-700 rounded-full px-3 py-1">
                       <span className="text-lg">{reactionEmojis[type] || '😊'}</span>
-                      <span className="text-sm text-gray-600 dark:text-gray-300">{count}</span>
+                      <span className="text-sm text-gray-600 dark:text-white">{count}</span>
                     </div>
                   ));
                 } else if (post.likes && Array.isArray(post.likes) && post.likes.length > 0) {
                   return (
                     <div className="flex items-center space-x-1 bg-gray-50 dark:bg-gray-700 rounded-full px-3 py-1">
                       <span className="text-lg">👍</span>
-                      <span className="text-sm text-gray-600 dark:text-gray-300">{post.likes.length}</span>
+                      <span className="text-sm text-gray-600 dark:text-white">{post.likes.length}</span>
                     </div>
                   );
                 } else {
@@ -773,7 +775,7 @@ export default function PostDisplay({
         {showLikedUsers && (
           <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-600 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
             <div className="mb-2">
-              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <h4 className="text-sm font-semibold text-gray-700 dark:text-white mb-2">
                 👍 Liked Users Section
               </h4>
             </div>
@@ -781,7 +783,7 @@ export default function PostDisplay({
             {post.likes && post.likes.length > 0 ? (
               <>
                 <div className="mb-2">
-                  <span className="text-xs text-gray-600 dark:text-gray-400">
+                  <span className="text-xs text-gray-600 dark:text-white">
                     Total likes: {post.likes.length}
                   </span>
                 </div>
@@ -839,12 +841,12 @@ export default function PostDisplay({
                 setShowLikedUsers(!showLikedUsers);
               }}
                 className={`flex flex-col items-center justify-center transition-colors touch-manipulation min-h-[60px] ${
-                  getCurrentReaction() ? 'text-red-500' : 'text-gray-600 hover:text-red-500'
+                  getCurrentReaction() ? 'text-red-500' : 'hover:text-red-500'
               }`}
               style={{ touchAction: 'manipulation' }}
             >
-                <span className="font-medium text-xs mb-2 text-center">React</span>
-              <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center">
+                <span className="font-medium text-xs mb-2 text-center text-gray-900 dark:text-white">React</span>
+              <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
                 <span className="text-sm">😊</span>
                 </div>
             </button>
@@ -867,11 +869,11 @@ export default function PostDisplay({
             {/* Comment Button */}
           <button 
             onClick={() => setShowCommentInput(!showCommentInput)}
-              className="flex flex-col items-center justify-center text-gray-600 hover:text-blue-500 transition-colors touch-manipulation min-h-[60px]"
+              className="flex flex-col items-center justify-center hover:text-blue-500 transition-colors touch-manipulation min-h-[60px]"
             style={{ touchAction: 'manipulation' }}
           >
-                <span className="font-medium text-xs mb-2 text-center">Comment</span>
-            <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center">
+                <span className="font-medium text-xs mb-2 text-center text-gray-900 dark:text-white">Comment</span>
+            <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
               <span className="text-sm">💬</span>
               </div>
           </button>
@@ -879,24 +881,24 @@ export default function PostDisplay({
             {/* Share Button */}
           <button 
             onClick={() => setShowSharePopup(true)}
-              className="flex flex-col items-center justify-center text-gray-600 hover:text-green-500 transition-colors touch-manipulation min-h-[60px]"
+              className="flex flex-col items-center justify-center hover:text-green-500 transition-colors touch-manipulation min-h-[60px]"
               style={{ touchAction: 'manipulation' }}
             >
-                <span className="font-medium text-xs mb-2 text-center">Share</span>
-            <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center">
+                <span className="font-medium text-xs mb-2 text-center text-gray-900 dark:text-white">Share</span>
+            <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
               <span className="text-sm">📤</span>
               </div>
             </button>
             
             {/* Review Button */}
             <button 
-              className="flex flex-col items-center justify-center text-gray-600 hover:text-yellow-500 transition-colors touch-manipulation min-h-[70px] px-2"
+              className="flex flex-col items-center justify-center hover:text-yellow-500 transition-colors touch-manipulation min-h-[70px] px-2"
             style={{ touchAction: 'manipulation' }}
           >
-            <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center mb-2">
+            <div className="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center mb-2">
               <span className="text-sm">⭐</span>
             </div>
-            <span className="font-medium text-xs text-center whitespace-nowrap">Review</span>
+            <span className="font-medium text-xs text-center whitespace-nowrap text-gray-900 dark:text-white">Review</span>
           </button>
         </div>
         
@@ -904,11 +906,11 @@ export default function PostDisplay({
           <button 
             onClick={() => onSave && onSave(post._id)}
             className={`flex flex-col items-center justify-center px-2 py-1 rounded-lg transition-colors touch-manipulation min-h-[60px] ${
-              isSaved ? 'text-blue-500 bg-blue-50' : 'text-gray-600 hover:text-blue-500 hover:bg-blue-50'
+              isSaved ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'
             }`}
             style={{ touchAction: 'manipulation' }}
           >
-            <span className="text-xs font-medium mb-2 text-center">{isSaved ? 'Saved' : 'Save'}</span>
+            <span className="text-xs font-medium mb-2 text-center text-gray-900 dark:text-white">{isSaved ? 'Saved' : 'Save'}</span>
             <span className="text-base">{isSaved ? '💾' : '🔖'}</span>
           </button>
           
@@ -917,7 +919,7 @@ export default function PostDisplay({
             <>
               <button 
                 onClick={() => onEdit && onEdit(post)}
-                className="flex flex-col items-center px-2 py-1 rounded-lg text-gray-600 hover:text-blue-500 hover:bg-blue-50 transition-colors touch-manipulation"
+                className="flex flex-col items-center px-2 py-1 rounded-lg text-gray-600 dark:text-white hover:text-blue-500 hover:bg-blue-50 transition-colors touch-manipulation"
                 title="Edit post"
                 style={{ touchAction: 'manipulation' }}
               >
@@ -931,7 +933,7 @@ export default function PostDisplay({
                     onDelete && onDelete(post._id);
                   }
                 }}
-                className="flex flex-col items-center px-2 py-1 rounded-lg text-gray-600 hover:text-red-500 hover:bg-red-50 transition-colors touch-manipulation"
+                className="flex flex-col items-center px-2 py-1 rounded-lg text-gray-600 dark:text-white hover:text-red-500 hover:bg-red-50 transition-colors touch-manipulation"
                 title="Delete post"
                 style={{ touchAction: 'manipulation' }}
               >
@@ -946,7 +948,7 @@ export default function PostDisplay({
                     onToggleComments(post._id);
                   }
                 }}
-                className="flex flex-col items-center px-2 py-1 rounded-lg text-gray-600 hover:text-yellow-500 hover:bg-yellow-50 transition-colors touch-manipulation"
+                className="flex flex-col items-center px-2 py-1 rounded-lg text-gray-600 dark:text-white hover:text-yellow-500 hover:bg-yellow-50 transition-colors touch-manipulation"
                 title={post.commentsEnabled !== false ? "Disable comments" : "Enable comments"}
                 style={{ touchAction: 'manipulation' }}
               >
@@ -960,14 +962,14 @@ export default function PostDisplay({
 
       {/* Comment Input */}
       {showCommentInput && (
-        <div className="mt-3 p-2 sm:p-3 bg-gray-50 rounded-lg">
+        <div className="mt-3 p-2 sm:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg transition-colors duration-200">
           <div className="flex gap-2">
             <input
               type="text"
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               placeholder="Write a comment..."
-              className="flex-1 px-2 sm:px-3 py-1 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
+              className="flex-1 px-2 sm:px-3 py-1 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
             />
             <button
               onClick={() => {
@@ -978,7 +980,7 @@ export default function PostDisplay({
                 }
               }}
               disabled={!commentText.trim()}
-              className="px-3 sm:px-4 py-1 sm:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm touch-manipulation"
+              className="px-3 sm:px-4 py-1 sm:py-2 bg-blue-500 dark:bg-blue-600 text-white rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors text-sm touch-manipulation"
               style={{ touchAction: 'manipulation' }}
             >
               Post
@@ -1020,7 +1022,7 @@ export default function PostDisplay({
                 ) : (
                   <span className="text-xs sm:text-sm font-medium truncate">{comment.user?.name || 'User'}</span>
                 )}
-                <span className="text-xs sm:text-sm text-gray-600 ml-1 sm:ml-2 break-words">{comment.text}</span>
+                <span className="text-xs sm:text-sm text-gray-600 dark:text-white ml-1 sm:ml-2 break-words">{comment.text}</span>
               </div>
             </div>
           ))}

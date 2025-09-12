@@ -4,8 +4,10 @@ import { useEffect, useState } from 'react';
 import { ArrowLeft, Filter, Search, TrendingUp, Grid, List, Bookmark, Share2, Heart, MessageCircle } from 'lucide-react';
 import PostDisplay from '@/components/PostDisplay';
 import AlbumDisplay from '@/components/AlbumDisplay';
+import { useDarkMode } from '@/contexts/DarkModeContext';
 
 export default function PopularPostsPage() {
+  const { isDarkMode } = useDarkMode();
   const [posts, setPosts] = useState<any[]>([]);
   const [albums, setAlbums] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -230,10 +232,10 @@ export default function PopularPostsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className={`min-h-screen flex items-center justify-center transition-colors duration-200 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="text-center">
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading popular content...</p>
+          <p className={`transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Loading popular content...</p>
         </div>
       </div>
     );
@@ -241,18 +243,22 @@ export default function PopularPostsPage() {
 
   if (refreshing) {
     return (
-      <div className="w-full">
+      <div className={`w-full transition-colors duration-200 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 z-30">
+        <div className={`border-b z-30 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <button className="lg:hidden p-2 hover:bg-gray-100 rounded-full transition-colors">
-                  <ArrowLeft className="w-5 h-5 text-gray-600" />
+                <button className={`lg:hidden p-2 rounded-full transition-colors ${
+                  isDarkMode 
+                    ? 'hover:bg-gray-700' 
+                    : 'hover:bg-gray-100'
+                }`}>
+                  <ArrowLeft className={`w-5 h-5 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`} />
                 </button>
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Popular Feed</h1>
-                  <p className="text-sm text-gray-500 hidden sm:block">
+                  <h1 className={`text-xl sm:text-2xl font-bold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Popular Feed</h1>
+                  <p className={`text-sm hidden sm:block transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                     Refreshing content...
                   </p>
                 </div>
@@ -273,18 +279,22 @@ export default function PopularPostsPage() {
   }
 
   return (
-    <div className="w-full">
+    <div className={`w-full transition-colors duration-200 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 z-30">
+      <div className={`border-b z-30 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
         <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <button className="lg:hidden p-2 hover:bg-gray-100 rounded-full transition-colors">
-                <ArrowLeft className="w-5 h-5 text-gray-600" />
+              <button className={`lg:hidden p-2 rounded-full transition-colors ${
+                isDarkMode 
+                  ? 'hover:bg-gray-700' 
+                  : 'hover:bg-gray-100'
+              }`}>
+                <ArrowLeft className={`w-5 h-5 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`} />
               </button>
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Popular Feed</h1>
-                <p className="text-sm text-gray-500 hidden sm:block">
+                <h1 className={`text-xl sm:text-2xl font-bold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Popular Feed</h1>
+                <p className={`text-sm hidden sm:block transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   Discover trending posts and albums
                 </p>
                 {!loading && (
@@ -361,7 +371,7 @@ export default function PopularPostsPage() {
       </div>
 
       {/* Filter Tabs */}
-      <div className="bg-white border-b border-gray-200">
+      <div className={`border-b transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
         <div className="px-4 sm:px-6 lg:px-8 py-3">
           <div className="flex gap-1 overflow-x-auto scrollbar-hide">
             {filters.map((filter) => {
@@ -370,10 +380,12 @@ export default function PopularPostsPage() {
                 <button
                   key={filter.id}
                   onClick={() => setActiveFilter(filter.id)}
-                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg whitespace-nowrap transition-all text-sm sm:text-base ${
+                  className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg whitespace-nowrap transition-all text-sm sm:text-base duration-200 ${
                     activeFilter === filter.id
                       ? 'bg-blue-500 text-white shadow-md'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                      : isDarkMode 
+                        ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                   }`}
                 >
                   <Icon className="w-4 h-4" />

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
+import { useDarkMode } from '../contexts/DarkModeContext';
 import FloatingActionButton from './FloatingActionButton';
 import FollowersSidebar from './FollowersSidebar';
 
@@ -55,8 +56,10 @@ interface DashboardLayoutProps {
 type DropdownType = 'people' | 'messages' | 'notifications' | 'profile' | null;
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+  const { isDarkMode, toggleDarkMode } = useDarkMode();
   const router = useRouter();
   const pathname = usePathname();
+  
   
   // Layout States
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
@@ -674,8 +677,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               href={item.href}
               className={`flex flex-col items-center gap-1 p-3 rounded-lg transition-all duration-200 group relative ${
                 pathname === item.href 
-                  ? 'bg-blue-50 text-blue-600' 
-                  : 'hover:bg-gray-50 text-gray-700'
+                  ? 'bg-blue-500 text-white' 
+                  : isDarkMode ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-50 text-gray-700'
               }`}
               title={item.name}
             >
@@ -710,14 +713,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-300 group ${
               pathname === item.href 
                 ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white' 
-                : 'text-gray-700 hover:text-white'
+                : isDarkMode ? 'text-gray-300 hover:text-white hover:bg-gray-700' : 'text-gray-700 hover:text-white hover:bg-gray-50'
             }`}
             style={{
               background: pathname === item.href 
                 ? 'linear-gradient(45deg, #022e8a, #5d97fe)' 
-                : '#ffffff',
+                : isDarkMode ? '#374151' : '#ffffff',
               borderRadius: '8px',
-              boxShadow: '4px 4px 8px rgba(0, 0, 0, 0.1), -4px -4px 8px rgba(255, 255, 255, 0.9)',
+              boxShadow: isDarkMode 
+                ? '4px 4px 8px rgba(0, 0, 0, 0.3), -4px -4px 8px rgba(0, 0, 0, 0.1)' 
+                : '4px 4px 8px rgba(0, 0, 0, 0.1), -4px -4px 8px rgba(255, 255, 255, 0.9)',
               padding: '8px 12px'
             }}
             onMouseEnter={(e) => {
@@ -729,14 +734,16 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             }}
             onMouseLeave={(e) => {
               if (pathname !== item.href) {
-                e.currentTarget.style.background = '#ffffff';
+                e.currentTarget.style.background = isDarkMode ? '#374151' : '#ffffff';
                 e.currentTarget.style.transform = 'translateX(0)';
-                e.currentTarget.style.boxShadow = '6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.9)';
+                e.currentTarget.style.boxShadow = isDarkMode 
+                  ? '4px 4px 8px rgba(0, 0, 0, 0.3), -4px -4px 8px rgba(0, 0, 0, 0.1)' 
+                  : '6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.9)';
               }
             }}
           >
             <div className={`w-8 h-8 rounded-md flex items-center justify-center text-base group-hover:scale-110 transition-transform leading-none relative ${
-              pathname === item.href ? 'bg-white/20' : 'bg-gray-100'
+              pathname === item.href ? 'bg-white/20' : isDarkMode ? 'bg-gray-600' : 'bg-gray-100'
             }`}>
               {item.icon}
               {/* Notification badge for notifications item */}
@@ -1554,9 +1561,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     type="checkbox" 
                     id="night-mode-toggle-mobile"
                     className="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                    checked={isDarkMode}
                     onChange={(e) => {
-                      // Toggle dark mode logic here
-                      console.log('Night mode toggled:', e.target.checked);
+                      toggleDarkMode();
                     }}
                     aria-label="Toggle night mode"
                   />
@@ -1640,7 +1647,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   <div className="mb-2">
                                             <Link
                           href="/dashboard"
-                          className="flex items-center gap-1.5 p-1.5 rounded-md hover:bg-gray-50 transition-colors text-gray-700 font-medium text-xs"
+                          className={`flex items-center gap-1.5 p-1.5 rounded-md transition-colors font-medium text-xs ${isDarkMode ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-50 text-gray-700'}`}
                         >
                           <span>←</span>
                           <span>Back to Dashboard</span>
@@ -1717,10 +1724,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
                     {/* Footer */}
                     <div className="mt-8 p-3" style={{
-                      background: '#ffffff',
+                      background: isDarkMode ? '#374151' : '#ffffff',
                       borderRadius: '8px',
-                      boxShadow: '4px 4px 8px rgba(0, 0, 0, 0.1), -4px -4px 8px rgba(255, 255, 255, 0.9)',
-                      color: '#2d2d2d',
+                      boxShadow: isDarkMode 
+                        ? '4px 4px 8px rgba(0, 0, 0, 0.3), -4px -4px 8px rgba(0, 0, 0, 0.1)' 
+                        : '4px 4px 8px rgba(0, 0, 0, 0.1), -4px -4px 8px rgba(255, 255, 255, 0.9)',
+                      color: isDarkMode ? '#d1d5db' : '#2d2d2d',
                       fontSize: '12px',
                       width: '100%'
                     }}>
@@ -1741,10 +1750,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     </button>
                       </div>
                       <div className="flex flex-wrap gap-3">
-                        <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">Privacy</a>
-                        <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">Terms</a>
-                        <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">About</a>
-                        <span className="text-gray-700 text-xs">Jaifriend</span>
+                        <a href="#" className={`text-xs hover:text-blue-600 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Privacy</a>
+                        <a href="#" className={`text-xs hover:text-blue-600 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Terms</a>
+                        <a href="#" className={`text-xs hover:text-blue-600 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>About</a>
+                        <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Jaifriend</span>
                   </div>
                   </div>
                 </>
@@ -1757,18 +1766,19 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             {/* Desktop Main Sidebar */}
             <aside className={`flex flex-col fixed left-0 top-0 h-screen transition-all duration-300 scrollbar-hide ${
               sidebarCollapsed ? 'w-16' : isAdminPage ? 'w-48' : 'w-64'
+            } ${isDarkMode ? 'bg-gray-800' : 'bg-white'} ${isAdminPage ? 'bg-gray-900' : ''} ${
+              isAdminPage ? '' : isDarkMode ? 'shadow-2xl' : 'shadow-lg'
             }`} style={{
-              background: isAdminPage ? '#2C2C2C' : '#ffffff',
-              boxShadow: isAdminPage ? 'none' : '6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.9)',
               height: 'calc(100vh - 64px)',
               top: '64px',
               padding: '16px',
               scrollbarWidth: 'thin',
-              scrollbarColor: isAdminPage ? '#4A4A4A #2C2C2C' : '#022e8a #f4f4f9',
+              scrollbarColor: isAdminPage ? '#4A4A4A #2C2C2C' : isDarkMode ? '#4A4A4A #374151' : '#022e8a #f4f4f9',
               display: 'flex',
               flexDirection: 'column',
               overflow: 'hidden'
             }}>
+              
               
               <div className="flex-1 overflow-y-auto scrollbar-hide" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {isSettingsPage ? (
@@ -1777,7 +1787,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       <div className="mb-2">
                         <Link
                           href="/dashboard"
-                          className="flex items-center gap-1.5 p-1.5 rounded-md hover:bg-gray-50 transition-colors text-gray-700 font-medium text-xs"
+                          className={`flex items-center gap-1.5 p-1.5 rounded-md transition-colors font-medium text-xs ${isDarkMode ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-50 text-gray-700'}`}
                         >
                           <span>←</span>
                           <span>Back to Dashboard</span>
@@ -1932,10 +1942,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     {/* Footer */}
                     {!sidebarCollapsed && (
                       <div className="mt-8 p-3" style={{
-                        background: '#ffffff',
+                        background: isDarkMode ? '#374151' : '#ffffff',
                         borderRadius: '8px',
-                        boxShadow: '4px 4px 8px rgba(0, 0, 0, 0.1), -4px -4px 8px rgba(255, 255, 255, 0.9)',
-                        color: '#2d2d2d',
+                        boxShadow: isDarkMode 
+                          ? '4px 4px 8px rgba(0, 0, 0, 0.3), -4px -4px 8px rgba(0, 0, 0, 0.1)' 
+                          : '4px 4px 8px rgba(0, 0, 0, 0.1), -4px -4px 8px rgba(255, 255, 255, 0.9)',
+                        color: isDarkMode ? '#d1d5db' : '#2d2d2d',
                         fontSize: '12px',
                         width: '100%'
                       }}>
@@ -1956,10 +1968,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       </button>
                       </div>
                         <div className="flex flex-wrap gap-3">
-                          <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">Privacy</a>
-                          <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">Terms</a>
-                          <a href="#" className="text-gray-700 hover:text-blue-600 text-xs">About</a>
-                          <span className="text-gray-700 text-xs">Jaifriend</span>
+                          <a href="#" className={`text-xs hover:text-blue-600 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Privacy</a>
+                          <a href="#" className={`text-xs hover:text-blue-600 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Terms</a>
+                          <a href="#" className={`text-xs hover:text-blue-600 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>About</a>
+                          <span className={`text-xs ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Jaifriend</span>
                     </div>
                       </div>
                     )}
@@ -2115,9 +2127,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                           type="checkbox" 
                           id="night-mode-toggle-desktop"
                           className="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                          checked={isDarkMode}
                           onChange={(e) => {
-                            // Toggle dark mode logic here
-                            console.log('Night mode toggled:', e.target.checked);
+                            toggleDarkMode();
                           }}
                           aria-label="Toggle night mode"
                         />
@@ -2190,7 +2202,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               className={`flex flex-col items-center p-2 rounded-lg transition-colors ${
                 pathname === '/dashboard' 
                   ? 'text-blue-600 dark:text-blue-400' 
-                  : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                  : isDarkMode ? 'text-gray-300 hover:text-blue-400' : 'text-gray-600 hover:text-blue-600'
               }`}
             >
               <span className="text-xl mb-1">🏠</span>
@@ -2202,7 +2214,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               className={`flex flex-col items-center p-2 rounded-lg transition-colors ${
                 pathname === '/dashboard/find-friends' 
                   ? 'text-blue-600 dark:text-blue-400' 
-                  : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                  : isDarkMode ? 'text-gray-300 hover:text-blue-400' : 'text-gray-600 hover:text-blue-600'
               }`}
             >
               <span className="text-xl mb-1">👥</span>
@@ -2214,7 +2226,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               className={`flex flex-col items-center p-2 rounded-lg transition-colors ${
                 pathname === '/dashboard/messages' 
                   ? 'text-blue-600 dark:text-blue-400' 
-                  : 'text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400'
+                  : isDarkMode ? 'text-gray-300 hover:text-blue-400' : 'text-gray-600 hover:text-blue-600'
               }`}
             >
               <span className="text-xl mb-1">💬</span>

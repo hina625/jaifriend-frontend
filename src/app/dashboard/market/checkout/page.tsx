@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, ArrowLeft, ShoppingCart } from 'lucide-react';
+import { useDarkMode } from '@/contexts/DarkModeContext';
 
 interface CartItem {
   id: number;
@@ -15,6 +16,7 @@ interface CartItem {
 const USER_BALANCE = 100; // Simulated user balance
 
 export default function CheckoutPage() {
+  const { isDarkMode } = useDarkMode();
   const router = useRouter();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [addresses, setAddresses] = useState<any[]>([]);
@@ -113,21 +115,25 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gray-50 scrollbar-hide">
+    <div className={`min-h-screen w-full scrollbar-hide transition-colors duration-200 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <div className="h-full overflow-y-auto scrollbar-hide">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b sticky top-0 z-30">
+      <div className={`shadow-sm border-b sticky top-0 z-30 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
         <div className="flex items-center justify-between p-4 max-w-6xl mx-auto">
           <div className="flex items-center gap-3">
             <button 
               onClick={() => router.push('/dashboard/market')}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className={`p-2 rounded-full transition-colors duration-200 ${
+                isDarkMode 
+                  ? 'hover:bg-gray-700' 
+                  : 'hover:bg-gray-100'
+              }`}
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className={`w-5 h-5 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`} />
             </button>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold">Checkout</h1>
+            <h1 className={`text-xl sm:text-2xl lg:text-3xl font-bold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Checkout</h1>
           </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className={`flex items-center gap-2 text-sm transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
             <ShoppingCart className="w-4 h-4" />
             <span className="hidden sm:inline">Balance:</span>
             <span className="font-semibold text-green-600">${USER_BALANCE}</span>
@@ -138,14 +144,18 @@ export default function CheckoutPage() {
       <div className="p-4 max-w-6xl mx-auto">
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
           {/* Address Section */}
-          <div className="flex-1 bg-white rounded-lg shadow-sm border p-4 sm:p-6">
+          <div className={`flex-1 rounded-lg shadow-sm border p-4 sm:p-6 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
             <div className="mb-6">
-              <h2 className="text-lg sm:text-xl font-semibold mb-4 flex items-center gap-2">
+              <h2 className={`text-lg sm:text-xl font-semibold mb-4 flex items-center gap-2 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                 📍 Delivery Address
               </h2>
               
               {addresses.length === 0 && (
-                <div className="bg-blue-50 text-blue-700 p-3 rounded-lg mb-4 text-sm">
+                <div className={`p-3 rounded-lg mb-4 text-sm transition-colors duration-200 ${
+                  isDarkMode 
+                    ? 'bg-blue-900 text-blue-300' 
+                    : 'bg-blue-50 text-blue-700'
+                }`}>
                   Please add a delivery address below to continue with your order
                 </div>
               )}
@@ -156,10 +166,14 @@ export default function CheckoutPage() {
                     {addresses.map((addr, idx) => (
                       <div 
                         key={idx} 
-                        className={`p-3 sm:p-4 rounded-lg border transition-all cursor-pointer ${
+                        className={`p-3 sm:p-4 rounded-lg border transition-all cursor-pointer duration-200 ${
                           selectedAddress === idx 
-                            ? 'border-cyan-500 bg-cyan-50 ring-1 ring-cyan-200' 
-                            : 'border-gray-200 hover:border-gray-300'
+                            ? isDarkMode
+                              ? 'border-cyan-500 bg-cyan-900 ring-1 ring-cyan-200'
+                              : 'border-cyan-500 bg-cyan-50 ring-1 ring-cyan-200'
+                            : isDarkMode
+                              ? 'border-gray-600 hover:border-gray-500'
+                              : 'border-gray-200 hover:border-gray-300'
                         }`}
                         onClick={() => setSelectedAddress(idx)}
                       >
@@ -171,11 +185,11 @@ export default function CheckoutPage() {
                             className="mt-1 text-cyan-600 focus:ring-cyan-500"
                           />
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-gray-900">{addr.name}</div>
-                            <div className="text-sm text-gray-600 mt-1 break-words">
+                            <div className={`font-medium transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{addr.name}</div>
+                            <div className={`text-sm mt-1 break-words transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                               {addr.address}, {addr.city}, {addr.country} {addr.zip}
                             </div>
-                            <div className="text-sm text-gray-500 mt-1">{addr.phone}</div>
+                            <div className={`text-sm mt-1 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{addr.phone}</div>
                           </div>
                         </div>
                       </div>
@@ -186,15 +200,19 @@ export default function CheckoutPage() {
             </div>
 
             {/* Add New Address Form */}
-            <div className="border-t pt-6">
-              <h3 className="text-lg font-semibold mb-4">Add New Address</h3>
+            <div className={`border-t pt-6 transition-colors duration-200 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <h3 className={`text-lg font-semibold mb-4 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Add New Address</h3>
               <form onSubmit={handleAddAddress} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <input
                     name="name"
                     required
                     placeholder="Full Name"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors"
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 ${
+                      isDarkMode 
+                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                    }`}
                     value={addressForm.name}
                     onChange={handleAddressFormChange}
                   />
@@ -202,7 +220,11 @@ export default function CheckoutPage() {
                     name="phone"
                     required
                     placeholder="Phone Number"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors"
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 ${
+                      isDarkMode 
+                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                    }`}
                     value={addressForm.phone}
                     onChange={handleAddressFormChange}
                   />
@@ -213,7 +235,11 @@ export default function CheckoutPage() {
                     name="country"
                     required
                     placeholder="Country"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors"
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 ${
+                      isDarkMode 
+                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                    }`}
                     value={addressForm.country}
                     onChange={handleAddressFormChange}
                   />
@@ -221,7 +247,11 @@ export default function CheckoutPage() {
                     name="city"
                     required
                     placeholder="City"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors"
+                    className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 ${
+                      isDarkMode 
+                        ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                    }`}
                     value={addressForm.city}
                     onChange={handleAddressFormChange}
                   />
@@ -231,7 +261,11 @@ export default function CheckoutPage() {
                   name="zip"
                   required
                   placeholder="Zip/Postal Code"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors"
+                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors duration-200 ${
+                    isDarkMode 
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                  }`}
                   value={addressForm.zip}
                   onChange={handleAddressFormChange}
                 />
@@ -241,7 +275,11 @@ export default function CheckoutPage() {
                   required
                   placeholder="Street Address"
                   rows={3}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors resize-none"
+                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-colors resize-none duration-200 ${
+                    isDarkMode 
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                  }`}
                   value={addressForm.address}
                   onChange={handleAddressFormChange}
                 />
@@ -258,12 +296,12 @@ export default function CheckoutPage() {
 
           {/* Cart Section */}
           <div className="w-full lg:w-[420px] xl:w-[460px]">
-            <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6 sticky top-24">
+            <div className={`rounded-lg shadow-sm border p-4 sm:p-6 sticky top-24 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg sm:text-xl font-bold flex items-center gap-2">
+                <h2 className={`text-lg sm:text-xl font-bold flex items-center gap-2 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                   🛒 Shopping Cart
                 </h2>
-                <div className="text-sm text-gray-500">
+                <div className={`text-sm transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   {cart.length} Item{cart.length !== 1 ? 's' : ''}
                 </div>
               </div>
@@ -271,10 +309,10 @@ export default function CheckoutPage() {
               {cart.length === 0 ? (
                 <div className="text-center py-8">
                   <div className="text-4xl mb-2">🛒</div>
-                  <div className="text-gray-500 mb-4">Your cart is empty</div>
+                  <div className={`mb-4 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Your cart is empty</div>
                   <button 
                     onClick={() => router.push('/dashboard/market')}
-                    className="text-cyan-600 hover:text-cyan-700 font-medium"
+                    className="text-cyan-600 hover:text-cyan-700 font-medium transition-colors duration-200"
                   >
                     Continue Shopping
                   </button>
@@ -284,29 +322,37 @@ export default function CheckoutPage() {
                   <div className="max-h-64 sm:max-h-80 overflow-y-auto">
                     <div className="space-y-4">
                       {cart.map((item, idx) => (
-                        <div key={item.id} className="flex gap-3 items-start border-b border-gray-100 pb-4 last:border-b-0">
+                        <div key={item.id} className={`flex gap-3 items-start border-b pb-4 last:border-b-0 transition-colors duration-200 ${isDarkMode ? 'border-gray-700' : 'border-gray-100'}`}>
                           <img 
                             src={item.imageUrl || item.image} 
                             alt={item.name} 
                             className="h-12 w-12 sm:h-16 sm:w-16 object-cover rounded-lg flex-shrink-0" 
                           />
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium text-sm sm:text-base text-gray-900 truncate">{item.name}</div>
+                            <div className={`font-medium text-sm sm:text-base truncate transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{item.name}</div>
                             <div className="text-cyan-600 font-bold text-sm sm:text-base">${item.price}</div>
                             <div className="flex items-center gap-2 mt-2">
-                              <span className="text-xs text-gray-500">Qty:</span>
+                              <span className={`text-xs transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Qty:</span>
                               <div className="flex items-center gap-1">
                                 <button 
                                   type="button" 
-                                  className="w-7 h-7 bg-gray-100 hover:bg-gray-200 rounded text-sm font-medium transition-colors" 
+                                  className={`w-7 h-7 rounded text-sm font-medium transition-colors duration-200 ${
+                                    isDarkMode 
+                                      ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                                  }`}
                                   onClick={() => handleQty(idx, -1)}
                                 >
                                   -
                                 </button>
-                                <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+                                <span className={`w-8 text-center text-sm font-medium transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{item.quantity}</span>
                                 <button 
                                   type="button" 
-                                  className="w-7 h-7 bg-gray-100 hover:bg-gray-200 rounded text-sm font-medium transition-colors" 
+                                  className={`w-7 h-7 rounded text-sm font-medium transition-colors duration-200 ${
+                                    isDarkMode 
+                                      ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                                  }`}
                                   onClick={() => handleQty(idx, 1)}
                                 >
                                   +
@@ -316,7 +362,11 @@ export default function CheckoutPage() {
                           </div>
                           <button 
                             type="button" 
-                            className="text-gray-400 hover:text-red-500 text-xl p-1 transition-colors" 
+                            className={`text-xl p-1 transition-colors duration-200 ${
+                              isDarkMode 
+                                ? 'text-gray-400 hover:text-red-500' 
+                                : 'text-gray-400 hover:text-red-500'
+                            }`}
                             onClick={() => handleRemove(idx)}
                           >
                             ×
@@ -326,20 +376,28 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  <div className="border-t pt-4 mt-4">
+                  <div className={`border-t pt-4 mt-4 transition-colors duration-200 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                     <div className="flex items-center justify-between mb-4">
-                      <span className="font-bold text-lg">Total:</span>
+                      <span className={`font-bold text-lg transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Total:</span>
                       <span className="font-bold text-xl sm:text-2xl text-cyan-700">${total.toFixed(2)}</span>
                     </div>
 
                     {orderError && (
-                      <div className="bg-red-50 text-red-700 p-3 rounded-lg mb-4 text-sm text-center">
+                      <div className={`p-3 rounded-lg mb-4 text-sm text-center transition-colors duration-200 ${
+                        isDarkMode 
+                          ? 'bg-red-900 text-red-300' 
+                          : 'bg-red-50 text-red-700'
+                      }`}>
                         {orderError}
                       </div>
                     )}
 
                     {total > USER_BALANCE && (
-                      <div className="bg-red-50 text-red-700 p-3 rounded-lg mb-4 text-sm text-center">
+                      <div className={`p-3 rounded-lg mb-4 text-sm text-center transition-colors duration-200 ${
+                        isDarkMode 
+                          ? 'bg-red-900 text-red-300' 
+                          : 'bg-red-50 text-red-700'
+                      }`}>
                         Insufficient balance. Please top up your wallet.
                       </div>
                     )}
@@ -369,7 +427,7 @@ export default function CheckoutPage() {
       {/* Floating Action Button - Only show on mobile when scrolled */}
       {showFAB && (
         <button
-          className="fixed bottom-6 right-6 w-12 h-12 sm:w-14 sm:h-14 bg-cyan-600 text-white rounded-full shadow-lg hover:bg-cyan-700 transition-all flex items-center justify-center z-50 lg:hidden"
+          className="fixed bottom-6 right-6 w-12 h-12 sm:w-14 sm:h-14 bg-cyan-600 text-white rounded-full shadow-lg hover:bg-cyan-700 transition-all duration-200 flex items-center justify-center z-50 lg:hidden"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         >
           <Plus className="w-5 h-5 sm:w-6 sm:h-6" />

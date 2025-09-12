@@ -34,6 +34,22 @@ export const DarkModeProvider: React.FC<DarkModeProviderProps> = ({ children }) 
       const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       setIsDarkMode(systemPrefersDark);
     }
+
+    // Listen for system theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleSystemThemeChange = (e: MediaQueryListEvent) => {
+      // Only update if user hasn't manually set a preference
+      const savedMode = localStorage.getItem('darkMode');
+      if (savedMode === null) {
+        setIsDarkMode(e.matches);
+      }
+    };
+
+    mediaQuery.addEventListener('change', handleSystemThemeChange);
+    
+    return () => {
+      mediaQuery.removeEventListener('change', handleSystemThemeChange);
+    };
   }, []);
 
   useEffect(() => {

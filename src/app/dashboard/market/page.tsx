@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Search, ChevronLeft, ChevronRight, MapPin, ChevronDown, ShoppingCart, Heart, Plus, Users, X } from 'lucide-react';
 import Link from "next/link";
 import Popup, { PopupState } from '../../../components/Popup';
+import { useDarkMode } from '@/contexts/DarkModeContext';
 
 interface Product {
   id: number;
@@ -18,6 +19,7 @@ interface Product {
 }
 
 const MarketplacePage: React.FC = () => {
+  const { isDarkMode } = useDarkMode();
   const [currentSlide, setCurrentSlide] = useState<number>(0);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [products, setProducts] = useState<Product[]>([]);
@@ -146,26 +148,30 @@ const MarketplacePage: React.FC = () => {
   };
 
   return (
-    <div className="w-full">
+    <div className={`w-full transition-colors duration-200 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Popup Modal */}
       <Popup popup={popup} onClose={closePopup} />
       
       {/* Header */}
-      <header className="bg-white shadow-sm border-b sticky top-0 z-30">
+      <header className={`shadow-sm border-b sticky top-0 z-30 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
         <div className="px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2 sm:gap-4">
-            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 flex-shrink-0">Market</h1>
+            <h1 className={`text-lg sm:text-xl lg:text-2xl font-bold flex-shrink-0 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Market</h1>
             
             {/* Search Bar - Hidden on mobile, visible on tablet+ */}
             <div className="hidden md:flex flex-1 max-w-2xl mx-4 lg:mx-8">
               <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 lg:w-5 lg:h-5" />
+                <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 lg:w-5 lg:h-5 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`} />
                 <input
                   type="text"
                   placeholder="Search for products"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 lg:pl-10 pr-4 py-2 text-sm lg:text-base border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full pl-9 lg:pl-10 pr-4 py-2 text-sm lg:text-base border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                    isDarkMode 
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                      : 'bg-white border-gray-200 text-gray-900 placeholder-gray-500'
+                  }`}
                 />
               </div>
             </div>
@@ -176,7 +182,11 @@ const MarketplacePage: React.FC = () => {
               <button
                 onClick={() => fetchProducts(true)}
                 disabled={refreshing}
-                className={`w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors ${refreshing ? 'opacity-50' : ''}`}
+                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center transition-colors duration-200 ${refreshing ? 'opacity-50' : ''} ${
+                  isDarkMode 
+                    ? 'bg-gray-700 hover:bg-gray-600' 
+                    : 'bg-gray-100 hover:bg-gray-200'
+                }`}
                 title="Refresh products"
               >
                 <div className={`w-4 h-4 sm:w-5 sm:h-5 ${refreshing ? 'animate-spin' : ''}`}>
@@ -187,16 +197,28 @@ const MarketplacePage: React.FC = () => {
               </button>
               
               {/* Mobile Search Button */}
-              <button className="md:hidden w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors">
-                <Search className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+              <button className={`md:hidden w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center transition-colors duration-200 ${
+                isDarkMode 
+                  ? 'bg-gray-700 hover:bg-gray-600' 
+                  : 'bg-gray-100 hover:bg-gray-200'
+              }`}>
+                <Search className={`w-4 h-4 sm:w-5 sm:h-5 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`} />
               </button>
               
               {/* Desktop Search and Users Buttons */}
-              <button className="hidden md:flex w-10 h-10 bg-gray-100 rounded-lg items-center justify-center hover:bg-gray-200 transition-colors">
-                <Search className="w-5 h-5 text-gray-600" />
+              <button className={`hidden md:flex w-10 h-10 rounded-lg items-center justify-center transition-colors duration-200 ${
+                isDarkMode 
+                  ? 'bg-gray-700 hover:bg-gray-600' 
+                  : 'bg-gray-100 hover:bg-gray-200'
+              }`}>
+                <Search className={`w-5 h-5 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`} />
               </button>
-              <button className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors">
-                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+              <button className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center transition-colors duration-200 ${
+                isDarkMode 
+                  ? 'bg-gray-700 hover:bg-gray-600' 
+                  : 'bg-gray-100 hover:bg-gray-200'
+              }`}>
+                <Users className={`w-4 h-4 sm:w-5 sm:h-5 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`} />
               </button>
             </div>
           </div>
@@ -204,13 +226,17 @@ const MarketplacePage: React.FC = () => {
           {/* Mobile Search Bar */}
           <div className="md:hidden mt-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`} />
               <input
                 type="text"
                 placeholder="Search for products"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={`w-full pl-9 pr-4 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-200 text-gray-900 placeholder-gray-500'
+                }`}
               />
             </div>
           </div>
@@ -220,9 +246,9 @@ const MarketplacePage: React.FC = () => {
       {/* Main Content */}
       <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
       {/* Featured Products Carousel */}
-        <section className="bg-white rounded-lg shadow-sm border mb-6">
+        <section className={`rounded-lg shadow-sm border mb-6 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <div className="p-4 sm:p-6">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Featured Products</h2>
+            <h2 className={`text-lg sm:text-xl font-bold mb-4 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Featured Products</h2>
           <div className="relative">
             <div className="flex items-center overflow-hidden">
               {/* Navigation Buttons - Hidden on mobile */}
@@ -308,17 +334,19 @@ const MarketplacePage: React.FC = () => {
       </section>
 
       {/* Category Tabs */}
-        <section className="bg-white rounded-lg shadow-sm border mb-6">
+        <section className={`rounded-lg shadow-sm border mb-6 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <div className="p-4">
           <div className="flex overflow-x-auto scrollbar-hide">
             {categories.map((category: string) => (
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
-                className={`flex-shrink-0 px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                className={`flex-shrink-0 px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm font-medium border-b-2 transition-colors whitespace-nowrap duration-200 ${
                   selectedCategory === category
                     ? 'text-blue-600 border-blue-600'
-                    : 'text-gray-500 border-transparent hover:text-blue-600'
+                    : isDarkMode 
+                      ? 'text-gray-300 border-transparent hover:text-blue-400' 
+                      : 'text-gray-500 border-transparent hover:text-blue-600'
                 }`}
               >
                 {category}
@@ -329,11 +357,11 @@ const MarketplacePage: React.FC = () => {
       </section>
 
       {/* Products Section */}
-        <section className="bg-white rounded-lg shadow-sm border">
+        <section className={`rounded-lg shadow-sm border transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <div className="p-4 sm:p-6">
         {/* Products Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-4">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-900">Products</h2>
+          <h2 className={`text-lg sm:text-xl font-bold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Products</h2>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
             <button className="flex items-center gap-2 text-blue-600 font-medium text-sm sm:text-base">
               <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -350,7 +378,7 @@ const MarketplacePage: React.FC = () => {
         {loading ? (
               <div className="text-center py-8 sm:py-12">
                 <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-500">Loading products...</p>
+                <p className={`transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Loading products...</p>
               </div>
         ) : error ? (
               <div className="text-center py-8 sm:py-12">
@@ -358,11 +386,11 @@ const MarketplacePage: React.FC = () => {
               </div>
             ) : filteredProducts.length === 0 ? (
               <div className="text-center py-8 sm:py-12">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <ShoppingCart className="w-8 h-8 text-gray-400" />
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-200 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                  <ShoppingCart className={`w-8 h-8 transition-colors duration-200 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No products available</h3>
-                <p className="text-gray-600 mb-4">Be the first to add a product to the marketplace!</p>
+                <h3 className={`text-lg font-semibold mb-2 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>No products available</h3>
+                <p className={`mb-4 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Be the first to add a product to the marketplace!</p>
                 <button 
                   onClick={() => router.push('/dashboard/products')}
                   className="bg-blue-500 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors"
@@ -376,22 +404,26 @@ const MarketplacePage: React.FC = () => {
               <Link 
                     key={product.id || product._id} 
                     href={`/dashboard/market/checkout/${product.id || product._id}`} 
-                className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-shadow block"
+                className={`rounded-lg shadow-sm border hover:shadow-md transition-all duration-200 block ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border-gray-600 hover:bg-gray-600' 
+                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                }`}
               >
-                <div className="aspect-square bg-gray-100 rounded-t-lg overflow-hidden">
+                <div className={`aspect-square rounded-t-lg overflow-hidden transition-colors duration-200 ${isDarkMode ? 'bg-gray-600' : 'bg-gray-100'}`}>
                   <img 
                     src={product.imageUrl || product.image} 
                     alt={product.name}
                     className="w-full h-full object-cover"
                     onError={handleImageError}
                   />
-                  <div className="w-full h-full bg-gray-300 hidden items-center justify-center">
-                    <span className="text-gray-500 text-xs">Image</span>
+                  <div className={`w-full h-full hidden items-center justify-center transition-colors duration-200 ${isDarkMode ? 'bg-gray-500' : 'bg-gray-300'}`}>
+                    <span className={`text-xs transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Image</span>
                   </div>
                 </div>
                 <div className="p-2 sm:p-3 lg:p-4">
-                  <h3 className="text-xs sm:text-sm lg:text-base text-gray-900 mb-1 sm:mb-2 line-clamp-2 leading-tight">{product.name}</h3>
-                  <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 mb-2 sm:mb-3">${product.price.toFixed(2)}</p>
+                  <h3 className={`text-xs sm:text-sm lg:text-base mb-1 sm:mb-2 line-clamp-2 leading-tight transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{product.name}</h3>
+                  <p className={`text-sm sm:text-base lg:text-lg font-bold mb-2 sm:mb-3 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>${product.price.toFixed(2)}</p>
                   <div className="flex gap-1 sm:gap-2">
                     <button 
                       className="flex-1 bg-blue-500 text-white py-1.5 sm:py-2 px-2 sm:px-3 rounded text-xs sm:text-sm font-medium hover:bg-blue-600 transition-colors flex items-center justify-center" 

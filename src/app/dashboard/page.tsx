@@ -3197,7 +3197,7 @@ export default function Dashboard() {
                       className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-300 transform hover:scale-105 font-medium text-sm ${
                       (selectedPostForWatch.likes?.includes(getCurrentUserId()) || selectedPostForWatch.likedBy?.includes(getCurrentUserId()))
                           ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white shadow-lg shadow-red-200 dark:shadow-red-900'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-900/20 dark:hover:to-pink-900/20 hover:text-red-500'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-900/20 dark:hover:to-pink-900/20 hover:text-red-500'
                     }`}
                   >
                       <span className="text-lg">❤️</span>
@@ -3212,7 +3212,7 @@ export default function Dashboard() {
                       const commentInput = document.getElementById('watch-comment-input');
                       if (commentInput) commentInput.focus();
                     }}
-                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 dark:hover:from-blue-900/20 dark:hover:to-cyan-900/20 hover:text-blue-500 transition-all duration-300 transform hover:scale-105 font-medium text-sm"
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-cyan-50 dark:hover:from-blue-900/20 dark:hover:to-cyan-900/20 hover:text-blue-500 transition-all duration-300 transform hover:scale-105 font-medium text-sm"
                   >
                       <span className="text-lg">💬</span>
                       <span className="font-medium">Comment</span>
@@ -3229,7 +3229,7 @@ export default function Dashboard() {
                       });
                       setShowWatchModal(false);
                     }}
-                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 dark:hover:from-green-900/20 dark:hover:to-emerald-900/20 hover:text-green-500 transition-all duration-300 transform hover:scale-105 font-medium text-sm"
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 dark:hover:from-green-900/20 dark:hover:to-emerald-900/20 hover:text-green-500 transition-all duration-300 transform hover:scale-105 font-medium text-sm"
                   >
                       <span className="text-lg">📤</span>
                       <span className="font-medium">Share</span>

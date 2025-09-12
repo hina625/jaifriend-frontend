@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Search, Filter, Users, Settings, MessageCircle, Calendar, MapPin, Globe, Lock, Eye, EyeOff, UserPlus, UserMinus, Crown, Shield, Trash2, Edit3, MoreHorizontal, ChevronDown, Check, X, Star, Heart, Share2, Bookmark, Flag, Bell, BellOff, Menu as MenuIcon, ArrowLeft, FileText, Upload, Smile } from 'lucide-react';
 import { getCurrentUserId } from '@/utils/auth';
+import { useDarkMode } from '@/contexts/DarkModeContext';
 
 interface FormData {
   name: string;
@@ -60,6 +61,7 @@ interface Group {
 
 const GroupsPage: React.FC = () => {
   const router = useRouter();
+  const { isDarkMode } = useDarkMode();
   const [activeTab, setActiveTab] = useState<string>('My Groups');
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
@@ -856,13 +858,13 @@ const GroupsPage: React.FC = () => {
     <div className="w-full">
       
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
+      <div className={`border-b sticky top-0 z-30 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
         <div className="px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Groups</h1>
+              <h1 className={`text-xl sm:text-2xl font-semibold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Groups</h1>
               {!loading && (
-                <p className="text-sm text-gray-500 mt-1">
+                <p className={`text-sm mt-1 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   {getGroupsForTab().length} group{getGroupsForTab().length !== 1 ? 's' : ''} in {activeTab}
                 </p>
               )}
@@ -872,7 +874,11 @@ const GroupsPage: React.FC = () => {
               <button
                 onClick={() => fetchGroups(true)}
                 disabled={refreshing}
-                className={`p-2 text-gray-400 hover:text-gray-600 transition-colors ${refreshing ? 'opacity-50' : ''}`}
+                className={`p-2 transition-colors ${refreshing ? 'opacity-50' : ''} ${
+                  isDarkMode 
+                    ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700' 
+                    : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                }`}
                 title="Refresh groups"
               >
                 <div className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`}>
@@ -883,23 +889,35 @@ const GroupsPage: React.FC = () => {
               </button>
               
               <div className="relative hidden sm:block">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`} />
                 <input
                   type="text"
                   placeholder="Search groups..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2 w-64 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`pl-10 pr-4 py-2 w-64 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                    isDarkMode 
+                      ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                      : 'bg-white border-gray-200 text-gray-900 placeholder-gray-500'
+                  }`}
                 />
               </div>
-              <button className="p-2 text-gray-400 hover:text-gray-600">
+              <button className={`p-2 transition-colors duration-200 ${
+                isDarkMode 
+                  ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700' 
+                  : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+              }`}>
                 <Users className="w-5 h-5" />
               </button>
               
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="sm:hidden p-2 text-gray-400 hover:text-gray-600"
+                className={`sm:hidden p-2 transition-colors duration-200 ${
+                  isDarkMode 
+                    ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700' 
+                    : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                }`}
               >
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
               </button>
@@ -912,10 +930,12 @@ const GroupsPage: React.FC = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
                   activeTab === tab
                     ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                    : isDarkMode 
+                      ? 'text-gray-300 hover:text-white hover:bg-gray-700' 
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                 }`}
               >
                 {tab}
@@ -927,20 +947,24 @@ const GroupsPage: React.FC = () => {
           <div className="sm:hidden mt-3">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-              <span className="text-sm font-medium text-gray-700">{activeTab}</span>
+              <span className={`text-sm font-medium transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{activeTab}</span>
             </div>
           </div>
           
           {/* Mobile Search Bar */}
           <div className="sm:hidden mt-3">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`} />
               <input
                 type="text"
                 placeholder="Search groups..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className={`w-full pl-10 pr-4 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                    : 'bg-white border-gray-200 text-gray-900 placeholder-gray-500'
+                }`}
               />
             </div>
           </div>
@@ -954,9 +978,9 @@ const GroupsPage: React.FC = () => {
             className="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="fixed top-0 right-0 h-full w-64 bg-white shadow-lg z-50 sm:hidden">
-            <div className="p-4 border-b">
-              <h3 className="font-semibold text-gray-800">Navigation</h3>
+          <div className={`fixed top-0 right-0 h-full w-64 shadow-lg z-50 sm:hidden transition-colors duration-200 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <div className={`p-4 border-b transition-colors duration-200 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+              <h3 className={`font-semibold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Navigation</h3>
             </div>
             <div className="py-2">
               {tabs.map((tab: string) => (
@@ -966,10 +990,12 @@ const GroupsPage: React.FC = () => {
                     setActiveTab(tab);
                     setMobileMenuOpen(false);
                   }}
-                  className={`w-full text-left px-4 py-3 text-sm transition-colors ${
+                  className={`w-full text-left px-4 py-3 text-sm transition-colors duration-200 ${
                     activeTab === tab
                       ? 'text-blue-600 bg-blue-50'
-                      : 'text-gray-700 hover:bg-gray-50'
+                      : isDarkMode 
+                        ? 'text-gray-300 hover:bg-gray-700' 
+                        : 'text-gray-700 hover:bg-gray-50'
                   }`}
                 >
                   {tab}

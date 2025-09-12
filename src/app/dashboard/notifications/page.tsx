@@ -3,6 +3,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hg
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Popup from '@/components/Popup';
+import { useDarkMode } from '@/contexts/DarkModeContext';
 
 interface Notification {
   _id: string;
@@ -39,6 +40,7 @@ interface PopupState {
 }
 
 const NotificationsPage = () => {
+  const { isDarkMode } = useDarkMode();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('notifications');
   const [loading, setLoading] = useState(false);

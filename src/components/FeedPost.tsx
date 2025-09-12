@@ -897,13 +897,16 @@ const FeedPost: React.FC<FeedPostProps> = ({
   const renderContentWithVideos = (content: string) => {
     // Check if content contains HTML (from backend pre tags)
     if (content.includes('<pre')) {
-      // Render the pre content as HTML to preserve formatting
-      return (
-        <div 
-          dangerouslySetInnerHTML={{ __html: content }}
-          className="whitespace-pre-wrap break-words font-sans"
-        />
-      );
+      // Extract content from pre tags and render with proper styling
+      const preMatch = content.match(/<pre[^>]*>([\s\S]*?)<\/pre>/);
+      if (preMatch) {
+        const preContent = preMatch[1];
+        return (
+          <div className="whitespace-pre-wrap break-words font-sans bg-gray-50 dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
+            {preContent}
+          </div>
+        );
+      }
     }
     
     const videoLinks = extractVideoLinks(content);
@@ -973,13 +976,16 @@ const FeedPost: React.FC<FeedPostProps> = ({
   const renderContentWithLinks = (content: string) => {
     // Check if content contains HTML (from backend pre tags)
     if (content.includes('<pre')) {
-      // Render the pre content as HTML to preserve formatting
-      return (
-        <div 
-          dangerouslySetInnerHTML={{ __html: content }}
-          className="whitespace-pre-wrap break-words font-sans"
-        />
-      );
+      // Extract content from pre tags and render with proper styling
+      const preMatch = content.match(/<pre[^>]*>([\s\S]*?)<\/pre>/);
+      if (preMatch) {
+        const preContent = preMatch[1];
+        return (
+          <div className="whitespace-pre-wrap break-words font-sans bg-gray-50 dark:bg-gray-700 p-3 rounded-lg border border-gray-200 dark:border-gray-600">
+            {preContent}
+          </div>
+        );
+      }
     }
     
     const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -1744,7 +1750,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
             {/* Comment Button */}
             <button
               onClick={() => setShowComments(!showComments)}
-              className="flex flex-col items-center space-y-1 sm:space-y-2 md:space-y-3 text-gray-600 hover:text-blue-600 transition-colors touch-manipulation"
+              className="flex flex-col items-center space-y-1 sm:space-y-2 md:space-y-3 text-gray-600 dark:text-white hover:text-blue-600 transition-colors touch-manipulation"
               style={{ touchAction: 'manipulation' }}
             >
               <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
@@ -1758,7 +1764,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
             {/* Share Button */}
             <button
               onClick={handleShare}
-              className="flex flex-col items-center space-y-1 sm:space-y-2 md:space-y-3 text-gray-600 hover:text-green-600 transition-colors touch-manipulation"
+              className="flex flex-col items-center space-y-1 sm:space-y-2 md:space-y-3 text-gray-600 dark:text-white hover:text-green-600 transition-colors touch-manipulation"
               style={{ touchAction: 'manipulation' }}
             >
               <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
@@ -1772,7 +1778,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
             {/* Review Button */}
             <button
               onClick={handleReview}
-              className="flex flex-col items-center space-y-1 sm:space-y-2 md:space-y-3 text-gray-600 hover:text-yellow-600 transition-colors touch-manipulation px-1"
+              className="flex flex-col items-center space-y-1 sm:space-y-2 md:space-y-3 text-gray-600 dark:text-white hover:text-yellow-600 transition-colors touch-manipulation px-1"
               style={{ touchAction: 'manipulation' }}
             >
               <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
@@ -1786,7 +1792,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
             {/* Save Button */}
             <button
               onClick={handleSave}
-              className="flex flex-col items-center space-y-1 sm:space-y-2 md:space-y-3 text-gray-600 hover:text-purple-600 transition-colors touch-manipulation"
+              className="flex flex-col items-center space-y-1 sm:space-y-2 md:space-y-3 text-gray-600 dark:text-white hover:text-purple-600 transition-colors touch-manipulation"
               style={{ touchAction: 'manipulation' }}
             >
               <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-colors ${

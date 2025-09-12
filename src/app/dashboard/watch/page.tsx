@@ -4,6 +4,7 @@ import { Play, ThumbsUp, MessageCircle, Share2, MoreHorizontal, Plus, Settings, 
 import axios from 'axios';
 import ReactionPopup, { ReactionType } from '@/components/ReactionPopup';
 import { getCurrentUserId } from '@/utils/auth';
+import { useDarkMode } from '@/contexts/DarkModeContext';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
 
@@ -82,6 +83,7 @@ function getMediaUrl(url: string) {
 }
 
 const WatchPage: React.FC = () => {
+  const { isDarkMode } = useDarkMode();
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -540,7 +542,7 @@ const WatchPage: React.FC = () => {
     };
 
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+      <div className={`rounded-lg shadow-sm border mb-6 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
         {/* Post Header */}
         <div className="p-4 pb-2">
           <div className="flex items-center justify-between">
@@ -914,10 +916,10 @@ const WatchPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="w-full h-full overflow-y-auto scrollbar-hide flex items-center justify-center">
+      <div className={`w-full h-full overflow-y-auto scrollbar-hide flex items-center justify-center transition-colors duration-200 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading videos...</p>
+          <p className={`mt-4 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Loading videos...</p>
         </div>
       </div>
     );
@@ -925,13 +927,13 @@ const WatchPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="w-full h-full overflow-y-auto scrollbar-hide flex items-center justify-center">
+      <div className={`w-full h-full overflow-y-auto scrollbar-hide flex items-center justify-center transition-colors duration-200 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-xl mx-auto mb-6 flex items-center justify-center">
-            <FileText className="w-8 h-8 text-red-600" />
+          <div className={`w-16 h-16 rounded-xl mx-auto mb-6 flex items-center justify-center transition-colors duration-200 ${isDarkMode ? 'bg-red-900/20' : 'bg-red-100'}`}>
+            <FileText className={`w-8 h-8 transition-colors duration-200 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`} />
           </div>
-          <p className="text-gray-600 text-lg mb-2">{error}</p>
-          <p className="text-gray-500 text-sm mb-6">Unable to load videos from the feed.</p>
+          <p className={`text-lg mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>{error}</p>
+          <p className={`text-sm mb-6 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Unable to load videos from the feed.</p>
           <div className="space-x-4">
             <button 
               onClick={() => fetchAllVideos(true)}
@@ -1087,14 +1089,14 @@ const WatchPage: React.FC = () => {
   }
 
   return (
-    <div className="w-full h-full overflow-y-auto scrollbar-hide">
+    <div className={`w-full h-full overflow-y-auto scrollbar-hide transition-colors duration-200 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-30">
+      <div className={`border-b px-4 sm:px-6 py-3 sm:py-4 sticky top-0 z-30 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
         <div className="flex items-center justify-between max-w-4xl mx-auto">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Watch</h1>
+            <h1 className={`text-2xl font-semibold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Watch</h1>
             {!loading && !error && (
-              <p className="text-sm text-gray-500 mt-1">
+              <p className={`text-sm mt-1 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 {videos.length} video{videos.length !== 1 ? 's' : ''} from feed
               </p>
             )}
@@ -1103,7 +1105,7 @@ const WatchPage: React.FC = () => {
             <button 
               onClick={() => fetchAllVideos(true)}
               disabled={refreshing}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-50"
+              className={`p-2 rounded-full transition-colors disabled:opacity-50 ${isDarkMode ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
               title="Refresh videos"
             >
               <div className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`}>
@@ -1112,13 +1114,13 @@ const WatchPage: React.FC = () => {
                 </svg>
               </div>
             </button>
-            <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+            <button className={`p-2 rounded-full transition-colors ${isDarkMode ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}>
               <Settings className="w-5 h-5" />
             </button>
-            <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+            <button className={`p-2 rounded-full transition-colors ${isDarkMode ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}>
               <Users className="w-5 h-5" />
             </button>
-            <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+            <button className={`p-2 rounded-full transition-colors ${isDarkMode ? 'text-gray-400 hover:text-gray-300 hover:bg-gray-700' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}>
               <User className="w-6 h-6" />
             </button>
           </div>

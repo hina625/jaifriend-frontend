@@ -3,6 +3,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hg
 import React, { useState, useRef, useEffect } from 'react';
 import { Heart, MessageCircle, Share2, ChevronDown, Smile, Paperclip, Send, MoreHorizontal, Globe } from 'lucide-react';
 import { getCurrentUserId } from '@/utils/auth';
+import { useDarkMode } from '@/contexts/DarkModeContext';
 import SharePopup, { ShareOptions } from './SharePopup';
 import ReactionPopup, { ReactionType } from './ReactionPopup';
 
@@ -33,6 +34,7 @@ export default function AlbumDisplay({
   onWatch,
   deletingComments = {}
 }: AlbumDisplayProps) {
+  const { isDarkMode } = useDarkMode();
   const [showAllPhotos, setShowAllPhotos] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [showCommentInput, setShowCommentInput] = useState(false);
@@ -481,7 +483,7 @@ export default function AlbumDisplay({
   });
 
   return (
-    <div className="bg-white rounded-xl shadow p-3 sm:p-4 mb-4 sm:mb-6">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-3 sm:p-4 mb-4 sm:mb-6 transition-colors duration-200 relative">
       <div className="flex items-center gap-2 mb-3">
         <img 
           src={album.user?.avatar ? (album.user.avatar.startsWith('http') ? album.user.avatar : `${API_URL}/${album.user.avatar}`) : '/avatars/1.png.png'} 
@@ -494,14 +496,14 @@ export default function AlbumDisplay({
               href={`/dashboard/profile/${String(album.user._id)}`} 
               target="_blank" 
               rel="noopener noreferrer"
-              className="font-semibold text-sm sm:text-base hover:underline cursor-pointer truncate block"
+              className="font-semibold text-sm sm:text-base hover:underline cursor-pointer truncate block transition-colors duration-200 text-gray-900 dark:text-white"
             >
               {album.user?.name || 'Unknown User'}
             </a>
           ) : (
-            <div className="font-semibold text-sm sm:text-base truncate">{album.user?.name || 'Unknown User'}</div>
+            <div className="font-semibold text-sm sm:text-base truncate transition-colors duration-200 text-gray-900 dark:text-white">{album.user?.name || 'Unknown User'}</div>
           )}
-          <div className="text-xs text-gray-400">
+          <div className="text-xs transition-colors duration-200 text-gray-500 dark:text-gray-400">
             {new Date(album.createdAt).toLocaleString()}
           </div>
         </div>
@@ -518,12 +520,12 @@ export default function AlbumDisplay({
 
       <div className="mb-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg p-2 transition-colors" onClick={() => onWatch && onWatch(album)}>
         <div className="flex items-center gap-2 mb-2">
-          <h3 className="font-semibold text-lg">📸 {album.name}</h3>
-          <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-medium">
+          <h3 className="font-semibold text-lg transition-colors duration-200 text-gray-900 dark:text-white">📸 {album.name}</h3>
+          <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 text-xs px-2 py-1 rounded-full font-medium transition-colors duration-200">
             Album
           </span>
         </div>
-        <div className="text-sm text-gray-600">
+        <div className="text-sm transition-colors duration-200 text-gray-600 dark:text-gray-300">
           {album.media ? album.media.length : 0} media item{(album.media ? album.media.length : 0) !== 1 ? 's' : ''}
         </div>
       </div>
@@ -601,11 +603,11 @@ export default function AlbumDisplay({
       
       {/* Debug: Show when no media */}
       {(!album.media || album.media.length === 0) && (
-        <div className="mb-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <div className="text-center text-yellow-800">
+        <div className="mb-3 p-4 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-700 border rounded-lg transition-colors duration-200">
+          <div className="text-center transition-colors duration-200 text-yellow-800 dark:text-yellow-300">
             <div className="text-2xl mb-2">⚠️</div>
             <div className="text-sm font-medium">No media found in album</div>
-            <div className="text-xs text-yellow-600 mt-1">
+            <div className="text-xs mt-1 transition-colors duration-200 text-yellow-600 dark:text-yellow-400">
               Album ID: {album._id}<br/>
               Media array: {JSON.stringify(album.media)}<br/>
               Media length: {album.media?.length || 'undefined'}
@@ -620,7 +622,7 @@ export default function AlbumDisplay({
       {hasMoreMedia && (
         <button
           onClick={() => setShowAllPhotos(!showAllPhotos)}
-          className="text-blue-500 hover:text-blue-700 text-sm touch-manipulation"
+          className="text-sm touch-manipulation transition-colors text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
           style={{ touchAction: 'manipulation' }}
         >
           {showAllPhotos ? 'Show Less' : `Show All ${album.media.length} Media`}
@@ -646,7 +648,7 @@ export default function AlbumDisplay({
               <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
                 <span className="text-lg sm:text-xl md:text-2xl">👍</span>
               </div>
-              <span className="text-xs sm:text-sm md:text-base font-medium text-gray-600 hover:text-pink-600 transition-colors">
+              <span className="text-xs sm:text-sm md:text-base font-medium transition-colors text-gray-600 dark:text-white hover:text-pink-600 dark:hover:text-pink-400">
                 Like
               </span>
             </button>
@@ -668,7 +670,7 @@ export default function AlbumDisplay({
           {/* Comment Button */}
           <button 
             onClick={() => setShowCommentInput(!showCommentInput)}
-            className="flex flex-col items-center space-y-1 sm:space-y-2 md:space-y-3 text-gray-600 hover:text-blue-600 transition-colors touch-manipulation"
+            className="flex flex-col items-center space-y-1 sm:space-y-2 md:space-y-3 transition-colors touch-manipulation text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400"
             style={{ touchAction: 'manipulation' }}
           >
             <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
@@ -676,13 +678,13 @@ export default function AlbumDisplay({
                 <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clipRule="evenodd"/>
               </svg>
             </div>
-            <span className="text-xs sm:text-sm md:text-base font-medium">Comment</span>
+            <span className="text-xs sm:text-sm md:text-base font-medium transition-colors text-gray-600 dark:text-white">Comment</span>
           </button>
           
           {/* Share Button */}
           <button 
             onClick={() => setShowSharePopup(true)}
-            className="flex flex-col items-center space-y-1 sm:space-y-2 md:space-y-3 text-gray-600 hover:text-green-600 transition-colors touch-manipulation"
+            className="flex flex-col items-center space-y-1 sm:space-y-2 md:space-y-3 transition-colors touch-manipulation text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400"
             style={{ touchAction: 'manipulation' }}
           >
             <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
@@ -690,13 +692,13 @@ export default function AlbumDisplay({
                 <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z"/>
               </svg>
             </div>
-            <span className="text-xs sm:text-sm md:text-base font-medium">Share</span>
+            <span className="text-xs sm:text-sm md:text-base font-medium transition-colors text-gray-600 dark:text-white">Share</span>
           </button>
           
           {/* Review Button */}
           <button
             onClick={() => {}} // Add review functionality if needed
-            className="flex flex-col items-center space-y-1 sm:space-y-2 md:space-y-3 text-gray-600 hover:text-yellow-600 transition-colors touch-manipulation px-1"
+            className="flex flex-col items-center space-y-1 sm:space-y-2 md:space-y-3 transition-colors touch-manipulation px-1 text-gray-600 dark:text-gray-300 hover:text-yellow-600 dark:hover:text-yellow-400"
             style={{ touchAction: 'manipulation' }}
           >
             <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
@@ -704,13 +706,13 @@ export default function AlbumDisplay({
                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-.1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
               </svg>
             </div>
-            <span className="text-xs sm:text-sm md:text-base font-medium whitespace-nowrap">Review</span>
+            <span className="text-xs sm:text-sm md:text-base font-medium whitespace-nowrap transition-colors text-gray-600 dark:text-white">Review</span>
           </button>
         
           {/* Save Button */}
         <button 
           onClick={() => onSave && onSave(album._id)}
-            className="flex flex-col items-center space-y-1 sm:space-y-2 md:space-y-3 text-gray-600 hover:text-purple-600 transition-colors touch-manipulation"
+            className="flex flex-col items-center space-y-1 sm:space-y-2 md:space-y-3 transition-colors touch-manipulation text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400"
           style={{ touchAction: 'manipulation' }}
         >
             <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-colors ${
@@ -722,7 +724,7 @@ export default function AlbumDisplay({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
               </svg>
             </div>
-            <span className="text-xs sm:text-sm md:text-base font-medium">{isSaved ? 'Saved' : 'Save'}</span>
+            <span className="text-xs sm:text-sm md:text-base font-medium transition-colors text-gray-600 dark:text-white">{isSaved ? 'Saved' : 'Save'}</span>
         </button>
         </div>
       </div>
@@ -731,14 +733,14 @@ export default function AlbumDisplay({
 
       {/* Comment Input */}
       {showCommentInput && (
-        <div className="mt-3 p-2 sm:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg transition-colors duration-200">
+        <div className="mt-3 p-2 sm:p-3 rounded-lg transition-colors duration-200 bg-gray-50 dark:bg-gray-700">
           <div className="flex gap-2">
             <input
               type="text"
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               placeholder="Write a comment..."
-              className="flex-1 px-2 sm:px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-200"
+              className="flex-1 px-2 sm:px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm sm:text-base transition-colors duration-200 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
             />
             <button
               onClick={() => {
@@ -749,7 +751,7 @@ export default function AlbumDisplay({
                 }
               }}
               disabled={!commentText.trim()}
-              className="px-3 sm:px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors text-sm sm:text-base touch-manipulation"
+              className="px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm sm:text-base touch-manipulation bg-blue-500 dark:bg-blue-600 text-white hover:bg-blue-600 dark:hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
               style={{ touchAction: 'manipulation' }}
             >
               Post
@@ -771,7 +773,7 @@ export default function AlbumDisplay({
             );
             
             return (
-              <div key={index} className="flex items-start gap-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg group transition-colors duration-200">
+              <div key={index} className="flex items-start gap-2 p-2 rounded-lg group transition-colors duration-200 bg-gray-50 dark:bg-gray-700">
                 <img 
                   src={comment.user?.avatar ? (comment.user.avatar.startsWith('http') ? comment.user.avatar : `${API_URL}/${comment.user.avatar}`) : '/avatars/1.png.png'} 
                   alt="avatar" 
@@ -784,12 +786,12 @@ export default function AlbumDisplay({
                         href={`/dashboard/profile/${String(comment.user._id)}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-sm font-medium hover:underline cursor-pointer text-gray-900 dark:text-white transition-colors duration-200"
+                        className="text-sm font-medium hover:underline cursor-pointer transition-colors duration-200 text-gray-900 dark:text-white"
                       >
                         {comment.user?.name || 'User'}
                       </a>
                     ) : (
-                      <span className="text-sm font-medium text-gray-900 dark:text-white transition-colors duration-200">{comment.user?.name || 'User'}</span>
+                      <span className="text-sm font-medium transition-colors duration-200 text-gray-900 dark:text-white">{comment.user?.name || 'User'}</span>
                     )}
                     
                     {/* Delete button for comment author */}
@@ -800,7 +802,9 @@ export default function AlbumDisplay({
                         className={`opacity-0 group-hover:opacity-100 ml-auto p-1 rounded transition-all duration-200 text-xs ${
                           deletingComments[`album-${album._id}-${comment._id || comment.id}`]
                             ? 'text-gray-400 cursor-not-allowed'
-                            : 'text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20'
+                            : isDarkMode 
+                              ? 'text-red-400 hover:text-red-300 hover:bg-red-900/20'
+                              : 'text-red-500 hover:text-red-700 hover:bg-red-50'
                         }`}
                         title={deletingComments[`album-${album._id}-${comment._id || comment.id}`] ? 'Deleting...' : 'Delete comment'}
                       >
@@ -808,13 +812,13 @@ export default function AlbumDisplay({
                       </button>
                     )}
                   </div>
-                  <span className="text-sm text-gray-600 dark:text-gray-400 transition-colors duration-200">{comment.text}</span>
+                  <span className="text-sm transition-colors duration-200 text-gray-600 dark:text-gray-300">{comment.text}</span>
                 </div>
               </div>
             );
           })}
           {album.comments.length > 3 && (
-            <button className="text-sm text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors duration-200">
+            <button className="text-sm transition-colors duration-200 text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
               View all {album.comments.length} comments
             </button>
           )}
