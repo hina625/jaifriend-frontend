@@ -56,7 +56,7 @@ interface DashboardLayoutProps {
 type DropdownType = 'people' | 'messages' | 'notifications' | 'profile' | null;
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
-  const { isDarkMode, toggleDarkMode } = useDarkMode();
+  const { isDarkMode, toggleDarkMode, resetToSystem, isSystemMode } = useDarkMode();
   const router = useRouter();
   const pathname = usePathname();
   
@@ -767,19 +767,33 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   };
 
   const renderSettingsMenuItems = (items: SettingsMenuItem[]): React.ReactElement => (
-    <div className="space-y-0.5">
+    <div className="space-y-1">
       {items.map((item) => (
         <Link
           key={item.name}
           href={item.href}
-          className={`w-full flex items-center px-2 py-1.5 text-xs font-medium rounded-md transition-colors ${
+          className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 group ${
             pathname === item.href
-              ? 'bg-blue-100 text-blue-700'
-              : 'text-gray-700 hover:bg-gray-100'
+              ? isDarkMode 
+                ? 'bg-blue-600 text-white shadow-lg' 
+                : 'bg-blue-100 text-blue-700 shadow-md'
+              : isDarkMode 
+                ? 'text-gray-300 hover:bg-gray-700 hover:text-white' 
+                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
           }`}
         >
-          <span className="text-sm mr-2 leading-none flex items-center justify-center w-4">{item.icon}</span>
-          {item.name}
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg mr-3 transition-all duration-200 ${
+            pathname === item.href
+              ? isDarkMode 
+                ? 'bg-white/20 text-white' 
+                : 'bg-blue-200 text-blue-600'
+              : isDarkMode 
+                ? 'bg-gray-600 text-gray-300 group-hover:bg-gray-500 group-hover:text-white' 
+                : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200 group-hover:text-gray-700'
+          }`}>
+            {item.icon}
+          </div>
+          <span className="font-medium">{item.name}</span>
         </Link>
       ))}
     </div>
@@ -1419,12 +1433,28 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
         {/* Mobile Profile Sidebar */}
         {isMobile && profileSidebarOpen && (
-          <aside className="fixed right-0 top-0 h-screen w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 z-[60] transform transition-transform duration-300" style={{ top: '64px', height: 'calc(100vh - 64px)' }}>
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-              <h2 className="text-gray-900 dark:text-white font-bold text-lg">Profile</h2>
+          <aside className={`fixed right-0 top-0 h-screen w-80 z-[60] transform transition-all duration-300 ${
+            isDarkMode 
+              ? 'bg-gray-900 border-l border-gray-700' 
+              : 'bg-white border-l border-gray-200'
+          }`} style={{ top: '64px', height: 'calc(100vh - 64px)' }}>
+            <div className={`p-4 border-b flex items-center justify-between ${
+              isDarkMode 
+                ? 'border-gray-700' 
+                : 'border-gray-200'
+            }`}>
+              <h2 className={`font-bold text-lg ${
+                isDarkMode 
+                  ? 'text-white' 
+                  : 'text-gray-900'
+              }`}>Profile</h2>
               <button
                 onClick={() => setProfileSidebarOpen(false)}
-                className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                  isDarkMode 
+                    ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                }`}
               >
                 ✕
               </button>
@@ -1432,24 +1462,44 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
             <div className="flex-1 p-4 overflow-y-auto">
               {/* Profile Section */}
-              <div className="flex items-center gap-2 mb-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div className={`flex items-center gap-2 mb-4 p-3 rounded-lg ${
+                isDarkMode 
+                  ? 'bg-gray-800' 
+                  : 'bg-gray-50'
+              }`}>
                 <img
                   src={profile.avatar}
                   alt="avatar"
-                  className="w-12 h-12 rounded-full border border-gray-200 dark:border-gray-600 object-cover"
+                  className={`w-12 h-12 rounded-full object-cover ${
+                    isDarkMode 
+                      ? 'border border-gray-600' 
+                      : 'border border-gray-200'
+                  }`}
                 />
                 <div className="flex flex-col">
                   <span 
-                    className="font-semibold text-sm text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
+                    className={`font-semibold text-sm cursor-pointer transition-colors ${
+                      isDarkMode 
+                        ? 'text-white hover:text-blue-400' 
+                        : 'text-gray-900 hover:text-blue-600'
+                    }`}
                     onClick={handleMyProfile}
                   >
                     My Profile
                   </span>
                   <div className="flex gap-1 mt-1">
-                    <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-600 px-1.5 py-0.5 rounded text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium ${
+                      isDarkMode 
+                        ? 'bg-gray-700 text-gray-300' 
+                        : 'bg-gray-100 text-gray-700'
+                    }`}>
                       💳 {profile.balance}
                     </span>
-                    <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-600 px-1.5 py-0.5 rounded text-xs font-medium text-gray-700 dark:text-gray-300">
+                    <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium ${
+                      isDarkMode 
+                        ? 'bg-gray-700 text-gray-300' 
+                        : 'bg-gray-100 text-gray-700'
+                    }`}>
                       👍 {profile.pokes} Pokes
                     </span>
                   </div>
@@ -1486,87 +1536,188 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                 </button>
                 
                 <button 
-                  className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
+                  className={`flex items-center gap-2 py-2 px-3 rounded-md text-left w-full transition-colors ${
+                    isDarkMode 
+                      ? 'hover:bg-gray-700' 
+                      : 'hover:bg-gray-50'
+                  }`}
                   onClick={() => router.push('/dashboard/upgrade')}
                 >
-                  <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">🛠️</span>
-                  <span className="font-medium text-gray-900 dark:text-white text-sm">Upgrade To Pro</span>
+                  <span className={`p-1.5 rounded-full text-sm ${
+                    isDarkMode 
+                      ? 'bg-gray-700' 
+                      : 'bg-gray-100'
+                  }`}>🛠️</span>
+                  <span className={`font-medium text-sm ${
+                    isDarkMode 
+                      ? 'text-white' 
+                      : 'text-gray-900'
+                  }`}>Upgrade To Pro</span>
                 </button>
                 
                 <button 
-                  className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
+                  className={`flex items-center gap-2 py-2 px-3 rounded-md text-left w-full transition-colors ${
+                    isDarkMode 
+                      ? 'hover:bg-gray-700' 
+                      : 'hover:bg-gray-50'
+                  }`}
                   onClick={() => router.push('/dashboard/advertising')}
                 >
-                  <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">📢</span>
-                  <span className="font-medium text-gray-900 dark:text-white text-sm">Advertising</span>
+                  <span className={`p-1.5 rounded-full text-sm ${
+                    isDarkMode 
+                      ? 'bg-gray-700' 
+                      : 'bg-gray-100'
+                  }`}>📢</span>
+                  <span className={`font-medium text-sm ${
+                    isDarkMode 
+                      ? 'text-white' 
+                      : 'text-gray-900'
+                  }`}>Advertising</span>
                 </button>
                 
                 <button 
-                  className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
+                  className={`flex items-center gap-2 py-2 px-3 rounded-md text-left w-full transition-colors ${
+                    isDarkMode 
+                      ? 'hover:bg-gray-700' 
+                      : 'hover:bg-gray-50'
+                  }`}
                   onClick={() => router.push('/dashboard/subscriptions')}
                 >
-                  <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">💳</span>
-                  <span className="font-medium text-gray-900 dark:text-white text-sm">Subscriptions</span>
+                  <span className={`p-1.5 rounded-full text-sm ${
+                    isDarkMode 
+                      ? 'bg-gray-700' 
+                      : 'bg-gray-100'
+                  }`}>💳</span>
+                  <span className={`font-medium text-sm ${
+                    isDarkMode 
+                      ? 'text-white' 
+                      : 'text-gray-900'
+                  }`}>Subscriptions</span>
                 </button>
                 
-                <div className="border-t border-gray-200 dark:border-gray-600 my-2"></div>
+                <div className={`my-2 ${
+                  isDarkMode 
+                    ? 'border-gray-600' 
+                    : 'border-gray-200'
+                } border-t`}></div>
                 
                 <button 
-                  className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
+                  className={`flex items-center gap-2 py-2 px-3 rounded-md text-left w-full transition-colors ${
+                    isDarkMode 
+                      ? 'hover:bg-gray-700' 
+                      : 'hover:bg-gray-50'
+                  }`}
                   onClick={() => {
                     router.push('/dashboard/settings/privacy');
                     setProfileSidebarOpen(false);
                   }}
                 >
-                  <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">✔️</span>
-                  <span className="font-medium text-gray-900 dark:text-white text-sm">Privacy Setting</span>
+                  <span className={`p-1.5 rounded-full text-sm ${
+                    isDarkMode 
+                      ? 'bg-gray-700' 
+                      : 'bg-gray-100'
+                  }`}>✔️</span>
+                  <span className={`font-medium text-sm ${
+                    isDarkMode 
+                      ? 'text-white' 
+                      : 'text-gray-900'
+                  }`}>Privacy Setting</span>
                 </button>
                 
                 <button 
-                  className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
+                  className={`flex items-center gap-2 py-2 px-3 rounded-md text-left w-full transition-colors ${
+                    isDarkMode 
+                      ? 'hover:bg-gray-700' 
+                      : 'hover:bg-gray-50'
+                  }`}
                   onClick={() => {
                     router.push('/dashboard/settings');
                     setProfileSidebarOpen(false);
                   }}
                 >
-                  <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">⚙️</span>
-                  <span className="font-medium text-gray-900 dark:text-white text-sm">General Setting</span>
+                  <span className={`p-1.5 rounded-full text-sm ${
+                    isDarkMode 
+                      ? 'bg-gray-700' 
+                      : 'bg-gray-100'
+                  }`}>⚙️</span>
+                  <span className={`font-medium text-sm ${
+                    isDarkMode 
+                      ? 'text-white' 
+                      : 'text-gray-900'
+                  }`}>General Setting</span>
                 </button>
                 
                 <button 
-                  className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
+                  className={`flex items-center gap-2 py-2 px-3 rounded-md text-left w-full transition-colors ${
+                    isDarkMode 
+                      ? 'hover:bg-gray-700' 
+                      : 'hover:bg-gray-50'
+                  }`}
                   onClick={() => router.push('/dashboard/invite')}
                 >
-                  <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">✉️</span>
-                  <span className="font-medium text-gray-900 dark:text-white text-sm">Invite Your Friends</span>
+                  <span className={`p-1.5 rounded-full text-sm ${
+                    isDarkMode 
+                      ? 'bg-gray-700' 
+                      : 'bg-gray-100'
+                  }`}>✉️</span>
+                  <span className={`font-medium text-sm ${
+                    isDarkMode 
+                      ? 'text-white' 
+                      : 'text-gray-900'
+                  }`}>Invite Your Friends</span>
                 </button>
                 
                 <button 
-                  className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
+                  className={`flex items-center gap-2 py-2 px-3 rounded-md text-left w-full transition-colors ${
+                    isDarkMode 
+                      ? 'hover:bg-gray-700' 
+                      : 'hover:bg-gray-50'
+                  }`}
                   onClick={() => {
                     router.push('/dashboard/admin');
                     setProfileSidebarOpen(false);
                   }}
                 >
-                  <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">👑</span>
-                  <span className="font-medium text-gray-900 dark:text-white text-sm">Admin Dashboard</span>
+                  <span className={`p-1.5 rounded-full text-sm ${
+                    isDarkMode 
+                      ? 'bg-gray-700' 
+                      : 'bg-gray-100'
+                  }`}>👑</span>
+                  <span className={`font-medium text-sm ${
+                    isDarkMode 
+                      ? 'text-white' 
+                      : 'text-gray-900'
+                  }`}>Admin Dashboard</span>
                 </button>
                 
                 <div className="border-t border-gray-200 dark:border-gray-600 my-2"></div>
                 
-                <div className="flex items-center gap-3 py-3 px-4">
-                  <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🌙</span>
-                  <span className="font-medium flex-1 text-gray-900 dark:text-white">Night mode</span>
-                  <input 
-                    type="checkbox" 
-                    id="night-mode-toggle-mobile"
-                    className="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
-                    checked={isDarkMode}
-                    onChange={(e) => {
-                      toggleDarkMode();
-                    }}
-                    aria-label="Toggle night mode"
-                  />
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 py-3 px-4">
+                    <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🌙</span>
+                    <span className="font-medium flex-1 text-gray-900 dark:text-white">
+                      {isSystemMode ? 'Follow System' : 'Night mode'}
+                    </span>
+                    <input 
+                      type="checkbox" 
+                      id="night-mode-toggle-mobile"
+                      className="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                      checked={isDarkMode}
+                      onChange={(e) => {
+                        toggleDarkMode();
+                      }}
+                      aria-label="Toggle night mode"
+                    />
+                  </div>
+                  {!isSystemMode && (
+                    <button 
+                      className="flex items-center gap-2 py-2 px-4 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors w-full"
+                      onClick={resetToSystem}
+                    >
+                      <span className="text-sm">🔄</span>
+                      <span>Reset to System</span>
+                    </button>
+                  )}
                 </div>
                 
                 <button 
@@ -1579,21 +1730,61 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               </div>
 
               {/* Footer */}
-              <div className="mt-8 p-4 border-t border-gray-200 dark:border-gray-600">
-                <div className="text-xs text-gray-400 flex flex-col items-center gap-2">
+              <div className={`mt-8 p-4 border-t ${
+                isDarkMode 
+                  ? 'border-gray-600' 
+                  : 'border-gray-200'
+              }`}>
+                <div className={`text-xs flex flex-col items-center gap-2 ${
+                  isDarkMode 
+                    ? 'text-gray-400' 
+                    : 'text-gray-500'
+                }`}>
                   <div className="flex items-center gap-2">
                     <span>© 2025 Jaifriend</span>
                     <span>•</span>
-                    <button className="underline cursor-pointer hover:text-gray-600">Language</button>
+                    <button className={`underline cursor-pointer transition-colors ${
+                      isDarkMode 
+                        ? 'hover:text-gray-300' 
+                        : 'hover:text-gray-700'
+                    }`}>Language</button>
                   </div>
                   <div className="flex flex-wrap gap-2 justify-center">
-                    <button className="underline cursor-pointer hover:text-gray-600 text-xs">About</button>
-                    <button className="underline cursor-pointer hover:text-gray-600 text-xs">Directory</button>
-                    <button className="underline cursor-pointer hover:text-gray-600 text-xs">Contact Us</button>
-                    <button className="underline cursor-pointer hover:text-gray-600 text-xs">Developers</button>
-                    <button className="underline cursor-pointer hover:text-gray-600 text-xs">Privacy Policy</button>
-                    <button className="underline cursor-pointer hover:text-gray-600 text-xs">Terms of Use</button>
-                    <button className="underline cursor-pointer hover:text-gray-600 text-xs">Refund</button>
+                    <button className={`underline cursor-pointer transition-colors text-xs ${
+                      isDarkMode 
+                        ? 'hover:text-gray-300' 
+                        : 'hover:text-gray-700'
+                    }`}>About</button>
+                    <button className={`underline cursor-pointer transition-colors text-xs ${
+                      isDarkMode 
+                        ? 'hover:text-gray-300' 
+                        : 'hover:text-gray-700'
+                    }`}>Directory</button>
+                    <button className={`underline cursor-pointer transition-colors text-xs ${
+                      isDarkMode 
+                        ? 'hover:text-gray-300' 
+                        : 'hover:text-gray-700'
+                    }`}>Contact Us</button>
+                    <button className={`underline cursor-pointer transition-colors text-xs ${
+                      isDarkMode 
+                        ? 'hover:text-gray-300' 
+                        : 'hover:text-gray-700'
+                    }`}>Developers</button>
+                    <button className={`underline cursor-pointer transition-colors text-xs ${
+                      isDarkMode 
+                        ? 'hover:text-gray-300' 
+                        : 'hover:text-gray-700'
+                    }`}>Privacy Policy</button>
+                    <button className={`underline cursor-pointer transition-colors text-xs ${
+                      isDarkMode 
+                        ? 'hover:text-gray-300' 
+                        : 'hover:text-gray-700'
+                    }`}>Terms of Use</button>
+                    <button className={`underline cursor-pointer transition-colors text-xs ${
+                      isDarkMode 
+                        ? 'hover:text-gray-300' 
+                        : 'hover:text-gray-700'
+                    }`}>Refund</button>
                   </div>
                 </div>
               </div>
@@ -1609,20 +1800,19 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
               isMobile 
                 ? (sidebarOpen ? 'translate-x-0' : '-translate-x-full')
                 : 'translate-x-0'
-            }`} style={{
-              background: isAdminPage ? '#2C2C2C' : '#ffffff',
-              boxShadow: isAdminPage ? 'none' : '6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.9)',
+            } ${isAdminPage ? 'bg-gray-900' : 'bg-white dark:bg-gray-800'}`} style={{
               height: 'calc(100vh - 64px)',
               top: '64px',
               padding: isAdminPage ? '12px' : '16px',
               scrollbarWidth: 'thin',
-              scrollbarColor: isAdminPage ? '#4A4A4A #2C2C2C' : '#022e8a #f4f4f9',
+              scrollbarColor: isAdminPage ? '#4A4A4A #2C2C2C' : isDarkMode ? '#4A4A4A #374151' : '#022e8a #f4f4f9',
               display: 'flex',
               flexDirection: 'column',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              boxShadow: isAdminPage ? 'none' : isDarkMode ? '6px 6px 12px rgba(0, 0, 0, 0.3), -6px -6px 12px rgba(0, 0, 0, 0.1)' : '6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.9)'
             }}>
                           <div className="flex items-center justify-between mb-4">
-              <h2 className={`font-bold text-lg ${isAdminPage ? 'text-white' : 'text-gray-900'}`}>
+              <h2 className={`font-bold text-lg ${isAdminPage ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
                 {isSettingsPage ? 'Settings' : isAdminPage ? 'Admin' : 'Menu'}
               </h2>
               <button
@@ -1630,10 +1820,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   className={`w-8 h-8 rounded-full flex items-center justify-center hover:transition-colors ${
                     isAdminPage 
                       ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                      : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'
                   }`}
                   style={!isAdminPage ? {
-                    boxShadow: '6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.9)'
+                    boxShadow: isDarkMode ? '6px 6px 12px rgba(0, 0, 0, 0.3), -6px -6px 12px rgba(0, 0, 0, 0.1)' : '6px 6px 12px rgba(0, 0, 0, 0.1), -6px -6px 12px rgba(255, 255, 255, 0.9)'
                   } : {}}
               >
                 ✕
@@ -1658,17 +1848,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   <div className="mb-4">
                     <button 
                       onClick={() => setSettingsOpen(!settingsOpen)} 
-                      className={`flex items-center justify-between w-full mb-2 p-2 rounded-lg transition-colors focus:outline-none ${
+                      className={`flex items-center justify-between w-full mb-3 p-3 rounded-lg transition-colors focus:outline-none ${
                         isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-[#eaf0fb]'
                       }`}
                     >
-                      <h3 className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-[#022e8a]'}`}>SETTINGS</h3>
+                      <h3 className={`font-bold text-base ${isDarkMode ? 'text-white' : 'text-[#022e8a]'}`}>SETTINGS</h3>
                       {!isMobile && (
                       <span className={`transition-transform duration-200 ${settingsOpen ? 'rotate-180' : ''} ${isDarkMode ? 'text-gray-300' : 'text-[#022e8a]'}`}>▼</span>
                       )}
                     </button>
                     {(settingsOpen || isMobile) && (
-                      <div className="pl-2">
+                      <div className="pl-1">
                         {renderSettingsMenuItems(settingsSections.settings)}
                       </div>
                     )}
@@ -1678,17 +1868,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   <div className="mb-4">
                     <button 
                       onClick={() => setProfileSettingsOpen(!profileSettingsOpen)} 
-                      className={`flex items-center justify-between w-full mb-2 p-2 rounded-lg transition-colors focus:outline-none ${
+                      className={`flex items-center justify-between w-full mb-3 p-3 rounded-lg transition-colors focus:outline-none ${
                         isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-[#eaf0fb]'
                       }`}
                     >
-                      <h3 className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-[#022e8a]'}`}>PROFILE</h3>
+                      <h3 className={`font-bold text-base ${isDarkMode ? 'text-white' : 'text-[#022e8a]'}`}>PROFILE</h3>
                       {!isMobile && (
                       <span className={`transition-transform duration-200 ${profileSettingsOpen ? 'rotate-180' : ''} ${isDarkMode ? 'text-gray-300' : 'text-[#022e8a]'}`}>▼</span>
                       )}
                     </button>
                     {(profileSettingsOpen || isMobile) && (
-                      <div className="pl-2">
+                      <div className="pl-1">
                         {renderSettingsMenuItems(settingsSections.profile)}
                       </div>
                     )}
@@ -1698,17 +1888,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   <div className="mb-4">
                     <button 
                       onClick={() => setSecuritySettingsOpen(!securitySettingsOpen)} 
-                      className={`flex items-center justify-between w-full mb-2 p-2 rounded-lg transition-colors focus:outline-none ${
+                      className={`flex items-center justify-between w-full mb-3 p-3 rounded-lg transition-colors focus:outline-none ${
                         isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-[#eaf0fb]'
                       }`}
                     >
-                      <h3 className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-[#022e8a]'}`}>SECURITY</h3>
+                      <h3 className={`font-bold text-base ${isDarkMode ? 'text-white' : 'text-[#022e8a]'}`}>SECURITY</h3>
                       {!isMobile && (
                       <span className={`transition-transform duration-200 ${securitySettingsOpen ? 'rotate-180' : ''} ${isDarkMode ? 'text-gray-300' : 'text-[#022e8a]'}`}>▼</span>
                       )}
                     </button>
                     {(securitySettingsOpen || isMobile) && (
-                      <div className="pl-2">
+                      <div className="pl-1">
                         {renderSettingsMenuItems(settingsSections.security)}
                       </div>
                     )}
@@ -1817,22 +2007,34 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       {(settingsOpen || sidebarCollapsed) && (
                         <div className={sidebarCollapsed ? '' : 'pl-2'}>
                           {sidebarCollapsed ? (
-                            <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-2">
                               {settingsSections.settings.map((item) => (
                                 <Link
                                   key={item.name}
                                   href={item.href}
-                                  className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 border-2 group relative ${
+                                  className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-200 group relative ${
                                     pathname === item.href 
-                                      ? 'bg-[#eaf0fb] border-[#022e8a] shadow scale-105' 
-                                      : 'hover:bg-[#eaf0fb] border-transparent'
+                                      ? isDarkMode 
+                                        ? 'bg-blue-600 text-white shadow-lg scale-105' 
+                                        : 'bg-blue-100 border-2 border-blue-300 shadow-md scale-105' 
+                                      : isDarkMode 
+                                        ? 'hover:bg-gray-700 text-gray-300' 
+                                        : 'hover:bg-gray-100 text-gray-700'
                                   }`}
                                   title={item.name}
                                 >
-                                  <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center text-sm shadow group-hover:scale-110 transition-transform leading-none">
+                                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl shadow group-hover:scale-110 transition-all duration-200 ${
+                                    pathname === item.href
+                                      ? isDarkMode 
+                                        ? 'bg-white/20 text-white' 
+                                        : 'bg-blue-200 text-blue-600'
+                                      : isDarkMode 
+                                        ? 'bg-gray-600 text-gray-300' 
+                                        : 'bg-gray-100 text-gray-600'
+                                  }`}>
                                     {item.icon}
                                   </div>
-                                  <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                                  <div className="absolute left-full ml-3 px-3 py-2 bg-gray-800 dark:bg-gray-700 text-white text-sm rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none font-medium">
                                     {item.name}
                                   </div>
                                 </Link>
@@ -1863,22 +2065,34 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       {(profileSettingsOpen || sidebarCollapsed) && (
                         <div className={sidebarCollapsed ? '' : 'pl-2'}>
                           {sidebarCollapsed ? (
-                            <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-2">
                               {settingsSections.profile.map((item) => (
                                 <Link
                                   key={item.name}
                                   href={item.href}
-                                  className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 border-2 group relative ${
+                                  className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-200 group relative ${
                                     pathname === item.href 
-                                      ? 'bg-[#eaf0fb] border-[#022e8a] shadow scale-105' 
-                                      : 'hover:bg-[#eaf0fb] border-transparent'
+                                      ? isDarkMode 
+                                        ? 'bg-blue-600 text-white shadow-lg scale-105' 
+                                        : 'bg-blue-100 border-2 border-blue-300 shadow-md scale-105' 
+                                      : isDarkMode 
+                                        ? 'hover:bg-gray-700 text-gray-300' 
+                                        : 'hover:bg-gray-100 text-gray-700'
                                   }`}
                                   title={item.name}
                                 >
-                                  <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-sm shadow group-hover:scale-110 transition-transform leading-none">
+                                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl shadow group-hover:scale-110 transition-all duration-200 ${
+                                    pathname === item.href
+                                      ? isDarkMode 
+                                        ? 'bg-white/20 text-white' 
+                                        : 'bg-blue-200 text-blue-600'
+                                      : isDarkMode 
+                                        ? 'bg-gray-600 text-gray-300' 
+                                        : 'bg-gray-100 text-gray-600'
+                                  }`}>
                                     {item.icon}
                                   </div>
-                                  <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                                  <div className="absolute left-full ml-3 px-3 py-2 bg-gray-800 dark:bg-gray-700 text-white text-sm rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none font-medium">
                                     {item.name}
                                   </div>
                                 </Link>
@@ -1909,22 +2123,34 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       {(securitySettingsOpen || sidebarCollapsed) && (
                         <div className={sidebarCollapsed ? '' : 'pl-2'}>
                           {sidebarCollapsed ? (
-                            <div className="flex flex-col gap-1">
+                            <div className="flex flex-col gap-2">
                               {settingsSections.security.map((item) => (
                                 <Link
                                   key={item.name}
                                   href={item.href}
-                                  className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all duration-200 border-2 group relative ${
+                                  className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-200 group relative ${
                                     pathname === item.href 
-                                      ? 'bg-[#eaf0fb] border-[#022e8a] shadow scale-105' 
-                                      : 'hover:bg-[#eaf0fb] border-transparent'
+                                      ? isDarkMode 
+                                        ? 'bg-red-600 text-white shadow-lg scale-105' 
+                                        : 'bg-red-100 border-2 border-red-300 shadow-md scale-105' 
+                                      : isDarkMode 
+                                        ? 'hover:bg-gray-700 text-gray-300' 
+                                        : 'hover:bg-gray-100 text-gray-700'
                                   }`}
                                   title={item.name}
                                 >
-                                  <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center text-sm shadow group-hover:scale-110 transition-transform leading-none">
+                                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl shadow group-hover:scale-110 transition-all duration-200 ${
+                                    pathname === item.href
+                                      ? isDarkMode 
+                                        ? 'bg-white/20 text-white' 
+                                        : 'bg-red-200 text-red-600'
+                                      : isDarkMode 
+                                        ? 'bg-gray-600 text-gray-300' 
+                                        : 'bg-gray-100 text-gray-600'
+                                  }`}>
                                     {item.icon}
                                   </div>
-                                  <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                                  <div className="absolute left-full ml-3 px-3 py-2 bg-gray-800 dark:bg-gray-700 text-white text-sm rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none font-medium">
                                     {item.name}
                                   </div>
                                 </Link>
@@ -1993,16 +2219,28 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
             </aside>
 
             {/* Desktop Profile Sidebar */}
-            <aside className={`bg-white border-r border-gray-200 overflow-y-auto overflow-x-hidden flex flex-col fixed left-0 top-0 h-screen transition-all duration-300 scrollbar-hide z-[60] ${
+            <aside className={`overflow-y-auto overflow-x-hidden flex flex-col fixed left-0 top-0 h-screen transition-all duration-300 scrollbar-hide z-[60] ${
               profileSidebarOpen ? 'w-64' : 'w-0'
-            }`}>
+            } ${isDarkMode ? 'bg-gray-900 border-r border-gray-700' : 'bg-white border-r border-gray-200'}`}>
               {profileSidebarOpen && (
                 <>
-                  <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-                    <h2 className="text-gray-900 font-bold text-lg">Profile</h2>
+                  <div className={`p-4 border-b flex items-center justify-between ${
+                    isDarkMode 
+                      ? 'border-gray-700' 
+                      : 'border-gray-200'
+                  }`}>
+                    <h2 className={`font-bold text-lg ${
+                      isDarkMode 
+                        ? 'text-white' 
+                        : 'text-gray-900'
+                    }`}>Profile</h2>
                     <button
                       onClick={() => setProfileSidebarOpen(false)}
-                      className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                        isDarkMode 
+                          ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                          : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                      }`}
                     >
                       ✕
                     </button>
@@ -2010,24 +2248,44 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
                   <div className="flex-1 p-4 overflow-y-auto scrollbar-hide">
                     {/* Profile Section */}
-                    <div className="flex items-center gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
+                    <div className={`flex items-center gap-2 mb-4 p-3 rounded-lg ${
+                      isDarkMode 
+                        ? 'bg-gray-800' 
+                        : 'bg-gray-50'
+                    }`}>
                       <img
                         src={profile.avatar}
                         alt="avatar"
-                        className="w-12 h-12 rounded-full border border-gray-200 object-cover"
+                        className={`w-12 h-12 rounded-full object-cover ${
+                          isDarkMode 
+                            ? 'border border-gray-600' 
+                            : 'border border-gray-200'
+                        }`}
                       />
                       <div className="flex flex-col">
                         <span 
-                          className="font-semibold text-sm text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
+                          className={`font-semibold text-sm cursor-pointer transition-colors ${
+                            isDarkMode 
+                              ? 'text-white hover:text-blue-400' 
+                              : 'text-gray-900 hover:text-blue-600'
+                          }`}
                           onClick={handleMyProfile}
                         >
                           My Profile
                         </span>
                         <div className="flex gap-1 mt-1">
-                          <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs font-medium text-gray-700 dark:text-gray-300">
+                          <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium ${
+                            isDarkMode 
+                              ? 'bg-gray-700 text-gray-300' 
+                              : 'bg-gray-100 text-gray-700'
+                          }`}>
                             💳 {profile.balance}
                           </span>
-                          <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs font-medium text-gray-700 dark:text-gray-300">
+                          <span className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium ${
+                            isDarkMode 
+                              ? 'bg-gray-700 text-gray-300' 
+                              : 'bg-gray-100 text-gray-700'
+                          }`}>
                             👍 {profile.pokes} Pokes
                           </span>
                         </div>
@@ -2064,87 +2322,188 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       </button>
                       
                       <button 
-                        className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
+                        className={`flex items-center gap-2 py-2 px-3 rounded-md text-left w-full transition-colors ${
+                          isDarkMode 
+                            ? 'hover:bg-gray-700' 
+                            : 'hover:bg-gray-50'
+                        }`}
                         onClick={() => router.push('/dashboard/upgrade')}
                       >
-                        <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">🛠️</span>
-                        <span className="font-medium text-gray-900 dark:text-white text-sm">Upgrade To Pro</span>
+                        <span className={`p-1.5 rounded-full text-sm ${
+                          isDarkMode 
+                            ? 'bg-gray-700' 
+                            : 'bg-gray-100'
+                        }`}>🛠️</span>
+                        <span className={`font-medium text-sm ${
+                          isDarkMode 
+                            ? 'text-white' 
+                            : 'text-gray-900'
+                        }`}>Upgrade To Pro</span>
                       </button>
                       
                       <button 
-                        className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
+                        className={`flex items-center gap-2 py-2 px-3 rounded-md text-left w-full transition-colors ${
+                          isDarkMode 
+                            ? 'hover:bg-gray-700' 
+                            : 'hover:bg-gray-50'
+                        }`}
                         onClick={() => router.push('/dashboard/advertising')}
                       >
-                        <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">📢</span>
-                        <span className="font-medium text-gray-900 dark:text-white text-sm">Advertising</span>
+                        <span className={`p-1.5 rounded-full text-sm ${
+                          isDarkMode 
+                            ? 'bg-gray-700' 
+                            : 'bg-gray-100'
+                        }`}>📢</span>
+                        <span className={`font-medium text-sm ${
+                          isDarkMode 
+                            ? 'text-white' 
+                            : 'text-gray-900'
+                        }`}>Advertising</span>
                       </button>
                       
                       <button 
-                        className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
+                        className={`flex items-center gap-2 py-2 px-3 rounded-md text-left w-full transition-colors ${
+                          isDarkMode 
+                            ? 'hover:bg-gray-700' 
+                            : 'hover:bg-gray-50'
+                        }`}
                         onClick={() => router.push('/dashboard/subscriptions')}
                       >
-                        <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">💳</span>
-                        <span className="font-medium text-gray-900 dark:text-white text-sm">Subscriptions</span>
+                        <span className={`p-1.5 rounded-full text-sm ${
+                          isDarkMode 
+                            ? 'bg-gray-700' 
+                            : 'bg-gray-100'
+                        }`}>💳</span>
+                        <span className={`font-medium text-sm ${
+                          isDarkMode 
+                            ? 'text-white' 
+                            : 'text-gray-900'
+                        }`}>Subscriptions</span>
                       </button>
                       
-                      <div className="border-t border-gray-200 my-2"></div>
+                      <div className={`my-2 ${
+                        isDarkMode 
+                          ? 'border-gray-600' 
+                          : 'border-gray-200'
+                      } border-t`}></div>
                       
                       <button 
-                        className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
+                        className={`flex items-center gap-2 py-2 px-3 rounded-md text-left w-full transition-colors ${
+                          isDarkMode 
+                            ? 'hover:bg-gray-700' 
+                            : 'hover:bg-gray-50'
+                        }`}
                         onClick={() => {
                           router.push('/dashboard/settings/privacy');
                           setProfileSidebarOpen(false);
                         }}
                       >
-                        <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">✔️</span>
-                        <span className="font-medium text-gray-900 dark:text-white text-sm">Privacy Setting</span>
+                        <span className={`p-1.5 rounded-full text-sm ${
+                          isDarkMode 
+                            ? 'bg-gray-700' 
+                            : 'bg-gray-100'
+                        }`}>✔️</span>
+                        <span className={`font-medium text-sm ${
+                          isDarkMode 
+                            ? 'text-white' 
+                            : 'text-gray-900'
+                        }`}>Privacy Setting</span>
                       </button>
                       
                       <button 
-                        className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
+                        className={`flex items-center gap-2 py-2 px-3 rounded-md text-left w-full transition-colors ${
+                          isDarkMode 
+                            ? 'hover:bg-gray-700' 
+                            : 'hover:bg-gray-50'
+                        }`}
                         onClick={() => {
                           router.push('/dashboard/settings');
                           setProfileSidebarOpen(false);
                         }}
                       >
-                        <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">⚙️</span>
-                        <span className="font-medium text-gray-900 dark:text-white text-sm">General Setting</span>
+                        <span className={`p-1.5 rounded-full text-sm ${
+                          isDarkMode 
+                            ? 'bg-gray-700' 
+                            : 'bg-gray-100'
+                        }`}>⚙️</span>
+                        <span className={`font-medium text-sm ${
+                          isDarkMode 
+                            ? 'text-white' 
+                            : 'text-gray-900'
+                        }`}>General Setting</span>
                       </button>
                       
                       <button 
-                        className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
+                        className={`flex items-center gap-2 py-2 px-3 rounded-md text-left w-full transition-colors ${
+                          isDarkMode 
+                            ? 'hover:bg-gray-700' 
+                            : 'hover:bg-gray-50'
+                        }`}
                         onClick={() => router.push('/dashboard/invite')}
                       >
-                        <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">✉️</span>
-                        <span className="font-medium text-gray-900 dark:text-white text-sm">Invite Your Friends</span>
+                        <span className={`p-1.5 rounded-full text-sm ${
+                          isDarkMode 
+                            ? 'bg-gray-700' 
+                            : 'bg-gray-100'
+                        }`}>✉️</span>
+                        <span className={`font-medium text-sm ${
+                          isDarkMode 
+                            ? 'text-white' 
+                            : 'text-gray-900'
+                        }`}>Invite Your Friends</span>
                       </button>
                       
                       <button 
-                        className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md text-left w-full transition-colors"
+                        className={`flex items-center gap-2 py-2 px-3 rounded-md text-left w-full transition-colors ${
+                          isDarkMode 
+                            ? 'hover:bg-gray-700' 
+                            : 'hover:bg-gray-50'
+                        }`}
                         onClick={() => {
                           router.push('/dashboard/admin');
                           setProfileSidebarOpen(false);
                         }}
                       >
-                        <span className="bg-gray-100 dark:bg-gray-700 p-1.5 rounded-full text-sm">👑</span>
-                        <span className="font-medium text-gray-900 dark:text-white text-sm">Admin Dashboard</span>
+                        <span className={`p-1.5 rounded-full text-sm ${
+                          isDarkMode 
+                            ? 'bg-gray-700' 
+                            : 'bg-gray-100'
+                        }`}>👑</span>
+                        <span className={`font-medium text-sm ${
+                          isDarkMode 
+                            ? 'text-white' 
+                            : 'text-gray-900'
+                        }`}>Admin Dashboard</span>
                       </button>
                       
                       <div className="border-t border-gray-200 my-2"></div>
                       
-                      <div className="flex items-center gap-3 py-3 px-4">
-                        <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🌙</span>
-                        <span className="font-medium flex-1 text-gray-900 dark:text-white">Night mode</span>
-                        <input 
-                          type="checkbox" 
-                          id="night-mode-toggle-desktop"
-                          className="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
-                          checked={isDarkMode}
-                          onChange={(e) => {
-                            toggleDarkMode();
-                          }}
-                          aria-label="Toggle night mode"
-                        />
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3 py-3 px-4">
+                          <span className="bg-gray-100 dark:bg-gray-700 p-2 rounded-full text-lg">🌙</span>
+                          <span className="font-medium flex-1 text-gray-900 dark:text-white">
+                            {isSystemMode ? 'Follow System' : 'Night mode'}
+                          </span>
+                          <input 
+                            type="checkbox" 
+                            id="night-mode-toggle-desktop"
+                            className="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                            checked={isDarkMode}
+                            onChange={(e) => {
+                              toggleDarkMode();
+                            }}
+                            aria-label="Toggle night mode"
+                          />
+                        </div>
+                        {!isSystemMode && (
+                          <button 
+                            className="flex items-center gap-2 py-2 px-4 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors w-full"
+                            onClick={resetToSystem}
+                          >
+                            <span className="text-sm">🔄</span>
+                            <span>Reset to System</span>
+                          </button>
+                        )}
                       </div>
                       
                       <button 
@@ -2157,21 +2516,61 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                     </div>
 
                     {/* Footer */}
-                    <div className="mt-8 p-4 border-t border-gray-200">
-                      <div className="text-xs text-gray-400 flex flex-col items-center gap-2">
+                    <div className={`mt-8 p-4 border-t ${
+                      isDarkMode 
+                        ? 'border-gray-600' 
+                        : 'border-gray-200'
+                    }`}>
+                      <div className={`text-xs flex flex-col items-center gap-2 ${
+                        isDarkMode 
+                          ? 'text-gray-400' 
+                          : 'text-gray-500'
+                      }`}>
                         <div className="flex items-center gap-2">
                           <span>© 2025 Jaifriend</span>
                           <span>•</span>
-                          <button className="underline cursor-pointer hover:text-gray-600">Language</button>
+                          <button className={`underline cursor-pointer transition-colors ${
+                            isDarkMode 
+                              ? 'hover:text-gray-300' 
+                              : 'hover:text-gray-700'
+                          }`}>Language</button>
                         </div>
                         <div className="flex flex-wrap gap-2 justify-center">
-                          <button className="underline cursor-pointer hover:text-gray-600 text-xs">About</button>
-                          <button className="underline cursor-pointer hover:text-gray-600 text-xs">Directory</button>
-                          <button className="underline cursor-pointer hover:text-gray-600 text-xs">Contact Us</button>
-                          <button className="underline cursor-pointer hover:text-gray-600 text-xs">Developers</button>
-                          <button className="underline cursor-pointer hover:text-gray-600 text-xs">Privacy Policy</button>
-                          <button className="underline cursor-pointer hover:text-gray-600 text-xs">Terms of Use</button>
-                          <button className="underline cursor-pointer hover:text-gray-600 text-xs">Refund</button>
+                          <button className={`underline cursor-pointer transition-colors text-xs ${
+                            isDarkMode 
+                              ? 'hover:text-gray-300' 
+                              : 'hover:text-gray-700'
+                          }`}>About</button>
+                          <button className={`underline cursor-pointer transition-colors text-xs ${
+                            isDarkMode 
+                              ? 'hover:text-gray-300' 
+                              : 'hover:text-gray-700'
+                          }`}>Directory</button>
+                          <button className={`underline cursor-pointer transition-colors text-xs ${
+                            isDarkMode 
+                              ? 'hover:text-gray-300' 
+                              : 'hover:text-gray-700'
+                          }`}>Contact Us</button>
+                          <button className={`underline cursor-pointer transition-colors text-xs ${
+                            isDarkMode 
+                              ? 'hover:text-gray-300' 
+                              : 'hover:text-gray-700'
+                          }`}>Developers</button>
+                          <button className={`underline cursor-pointer transition-colors text-xs ${
+                            isDarkMode 
+                              ? 'hover:text-gray-300' 
+                              : 'hover:text-gray-700'
+                          }`}>Privacy Policy</button>
+                          <button className={`underline cursor-pointer transition-colors text-xs ${
+                            isDarkMode 
+                              ? 'hover:text-gray-300' 
+                              : 'hover:text-gray-700'
+                          }`}>Terms of Use</button>
+                          <button className={`underline cursor-pointer transition-colors text-xs ${
+                            isDarkMode 
+                              ? 'hover:text-gray-300' 
+                              : 'hover:text-gray-700'
+                          }`}>Refund</button>
                         </div>
                       </div>
                     </div>

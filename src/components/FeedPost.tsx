@@ -37,14 +37,6 @@ const FeedPost: React.FC<FeedPostProps> = ({
   onWatch
 }) => {
   
-  // Debug logging to see what post data we're receiving
-  console.log('🔍 FeedPost received post data:', {
-    postId: post._id,
-    userData: post.user,
-    hasAvatar: !!post.user?.avatar,
-    avatarUrl: post.user?.avatar,
-    userName: post.user?.name
-  });
 
   const router = useRouter();
   const [showCommentInput, setShowCommentInput] = useState(false);
@@ -72,16 +64,15 @@ const FeedPost: React.FC<FeedPostProps> = ({
   const reactionPopupWrapperRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Handle click outside to close pickers
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
         setShowEmojiPicker(false);
       }
       if (mediaPickerRef.current && !mediaPickerRef.current.contains(event.target as Node)) {
         setShowMediaPicker(false);
       }
-      // Close reaction popup when clicking outside both the button and the popup
+      
       if (showReactionPopup) {
         const buttonEl = reactionButtonRef.current;
         const popupEl = reactionPopupWrapperRef.current;
@@ -94,9 +85,13 @@ const FeedPost: React.FC<FeedPostProps> = ({
       }
     };
 
+  
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
     };
   }, [showReactionPopup]);
 
@@ -109,9 +104,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
       return url;
     }
     
-    // Handle avatar URLs properly
     if (url.includes('/avatars/') || url.includes('/covers/')) {
-      // For avatar paths, construct the full URL
       const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/${url}`;
       return fullUrl;
     }
@@ -160,15 +153,11 @@ const FeedPost: React.FC<FeedPostProps> = ({
   };
 
   const handleCommentLike = (commentId: string) => {
-    // TODO: Implement comment like functionality
     console.log('Like comment:', commentId);
-    // You can add API call here to like/unlike comments
-    // Example: onCommentLike(post._id, commentId);
   };
 
   const handleCommentReply = (commentId: string, userName: string) => {
     setCommentText(`@${userName} `);
-    // Focus on the comment input
     const input = document.querySelector('input[placeholder="Write a comment and press enter"]') as HTMLInputElement;
     if (input) {
       input.focus();
@@ -185,7 +174,6 @@ const FeedPost: React.FC<FeedPostProps> = ({
 
       setIsReacting(true);
 
-      // Call backend API directly - the backend handles both add and remove logic
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/posts/${post._id}/reaction`, {
         method: 'POST',
         headers: {
@@ -201,12 +189,12 @@ const FeedPost: React.FC<FeedPostProps> = ({
         const data = await response.json();
         console.log('Reaction updated successfully:', data);
         
-        // Update local state with the updated post from the API
+      
         if (onPostUpdate) {
           if (data.post) {
             onPostUpdate(data.post);
           } else {
-            // Fallback: refresh the page if API doesn't return updated post
+        
             console.log('API response missing post data, refreshing page...');
             window.location.reload();
           }
@@ -232,62 +220,44 @@ const FeedPost: React.FC<FeedPostProps> = ({
       alert(errorMessage);
     } finally {
       setIsReacting(false);
-      // Automatically close the popup after reaction selection
       setShowReactionPopup(false);
     }
   };
 
-  // Function to update reaction count locally (for future use)
   const updateReactionCount = (newCount: number) => {
-    // This function can be used to update the reaction count without refreshing
-    // For now, we'll keep the page refresh approach
-    console.log('Reaction count updated to:', newCount);
+
   };
 
-  // Check if current user has saved this post
+
   const isPostSaved = (): boolean => {
     try {
       const currentUserId = getCurrentUserId();
       
       if (!currentUserId) {
-        console.log('❌ isPostSaved: No currentUserId found - user may not be logged in');
-        // Show a subtle indicator that the user needs to log in
         return false;
       }
       
       if (!post.savedBy) {
-        console.log('❌ isPostSaved: No savedBy array in post data');
         return false;
       }
       
-      console.log('🔍 Checking if post is saved:');
-      console.log('  - Current user ID:', currentUserId);
-      console.log('  - SavedBy array:', post.savedBy);
-      console.log('  - SavedBy type:', typeof post.savedBy);
-      console.log('  - Is array:', Array.isArray(post.savedBy));
-      
-      // Check if the current user ID exists in the savedBy array
-      // Handle both cases: when savedBy contains user IDs and when it contains populated user objects
+
       const isSaved = Array.isArray(post.savedBy) && post.savedBy.some((savedUser: string | { _id?: string; id?: string; userId?: string }) => {
         let savedUserId: string | undefined;
         
         if (typeof savedUser === 'object' && savedUser !== null) {
-          // If savedUser is an object (populated user), get the ID
+   
           savedUserId = savedUser._id || savedUser.id || savedUser.userId;
-          console.log('  - SavedUser object:', savedUser, '-> ID:', savedUserId);
         } else {
-          // If savedUser is a string/primitive, use it directly
+        
           savedUserId = savedUser;
-          console.log('  - SavedUser string:', savedUser, '-> ID:', savedUserId);
         }
         
-        // Compare IDs (handle both string and ObjectId comparisons)
+     
         const matches = savedUserId === currentUserId || savedUserId?.toString() === currentUserId?.toString();
-        console.log('  - ID comparison:', savedUserId, '===', currentUserId, '->', matches);
         return matches;
       });
       
-      console.log('💾 Final result - Is post saved:', isSaved);
       return isSaved;
     } catch (error) {
       console.error('Error checking if post is saved:', error);
@@ -295,13 +265,12 @@ const FeedPost: React.FC<FeedPostProps> = ({
     }
   };
 
-  // Handle edit post
   const handleEdit = () => {
     onEdit(post);
     setShowOptionsDropdown(false);
   };
 
-  // Handle toggle comments
+ 
   const handleToggleComments = async () => {
     try {
       setIsTogglingComments(true);
@@ -328,14 +297,12 @@ const FeedPost: React.FC<FeedPostProps> = ({
     }
   };
 
-  // Handle open post in new tab
   const handleOpenInNewTab = () => {
     const postUrl = `${window.location.origin}/dashboard/post/${post._id}`;
     window.open(postUrl, '_blank');
     setShowOptionsDropdown(false);
   };
 
-  // Handle pin/unpin post
   const handlePin = async () => {
     try {
       setIsPinning(true);
@@ -350,10 +317,9 @@ const FeedPost: React.FC<FeedPostProps> = ({
 
       if (response.message) {
         console.log('✅ Pin response:', response);
-        // Update the post state locally instead of reloading
+     
         const updatedPost = { ...post, isPinned: response.isPinned };
         
-        // Dispatch event to update parent component
         window.dispatchEvent(new CustomEvent('postUpdated', { 
           detail: { postId: post._id, updatedPost } 
         }));
@@ -412,26 +378,15 @@ const FeedPost: React.FC<FeedPostProps> = ({
   // Handle save/unsave post
   const handleSave = async () => {
     try {
-      console.log('🔄 handleSave called!');
-      console.log('📝 Post ID:', post._id);
-      console.log('🔗 onSave function exists:', !!onSave);
-      
       if (!onSave) {
-        console.error('❌ onSave function is not provided!');
         alert('Save functionality not available');
         return;
       }
       
-      console.log('🔄 Calling onSave with post ID:', post._id);
-      console.log('📋 Current savedBy:', post.savedBy);
-      console.log('👤 Current user ID:', getCurrentUserId());
-      console.log('💾 Is currently saved:', isPostSaved());
-      
       onSave(post._id);
-      console.log('✅ onSave called successfully');
       setShowOptionsDropdown(false);
     } catch (error) {
-      console.error('❌ Error in handleSave:', error);
+      console.error('Error in handleSave:', error);
       alert('Error saving/unsaving post');
     }
   };
@@ -829,40 +784,32 @@ const FeedPost: React.FC<FeedPostProps> = ({
 
   // Toggle post content expansion
   const togglePostExpansion = (postId: string) => {
-    console.log('🔄 Toggling post expansion for:', postId);
-    console.log('🔄 Current expanded state:', expandedPosts[postId]);
-    
-    setExpandedPosts(prev => {
-      const newState = {
+    setExpandedPosts(prev => ({
       ...prev,
       [postId]: !prev[postId]
-      };
-      console.log('🔄 New expanded state:', newState);
-      return newState;
-    });
+    }));
   };
 
-  // Function to detect and extract video links
   const extractVideoLinks = (content: string) => {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     const urls = content.match(urlRegex) || [];
     
     return urls.filter(url => {
-      // YouTube links
+    
       if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) return true;
-      // Vimeo links
+   
       if (url.includes('vimeo.com/')) return true;
-      // Facebook video links
+    
       if (url.includes('facebook.com/') && url.includes('video')) return true;
-      // Instagram video links
+     
       if (url.includes('instagram.com/') && url.includes('reel')) return true;
-      // TikTok links
+      
       if (url.includes('tiktok.com/')) return true;
       return false;
     });
   };
 
-  // Function to get video embed URL
+  
   const getVideoEmbedUrl = (url: string) => {
     // YouTube
     if (url.includes('youtube.com/watch')) {
@@ -893,11 +840,10 @@ const FeedPost: React.FC<FeedPostProps> = ({
     return null;
   };
 
-  // Function to render content with video previews
   const renderContentWithVideos = (content: string) => {
-    // Check if content contains HTML (from backend pre tags)
+ 
     if (content.includes('<pre')) {
-      // Extract content from pre tags and render with proper styling
+ 
       const preMatch = content.match(/<pre[^>]*>([\s\S]*?)<\/pre>/);
       if (preMatch) {
         const preContent = preMatch[1];
@@ -915,7 +861,6 @@ const FeedPost: React.FC<FeedPostProps> = ({
       return renderContentWithLinks(content);
     }
 
-    // Split content by URLs and render with video previews
     let parts = [content];
     videoLinks.forEach(url => {
       parts = parts.flatMap(part => {
@@ -972,11 +917,11 @@ const FeedPost: React.FC<FeedPostProps> = ({
     );
   };
 
-  // Function to render content with clickable links
+
   const renderContentWithLinks = (content: string) => {
-    // Check if content contains HTML (from backend pre tags)
+  
     if (content.includes('<pre')) {
-      // Extract content from pre tags and render with proper styling
+   
       const preMatch = content.match(/<pre[^>]*>([\s\S]*?)<\/pre>/);
       if (preMatch) {
         const preContent = preMatch[1];
@@ -993,12 +938,11 @@ const FeedPost: React.FC<FeedPostProps> = ({
     
     return parts.map((part, index) => {
       if (urlRegex.test(part)) {
-        // Check if it's a video link (already handled above)
+   
         if (extractVideoLinks(part).length > 0) {
           return <span key={index}>{part}</span>;
         }
         
-        // Show link preview for non-video links
         return (
           <div key={index} className="my-2">
             <a
@@ -1030,8 +974,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
           </div>
         );
       }
-      
-      // Render text content with proper formatting for line breaks and paragraphs
+
       if (part.trim() === '') return null;
       
       // Split by double line breaks to create paragraphs
@@ -1136,11 +1079,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
                   alt={post.user?.name || 'User'}
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    console.log('❌ Avatar load failed for user:', post.user?.name, 'URL:', post.user?.avatar);
                     e.currentTarget.src = '/default-avatar.svg';
-                  }}
-                  onLoad={() => {
-                    console.log('✅ Avatar loaded successfully for user:', post.user?.name, 'URL:', post.user?.avatar);
                   }}
                 />
               </div>
@@ -1262,15 +1201,6 @@ const FeedPost: React.FC<FeedPostProps> = ({
             const postId = post._id || post.id;
             const isExpanded = expandedPosts[postId] || false;
             
-            // Debug logging to see what content we're working with
-                            console.log('🔍 FeedPost - Content Debug:', {
-                  postId: postId,
-                  contentLength: content.length,
-                  wordCount: wordCount,
-                  content: content,
-                  truncated: content.length > 200 ? content.substring(0, 200) + '...' : content,
-                  isExpanded: isExpanded
-                });
                 
                 if (wordCount > 50) {
                   // Smart truncation that respects paragraph boundaries
@@ -1327,16 +1257,6 @@ const FeedPost: React.FC<FeedPostProps> = ({
                       }
                     }
                     
-                    console.log('🔍 FeedPost - Smart Truncation Debug:', {
-                      originalText: text,
-                      maxWords: maxWords,
-                      truncatedText: truncatedText,
-                      foundBreak: foundBreak,
-                      wordCount: words.length,
-                      originalLength: text.length,
-                      truncatedLength: truncatedText.length,
-                      reductionPercentage: ((text.length - truncatedText.length) / text.length * 100).toFixed(1) + '%'
-                    });
                     
                     return truncatedText;
                   };
@@ -1710,6 +1630,12 @@ const FeedPost: React.FC<FeedPostProps> = ({
                   // Toggle reaction popup on click (choose Like/Love/Haha/etc.)
                   setShowReactionPopup(!showReactionPopup);
                 }}
+                onTouchEnd={(e) => {
+                  // Prevent default to avoid double-tap zoom on mobile
+                  e.preventDefault();
+                  // Toggle reaction popup on touch
+                  setShowReactionPopup(!showReactionPopup);
+                }}
                 disabled={isReacting}
                 className="flex flex-col items-center space-y-1 sm:space-y-2 md:space-y-3 transition-colors touch-manipulation disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 style={{ touchAction: 'manipulation' }}
@@ -1734,7 +1660,16 @@ const FeedPost: React.FC<FeedPostProps> = ({
               
               {/* Reaction Popup */}
               {showReactionPopup && (
-                <div ref={reactionPopupWrapperRef} className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 sm:mb-3 z-50 pointer-events-auto">
+                <div 
+                  ref={reactionPopupWrapperRef} 
+                  className="absolute bottom-full right-0 sm:right-0 left-1/2 sm:left-auto transform -translate-x-1/2 sm:translate-x-0 mb-1 sm:mb-2 md:mb-3 z-[60] pointer-events-auto"
+                  style={{
+                    // Ensure popup is visible on mobile screens
+                    maxWidth: 'calc(100vw - 1rem)',
+                    // Add some padding from screen edge on mobile
+                    marginRight: '0.5rem'
+                  }}
+                >
                   <ReactionPopup
                     isOpen={showReactionPopup}
                     onClose={() => setShowReactionPopup(false)}

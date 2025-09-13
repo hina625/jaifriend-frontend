@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { setupUserApi } from '@/utils/api';
 import ResponsiveContainer from '@/components/ResponsiveContainer';
+import { useDarkMode } from '@/contexts/DarkModeContext';
 
 const users = [
   { name: "Daniel John", img: "/avatars/1.png.png" },
@@ -32,6 +33,7 @@ const steps = ["Media", "Info", "Follow"];
 
 export default function StartUpPage() {
   const router = useRouter();
+  const { isDarkMode } = useDarkMode();
   const [step, setStep] = useState(0);
   const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
@@ -101,8 +103,12 @@ export default function StartUpPage() {
 
   return (
     <ResponsiveContainer>
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-2 sm:p-4 lg:p-8">
-        <div className="bg-white rounded-xl sm:rounded-2xl shadow-xl flex flex-col lg:flex-row w-full max-w-5xl overflow-hidden">
+      <div className={`min-h-screen flex items-center justify-center p-2 sm:p-4 lg:p-8 transition-colors duration-200 ${
+        isDarkMode ? 'bg-gray-900' : 'bg-gray-50'
+      }`}>
+        <div className={`rounded-xl sm:rounded-2xl shadow-xl flex flex-col lg:flex-row w-full max-w-5xl overflow-hidden transition-colors duration-200 ${
+          isDarkMode ? 'bg-gray-800' : 'bg-white'
+        }`}>
           {/* Left Panel */}
           <div className="bg-gray-200 flex flex-col lg:flex-col items-center justify-between lg:w-1/4 lg:min-w-[180px] p-4 lg:py-8 lg:px-4">
             <div className="text-base lg:text-lg font-semibold text-gray-700 text-center mb-4 lg:mb-4">

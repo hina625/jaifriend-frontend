@@ -11,6 +11,9 @@ interface User {
   isVerified?: boolean;
   followers?: number;
   following?: number;
+  isOnline?: boolean;
+  lastSeen?: string;
+  bio?: string;
 }
 
 interface PeopleYouMayKnowProps {
@@ -167,8 +170,8 @@ const PeopleYouMayKnow: React.FC<PeopleYouMayKnowProps> = ({ onFollow }) => {
             ? { 
                 ...user, 
                 followers: isFollowing 
-                  ? Math.max(0, (user.followers || 0) - 1) 
-                  : (user.followers || 0) + 1 
+                  ? Math.max(0, (user.followers || 0) - 1)
+                  : (user.followers || 0) + 1
               }
             : user
         ));
@@ -187,24 +190,21 @@ const PeopleYouMayKnow: React.FC<PeopleYouMayKnowProps> = ({ onFollow }) => {
           }
           return newSet;
         });
-        
-        alert(isFollowing ? 'Failed to unfollow user' : 'Failed to follow user');
+        alert('Failed to follow user. Please try again.');
       }
     } catch (error) {
-      // Revert optimistic update on network error
-      const isFollowing = followedUsers.has(userId);
+      console.error('Error following user:', error);
+      // Revert optimistic update on error
       setFollowedUsers(prev => {
         const newSet = new Set(prev);
-        if (isFollowing) {
-          newSet.add(userId);
-        } else {
+        if (followedUsers.has(userId)) {
           newSet.delete(userId);
+        } else {
+          newSet.add(userId);
         }
         return newSet;
       });
-      
-      console.error('Error following/unfollowing user:', error);
-      alert('Network error. Please try again.');
+      alert('Error following user. Please try again.');
     }
   };
 
@@ -218,147 +218,81 @@ const PeopleYouMayKnow: React.FC<PeopleYouMayKnowProps> = ({ onFollow }) => {
     fetchSuggestedUsers();
   }, []);
 
-  // Check if user is logged in
-  const token = localStorage.getItem('token');
-  
-  // Show login prompt if no token
-  if (!token) {
-    return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-3 sm:mb-4 p-4">
-        <div className="text-center py-6">
-          <div className="text-4xl mb-3">🔐</div>
-          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            Login to see suggestions
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
-            Sign in to discover people you may know
-          </p>
-          <button
-            onClick={() => router.push('/login')}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-          >
-            Sign In
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Show loading state
-  if (loading && users.length === 0) {
-    return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-3 sm:mb-4 p-4">
-        <div className="text-center py-6">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mx-auto mb-3"></div>
-          <span className="text-gray-500 dark:text-gray-400">Loading suggestions...</span>
-        </div>
-      </div>
-    );
-  }
-
-  // Show message when no users found (after loading)
   if (users.length === 0 && !loading) {
-    return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-3 sm:mb-4 p-4">
-        <div className="text-center py-6">
-          <div className="text-4xl mb-3">👥</div>
-          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
-            People you may know
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">
-            We couldn't find any users to suggest right now.
-          </p>
-          <button
-            onClick={fetchSuggestedUsers}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-3 sm:mb-4 p-4">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-4">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-            People you may know
+      <div className="p-4 border-b border-gray-100 dark:border-gray-700">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            People You May Know
           </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            {users.length} {users.length === 1 ? 'person' : 'people'} suggested
-            {lastUpdated && (
-              <span className="ml-2">
-                • Updated {lastUpdated.toLocaleTimeString()}
-              </span>
-            )}
-          </p>
+          <button
+            onClick={fetchSuggestedUsers}
+            disabled={loading}
+            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            title="Refresh suggestions"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
         </div>
-        <button
-          onClick={fetchSuggestedUsers}
-          disabled={loading}
-          className="text-red-500 hover:text-red-600 text-sm font-medium transition-colors flex items-center gap-1 disabled:opacity-50"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
+        {lastUpdated && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Updated {lastUpdated.toLocaleTimeString()}
+          </p>
+        )}
       </div>
 
-      {/* Loading State */}
-      {loading && users.length === 0 ? (
-        <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
-          <span className="ml-3 text-gray-500 dark:text-gray-400">Loading suggestions...</span>
-        </div>
-      ) : (
-        /* Users List - Horizontal Scrollable Layout */
-        <div className="relative">
-          <div className="people-scroll-container flex gap-4 overflow-x-auto pb-4" style={{
-            scrollBehavior: 'smooth'
-          }}>
-            {/* Gradient fade effects */}
-            <div className="absolute left-0 top-0 bottom-4 w-8 bg-gradient-to-r from-white dark:from-gray-800 to-transparent pointer-events-none z-10"></div>
-            <div className="absolute right-0 top-0 bottom-4 w-8 bg-gradient-to-l from-white dark:from-gray-800 to-transparent pointer-events-none z-10"></div>
+      {/* Users List - Horizontal Scroll */}
+      <div className="p-4">
+        <div className="people-scroll-container flex space-x-4 overflow-x-auto pb-2">
           {users.map((user) => {
             const isFollowing = followedUsers.has(user._id);
             
             return (
-                <div 
-                  key={user._id} 
-                  className="people-card flex flex-col items-center min-w-[140px] max-w-[160px] p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer group border border-gray-200 dark:border-gray-600 hover:shadow-md hover:scale-105 transform transition-all duration-200"
-                  onClick={() => navigateToProfile(user._id)}
-                >
-                  {/* Avatar */}
-                  <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 mb-3 ring-2 ring-gray-200 dark:ring-gray-600 group-hover:ring-blue-300 dark:group-hover:ring-blue-600 transition-all duration-200">
-                  <img
-                      src={user.avatar ? `${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/${user.avatar}` : '/default-avatar.svg'}
-                    alt={user.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.src = '/default-avatar.svg';
-                    }}
-                  />
+              <div
+                key={user._id}
+                className="people-card flex-shrink-0 w-48 bg-gray-50 dark:bg-gray-700 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer"
+                onClick={() => navigateToProfile(user._id)}
+              >
+                {/* Avatar */}
+                <div className="flex justify-center mb-3">
+                  <div className="relative">
+                    <img
+                      src={user.avatar || '/default-avatar.svg'}
+                      alt={user.name}
+                      className="w-16 h-16 rounded-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = '/default-avatar.svg';
+                      }}
+                    />
+                    {user.isOnline && (
+                      <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-700"></div>
+                    )}
+                  </div>
                 </div>
-                
-                  {/* Name and Verification */}
-                  <div className="text-center mb-3 min-w-0 w-full">
-                    <h4 className="text-sm font-medium text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors mb-1 px-1">
+
+                {/* User Info */}
+                <div className="text-center mb-3">
+                  <div className="flex items-center justify-center space-x-1 mb-1">
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                       {user.name}
                     </h4>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate px-1">
-                      {user.username}
-                    </p>
                     {user.isVerified && (
-                      <div className="inline-flex items-center justify-center w-4 h-4 bg-red-500 rounded-full mx-auto mt-1">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full flex items-center justify-center">
                         <span className="text-white text-xs">✓</span>
                       </div>
                     )}
-                    {/* Follower count */}
-                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                      {user.followers} followers
-                    </p>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    {user.username}
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
+                    {user.followers} followers
+                  </p>
                 </div>
                 
                 {/* Follow Button */}
@@ -396,7 +330,6 @@ const PeopleYouMayKnow: React.FC<PeopleYouMayKnowProps> = ({ onFollow }) => {
             </div>
           )}
         </div>
-      )}
     </div>
   );
 };

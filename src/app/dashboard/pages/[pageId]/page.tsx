@@ -1817,8 +1817,8 @@ const PageView: React.FC = () => {
               {/* Jobs Header */}
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900">Jobs</h3>
-                  <p className="text-gray-500 mt-1">{jobs.length} job{jobs.length !== 1 ? 's' : ''} posted</p>
+                  <h3 className={`text-2xl font-bold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Jobs</h3>
+                  <p className={`mt-1 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>{jobs.length} job{jobs.length !== 1 ? 's' : ''} posted</p>
                 </div>
                 <button
                   onClick={() => setShowJobModal(true)}
@@ -1835,7 +1835,11 @@ const PageView: React.FC = () => {
                   jobs.map((job) => (
                     <div 
                       key={job._id} 
-                      className="bg-white rounded-lg border border-gray-200 p-6 cursor-pointer hover:shadow-lg transition-shadow duration-200"
+                      className={`rounded-lg border p-6 cursor-pointer hover:shadow-lg transition-all duration-200 ${
+                        isDarkMode 
+                          ? 'bg-gray-800 border-gray-700 hover:border-gray-600' 
+                          : 'bg-white border-gray-200 hover:border-gray-300'
+                      }`}
                       onClick={() => handleJobClick(job)}
                     >
                       <div className="flex items-start justify-between mb-4">
@@ -1852,7 +1856,7 @@ const PageView: React.FC = () => {
                     )}
                   </div>
                           <div className="flex-1">
-                            <h4 className="text-xl font-bold text-gray-900 mb-1">{job.title}</h4>
+                            <h4 className={`text-xl font-bold mb-1 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{job.title}</h4>
                             
                             {/* Job Image */}
                             {job.image && (
@@ -1868,14 +1872,14 @@ const PageView: React.FC = () => {
                               </div>
                             )}
                             
-                            <div className="flex items-center gap-2 text-gray-600 mb-2">
+                            <div className={`flex items-center gap-2 mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                               <span>{page.name}</span>
                               <span>•</span>
                               <span>{getTimeAgo(job.createdAt)}</span>
                               <span>•</span>
                               <span>{job.category}</span>
                             </div>
-                            <p className="text-gray-700">{job.description.substring(0, 150)}...</p>
+                            <p className={`transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{job.description.substring(0, 150)}...</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -1928,10 +1932,12 @@ const PageView: React.FC = () => {
                       </div>
 
                       {/* Salary and Job Type */}
-                      <div className="grid grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+                      <div className={`grid grid-cols-3 gap-4 p-4 rounded-lg transition-colors duration-200 ${
+                        isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                      }`}>
                         <div>
-                          <div className="text-sm font-medium text-gray-600">MINIMUM</div>
-                          <div className="text-lg font-bold text-gray-900">
+                          <div className={`text-sm font-medium transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>MINIMUM</div>
+                          <div className={`text-lg font-bold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                             {job.salaryRange.currency === 'USD' ? '$' : 
                              job.salaryRange.currency === 'EUR' ? '€' : 
                              job.salaryRange.currency === 'GBP' ? '£' : 
@@ -1941,8 +1947,8 @@ const PageView: React.FC = () => {
                           </div>
                         </div>
                         <div>
-                          <div className="text-sm font-medium text-gray-600">MAXIMUM</div>
-                          <div className="text-lg font-bold text-gray-900">
+                          <div className={`text-sm font-medium transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>MAXIMUM</div>
+                          <div className={`text-lg font-bold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                             {job.salaryRange.currency === 'USD' ? '$' : 
                              job.salaryRange.currency === 'EUR' ? '€' : 
                              job.salaryRange.currency === 'GBP' ? '£' : 
@@ -1952,19 +1958,23 @@ const PageView: React.FC = () => {
                           </div>
                         </div>
                         <div>
-                          <div className="text-sm font-medium text-gray-600">TYPE</div>
-                          <div className="text-lg font-bold text-gray-900">{job.jobType}</div>
+                          <div className={`text-sm font-medium transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>TYPE</div>
+                          <div className={`text-lg font-bold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{job.jobType}</div>
                         </div>
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <FileText className="w-8 h-8 text-gray-400" />
+                  <div className={`rounded-lg border p-8 text-center transition-colors duration-200 ${
+                    isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+                  }`}>
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-200 ${
+                      isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
+                    }`}>
+                      <FileText className={`w-8 h-8 transition-colors duration-200 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                     </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No jobs posted yet</h3>
-                    <p className="text-gray-500">Create your first job posting to attract candidates!</p>
+                    <h3 className={`text-lg font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>No jobs posted yet</h3>
+                    <p className={`transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Create your first job posting to attract candidates!</p>
                   </div>
                 )}
               </div>
@@ -1976,8 +1986,8 @@ const PageView: React.FC = () => {
               {/* Offers Header */}
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900">Offers</h3>
-                  <p className="text-gray-500 mt-1">Create and manage special offers for your customers</p>
+                  <h3 className={`text-2xl font-bold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Offers</h3>
+                  <p className={`mt-1 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Create and manage special offers for your customers</p>
                 </div>
                 <button
                   onClick={() => setShowOfferModal(true)}
@@ -1989,12 +1999,16 @@ const PageView: React.FC = () => {
               </div>
 
               {/* Offers List - Placeholder for now */}
-              <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Diamond className="w-8 h-8 text-gray-400" />
+              <div className={`rounded-lg border p-8 text-center transition-colors duration-200 ${
+                isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+              }`}>
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-200 ${
+                  isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
+                }`}>
+                  <Diamond className={`w-8 h-8 transition-colors duration-200 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No offers yet</h3>
-                <p className="text-gray-500 mb-4">Create your first offer to attract customers!</p>
+                <h3 className={`text-lg font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>No offers yet</h3>
+                <p className={`mb-4 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Create your first offer to attract customers!</p>
                 <button
                   onClick={() => setShowOfferModal(true)}
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
@@ -2010,8 +2024,8 @@ const PageView: React.FC = () => {
               {/* Reviews Header */}
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900">Reviews</h3>
-                  <p className="text-gray-600">
+                  <h3 className={`text-2xl font-bold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Reviews</h3>
+                  <p className={`transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                     {reviews.length} review{reviews.length !== 1 ? 's' : ''} • 
                     {reviews.length > 0 ? (
                       <span className="ml-1">
@@ -2037,16 +2051,20 @@ const PageView: React.FC = () => {
               {reviews.length > 0 ? (
                 <div className="space-y-4">
                   {reviews.map((review, index) => (
-                    <div key={index} className="bg-white rounded-lg border border-gray-200 p-6">
+                    <div key={index} className={`rounded-lg border p-6 transition-colors duration-200 ${
+                      isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+                    }`}>
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                            <span className="text-gray-600 font-medium">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-200 ${
+                            isDarkMode ? 'bg-gray-700' : 'bg-gray-200'
+                          }`}>
+                            <span className={`font-medium transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                               {review.user?.name?.charAt(0) || 'U'}
                             </span>
                           </div>
                           <div>
-                            <h4 className="font-medium text-gray-900">
+                            <h4 className={`font-medium transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                               {review.user?.name || 'Anonymous User'}
                             </h4>
                             <div className="flex items-center gap-1">
@@ -2054,7 +2072,7 @@ const PageView: React.FC = () => {
                                 <svg
                                   key={i}
                                   className={`w-4 h-4 ${
-                                    i < review.rating ? 'text-yellow-400' : 'text-gray-300'
+                                    i < review.rating ? 'text-yellow-400' : isDarkMode ? 'text-gray-600' : 'text-gray-300'
                                   }`}
                                   fill="currentColor"
                                   viewBox="0 0 20 20"
@@ -2062,24 +2080,26 @@ const PageView: React.FC = () => {
                                   <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                                 </svg>
                               ))}
-                              <span className="text-sm text-gray-500 ml-1">
+                              <span className={`text-sm ml-1 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                                 {getTimeAgo(review.createdAt)}
                               </span>
                             </div>
                           </div>
                         </div>
                       </div>
-                      <p className="text-gray-700">{review.comment}</p>
+                      <p className={`transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{review.comment}</p>
                     </div>
                   ))}
                 </div>
               ) : (
-            <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-                  <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className={`rounded-lg border p-8 text-center transition-colors duration-200 ${
+              isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+            }`}>
+                  <svg className={`w-12 h-12 mx-auto mb-4 transition-colors duration-200 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                   </svg>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No reviews yet</h3>
-                  <p className="text-gray-500 mb-4">Be the first to write a review for this page!</p>
+                  <h3 className={`text-lg font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>No reviews yet</h3>
+                  <p className={`mb-4 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`}>Be the first to write a review for this page!</p>
                   <button 
                     onClick={() => setShowReviewModal(true)}
                     className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600"
@@ -2095,23 +2115,27 @@ const PageView: React.FC = () => {
             <div className="space-y-6">
               {/* Invite Header */}
               <div className="text-center">
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">Invite People</h3>
-                <p className="text-gray-600">Share this page with your friends and colleagues</p>
+                <h3 className={`text-2xl font-bold mb-2 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Invite People</h3>
+                <p className={`transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Share this page with your friends and colleagues</p>
               </div>
 
               {/* Invite Options */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Email Invite */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className={`rounded-lg border p-6 transition-colors duration-200 ${
+                  isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+                }`}>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-200 ${
+                      isDarkMode ? 'bg-blue-900/30' : 'bg-blue-100'
+                    }`}>
+                      <svg className={`w-5 h-5 transition-colors duration-200 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                       </svg>
                     </div>
-                    <h4 className="text-lg font-semibold text-gray-900">Email Invite</h4>
+                    <h4 className={`text-lg font-semibold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Email Invite</h4>
                   </div>
-                  <p className="text-gray-600 mb-4">Send a personalized invitation via email</p>
+                  <p className={`mb-4 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Send a personalized invitation via email</p>
                   <button 
                     onClick={() => setShowInviteModal(true)}
                     className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 flex items-center justify-center gap-2"
@@ -2124,16 +2148,20 @@ const PageView: React.FC = () => {
                 </div>
 
                 {/* Share Link */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className={`rounded-lg border p-6 transition-colors duration-200 ${
+                  isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+                }`}>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-200 ${
+                      isDarkMode ? 'bg-green-900/30' : 'bg-green-100'
+                    }`}>
+                      <svg className={`w-5 h-5 transition-colors duration-200 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
                       </svg>
                     </div>
-                    <h4 className="text-lg font-semibold text-gray-900">Share Link</h4>
+                    <h4 className={`text-lg font-semibold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Share Link</h4>
                   </div>
-                  <p className="text-gray-600 mb-4">Copy and share the page link directly</p>
+                  <p className={`mb-4 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Copy and share the page link directly</p>
                   <button 
                     onClick={async () => {
                       try {
@@ -2154,9 +2182,11 @@ const PageView: React.FC = () => {
               </div>
 
               {/* Page Info */}
-              <div className="bg-gray-50 rounded-lg p-6">
-                <h4 className="font-semibold text-gray-900 mb-2">About this page</h4>
-                <p className="text-gray-600 text-sm">
+              <div className={`rounded-lg p-6 transition-colors duration-200 ${
+                isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+              }`}>
+                <h4 className={`font-semibold mb-2 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>About this page</h4>
+                <p className={`text-sm transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                   Share this page to help others discover {page?.name || 'this amazing page'}. 
                   You can invite people via email or share the direct link on social media, 
                   messaging apps, or anywhere else you'd like.
@@ -2172,16 +2202,20 @@ const PageView: React.FC = () => {
       {/* Post Creation Modal */}
       {showPostModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" style={{ paddingTop: '60px', paddingBottom: '80px' }}>
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[calc(100vh-140px)] overflow-y-auto">
+          <div className={`rounded-lg shadow-xl max-w-2xl w-full max-h-[calc(100vh-140px)] overflow-y-auto transition-colors duration-200 ${
+            isDarkMode ? 'bg-gray-800' : 'bg-white'
+          }`}>
             <div className="p-6">
               {/* Modal Header */}
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">Create New Post</h2>
+                <h2 className={`text-xl font-semibold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Create New Post</h2>
                 <button
                   onClick={() => setShowPostModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className={`p-2 rounded-full transition-colors duration-200 ${
+                    isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+                  }`}
                 >
-                  <X className="w-5 h-5 text-gray-500" />
+                  <X className={`w-5 h-5 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`} />
                 </button>
               </div>
 
@@ -2194,7 +2228,11 @@ const PageView: React.FC = () => {
                       placeholder="Post title (optional)"
                       value={postTitle}
                       onChange={(e) => setPostTitle(e.target.value)}
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                        isDarkMode 
+                          ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
+                          : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+                      }`}
                     />
                   </div>
 
@@ -2205,17 +2243,25 @@ const PageView: React.FC = () => {
                       value={postContent}
                       onChange={(e) => setPostContent(e.target.value)}
                       rows={4}
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-colors duration-200 ${
+                        isDarkMode 
+                          ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
+                          : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+                      }`}
                     />
                   </div>
 
                   {/* Privacy Settings */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Privacy</label>
+                    <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Privacy</label>
                     <select
                       value={postPrivacy}
                       onChange={(e) => setPostPrivacy(e.target.value)}
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                        isDarkMode 
+                          ? 'border-gray-600 bg-gray-700 text-white' 
+                          : 'border-gray-300 bg-white text-gray-900'
+                      }`}
                     >
                       <option value="public">Public</option>
                       <option value="friends">Friends</option>
@@ -2226,17 +2272,23 @@ const PageView: React.FC = () => {
                   {/* Selected Tags */}
                   {selectedTags.length > 0 && (
                     <div className="space-y-2">
-                      <p className="text-sm font-medium text-gray-700">Tags:</p>
+                      <p className={`text-sm font-medium transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Tags:</p>
                       <div className="flex flex-wrap gap-2">
                         {selectedTags.map((tag, index) => (
                           <span
                             key={index}
-                            className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                            className={`px-3 py-1 rounded-full text-sm flex items-center gap-2 transition-colors duration-200 ${
+                              isDarkMode 
+                                ? 'bg-blue-900/30 text-blue-400' 
+                                : 'bg-blue-100 text-blue-700'
+                            }`}
                           >
                             #{tag}
                             <button
                               onClick={() => removeTag(tag)}
-                              className="hover:text-blue-900"
+                              className={`transition-colors duration-200 ${
+                                isDarkMode ? 'hover:text-blue-300' : 'hover:text-blue-900'
+                              }`}
                             >
                               <X className="w-3 h-3" />
                             </button>
@@ -2248,12 +2300,16 @@ const PageView: React.FC = () => {
 
                   {/* Selected Location */}
                   {selectedLocation && (
-                    <div className="flex items-center gap-2 bg-gray-50 p-3 rounded-lg">
-                      <MapPin className="w-4 h-4 text-gray-500" />
-                      <span className="text-sm text-gray-700">{selectedLocation}</span>
+                    <div className={`flex items-center gap-2 p-3 rounded-lg transition-colors duration-200 ${
+                      isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                    }`}>
+                      <MapPin className={`w-4 h-4 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                      <span className={`text-sm transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{selectedLocation}</span>
                       <button
                         onClick={() => setSelectedLocation('')}
-                        className="ml-auto text-gray-400 hover:text-gray-600"
+                        className={`ml-auto transition-colors duration-200 ${
+                          isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'
+                        }`}
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -2262,10 +2318,12 @@ const PageView: React.FC = () => {
 
                 {/* Media Upload */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Add Media</label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                    <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600 mb-2">Click to upload or drag and drop</p>
+                  <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Add Media</label>
+                  <div className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors duration-200 ${
+                    isDarkMode ? 'border-gray-600' : 'border-gray-300'
+                  }`}>
+                    <Upload className={`w-8 h-8 mx-auto mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                    <p className={`text-sm mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Click to upload or drag and drop</p>
                     <input
                       type="file"
                       multiple
@@ -2286,8 +2344,10 @@ const PageView: React.FC = () => {
                   {mediaFiles.length > 0 && (
                     <div className="mt-3 space-y-2">
                       {mediaFiles.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                          <span className="text-sm text-gray-700 truncate">{file.name}</span>
+                        <div key={index} className={`flex items-center justify-between p-2 rounded transition-colors duration-200 ${
+                          isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                        }`}>
+                          <span className={`text-sm truncate transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{file.name}</span>
                           <button
                             onClick={() => removeFile(index)}
                             className="text-red-500 hover:text-red-700"
@@ -2347,27 +2407,39 @@ const PageView: React.FC = () => {
 
                 {/* Location Picker */}
                 {showLocationPicker && (
-                  <div className="mt-4 p-3 border border-gray-200 rounded-lg">
+                  <div className={`mt-4 p-3 border rounded-lg transition-colors duration-200 ${
+                    isDarkMode ? 'border-gray-600' : 'border-gray-200'
+                  }`}>
                     <input
                       type="text"
                       placeholder="Enter location..."
                       value={selectedLocation}
                       onChange={(e) => setSelectedLocation(e.target.value)}
-                      className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
+                        isDarkMode 
+                          ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
+                          : 'border-gray-200 bg-white text-gray-900 placeholder-gray-500'
+                      }`}
                     />
                   </div>
                 )}
 
                 {/* Tag Input */}
                 {showTagInput && (
-                  <div className="mt-4 p-3 border border-gray-200 rounded-lg">
+                  <div className={`mt-4 p-3 border rounded-lg transition-colors duration-200 ${
+                    isDarkMode ? 'border-gray-600' : 'border-gray-200'
+                  }`}>
                     <input
                       type="text"
                       placeholder="Type tag and press Enter..."
                       value={tagInput}
                       onChange={(e) => setTagInput(e.target.value)}
                       onKeyPress={handleTagInput}
-                      className="w-full p-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 ${
+                        isDarkMode 
+                          ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
+                          : 'border-gray-200 bg-white text-gray-900 placeholder-gray-500'
+                      }`}
                     />
                   </div>
                 )}
@@ -2380,11 +2452,13 @@ const PageView: React.FC = () => {
             {/* Job Creation Modal - Like Image Design */}
       {showJobModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[85vh] overflow-y-auto">
+          <div className={`rounded-lg shadow-xl max-w-lg w-full max-h-[85vh] overflow-y-auto scrollbar-hide transition-colors duration-200 ${
+            isDarkMode ? 'bg-gray-800' : 'bg-white'
+          }`}>
             <div className="p-6">
               {/* Modal Header */}
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">{editingJob ? 'Edit Job' : 'Create Job'}</h2>
+                <h2 className={`text-xl font-semibold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{editingJob ? 'Edit Job' : 'Create Job'}</h2>
                 <button
                   onClick={() => {
                     setShowJobModal(false);
@@ -2405,9 +2479,11 @@ const PageView: React.FC = () => {
                       questions: [] as string[]
                     });
                   }}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className={`p-2 rounded-full transition-colors duration-200 ${
+                    isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+                  }`}
                 >
-                  <X className="w-5 h-5 text-gray-500" />
+                  <X className={`w-5 h-5 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`} />
                 </button>
               </div>
 
@@ -2415,49 +2491,61 @@ const PageView: React.FC = () => {
               <div className="space-y-6">
                 {/* Job Title */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Job Title</label>
+                  <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Job Title</label>
                   <input
                     type="text"
                     placeholder="Job title"
                     value={jobFormData.title}
                     onChange={(e) => setJobFormData(prev => ({ ...prev, title: e.target.value }))}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                      isDarkMode 
+                        ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
+                        : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+                    }`}
                   />
                 </div>
 
                 {/* Location */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+                  <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Location</label>
                   <input
                     type="text"
                     placeholder="Location"
                     value={jobFormData.location}
                     onChange={(e) => setJobFormData(prev => ({ ...prev, location: e.target.value }))}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                      isDarkMode 
+                        ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
+                        : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+                    }`}
                   />
                 </div>
 
                 {/* Description */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Description</label>
                   <textarea
                     placeholder="Description"
                     value={jobFormData.description}
                     onChange={(e) => setJobFormData(prev => ({ ...prev, description: e.target.value }))}
                     rows={4}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-colors duration-200 ${
+                      isDarkMode 
+                        ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
+                        : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+                    }`}
                   />
-                  <p className="text-sm text-gray-500 mt-1">Describe the responsibilities and preferred skills for this job</p>
+                  <p className={`text-sm mt-1 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Describe the responsibilities and preferred skills for this job</p>
                 </div>
 
                 {/* Salary Range Section */}
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Salary Range</h3>
+                  <h3 className={`text-lg font-medium mb-4 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Salary Range</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Minimum</label>
+                      <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Minimum</label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₹</span>
+                        <span className={`absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>₹</span>
                         <input
                           type="number"
                           placeholder="Minimum"
@@ -2466,14 +2554,18 @@ const PageView: React.FC = () => {
                             ...prev,
                             salaryRange: { ...prev.salaryRange, minimum: Number(e.target.value) || 0 }
                           }))}
-                          className="w-full pl-8 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className={`w-full pl-8 pr-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                            isDarkMode 
+                              ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
+                              : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+                          }`}
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Maximum</label>
+                      <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Maximum</label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₹</span>
+                        <span className={`absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>₹</span>
                         <input
                           type="number"
                           placeholder="Maximum"
@@ -2482,21 +2574,29 @@ const PageView: React.FC = () => {
                             ...prev,
                             salaryRange: { ...prev.salaryRange, maximum: Number(e.target.value) || 0 }
                           }))}
-                          className="w-full pl-8 pr-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className={`w-full pl-8 pr-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                            isDarkMode 
+                              ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
+                              : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+                          }`}
                         />
                       </div>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4 mt-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                      <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Currency</label>
                       <select
                         value={jobFormData.salaryRange.currency}
                         onChange={(e) => setJobFormData(prev => ({
                           ...prev,
                           salaryRange: { ...prev.salaryRange, currency: e.target.value }
                         }))}
-                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-700 text-white' 
+                            : 'border-gray-300 bg-white text-gray-900'
+                        }`}
                       >
                         <option value="USD">USD ($)</option>
                         <option value="EUR">EUR (€)</option>
@@ -2506,14 +2606,18 @@ const PageView: React.FC = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                      <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Type</label>
                       <select
                         value={jobFormData.salaryRange.type}
                         onChange={(e) => setJobFormData(prev => ({
                           ...prev,
                           salaryRange: { ...prev.salaryRange, type: e.target.value }
                         }))}
-                        className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-700 text-white' 
+                            : 'border-gray-300 bg-white text-gray-900'
+                        }`}
                       >
                         <option value="Per Hour">Per Hour</option>
                         <option value="Per Day">Per Day</option>
@@ -2528,11 +2632,15 @@ const PageView: React.FC = () => {
                 {/* Job Type and Category */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Job Type</label>
+                    <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Job Type</label>
                     <select
                       value={jobFormData.jobType}
                       onChange={(e) => setJobFormData(prev => ({ ...prev, jobType: e.target.value }))}
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                        isDarkMode 
+                          ? 'border-gray-600 bg-gray-700 text-white' 
+                          : 'border-gray-300 bg-white text-gray-900'
+                      }`}
                     >
                       <option value="Full time">Full time</option>
                       <option value="Part time">Part time</option>
@@ -2543,11 +2651,15 @@ const PageView: React.FC = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                    <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Category</label>
                     <select
                       value={jobFormData.category}
                       onChange={(e) => setJobFormData(prev => ({ ...prev, category: e.target.value }))}
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                        isDarkMode 
+                          ? 'border-gray-600 bg-gray-700 text-white' 
+                          : 'border-gray-300 bg-white text-gray-900'
+                      }`}
                     >
                       <option value="Technology">Technology</option>
                       <option value="Healthcare">Healthcare</option>
@@ -2566,10 +2678,12 @@ const PageView: React.FC = () => {
 
                 {/* Questions Section */}
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Questions</h3>
+                  <h3 className={`text-lg font-medium mb-4 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Questions</h3>
                   <button
                     onClick={addQuestion}
-                    className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-3"
+                    className={`flex items-center gap-2 mb-3 transition-colors duration-200 ${
+                      isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'
+                    }`}
                   >
                     <Plus className="w-4 h-4" />
                     Add Question
@@ -2581,7 +2695,11 @@ const PageView: React.FC = () => {
                         placeholder="Enter question"
                         value={question}
                         onChange={(e) => updateQuestion(index, e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className={`flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
+                            : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+                        }`}
                       />
                       <button
                         onClick={() => removeQuestion(index)}
@@ -2595,8 +2713,10 @@ const PageView: React.FC = () => {
 
                 {/* Image Upload Section */}
                 <div>
-                  <p className="text-sm text-gray-600 mb-3">Add an image to help applicants see what it's like to work at this location.</p>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <p className={`text-sm mb-3 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Add an image to help applicants see what it's like to work at this location.</p>
+                  <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors duration-200 ${
+                    isDarkMode ? 'border-gray-600' : 'border-gray-300'
+                  }`}>
                     {jobImage ? (
                       <div className="space-y-4">
                         <img
@@ -2613,8 +2733,8 @@ const PageView: React.FC = () => {
                       </div>
                     ) : (
                       <>
-                        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-3" />
-                        <p className="text-gray-600 mb-3">Click to upload or drag and drop</p>
+                        <Upload className={`w-8 h-8 mx-auto mb-3 transition-colors duration-200 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                        <p className={`mb-3 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Click to upload or drag and drop</p>
                         <input
                           type="file"
                           accept="image/*"
@@ -2624,11 +2744,19 @@ const PageView: React.FC = () => {
                         />
                         <label
                           htmlFor="job-image-upload"
-                          className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 cursor-pointer inline-block mr-2"
+                          className={`px-4 py-2 rounded-lg cursor-pointer inline-block mr-2 transition-colors duration-200 ${
+                            isDarkMode 
+                              ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
                         >
                           Browse To Upload
                         </label>
-                        <button className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300">
+                        <button className={`px-4 py-2 rounded-lg transition-colors duration-200 ${
+                          isDarkMode 
+                            ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}>
                           Use Cover Photo
                         </button>
                       </>
@@ -2679,16 +2807,20 @@ const PageView: React.FC = () => {
       {/* Create Offer Modal */}
       {showOfferModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[85vh] overflow-y-auto">
+          <div className={`rounded-lg shadow-xl max-w-lg w-full max-h-[85vh] overflow-y-auto scrollbar-hide transition-colors duration-200 ${
+            isDarkMode ? 'bg-gray-800' : 'bg-white'
+          }`}>
             <div className="p-6">
               {/* Modal Header */}
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">Create New Offer</h2>
+                <h2 className={`text-xl font-semibold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Create New Offer</h2>
                 <button
                   onClick={() => setShowOfferModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className={`p-2 rounded-full transition-colors duration-200 ${
+                    isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+                  }`}
                 >
-                  <X className="w-5 h-5 text-gray-500" />
+                  <X className={`w-5 h-5 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`} />
                 </button>
               </div>
 
@@ -2696,91 +2828,121 @@ const PageView: React.FC = () => {
               <div className="space-y-6">
                 {/* Offer Type */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Offer Type</label>
+                  <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Offer Type</label>
                   <input
                     type="text"
                     value={offerFormData.offerType}
                     readOnly
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                    className={`w-full px-3 py-2.5 border rounded-lg transition-colors duration-200 ${
+                      isDarkMode 
+                        ? 'border-gray-600 bg-gray-700 text-gray-400' 
+                        : 'border-gray-300 bg-gray-50 text-gray-600'
+                    }`}
                   />
                 </div>
 
                 {/* Discount Percent */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Discount Percent</label>
+                  <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Discount Percent</label>
                   <input
                     type="number"
                     min="1"
                     max="100"
                     value={offerFormData.discountPercent}
                     onChange={(e) => setOfferFormData(prev => ({ ...prev, discountPercent: Number(e.target.value) }))}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                      isDarkMode 
+                        ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
+                        : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+                    }`}
                   />
                 </div>
 
                 {/* Discounted Items and Currency */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Discounted Items and/or Services</label>
+                    <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Discounted Items and/or Services</label>
                     <textarea
                       placeholder="Add items or services to this offer"
                       value={offerFormData.discountedItems}
                       onChange={(e) => setOfferFormData(prev => ({ ...prev, discountedItems: e.target.value }))}
                       rows={3}
                       maxLength={100}
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-colors duration-200 ${
+                        isDarkMode 
+                          ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
+                          : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+                      }`}
                     />
-                    <p className="text-xs text-gray-500 mt-1">Max 100 characters</p>
+                    <p className={`text-xs mt-1 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Max 100 characters</p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                    <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Currency</label>
                     <input
                       type="text"
                       value={`${offerFormData.currency} (${offerFormData.currency === 'USD' ? '$' : offerFormData.currency === 'EUR' ? '€' : offerFormData.currency === 'GBP' ? '£' : offerFormData.currency === 'INR' ? '₹' : offerFormData.currency === 'PKR' ? '₨' : ''})`}
                       readOnly
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
+                      className={`w-full px-3 py-2.5 border rounded-lg transition-colors duration-200 ${
+                        isDarkMode 
+                          ? 'border-gray-600 bg-gray-700 text-gray-400' 
+                          : 'border-gray-300 bg-gray-50 text-gray-600'
+                      }`}
                     />
                   </div>
                 </div>
 
                 {/* Description */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Description</label>
                   <textarea
                     placeholder="Describe your offer in detail"
                     value={offerFormData.description}
                     onChange={(e) => setOfferFormData(prev => ({ ...prev, description: e.target.value }))}
                     rows={4}
-                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-colors duration-200 ${
+                      isDarkMode 
+                        ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400' 
+                        : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'
+                    }`}
                   />
                 </div>
 
                 {/* End Date and Time */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">End date</label>
+                    <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>End date</label>
                     <input
                       type="date"
                       value={offerFormData.endDate}
                       onChange={(e) => setOfferFormData(prev => ({ ...prev, endDate: e.target.value }))}
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                        isDarkMode 
+                          ? 'border-gray-600 bg-gray-700 text-white' 
+                          : 'border-gray-300 bg-white text-gray-900'
+                      }`}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">End time</label>
+                    <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>End time</label>
                     <input
                       type="time"
                       value={offerFormData.endTime}
                       onChange={(e) => setOfferFormData(prev => ({ ...prev, endTime: e.target.value }))}
-                      className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className={`w-full px-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors duration-200 ${
+                        isDarkMode 
+                          ? 'border-gray-600 bg-gray-700 text-white' 
+                          : 'border-gray-300 bg-white text-gray-900'
+                      }`}
                     />
                   </div>
                 </div>
 
                 {/* Thumbnail Upload */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Thumbnail</label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <label className={`block text-sm font-medium mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Thumbnail</label>
+                  <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors duration-200 ${
+                    isDarkMode ? 'border-gray-600' : 'border-gray-300'
+                  }`}>
                     {offerThumbnail ? (
                       <div className="space-y-4">
                         <img
@@ -2797,8 +2959,8 @@ const PageView: React.FC = () => {
                       </div>
                     ) : (
                       <>
-                        <Upload className="w-8 h-8 text-gray-400 mx-auto mb-3" />
-                        <p className="text-gray-600 mb-3">Click to upload or drag and drop</p>
+                        <Upload className={`w-8 h-8 mx-auto mb-3 transition-colors duration-200 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
+                        <p className={`mb-3 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>Click to upload or drag and drop</p>
                         <input
                           type="file"
                           accept="image/*"
@@ -2808,7 +2970,11 @@ const PageView: React.FC = () => {
                         />
                         <label
                           htmlFor="offer-thumbnail-upload"
-                          className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 cursor-pointer inline-block"
+                          className={`px-4 py-2 rounded-lg cursor-pointer inline-block transition-colors duration-200 ${
+                            isDarkMode 
+                              ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
                         >
                           Browse To Upload
                         </label>
@@ -2842,20 +3008,24 @@ const PageView: React.FC = () => {
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+          <div className={`rounded-lg p-6 max-w-md w-full mx-4 transition-colors duration-200 ${
+            isDarkMode ? 'bg-gray-800' : 'bg-white'
+          }`}>
             <div className="flex items-center mb-4">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
-                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center mr-4 transition-colors duration-200 ${
+                isDarkMode ? 'bg-red-900/30' : 'bg-red-100'
+              }`}>
+                <svg className={`w-6 h-6 transition-colors duration-200 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Delete Job</h3>
-                <p className="text-sm text-gray-500">This action cannot be undone</p>
+                <h3 className={`text-lg font-semibold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Delete Job</h3>
+                <p className={`text-sm transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>This action cannot be undone</p>
               </div>
             </div>
             
-            <p className="text-gray-700 mb-6">
+            <p className={`mb-6 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Are you sure you want to delete this job posting? This will permanently remove the job and all associated data.
             </p>
             
@@ -2865,7 +3035,11 @@ const PageView: React.FC = () => {
                   setShowDeleteConfirm(false);
                   setJobToDelete(null);
                 }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50"
+                className={`px-4 py-2 border rounded-lg transition-colors duration-200 ${
+                  isDarkMode 
+                    ? 'text-gray-300 hover:text-white border-gray-600 hover:bg-gray-700' 
+                    : 'text-gray-600 hover:text-gray-800 border-gray-300 hover:bg-gray-50'
+                }`}
               >
                 Cancel
               </button>
@@ -2883,19 +3057,23 @@ const PageView: React.FC = () => {
       {/* Job Detail Modal */}
       {showJobDetail && selectedJob && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl h-[80vh] max-h-[600px] overflow-y-auto flex flex-col">
+          <div className={`rounded-lg shadow-xl w-full max-w-2xl h-[80vh] max-h-[600px] overflow-y-auto flex flex-col transition-colors duration-200 ${
+            isDarkMode ? 'bg-gray-800' : 'bg-white'
+          }`}>
             <div className="p-6 flex-1 flex flex-col">
               {/* Modal Header */}
               <div className="flex items-center justify-between mb-6 flex-shrink-0">
-                <h2 className="text-2xl font-bold text-gray-900">{selectedJob.title}</h2>
+                <h2 className={`text-2xl font-bold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedJob.title}</h2>
                 <button
                   onClick={() => {
                     setShowJobDetail(false);
                     setSelectedJob(null);
                   }}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className={`p-2 rounded-full transition-colors duration-200 ${
+                    isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+                  }`}
                 >
-                  <X className="w-6 h-6 text-gray-500" />
+                  <X className={`w-6 h-6 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`} />
                 </button>
               </div>
 
@@ -2915,16 +3093,20 @@ const PageView: React.FC = () => {
                     )}
                   </div>
                   <div className="flex-1">
-                    <div className="flex items-center gap-2 text-gray-600 mb-2">
+                    <div className={`flex items-center gap-2 mb-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                       <span className="font-medium">{page.name}</span>
                       <span>•</span>
                       <span>{getTimeAgo(selectedJob.createdAt)}</span>
                       <span>•</span>
-                      <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-sm">
+                      <span className={`px-2 py-1 rounded-full text-sm transition-colors duration-200 ${
+                        isDarkMode 
+                          ? 'bg-blue-900/30 text-blue-400' 
+                          : 'bg-blue-100 text-blue-700'
+                      }`}>
                         {selectedJob.category}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-gray-500">
+                    <div className={`flex items-center gap-2 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                       <MapPin className="w-4 h-4" />
                       <span>{selectedJob.location}</span>
                     </div>
@@ -2947,17 +3129,19 @@ const PageView: React.FC = () => {
 
                 {/* Job Description */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Job Description</h3>
+                  <h3 className={`text-lg font-semibold mb-3 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Job Description</h3>
                   <div className="prose max-w-none">
-                    <p className="text-gray-700 whitespace-pre-wrap">{selectedJob.description}</p>
+                    <p className={`whitespace-pre-wrap transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{selectedJob.description}</p>
                   </div>
                 </div>
 
                 {/* Salary and Job Details */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="text-sm font-medium text-gray-600 mb-1">MINIMUM SALARY</div>
-                    <div className="text-xl font-bold text-gray-900">
+                  <div className={`p-4 rounded-lg transition-colors duration-200 ${
+                    isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                  }`}>
+                    <div className={`text-sm font-medium mb-1 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>MINIMUM SALARY</div>
+                    <div className={`text-xl font-bold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                       {selectedJob.salaryRange.currency === 'USD' ? '$' : 
                        selectedJob.salaryRange.currency === 'EUR' ? '€' : 
                        selectedJob.salaryRange.currency === 'GBP' ? '£' : 
@@ -2966,9 +3150,11 @@ const PageView: React.FC = () => {
                       {selectedJob.salaryRange.minimum.toLocaleString()} {selectedJob.salaryRange.type}
                     </div>
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="text-sm font-medium text-gray-600 mb-1">MAXIMUM SALARY</div>
-                    <div className="text-xl font-bold text-gray-900">
+                  <div className={`p-4 rounded-lg transition-colors duration-200 ${
+                    isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                  }`}>
+                    <div className={`text-sm font-medium mb-1 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>MAXIMUM SALARY</div>
+                    <div className={`text-xl font-bold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                       {selectedJob.salaryRange.currency === 'USD' ? '$' : 
                        selectedJob.salaryRange.currency === 'EUR' ? '€' : 
                        selectedJob.salaryRange.currency === 'GBP' ? '£' : 
@@ -2977,24 +3163,32 @@ const PageView: React.FC = () => {
                       {selectedJob.salaryRange.maximum.toLocaleString()} {selectedJob.salaryRange.type}
                     </div>
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="text-sm font-medium text-gray-600 mb-1">JOB TYPE</div>
-                    <div className="text-xl font-bold text-gray-900">{selectedJob.jobType}</div>
+                  <div className={`p-4 rounded-lg transition-colors duration-200 ${
+                    isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                  }`}>
+                    <div className={`text-sm font-medium mb-1 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>JOB TYPE</div>
+                    <div className={`text-xl font-bold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedJob.jobType}</div>
                   </div>
                 </div>
 
                 {/* Application Questions */}
                 {selectedJob.questions && selectedJob.questions.length > 0 && (
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Application Questions</h3>
+                    <h3 className={`text-lg font-semibold mb-3 transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Application Questions</h3>
                     <div className="space-y-3">
                       {selectedJob.questions.map((question, index) => (
-                        <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                        <div key={index} className={`p-4 rounded-lg transition-colors duration-200 ${
+                          isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                        }`}>
                           <div className="flex items-start gap-3">
-                            <span className="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0">
+                            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0 transition-colors duration-200 ${
+                              isDarkMode 
+                                ? 'bg-blue-900/30 text-blue-400' 
+                                : 'bg-blue-100 text-blue-700'
+                            }`}>
                               {index + 1}
                             </span>
-                            <p className="text-gray-700">{question.question}</p>
+                            <p className={`transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{question.question}</p>
                           </div>
                         </div>
                       ))}
@@ -3065,13 +3259,15 @@ const PageView: React.FC = () => {
       {/* Apply Modal */}
       {showApplyModal && selectedJob && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-xl h-[80vh] max-h-[600px] overflow-y-auto flex flex-col">
+          <div className={`rounded-lg shadow-xl w-full max-w-xl h-[80vh] max-h-[600px] overflow-y-auto flex flex-col transition-colors duration-200 ${
+            isDarkMode ? 'bg-gray-800' : 'bg-white'
+          }`}>
             <div className="p-6 flex-1 flex flex-col">
               {/* Modal Header */}
               <div className="flex items-center justify-between mb-6 flex-shrink-0">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Apply for {selectedJob.title}</h2>
-                  <p className="text-gray-600">at {page.name}</p>
+                  <h2 className={`text-2xl font-bold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Apply for {selectedJob.title}</h2>
+                  <p className={`transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>at {page.name}</p>
                 </div>
                 <button
                   onClick={() => {
@@ -3085,9 +3281,11 @@ const PageView: React.FC = () => {
                       answers: []
                     });
                   }}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  className={`p-2 rounded-full transition-colors duration-200 ${
+                    isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+                  }`}
                 >
-                  <X className="w-6 h-6 text-gray-500" />
+                  <X className={`w-6 h-6 transition-colors duration-200 ${isDarkMode ? 'text-gray-300' : 'text-gray-500'}`} />
                 </button>
               </div>
 

@@ -109,20 +109,19 @@ const PostOptionsDropdown: React.FC<PostOptionsDropdownProps> = ({
       {/* Mobile backdrop overlay */}
       <div className="sm:hidden fixed inset-0 bg-black bg-opacity-60 z-40" onClick={onClose} />
       
-    <div
-      ref={dropdownRef}
-        className={`absolute z-50 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border-2 border-gray-200 dark:border-gray-600 min-w-[280px] sm:min-w-[320px] max-w-[90vw] ${
-        position === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'
-        } right-0 sm:right-0 transform -translate-x-1/2 sm:translate-x-0`}
+      <div
+        ref={dropdownRef}
+        className={`z-50 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-600 min-w-[280px] sm:min-w-[320px] max-w-[90vw]
+        fixed sm:absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 sm:top-auto sm:left-auto sm:transform-none
+        ${position === 'top' ? 'sm:bottom-full sm:mb-2' : 'sm:top-full sm:mt-2'} sm:right-0 sm:transform sm:-translate-x-1/2`}
         style={{
-          backgroundColor: 'white',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05)',
-          border: '2px solid #e5e7eb',
-          filter: 'drop-shadow(0 10px 8px rgb(0 0 0 / 0.04)) drop-shadow(0 4px 3px rgb(0 0 0 / 0.1))'
+          maxWidth: 'calc(100vw - 2rem)',
+          maxHeight: '80vh',
+          overflowY: 'auto'
         }}
       >
         {/* Mobile close button */}
-        <div className="sm:hidden flex justify-end p-3 border-b-2 border-gray-200 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 rounded-t-xl">
+        <div className="sm:hidden flex justify-end p-3 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 rounded-t-xl">
           <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors bg-white dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-600"
@@ -139,8 +138,8 @@ const PostOptionsDropdown: React.FC<PostOptionsDropdownProps> = ({
                 option.onClick();
                 onClose();
               }}
-                className={`w-full px-4 sm:px-4 py-4 sm:py-3 text-left transition-all duration-200 ${option.className} hover:scale-[1.02] active:scale-[0.98] touch-manipulation rounded-lg mx-2 sm:mx-0 hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600`}
-                style={{ touchAction: 'manipulation' }}
+              className={`w-full px-4 sm:px-4 py-4 sm:py-3 text-left transition-all duration-200 ${option.className} hover:scale-[1.02] active:scale-[0.98] touch-manipulation rounded-lg mx-2 sm:mx-0 hover:bg-gray-50 dark:hover:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-600 min-h-[60px] sm:min-h-[48px] flex items-center`}
+              style={{ touchAction: 'manipulation' }}
             >
                 <div className="flex items-start gap-3 sm:gap-3">
                 <div className="flex-shrink-0 mt-0.5">
@@ -157,7 +156,7 @@ const PostOptionsDropdown: React.FC<PostOptionsDropdownProps> = ({
               </div>
             </button>
             {index < options.length - 1 && (
-                <div className="border-t-2 border-gray-200 dark:border-gray-600 mx-4 sm:mx-4" />
+                <div className="border-t border-gray-200 dark:border-gray-600 mx-4 sm:mx-4" />
             )}
           </React.Fragment>
         ))}

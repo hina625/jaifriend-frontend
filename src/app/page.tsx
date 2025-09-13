@@ -6,6 +6,7 @@ import { loginApi } from '../utils/api';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
 import { setToken } from '../utils/auth';
 import AuthGuard from '../components/AuthGuard';
+import { useDarkMode } from '../contexts/DarkModeContext';
 
 interface FormData {
   email: string;
@@ -135,6 +136,7 @@ const Modal: React.FC<{
 
 export default function Home(): React.ReactElement {
   const router = useRouter();
+  const { isDarkMode } = useDarkMode();
   const [loginType, setLoginType] = useState<'username' | 'social'>('username');
   const [formData, setFormData] = useState<FormData>({
     email: '',
@@ -353,18 +355,26 @@ export default function Home(): React.ReactElement {
         )}
 
         {/* Header */}
-        <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100 w-full">
+        <header className={`sticky top-0 z-40 backdrop-blur-md border-b w-full transition-colors duration-200 ${
+          isDarkMode ? 'bg-gray-800/80 border-gray-700' : 'bg-white/80 border-gray-100'
+        }`}>
           <div className="flex justify-between items-center px-4 sm:px-6 lg:px-8 py-3 w-full">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
                 <span className="text-white font-bold text-sm sm:text-base">J</span>
               </div>
-              <span className="text-xl sm:text-2xl font-bold text-gray-800">jaifriend</span>
+              <span className={`text-xl sm:text-2xl font-bold transition-colors duration-200 ${
+                isDarkMode ? 'text-white' : 'text-gray-800'
+              }`}>jaifriend</span>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-3">
               <button
                 onClick={() => { setAuthType('login'); setAuthModalOpen(true); setModalMessage(undefined); }}
-                className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-lg font-medium transition-all duration-300 text-sm sm:text-base"
+                className={`px-3 py-2 rounded-lg font-medium transition-all duration-300 text-sm sm:text-base ${
+                  isDarkMode 
+                    ? 'text-gray-300 hover:text-blue-400' 
+                    : 'text-gray-700 hover:text-blue-600'
+                }`}
               >
                 Login
               </button>

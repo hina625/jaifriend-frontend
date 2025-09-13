@@ -3,6 +3,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hg
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, FileText, ArrowLeft, ArrowRight, ThumbsUp, Camera, Users, Menu, X, Search, Heart, MessageCircle, Share2, Globe, Calendar, Users2, Star } from 'lucide-react';
+import { useDarkMode } from '@/contexts/DarkModeContext';
 
 // Helper function to get proper image URL
 const getImageUrl = (url: string) => {
@@ -88,23 +89,39 @@ interface SuggestedPagesComponentProps {
 
 // Top-level components to prevent remount on each parent render
 const MyPagesView: React.FC<MyPagesComponentProps> = ({ loading, userPages, onCreate, onOpenPage }) => {
+  const { isDarkMode } = useDarkMode();
+  
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 min-h-80 flex flex-col items-center justify-center p-8">
+      <div className={`rounded-2xl border min-h-80 flex flex-col items-center justify-center p-8 transition-colors duration-200 ${
+        isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'
+      }`}>
         <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-        <p className="text-gray-500 text-lg font-medium">Loading your pages...</p>
+        <p className={`text-lg font-medium transition-colors duration-200 ${
+          isDarkMode ? 'text-gray-300' : 'text-gray-500'
+        }`}>Loading your pages...</p>
       </div>
     );
   }
 
   if (userPages.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 min-h-80 flex flex-col items-center justify-center p-8">
-        <div className="w-20 h-20 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl flex items-center justify-center mb-6">
-          <FileText className="w-10 h-10 text-blue-600" />
+      <div className={`rounded-2xl border min-h-80 flex flex-col items-center justify-center p-8 transition-colors duration-200 ${
+        isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'
+      }`}>
+        <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mb-6 transition-colors duration-200 ${
+          isDarkMode ? 'bg-gradient-to-br from-blue-900 to-indigo-900' : 'bg-gradient-to-br from-blue-50 to-indigo-100'
+        }`}>
+          <FileText className={`w-10 h-10 transition-colors duration-200 ${
+            isDarkMode ? 'text-blue-400' : 'text-blue-600'
+          }`} />
         </div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-3">No pages yet</h3>
-        <p className="text-gray-500 text-center mb-8 max-w-md">
+        <h3 className={`text-xl font-semibold mb-3 transition-colors duration-200 ${
+          isDarkMode ? 'text-white' : 'text-gray-900'
+        }`}>No pages yet</h3>
+        <p className={`text-center mb-8 max-w-md transition-colors duration-200 ${
+          isDarkMode ? 'text-gray-300' : 'text-gray-500'
+        }`}>
           Create your first page to start building your online presence and connect with your audience.
         </p>
         <button
@@ -121,8 +138,12 @@ const MyPagesView: React.FC<MyPagesComponentProps> = ({ loading, userPages, onCr
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-2xl font-bold text-gray-900">Your Pages</h3>
-          <p className="text-gray-500 mt-1">{userPages.length} page{userPages.length !== 1 ? 's' : ''} • Click any page to open it</p>
+          <h3 className={`text-2xl font-bold transition-colors duration-200 ${
+            isDarkMode ? 'text-white' : 'text-gray-900'
+          }`}>Your Pages</h3>
+          <p className={`mt-1 transition-colors duration-200 ${
+            isDarkMode ? 'text-gray-300' : 'text-gray-500'
+          }`}>{userPages.length} page{userPages.length !== 1 ? 's' : ''} • Click any page to open it</p>
         </div>
         <button
           onClick={onCreate}
@@ -138,43 +159,67 @@ const MyPagesView: React.FC<MyPagesComponentProps> = ({ loading, userPages, onCr
           <div 
             key={page._id} 
             onClick={() => onOpenPage(page._id)}
-            className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl hover:border-blue-200 transition-all duration-300 transform hover:-translate-y-1 group cursor-pointer"
+            className={`rounded-2xl border overflow-hidden transition-all duration-300 transform hover:-translate-y-1 group cursor-pointer ${
+              isDarkMode 
+                ? 'bg-gray-800 border-gray-700 hover:shadow-xl hover:border-blue-500' 
+                : 'bg-white border-gray-100 hover:shadow-xl hover:border-blue-200'
+            }`}
           >
             <div className="p-6">
               <div className="flex items-start gap-4 mb-4">
-                <div className="w-14 h-14 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-200">
-                  <FileText className="w-7 h-7 text-blue-600" />
+                <div className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-all duration-200 ${
+                  isDarkMode ? 'bg-gradient-to-br from-blue-900 to-indigo-900' : 'bg-gradient-to-br from-blue-50 to-indigo-100'
+                }`}>
+                  <FileText className={`w-7 h-7 transition-colors duration-200 ${
+                    isDarkMode ? 'text-blue-400' : 'text-blue-600'
+                  }`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <h4 className="font-bold text-gray-900 text-lg truncate">{page.name}</h4>
+                    <h4 className={`font-bold text-lg truncate transition-colors duration-200 ${
+                      isDarkMode ? 'text-white' : 'text-gray-900'
+                    }`}>{page.name}</h4>
                     {page.isVerified && (
                       <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
                         <Star className="w-3 h-3 text-white fill-current" />
                       </div>
                     )}
                 </div>
-                  <div className="flex items-center gap-2 text-gray-500">
+                  <div className={`flex items-center gap-2 transition-colors duration-200 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                  }`}>
                     <Globe className="w-4 h-4" />
                     <span className="text-sm">@{page.url}</span>
                   </div>
                 </div>
               </div>
               
-              <p className="text-gray-600 text-base mb-4 leading-relaxed line-clamp-3">{page.description}</p>
+              <p className={`text-base mb-4 leading-relaxed line-clamp-3 transition-colors duration-200 ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-600'
+              }`}>{page.description}</p>
               
               <div className="flex items-center justify-between mb-4">
-                <span className="bg-gray-50 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-medium border border-gray-200">
+                <span className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors duration-200 ${
+                  isDarkMode 
+                    ? 'bg-gray-700 text-gray-300 border-gray-600' 
+                    : 'bg-gray-50 text-gray-700 border-gray-200'
+                }`}>
                   {page.category}
                 </span>
-                <div className="flex items-center gap-1 text-gray-400">
+                <div className={`flex items-center gap-1 transition-colors duration-200 ${
+                  isDarkMode ? 'text-gray-400' : 'text-gray-400'
+                }`}>
                   <Calendar className="w-4 h-4" />
                   <span className="text-sm">{new Date(page.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
               
-              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                <div className="flex items-center gap-6 text-sm text-gray-500">
+              <div className={`flex items-center justify-between pt-4 border-t transition-colors duration-200 ${
+                isDarkMode ? 'border-gray-700' : 'border-gray-100'
+              }`}>
+                <div className={`flex items-center gap-6 text-sm transition-colors duration-200 ${
+                  isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                }`}>
                   <div className="flex items-center gap-2">
                     <Heart className="w-4 h-4 text-red-400" />
                     <span className="font-medium">{page.likes?.length || 0}</span>
@@ -189,7 +234,11 @@ const MyPagesView: React.FC<MyPagesComponentProps> = ({ loading, userPages, onCr
                     onClick={(e) => {
                       e.stopPropagation();
                     }}
-                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                    className={`p-2 rounded-lg transition-all duration-200 ${
+                      isDarkMode 
+                        ? 'text-gray-400 hover:text-blue-400 hover:bg-gray-700' 
+                        : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
+                    }`}
                   >
                     <MessageCircle className="w-4 h-4" />
                   </button>
@@ -197,11 +246,17 @@ const MyPagesView: React.FC<MyPagesComponentProps> = ({ loading, userPages, onCr
                     onClick={(e) => {
                       e.stopPropagation();
                     }}
-                    className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                    className={`p-2 rounded-lg transition-all duration-200 ${
+                      isDarkMode 
+                        ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' 
+                        : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
+                    }`}
                   >
                     <Share2 className="w-4 h-4" />
                   </button>
-                  <div className="w-6 h-6 text-gray-400 group-hover:text-blue-500 transition-colors">
+                  <div className={`w-6 h-6 group-hover:text-blue-500 transition-colors ${
+                    isDarkMode ? 'text-gray-400' : 'text-gray-400'
+                  }`}>
                     <ArrowRight className="w-4 h-4" />
                   </div>
                 </div>
@@ -214,8 +269,13 @@ const MyPagesView: React.FC<MyPagesComponentProps> = ({ loading, userPages, onCr
   );
 };
 
-const CreatePageFormView: React.FC<CreatePageFormProps> = ({ formData, categories, creating, isFormValid, onInputChange, onCreate, onGoBack }) => (
-  <div className="bg-white rounded-2xl border border-gray-100 p-8 max-w-3xl mx-auto shadow-lg">
+const CreatePageFormView: React.FC<CreatePageFormProps> = ({ formData, categories, creating, isFormValid, onInputChange, onCreate, onGoBack }) => {
+  const { isDarkMode } = useDarkMode();
+  
+  return (
+    <div className={`rounded-2xl border p-8 max-w-3xl mx-auto shadow-lg transition-colors duration-200 ${
+      isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'
+    }`}>
     {/* Form Header */}
     <div className="flex items-center justify-between mb-8">
       <div className="flex items-center gap-3">
@@ -223,22 +283,32 @@ const CreatePageFormView: React.FC<CreatePageFormProps> = ({ formData, categorie
           <Plus className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Create New Page</h2>
-          <p className="text-gray-500 mt-1">Build your online presence</p>
+          <h2 className={`text-2xl font-bold transition-colors duration-200 ${
+            isDarkMode ? 'text-white' : 'text-gray-900'
+          }`}>Create New Page</h2>
+          <p className={`mt-1 transition-colors duration-200 ${
+            isDarkMode ? 'text-gray-300' : 'text-gray-500'
+          }`}>Build your online presence</p>
         </div>
       </div>
       <button
         onClick={onGoBack}
-        className="sm:hidden p-3 hover:bg-gray-100 rounded-xl transition-colors"
+        className={`sm:hidden p-3 rounded-xl transition-colors ${
+          isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+        }`}
       >
-        <X className="w-6 h-6 text-gray-600" />
+        <X className={`w-6 h-6 transition-colors duration-200 ${
+          isDarkMode ? 'text-gray-300' : 'text-gray-600'
+        }`} />
       </button>
     </div>
 
     <form onSubmit={(e) => e.preventDefault()} noValidate className="space-y-6">
       {/* Page Name */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-3">
+        <label className={`block text-sm font-semibold mb-3 transition-colors duration-200 ${
+          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+        }`}>
           Page Name <span className="text-red-500">*</span>
         </label>
         <input
@@ -256,14 +326,22 @@ const CreatePageFormView: React.FC<CreatePageFormProps> = ({ formData, categorie
           className={`w-full p-4 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base transition-all duration-200 ${
             formData.pageName.length > 0 
               ? formData.pageName.length >= 3 
-                ? 'border-green-300 bg-green-50' 
+                ? isDarkMode
+                  ? 'border-green-500 bg-green-900/20 text-white'
+                  : 'border-green-300 bg-green-50'
+                : isDarkMode
+                  ? 'border-red-500 bg-red-900/20 text-white'
                 : 'border-red-300 bg-red-50'
+              : isDarkMode
+                ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500'
               : 'border-gray-200 hover:border-gray-300'
           }`}
         />
         {formData.pageName.length > 0 && (
-          <div className={`text-sm mt-2 ${
-            formData.pageName.length >= 3 ? 'text-green-600' : 'text-red-500'
+          <div className={`text-sm mt-2 transition-colors duration-200 ${
+            formData.pageName.length >= 3 
+              ? isDarkMode ? 'text-green-400' : 'text-green-600'
+              : 'text-red-500'
           }`}>
             {formData.pageName.length >= 3 
               ? '✓ Page name is valid' 
@@ -275,9 +353,15 @@ const CreatePageFormView: React.FC<CreatePageFormProps> = ({ formData, categorie
 
       {/* Page URL */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-3">Page URL <span className="text-red-500">*</span></label>
+        <label className={`block text-sm font-semibold mb-3 transition-colors duration-200 ${
+          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+        }`}>Page URL <span className="text-red-500">*</span></label>
         <div className="flex">
-          <span className="inline-flex items-center px-4 py-4 rounded-l-xl border border-r-0 border-gray-200 bg-gray-50 text-gray-600 text-sm font-medium">
+          <span className={`inline-flex items-center px-4 py-4 rounded-l-xl border border-r-0 text-sm font-medium transition-colors duration-200 ${
+            isDarkMode 
+              ? 'border-gray-600 bg-gray-700 text-gray-300' 
+              : 'border-gray-200 bg-gray-50 text-gray-600'
+          }`}>
             https://jaifriend.com/
           </span>
           <input
@@ -295,15 +379,23 @@ const CreatePageFormView: React.FC<CreatePageFormProps> = ({ formData, categorie
             className={`flex-1 p-4 border rounded-r-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base transition-all duration-200 ${
               formData.pageURL.length > 0 
                 ? formData.pageURL.length >= 3 && /^[a-z0-9-]+$/.test(formData.pageURL)
-                  ? 'border-green-300 bg-green-50' 
+                  ? isDarkMode
+                    ? 'border-green-500 bg-green-900/20 text-white'
+                    : 'border-green-300 bg-green-50'
+                  : isDarkMode
+                    ? 'border-red-500 bg-red-900/20 text-white'
                   : 'border-red-300 bg-red-50'
+                : isDarkMode
+                  ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500'
                 : 'border-gray-200 hover:border-gray-300'
             }`}
           />
         </div>
         {formData.pageURL.length > 0 && (
-          <div className={`text-sm mt-2 ${
-            formData.pageURL.length >= 3 && /^[a-z0-9-]+$/.test(formData.pageURL) ? 'text-green-600' : 'text-red-500'
+          <div className={`text-sm mt-2 transition-colors duration-200 ${
+            formData.pageURL.length >= 3 && /^[a-z0-9-]+$/.test(formData.pageURL) 
+              ? isDarkMode ? 'text-green-400' : 'text-green-600'
+              : 'text-red-500'
           }`}>
             {formData.pageURL.length >= 3 && /^[a-z0-9-]+$/.test(formData.pageURL)
               ? '✓ URL is valid' 
@@ -317,7 +409,9 @@ const CreatePageFormView: React.FC<CreatePageFormProps> = ({ formData, categorie
 
       {/* Page Description */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-3">Page Description <span className="text-red-500">*</span></label>
+        <label className={`block text-sm font-semibold mb-3 transition-colors duration-200 ${
+          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+        }`}>Page Description <span className="text-red-500">*</span></label>
         <textarea
           name="pageDescription"
           value={formData.pageDescription}
@@ -333,25 +427,35 @@ const CreatePageFormView: React.FC<CreatePageFormProps> = ({ formData, categorie
           className={`w-full p-4 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-base transition-all duration-200 ${
             formData.pageDescription.length > 0 
               ? formData.pageDescription.length >= 10 && formData.pageDescription.length <= 200
-                ? 'border-green-300 bg-green-50' 
+                ? isDarkMode
+                  ? 'border-green-500 bg-green-900/20 text-white'
+                  : 'border-green-300 bg-green-50'
+                : isDarkMode
+                  ? 'border-red-500 bg-red-900/20 text-white'
                 : 'border-red-300 bg-red-50'
+              : isDarkMode
+                ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500'
               : 'border-gray-200 hover:border-gray-300'
           }`}
         />
-        <div className="flex items-center justify_between mt-2">
-          <p className="text-sm text-gray-500">
+        <div className="flex items-center justify-between mt-2">
+          <p className={`text-sm transition-colors duration-200 ${
+            isDarkMode ? 'text-gray-400' : 'text-gray-500'
+          }`}>
             Between 10 and 200 characters
           </p>
-          <span className={`${'text-sm font-medium'} ${
+          <span className={`text-sm font-medium transition-colors duration-200 ${
             formData.pageDescription.length > 200 ? 'text-red-500' : 
-            formData.pageDescription.length >= 10 ? 'text-green-500' : 'text-gray-400'
+            formData.pageDescription.length >= 10 ? isDarkMode ? 'text-green-400' : 'text-green-500' : isDarkMode ? 'text-gray-500' : 'text-gray-400'
           }`}>
             {formData.pageDescription.length}/200
           </span>
         </div>
         {formData.pageDescription.length > 0 && (
-          <div className={`text-sm mt-2 ${
-            formData.pageDescription.length >= 10 && formData.pageDescription.length <= 200 ? 'text-green-600' : 'text-red-500'
+          <div className={`text-sm mt-2 transition-colors duration-200 ${
+            formData.pageDescription.length >= 10 && formData.pageDescription.length <= 200 
+              ? isDarkMode ? 'text-green-400' : 'text-green-600'
+              : 'text-red-500'
           }`}>
             {formData.pageDescription.length >= 10 && formData.pageDescription.length <= 200
               ? '✓ Description is valid' 
@@ -365,28 +469,42 @@ const CreatePageFormView: React.FC<CreatePageFormProps> = ({ formData, categorie
 
       {/* Page Category */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-3">Page Category <span className="text-red-500">*</span></label>
+        <label className={`block text-sm font-semibold mb-3 transition-colors duration-200 ${
+          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+        }`}>Page Category <span className="text-red-500">*</span></label>
         <select
           name="pageCategory"
           value={formData.pageCategory}
           onChange={onInputChange}
-          className="w-full p-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base transition-all duration-200 hover:border-gray-300"
+          className={`w-full p-4 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base transition-all duration-200 ${
+            isDarkMode 
+              ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500' 
+              : 'border-gray-200 hover:border-gray-300'
+          }`}
         >
           {categories.map((category: string) => (
             <option key={category} value={category}>{category}</option>
           ))}
         </select>
-        <p className="text-sm text-gray-500 mt-2">
+        <p className={`text-sm mt-2 transition-colors duration-200 ${
+          isDarkMode ? 'text-gray-400' : 'text-gray-500'
+        }`}>
           Choose the category that best describes your page
         </p>
       </div>
 
       {/* Form Actions */}
-      <div className="flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-4 mt-8 pt-6 border-t border-gray-100">
+      <div className={`flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-4 mt-8 pt-6 border-t transition-colors duration-200 ${
+        isDarkMode ? 'border-gray-700' : 'border-gray-100'
+      }`}>
         <button
           onClick={onGoBack}
           disabled={creating}
-          className="hidden sm:flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors disabled:opacity-50 px-6 py-3 rounded-xl hover:bg-gray-50"
+          className={`hidden sm:flex items-center gap-2 transition-colors disabled:opacity-50 px-6 py-3 rounded-xl ${
+            isDarkMode 
+              ? 'text-gray-300 hover:text-white hover:bg-gray-700' 
+              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+          }`}
         >
           <ArrowLeft className="w-5 h-5" />
           Go back
@@ -394,7 +512,7 @@ const CreatePageFormView: React.FC<CreatePageFormProps> = ({ formData, categorie
         <button
           onClick={onCreate}
           disabled={creating || !isFormValid}
-          className="w-full sm:w-auto bg-gradient_to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-3"
+          className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-3"
         >
           {creating ? (
             <>
@@ -412,6 +530,7 @@ const CreatePageFormView: React.FC<CreatePageFormProps> = ({ formData, categorie
     </form>
   </div>
 );
+};
 
 const SuggestedPagesView: React.FC<{ 
   promotedPages: Page[], 
@@ -420,6 +539,7 @@ const SuggestedPagesView: React.FC<{
   onJoin: (pageId: string) => void,
   loading: boolean 
 }> = ({ promotedPages, otherPages, onLike, onJoin, loading }) => {
+  const { isDarkMode } = useDarkMode();
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   
   const isLiked = (page: Page) => {
@@ -436,11 +556,17 @@ const SuggestedPagesView: React.FC<{
     <div className="space-y-8">
       {/* Promoted Section */}
       <div>
-        <h3 className="text-xl font-bold text-gray-900 mb-6">Promoted Pages</h3>
+        <h3 className={`text-xl font-bold mb-6 transition-colors duration-200 ${
+          isDarkMode ? 'text-white' : 'text-gray-900'
+        }`}>Promoted Pages</h3>
         {loading ? (
-          <div className="bg-white rounded-2xl border border-gray-100 min-h-32 flex flex-col items-center justify-center p-8">
+          <div className={`rounded-2xl border min-h-32 flex flex-col items-center justify-center p-8 transition-colors duration-200 ${
+            isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'
+          }`}>
             <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-500 text-lg font-medium">Loading promoted pages...</p>
+            <p className={`text-lg font-medium transition-colors duration-200 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-500'
+            }`}>Loading promoted pages...</p>
           </div>
         ) : promotedPages.length > 0 ? (
           <div className="space-y-4">
@@ -451,7 +577,11 @@ const SuggestedPagesView: React.FC<{
                   // Navigate to page details or open page
                   window.open(`https://jaifriend.com/${page.url}`, '_blank');
                 }}
-                className="bg-gradient-to-r from-orange-50 to-red-50 rounded-2xl border border-orange-200 p-6 hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-orange-300"
+                className={`rounded-2xl border p-6 hover:shadow-lg transition-all duration-200 cursor-pointer ${
+                  isDarkMode 
+                    ? 'bg-gradient-to-r from-orange-900/20 to-red-900/20 border-orange-700 hover:border-orange-600' 
+                    : 'bg-gradient-to-r from-orange-50 to-red-50 border-orange-200 hover:border-orange-300'
+                }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4 min-w-0 flex-1">
@@ -473,10 +603,14 @@ const SuggestedPagesView: React.FC<{
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-bold text-gray-900 text-lg truncate">{page.name}</h4>
+                        <h4 className={`font-bold text-lg truncate transition-colors duration-200 ${
+                          isDarkMode ? 'text-white' : 'text-gray-900'
+                        }`}>{page.name}</h4>
                         {page.isVerified && <Star className="w-5 h-5 text-blue-500" />}
                       </div>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-gray-600">
+                      <div className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm transition-colors duration-200 ${
+                        isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                      }`}>
                         <span className="flex items-center gap-2">
                           <ThumbsUp className="w-4 h-4 text-blue-500" />
                           <span className="font-medium">{page.likes?.length || 0} people like this</span>
@@ -485,9 +619,15 @@ const SuggestedPagesView: React.FC<{
                           <Users className="w-4 h-4 text-green-500" />
                           <span className="font-medium">{page.followers?.length || 0} followers</span>
                         </span>
-                        <span className="text-blue-600 font-medium bg-blue-50 px-3 py-1 rounded-lg">{page.category}</span>
+                        <span className={`font-medium px-3 py-1 rounded-lg transition-colors duration-200 ${
+                          isDarkMode 
+                            ? 'text-blue-400 bg-blue-900/30' 
+                            : 'text-blue-600 bg-blue-50'
+                        }`}>{page.category}</span>
                       </div>
-                      <p className="text-gray-500 text-sm mt-2 truncate">{page.description}</p>
+                      <p className={`text-sm mt-2 truncate transition-colors duration-200 ${
+                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`}>{page.description}</p>
                     </div>
                   </div>
                   <div className="flex gap-2 ml-4 flex-shrink-0">
@@ -499,7 +639,9 @@ const SuggestedPagesView: React.FC<{
                       className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 border ${
                         isLiked(page) 
                           ? 'bg-blue-500 text-white border-blue-500' 
-                          : 'bg-gray-50 hover:bg-blue-50 hover:text-blue-600 text-gray-700 border-gray-200 hover:border-blue-200'
+                          : isDarkMode
+                            ? 'bg-gray-700 hover:bg-blue-900/30 hover:text-blue-400 text-gray-300 border-gray-600 hover:border-blue-500'
+                            : 'bg-gray-50 hover:bg-blue-50 hover:text-blue-600 text-gray-700 border-gray-200 hover:border-blue-200'
                       }`}
                     >
                       <ThumbsUp className="w-4 h-4" />
@@ -513,7 +655,9 @@ const SuggestedPagesView: React.FC<{
                       className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 border ${
                         isJoined(page) 
                           ? 'bg-green-500 text-white border-green-500' 
-                          : 'bg-gray-50 hover:bg-green-50 hover:text-green-600 text-gray-700 border-gray-200 hover:border-green-200'
+                          : isDarkMode
+                            ? 'bg-gray-700 hover:bg-green-900/30 hover:text-green-400 text-gray-300 border-gray-600 hover:border-green-500'
+                            : 'bg-gray-50 hover:bg-green-50 hover:text-green-600 text-gray-700 border-gray-200 hover:border-green-200'
                       }`}
                     >
                       <Users className="w-4 h-4" />
@@ -525,11 +669,21 @@ const SuggestedPagesView: React.FC<{
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-gray-100 min-h-32 flex flex-col items-center justify-center p-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-orange-50 to-red-100 rounded-2xl flex items-center justify-center mb-4">
-              <FileText className="w-8 h-8 text-orange-500" />
+          <div className={`rounded-2xl border min-h-32 flex flex-col items-center justify-center p-8 transition-colors duration-200 ${
+            isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'
+          }`}>
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-colors duration-200 ${
+              isDarkMode 
+                ? 'bg-gradient-to-br from-orange-900/30 to-red-900/30' 
+                : 'bg-gradient-to-br from-orange-50 to-red-100'
+            }`}>
+              <FileText className={`w-8 h-8 transition-colors duration-200 ${
+                isDarkMode ? 'text-orange-400' : 'text-orange-500'
+              }`} />
             </div>
-            <p className="text-gray-500 text-lg font-medium">No promoted pages available</p>
+            <p className={`text-lg font-medium transition-colors duration-200 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-500'
+            }`}>No promoted pages available</p>
           </div>
         )}
       </div>
@@ -537,19 +691,31 @@ const SuggestedPagesView: React.FC<{
       {/* Suggested Pages List */}
       <div>
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-gray-900">Suggested Pages</h3>
+          <h3 className={`text-xl font-bold transition-colors duration-200 ${
+            isDarkMode ? 'text-white' : 'text-gray-900'
+          }`}>Suggested Pages</h3>
           <button
             onClick={() => window.location.reload()}
-            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+            className={`text-sm font-medium transition-colors duration-200 ${
+              isDarkMode 
+                ? 'text-blue-400 hover:text-blue-300' 
+                : 'text-blue-600 hover:text-blue-700'
+            }`}
           >
             Refresh
           </button>
         </div>
-        <p className="text-gray-500 mb-4">Discover pages created by other users</p>
+        <p className={`mb-4 transition-colors duration-200 ${
+          isDarkMode ? 'text-gray-300' : 'text-gray-500'
+        }`}>Discover pages created by other users</p>
         {loading ? (
-          <div className="bg-white rounded-2xl border border-gray-100 min-h-32 flex flex-col items-center justify-center p-8">
+          <div className={`rounded-2xl border min-h-32 flex flex-col items-center justify-center p-8 transition-colors duration-200 ${
+            isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'
+          }`}>
             <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-500 text-lg font-medium">Loading suggested pages...</p>
+            <p className={`text-lg font-medium transition-colors duration-200 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-500'
+            }`}>Loading suggested pages...</p>
           </div>
         ) : otherPages.length > 0 ? (
           <div className="space-y-4">
@@ -560,7 +726,11 @@ const SuggestedPagesView: React.FC<{
                   // Navigate to page details or open page
                   window.open(`https://jaifriend.com/${page.url}`, '_blank');
                 }}
-                className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-blue-200"
+                className={`rounded-2xl border p-6 hover:shadow-lg transition-all duration-200 cursor-pointer ${
+                  isDarkMode 
+                    ? 'bg-gray-800 border-gray-700 hover:border-blue-500' 
+                    : 'bg-white border-gray-100 hover:border-blue-200'
+                }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4 min-w-0 flex-1">
@@ -582,10 +752,14 @@ const SuggestedPagesView: React.FC<{
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-bold text-gray-900 text-lg truncate">{page.name}</h4>
+                        <h4 className={`font-bold text-lg truncate transition-colors duration-200 ${
+                          isDarkMode ? 'text-white' : 'text-gray-900'
+                        }`}>{page.name}</h4>
                         {page.isVerified && <Star className="w-5 h-5 text-blue-500" />}
                       </div>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-gray-600">
+                      <div className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm transition-colors duration-200 ${
+                        isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                      }`}>
                         <span className="flex items-center gap-2">
                           <ThumbsUp className="w-4 h-4 text-blue-500" />
                           <span className="font-medium">{page.likes?.length || 0} people like this</span>
@@ -594,10 +768,18 @@ const SuggestedPagesView: React.FC<{
                           <Users className="w-4 h-4 text-green-500" />
                           <span className="font-medium">{page.followers?.length || 0} followers</span>
                         </span>
-                        <span className="text-blue-600 font-medium bg-blue-50 px-3 py-1 rounded-lg">{page.category}</span>
+                        <span className={`font-medium px-3 py-1 rounded-lg transition-colors duration-200 ${
+                          isDarkMode 
+                            ? 'text-blue-400 bg-blue-900/30' 
+                            : 'text-blue-600 bg-blue-50'
+                        }`}>{page.category}</span>
                       </div>
-                      <p className="text-gray-500 text-sm mt-2 truncate">{page.description}</p>
-                      <div className="flex items-center gap-2 mt-2 text-xs text-gray-400">
+                      <p className={`text-sm mt-2 truncate transition-colors duration-200 ${
+                        isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                      }`}>{page.description}</p>
+                      <div className={`flex items-center gap-2 mt-2 text-xs transition-colors duration-200 ${
+                        isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                      }`}>
                         <span>Created by {page.createdBy.name || page.createdBy.username}</span>
                         <span>•</span>
                         <span>{new Date(page.createdAt).toLocaleDateString()}</span>
@@ -613,7 +795,9 @@ const SuggestedPagesView: React.FC<{
                       className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 border ${
                         isLiked(page) 
                           ? 'bg-blue-500 text-white border-blue-500' 
-                          : 'bg-gray-50 hover:bg-blue-50 hover:text-blue-600 text-gray-700 border-gray-200 hover:border-blue-200'
+                          : isDarkMode
+                            ? 'bg-gray-700 hover:bg-blue-900/30 hover:text-blue-400 text-gray-300 border-gray-600 hover:border-blue-500'
+                            : 'bg-gray-50 hover:bg-blue-50 hover:text-blue-600 text-gray-700 border-gray-200 hover:border-blue-200'
                       }`}
                     >
                       <ThumbsUp className="w-4 h-4" />
@@ -627,7 +811,9 @@ const SuggestedPagesView: React.FC<{
                       className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 border ${
                         isJoined(page) 
                           ? 'bg-green-500 text-white border-green-500' 
-                          : 'bg-gray-50 hover:bg-green-50 hover:text-green-600 text-gray-700 border-gray-200 hover:border-green-200'
+                          : isDarkMode
+                            ? 'bg-gray-700 hover:bg-green-900/30 hover:text-green-400 text-gray-300 border-gray-600 hover:border-green-500'
+                            : 'bg-gray-50 hover:bg-green-50 hover:text-green-600 text-gray-700 border-gray-200 hover:border-green-200'
                       }`}
                     >
                       <Users className="w-4 h-4" />
@@ -639,11 +825,21 @@ const SuggestedPagesView: React.FC<{
             ))}
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-gray-100 min-h-32 flex flex-col items-center justify-center p-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl flex items-center justify-center mb-4">
-              <FileText className="w-8 h-8 text-blue-500" />
+          <div className={`rounded-2xl border min-h-32 flex flex-col items-center justify-center p-8 transition-colors duration-200 ${
+            isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'
+          }`}>
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-colors duration-200 ${
+              isDarkMode 
+                ? 'bg-gradient-to-br from-blue-900/30 to-indigo-900/30' 
+                : 'bg-gradient-to-br from-blue-50 to-indigo-100'
+            }`}>
+              <FileText className={`w-8 h-8 transition-colors duration-200 ${
+                isDarkMode ? 'text-blue-400' : 'text-blue-500'
+              }`} />
             </div>
-            <p className="text-gray-500 text-lg font-medium">No suggested pages available</p>
+            <p className={`text-lg font-medium transition-colors duration-200 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-500'
+            }`}>No suggested pages available</p>
           </div>
         )}
       </div>
@@ -652,23 +848,41 @@ const SuggestedPagesView: React.FC<{
 };
 
 const LikedPagesView: React.FC<{ likedPages: Page[], loading: boolean }> = ({ likedPages, loading }) => {
+  const { isDarkMode } = useDarkMode();
+  
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 min-h-80 flex flex-col items-center justify-center p-8">
+      <div className={`rounded-2xl border min-h-80 flex flex-col items-center justify-center p-8 transition-colors duration-200 ${
+        isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'
+      }`}>
         <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-gray-500 text-lg font-medium">Loading liked pages...</p>
+        <p className={`text-lg font-medium transition-colors duration-200 ${
+          isDarkMode ? 'text-gray-300' : 'text-gray-500'
+        }`}>Loading liked pages...</p>
       </div>
     );
   }
 
   if (likedPages.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-100 min-h-80 flex flex-col items-center justify-center p-8">
-        <div className="w-20 h-20 bg-gradient-to-br from-red-50 to-pink-100 rounded-2xl flex items-center justify-center mb-6">
-          <Heart className="w-10 h-10 text-red-500" />
+      <div className={`rounded-2xl border min-h-80 flex flex-col items-center justify-center p-8 transition-colors duration-200 ${
+        isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'
+      }`}>
+        <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mb-6 transition-colors duration-200 ${
+          isDarkMode 
+            ? 'bg-gradient-to-br from-red-900/30 to-pink-900/30' 
+            : 'bg-gradient-to-br from-red-50 to-pink-100'
+        }`}>
+          <Heart className={`w-10 h-10 transition-colors duration-200 ${
+            isDarkMode ? 'text-red-400' : 'text-red-500'
+          }`} />
         </div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-3">No liked pages yet</h3>
-        <p className="text-gray-500 text-center max-w-md">
+        <h3 className={`text-xl font-semibold mb-3 transition-colors duration-200 ${
+          isDarkMode ? 'text-white' : 'text-gray-900'
+        }`}>No liked pages yet</h3>
+        <p className={`text-center max-w-md transition-colors duration-200 ${
+          isDarkMode ? 'text-gray-300' : 'text-gray-500'
+        }`}>
           Start exploring and like pages that interest you to see them here.
         </p>
       </div>
@@ -678,8 +892,12 @@ const LikedPagesView: React.FC<{ likedPages: Page[], loading: boolean }> = ({ li
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-2xl font-bold text-gray-900 mb-2">Your Liked Pages</h3>
-        <p className="text-gray-500">{likedPages.length} page{likedPages.length !== 1 ? 's' : ''} you've liked</p>
+        <h3 className={`text-2xl font-bold mb-2 transition-colors duration-200 ${
+          isDarkMode ? 'text-white' : 'text-gray-900'
+        }`}>Your Liked Pages</h3>
+        <p className={`transition-colors duration-200 ${
+          isDarkMode ? 'text-gray-300' : 'text-gray-500'
+        }`}>{likedPages.length} page{likedPages.length !== 1 ? 's' : ''} you've liked</p>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -689,7 +907,11 @@ const LikedPagesView: React.FC<{ likedPages: Page[], loading: boolean }> = ({ li
             onClick={() => {
               window.open(`https://jaifriend.com/${page.url}`, '_blank');
             }}
-            className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-all duration-200 cursor-pointer hover:border-red-200"
+            className={`rounded-2xl border p-6 hover:shadow-lg transition-all duration-200 cursor-pointer ${
+              isDarkMode 
+                ? 'bg-gray-800 border-gray-700 hover:border-red-500' 
+                : 'bg-white border-gray-100 hover:border-red-200'
+            }`}
           >
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -710,14 +932,20 @@ const LikedPagesView: React.FC<{ likedPages: Page[], loading: boolean }> = ({ li
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <h4 className="font-bold text-gray-900 text-lg truncate">{page.name}</h4>
+                  <h4 className={`font-bold text-lg truncate transition-colors duration-200 ${
+                    isDarkMode ? 'text-white' : 'text-gray-900'
+                  }`}>{page.name}</h4>
                   {page.isVerified && <Star className="w-4 h-4 text-blue-500" />}
                 </div>
-                <p className="text-gray-500 text-sm truncate">{page.description}</p>
+                <p className={`text-sm truncate transition-colors duration-200 ${
+                  isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                }`}>{page.description}</p>
               </div>
             </div>
             
-            <div className="flex items-center justify-between text-sm text-gray-600">
+            <div className={`flex items-center justify-between text-sm transition-colors duration-200 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-600'
+            }`}>
               <div className="flex items-center gap-4">
                 <span className="flex items-center gap-1">
                   <ThumbsUp className="w-4 h-4 text-blue-500" />
@@ -728,7 +956,11 @@ const LikedPagesView: React.FC<{ likedPages: Page[], loading: boolean }> = ({ li
                   <span>{page.followers?.length || 0}</span>
                 </span>
               </div>
-              <span className="text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-lg text-xs">{page.category}</span>
+              <span className={`font-medium px-2 py-1 rounded-lg text-xs transition-colors duration-200 ${
+                isDarkMode 
+                  ? 'text-blue-400 bg-blue-900/30' 
+                  : 'text-blue-600 bg-blue-50'
+              }`}>{page.category}</span>
             </div>
           </div>
         ))}
@@ -739,6 +971,7 @@ const LikedPagesView: React.FC<{ likedPages: Page[], loading: boolean }> = ({ li
 
 const PagesInterface: React.FC = () => {
   const router = useRouter();
+  const { isDarkMode } = useDarkMode();
   const [activeTab, setActiveTab] = useState<string>('My Pages');
   const [showCreateForm, setShowCreateForm] = useState<boolean>(false);
   const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
@@ -1482,9 +1715,13 @@ const PagesInterface: React.FC = () => {
   };
 
   return (
-    <div className="w-full bg-gray-50 min-h-screen">
+    <div className={`w-full min-h-screen transition-colors duration-200 ${
+      isDarkMode ? 'bg-gray-900' : 'bg-gray-50'
+    }`}>
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-30">
+      <header className={`shadow-sm border-b sticky top-0 z-30 transition-colors duration-200 ${
+        isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'
+      }`}>
         <div className="px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -1497,19 +1734,27 @@ const PagesInterface: React.FC = () => {
                 </button>
               )}
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className={`text-2xl font-bold transition-colors duration-200 ${
+                  isDarkMode ? 'text-white' : 'text-gray-900'
+                }`}>
                 {showCreateForm ? 'Create Page' : 'Pages'}
               </h1>
                 {!showCreateForm && (
-                  <p className="text-gray-500 text-sm mt-1">Manage and discover amazing pages</p>
+                  <p className={`text-sm mt-1 transition-colors duration-200 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-500'
+                  }`}>Manage and discover amazing pages</p>
                 )}
               </div>
             </div>
             
             <div className="flex items-center gap-3">
               {/* Search Button (Mobile) */}
-              <button className="sm:hidden p-3 hover:bg-gray-100 rounded-xl transition-colors">
-                <Search className="w-5 h-5 text-gray-600" />
+              <button className={`sm:hidden p-3 rounded-xl transition-colors ${
+                isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+              }`}>
+                <Search className={`w-5 h-5 transition-colors duration-200 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                }`} />
               </button>
               
               {/* Action Buttons */}
@@ -1518,9 +1763,13 @@ const PagesInterface: React.FC = () => {
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setShowMobileMenu(true)}
-                className="sm:hidden p-3 hover:bg-gray-100 rounded-xl transition-colors"
+                className={`sm:hidden p-3 rounded-xl transition-colors ${
+                  isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+                }`}
               >
-                <Menu className="w-5 h-5 text-gray-600" />
+                <Menu className={`w-5 h-5 transition-colors duration-200 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                }`} />
               </button>
             </div>
           </div>
@@ -1530,15 +1779,25 @@ const PagesInterface: React.FC = () => {
       {/* Mobile Menu Overlay */}
       {showMobileMenu && (
         <div className="sm:hidden fixed inset-0 z-50 bg-black/50" onClick={() => setShowMobileMenu(false)}>
-          <div className="absolute right-0 top-0 h-full w-72 bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6 border-b border-gray-100">
+          <div className={`absolute right-0 top-0 h-full w-72 shadow-2xl transition-colors duration-200 ${
+            isDarkMode ? 'bg-gray-800' : 'bg-white'
+          }`} onClick={(e) => e.stopPropagation()}>
+            <div className={`p-6 border-b transition-colors duration-200 ${
+              isDarkMode ? 'border-gray-700' : 'border-gray-100'
+            }`}>
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900">Menu</h2>
+                <h2 className={`text-xl font-bold transition-colors duration-200 ${
+                  isDarkMode ? 'text-white' : 'text-gray-900'
+                }`}>Menu</h2>
                 <button
                   onClick={() => setShowMobileMenu(false)}
-                  className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                  className={`p-2 rounded-xl transition-colors ${
+                    isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+                  }`}
                 >
-                  <X className="w-6 h-6" />
+                  <X className={`w-6 h-6 transition-colors duration-200 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                  }`} />
                 </button>
               </div>
             </div>
@@ -1552,7 +1811,9 @@ const PagesInterface: React.FC = () => {
 
       {/* Navigation Tabs - Desktop Only */}
       {!showCreateForm && (
-        <nav className="hidden sm:block bg-white border-b border-gray-100">
+        <nav className={`hidden sm:block border-b transition-colors duration-200 ${
+          isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'
+        }`}>
           <div className="px-6 lg:px-8">
             <div className="flex">
               {tabs.map((tab: Tab) => (
@@ -1562,6 +1823,8 @@ const PagesInterface: React.FC = () => {
                   className={`flex-shrink-0 px-6 py-4 text-sm font-semibold border-b-2 transition-all duration-200 ${
                     activeTab === tab.name
                       ? 'text-blue-600 border-blue-600'
+                      : isDarkMode
+                        ? 'text-gray-300 border-transparent hover:text-blue-400 hover:border-gray-600'
                       : 'text-gray-500 border-transparent hover:text-blue-600 hover:border-gray-200'
                   }`}
                 >

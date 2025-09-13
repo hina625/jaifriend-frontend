@@ -94,7 +94,7 @@ export default function MessagesPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  // Mock data for demonstration
+  // Mock data
   useEffect(() => {
     const mockConversations: Conversation[] = [
       {
@@ -102,8 +102,8 @@ export default function MessagesPage() {
         participants: [
           {
             _id: '1',
-            name: 'John Doe',
-            username: 'johndoe',
+            name: 'marm',
+            username: 'mariyam',
             avatar: '/default-avatar.svg',
             isOnline: true
           },
@@ -120,8 +120,8 @@ export default function MessagesPage() {
           content: 'Hey! How are you doing?',
           sender: {
             _id: '1',
-            name: 'John Doe',
-            username: 'johndoe'
+            name: 'mariyam',
+            username: 'mariyam'
           },
           receiver: {
             _id: '2',
@@ -142,8 +142,8 @@ export default function MessagesPage() {
         participants: [
           {
             _id: '3',
-            name: 'Jane Smith',
-            username: 'janesmith',
+            name: 'Maha',
+            username: 'romaha',
             avatar: '/default-avatar.svg',
             isOnline: false
           },
@@ -165,8 +165,8 @@ export default function MessagesPage() {
           },
           receiver: {
             _id: '3',
-            name: 'Jane Smith',
-            username: 'janesmith'
+            name: 'Manan',
+            username: 'MANAN'
           },
           timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
           isRead: true,
@@ -182,8 +182,8 @@ export default function MessagesPage() {
         participants: [
           {
             _id: '4',
-            name: 'Mike Johnson',
-            username: 'mikej',
+            name: 'Manan',
+            username: 'Manan',
             avatar: '/default-avatar.svg',
             isOnline: true
           },
@@ -200,8 +200,8 @@ export default function MessagesPage() {
           content: 'Can we meet tomorrow?',
           sender: {
             _id: '4',
-            name: 'Mike Johnson',
-            username: 'mikej'
+            name: 'Hina ',
+            username: 'Hinuu'
           },
           receiver: {
             _id: '2',
@@ -223,7 +223,7 @@ export default function MessagesPage() {
     setLoading(false);
   }, []);
 
-  // Mock messages for selected conversation
+
   useEffect(() => {
     if (selectedConversation) {
       const mockMessages: Message[] = [
@@ -300,7 +300,7 @@ export default function MessagesPage() {
     }
   }, [selectedConversation]);
 
-  // Auto scroll to bottom when new messages arrive
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -310,7 +310,7 @@ export default function MessagesPage() {
 
     setSending(true);
     
-    // Simulate sending message
+
     const message: Message = {
       _id: Date.now().toString(),
       content: newMessage,
@@ -332,7 +332,7 @@ export default function MessagesPage() {
     setMessages(prev => [...prev, message]);
     setNewMessage('');
     
-    // Update conversation last message
+    
     setConversations(prev => prev.map(conv => 
       conv._id === selectedConversation._id 
         ? { ...conv, lastMessage: message, updatedAt: new Date().toISOString() }
@@ -384,12 +384,12 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className={`min-h-screen flex ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+    <div className={`min-h-screen flex ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} pb-16 sm:pb-0`}>
       {/* Sidebar */}
       <div className={`w-full max-w-md border-r transition-colors duration-200 ${
         isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-      } ${selectedConversation ? 'hidden lg:block' : 'block'}`}>
-        {/* Header */}
+      } ${selectedConversation ? 'hidden lg:block' : 'block'} pb-16 sm:pb-0`}>
+      
         <div className={`p-4 border-b transition-colors duration-200 ${
           isDarkMode ? 'border-gray-700' : 'border-gray-200'
         }`}>
@@ -422,7 +422,7 @@ export default function MessagesPage() {
             </div>
           </div>
 
-          {/* Search Bar */}
+          
           {showSearch && (
             <div className="relative">
               <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${
@@ -443,7 +443,7 @@ export default function MessagesPage() {
           )}
         </div>
 
-        {/* Conversations List */}
+     
         <div className="flex-1 overflow-y-auto">
           {filteredConversations.length > 0 ? (
             <div className="space-y-1 p-2">
@@ -481,7 +481,7 @@ export default function MessagesPage() {
                         )}
                       </div>
 
-                      {/* Content */}
+                    
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <h3 className={`font-medium truncate transition-colors duration-200 ${
@@ -545,9 +545,9 @@ export default function MessagesPage() {
         </div>
       </div>
 
-      {/* Chat Area */}
+    
       {selectedConversation ? (
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col pb-16 sm:pb-0">
           {/* Chat Header */}
           <div className={`p-4 border-b transition-colors duration-200 ${
             isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
@@ -615,8 +615,8 @@ export default function MessagesPage() {
             </div>
           </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-20 sm:pb-4">
             {messages.map((message) => {
               const isOwn = message.sender._id === '2';
               const isRead = message.isRead;
@@ -660,7 +660,7 @@ export default function MessagesPage() {
               );
             })}
             
-            {/* Typing Indicator */}
+          
             {isTyping && (
               <div className="flex justify-start">
                 <div className={`px-4 py-2 rounded-2xl transition-colors duration-200 ${
@@ -685,11 +685,10 @@ export default function MessagesPage() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Message Input */}
           <div className={`p-4 border-t transition-colors duration-200 ${
             isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-          }`}>
-            {/* Reply Preview */}
+          } pb-20 sm:pb-4`}>
+           
             {replyingTo && (
               <div className={`mb-3 p-3 rounded-lg border-l-4 border-blue-500 ${
                 isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
@@ -786,14 +785,14 @@ export default function MessagesPage() {
             </div>
           </div>
 
-          {/* Hidden file inputs */}
+        
           <input
             ref={fileInputRef}
             type="file"
             className="hidden"
             accept=".pdf,.doc,.docx,.txt"
             onChange={(e) => {
-              // Handle file upload
+          
               console.log('File selected:', e.target.files?.[0]);
             }}
           />

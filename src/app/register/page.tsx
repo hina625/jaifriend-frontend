@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useDarkMode } from '../contexts/DarkModeContext';
 
 // Type definitions for form and errors
 interface RegisterForm {
@@ -30,6 +31,7 @@ interface PopupState {
 }
 
 export default function Register(): React.ReactElement {
+  const { isDarkMode } = useDarkMode();
   const [formData, setFormData] = useState<RegisterForm>({
     username: '',
     email: '',
@@ -161,11 +163,15 @@ export default function Register(): React.ReactElement {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f9fa] flex flex-col">
+    <div className={`min-h-screen flex flex-col transition-colors duration-200 ${
+      isDarkMode ? 'bg-gray-900' : 'bg-[#f8f9fa]'
+    }`}>
       {/* Custom Popup Modal */}
       {popup.isOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-100">
+          <div className={`rounded-2xl shadow-2xl max-w-md w-full mx-4 transform transition-all duration-300 scale-100 ${
+            isDarkMode ? 'bg-gray-800' : 'bg-white'
+          }`}>
             <div className="p-6">
               {/* Icon */}
               <div className="flex items-center justify-center mb-4">

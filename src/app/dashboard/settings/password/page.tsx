@@ -12,7 +12,7 @@ interface PasswordForm {
 }
 
 const ChangePasswordPage = () => {
-  const { isDarkMode } = useDarkMode();
+  const { isDarkMode, isSystemMode } = useDarkMode();
   const [loading, setLoading] = useState(false);
   const [passwordForm, setPasswordForm] = useState<PasswordForm>({
     currentPassword: '',
@@ -187,14 +187,36 @@ const ChangePasswordPage = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white dark:bg-dark-800 rounded-lg shadow-sm border border-gray-200 dark:border-dark-600 p-8">
-        <h1 className="text-2xl font-semibold text-gray-900 dark:text-dark-100 mb-8">Change Password</h1>
+    <div className={`max-w-4xl mx-auto p-6 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'} min-h-screen`}>
+      <div className={`rounded-lg shadow-sm border p-8 transition-all duration-200 ${
+        isDarkMode 
+          ? 'bg-gray-800 border-gray-700 shadow-xl' 
+          : 'bg-white border-gray-200 shadow-sm'
+      }`}>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className={`text-2xl font-semibold ${
+            isDarkMode 
+              ? 'text-white' 
+              : 'text-gray-900'
+          }`}>Change Password</h1>
+          <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium ${
+            isDarkMode 
+              ? 'bg-gray-700 text-gray-300' 
+              : 'bg-gray-100 text-gray-600'
+          }`}>
+            <span className="text-sm">🌙</span>
+            <span>{isSystemMode ? 'System Mode' : 'Manual Mode'}</span>
+          </div>
+        </div>
         
         <div className="space-y-6">
           {/* Current Password */}
           <div>
-            <label className="block text-sm text-gray-600 dark:text-dark-300 mb-2">
+            <label className={`block text-sm mb-2 ${
+              isDarkMode 
+                ? 'text-gray-300' 
+                : 'text-gray-600'
+            }`}>
               Current Password
             </label>
             <div className="relative">
@@ -202,13 +224,21 @@ const ChangePasswordPage = () => {
                 type={showPasswords.current ? 'text' : 'password'}
                 value={passwordForm.currentPassword}
                 onChange={(e) => handleInputChange('currentPassword', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-dark-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-dark-100 bg-white dark:bg-dark-700 pr-12"
+                className={`w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12 transition-all duration-200 ${
+                  isDarkMode 
+                    ? 'border-gray-600 text-white bg-gray-700 placeholder-gray-400' 
+                    : 'border-gray-300 text-gray-900 bg-white placeholder-gray-500'
+                }`}
                 placeholder="Enter current password"
               />
               <button
                 type="button"
                 onClick={() => togglePasswordVisibility('current')}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 dark:text-dark-400 hover:text-gray-600 dark:hover:text-dark-200"
+                className={`absolute inset-y-0 right-0 pr-3 flex items-center transition-colors ${
+                  isDarkMode 
+                    ? 'text-gray-400 hover:text-gray-200' 
+                    : 'text-gray-400 hover:text-gray-600'
+                }`}
               >
                 {showPasswords.current ? (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -226,7 +256,11 @@ const ChangePasswordPage = () => {
 
           {/* New Password */}
           <div>
-            <label className="block text-sm text-gray-600 dark:text-dark-300 mb-2">
+            <label className={`block text-sm mb-2 ${
+              isDarkMode 
+                ? 'text-gray-300' 
+                : 'text-gray-600'
+            }`}>
               New password
             </label>
             <div className="relative">
@@ -234,13 +268,21 @@ const ChangePasswordPage = () => {
                 type={showPasswords.new ? 'text' : 'password'}
                 value={passwordForm.newPassword}
                 onChange={(e) => handleInputChange('newPassword', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-dark-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-dark-100 bg-white dark:bg-dark-700 pr-12"
+                className={`w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12 transition-all duration-200 ${
+                  isDarkMode 
+                    ? 'border-gray-600 text-white bg-gray-700 placeholder-gray-400' 
+                    : 'border-gray-300 text-gray-900 bg-white placeholder-gray-500'
+                }`}
                 placeholder="Enter new password"
               />
               <button
                 type="button"
                 onClick={() => togglePasswordVisibility('new')}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 dark:text-dark-400 hover:text-gray-600 dark:hover:text-dark-200"
+                className={`absolute inset-y-0 right-0 pr-3 flex items-center transition-colors ${
+                  isDarkMode 
+                    ? 'text-gray-400 hover:text-gray-200' 
+                    : 'text-gray-400 hover:text-gray-600'
+                }`}
               >
                 {showPasswords.new ? (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -255,7 +297,11 @@ const ChangePasswordPage = () => {
               </button>
             </div>
             {passwordForm.newPassword && !validatePassword(passwordForm.newPassword) && (
-              <p className="mt-1 text-xs text-red-600">
+              <p className={`mt-1 text-xs ${
+                isDarkMode 
+                  ? 'text-red-400' 
+                  : 'text-red-600'
+              }`}>
                 Password must be at least 8 characters with uppercase, lowercase, and number
               </p>
             )}
@@ -263,7 +309,11 @@ const ChangePasswordPage = () => {
 
           {/* Repeat Password */}
           <div>
-            <label className="block text-sm text-gray-600 dark:text-dark-300 mb-2">
+            <label className={`block text-sm mb-2 ${
+              isDarkMode 
+                ? 'text-gray-300' 
+                : 'text-gray-600'
+            }`}>
               Repeat password
             </label>
             <div className="relative">
@@ -271,13 +321,21 @@ const ChangePasswordPage = () => {
                 type={showPasswords.repeat ? 'text' : 'password'}
                 value={passwordForm.repeatPassword}
                 onChange={(e) => handleInputChange('repeatPassword', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-dark-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-dark-100 bg-white dark:bg-dark-700 pr-12"
+                className={`w-full px-4 py-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12 transition-all duration-200 ${
+                  isDarkMode 
+                    ? 'border-gray-600 text-white bg-gray-700 placeholder-gray-400' 
+                    : 'border-gray-300 text-gray-900 bg-white placeholder-gray-500'
+                }`}
                 placeholder="Repeat new password"
               />
               <button
                 type="button"
                 onClick={() => togglePasswordVisibility('repeat')}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 dark:text-dark-400 hover:text-gray-600 dark:hover:text-dark-200"
+                className={`absolute inset-y-0 right-0 pr-3 flex items-center transition-colors ${
+                  isDarkMode 
+                    ? 'text-gray-400 hover:text-gray-200' 
+                    : 'text-gray-400 hover:text-gray-600'
+                }`}
               >
                 {showPasswords.repeat ? (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -292,20 +350,36 @@ const ChangePasswordPage = () => {
               </button>
             </div>
             {passwordForm.repeatPassword && passwordForm.newPassword !== passwordForm.repeatPassword && (
-              <p className="mt-1 text-xs text-red-600">
+              <p className={`mt-1 text-xs ${
+                isDarkMode 
+                  ? 'text-red-400' 
+                  : 'text-red-600'
+              }`}>
                 Passwords do not match
               </p>
             )}
           </div>
 
           {/* Two Factor Authentication */}
-          <div className="border-t border-gray-200 dark:border-dark-600 pt-6">
+          <div className={`border-t pt-6 ${
+            isDarkMode 
+              ? 'border-gray-600' 
+              : 'border-gray-200'
+          }`}>
             <div className="flex items-center justify-between">
               <div>
-                <label className="block text-sm text-gray-600 dark:text-dark-300 mb-1">
+                <label className={`block text-sm mb-1 ${
+                  isDarkMode 
+                    ? 'text-gray-300' 
+                    : 'text-gray-600'
+                }`}>
                   Two factor authentication
                 </label>
-                <p className="text-sm text-gray-500 dark:text-dark-400">
+                <p className={`text-sm ${
+                  isDarkMode 
+                    ? 'text-gray-400' 
+                    : 'text-gray-500'
+                }`}>
                   {passwordForm.twoFactorAuthentication ? 'Enable' : 'Disable'}
                 </p>
               </div>
@@ -313,7 +387,11 @@ const ChangePasswordPage = () => {
                 type="button"
                 onClick={() => handleInputChange('twoFactorAuthentication', !passwordForm.twoFactorAuthentication)}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                  passwordForm.twoFactorAuthentication ? 'bg-blue-600' : 'bg-gray-200'
+                  passwordForm.twoFactorAuthentication 
+                    ? 'bg-blue-600' 
+                    : isDarkMode 
+                      ? 'bg-gray-600' 
+                      : 'bg-gray-200'
                 }`}
               >
                 <span
@@ -331,16 +409,28 @@ const ChangePasswordPage = () => {
           <button
             onClick={handleSave}
             disabled={loading}
-            className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-400 text-white px-8 py-3 rounded-md font-medium transition-colors duration-200 disabled:cursor-not-allowed"
+            className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-400 text-white px-8 py-3 rounded-md font-medium transition-all duration-200 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none"
           >
             {loading ? 'Saving...' : 'Save'}
           </button>
         </div>
 
         {/* Security Tips */}
-        <div className="mt-8 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-700">
-          <h4 className="text-sm font-medium text-yellow-900 dark:text-yellow-200 mb-2">Password Security Tips:</h4>
-          <ul className="text-sm text-yellow-800 dark:text-yellow-300 space-y-1">
+        <div className={`mt-8 p-4 rounded-lg border ${
+          isDarkMode 
+            ? 'bg-yellow-900/20 border-yellow-700' 
+            : 'bg-yellow-50 border-yellow-200'
+        }`}>
+          <h4 className={`text-sm font-medium mb-2 ${
+            isDarkMode 
+              ? 'text-yellow-200' 
+              : 'text-yellow-900'
+          }`}>Password Security Tips:</h4>
+          <ul className={`text-sm space-y-1 ${
+            isDarkMode 
+              ? 'text-yellow-300' 
+              : 'text-yellow-800'
+          }`}>
             <li>• Use at least 8 characters with a mix of letters, numbers, and symbols</li>
             <li>• Avoid using personal information or common words</li>
             <li>• Don't reuse passwords from other accounts</li>
