@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { useDarkMode } from '../contexts/DarkModeContext';
+import { useDarkMode } from '@/contexts/DarkModeContext';
 import FloatingActionButton from './FloatingActionButton';
 import FollowersSidebar from './FollowersSidebar';
 
