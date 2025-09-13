@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import Popup from '@/components/Popup';
+import { useDarkMode } from '@/contexts/DarkModeContext';
 
 interface InvitationStats {
   availableLinks: number;
@@ -16,6 +17,7 @@ interface PopupState {
 }
 
 const InvitationLinksPage = () => {
+  const { isDarkMode } = useDarkMode();
   const [stats, setStats] = useState<InvitationStats>({
     availableLinks: 10,
     generatedLinks: 0,
@@ -183,8 +185,14 @@ const InvitationLinksPage = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-8">Invitation Links</h1>
+      <div className={`rounded-lg shadow-sm border p-8 ${
+        isDarkMode 
+          ? 'bg-gray-800 border-gray-700' 
+          : 'bg-white border-gray-200'
+      }`}>
+        <h1 className={`text-2xl font-semibold mb-8 ${
+          isDarkMode ? 'text-white' : 'text-gray-900'
+        }`}>Invitation Links</h1>
         
         {/* Statistics */}
         <div className="space-y-6 mb-12">
@@ -194,8 +202,12 @@ const InvitationLinksPage = () => {
                 {item.icon}
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xl font-semibold text-gray-900">{item.count}</span>
-                <span className="text-gray-700 font-medium">{item.label}</span>
+                <span className={`text-xl font-semibold ${
+                  isDarkMode ? 'text-white' : 'text-gray-900'
+                }`}>{item.count}</span>
+                <span className={`font-medium ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>{item.label}</span>
               </div>
             </div>
           ))}
@@ -213,7 +225,9 @@ const InvitationLinksPage = () => {
         </div>
 
         {stats.availableLinks === 0 && (
-          <p className="text-center text-gray-500 text-sm mt-4">
+          <p className={`text-center text-sm mt-4 ${
+            isDarkMode ? 'text-gray-400' : 'text-gray-500'
+          }`}>
             No available links remaining
           </p>
         )}

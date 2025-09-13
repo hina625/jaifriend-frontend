@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import Popup from '@/components/Popup';
+import { useDarkMode } from '@/contexts/DarkModeContext';
 
 interface DataOption {
   id: string;
@@ -18,6 +19,7 @@ interface PopupState {
 }
 
 const DownloadMyInformationPage = () => {
+  const { isDarkMode } = useDarkMode();
   const [loading, setLoading] = useState(false);
   const [popup, setPopup] = useState<PopupState>({
     isOpen: false,
@@ -209,10 +211,18 @@ The actual data would be processed and included in a real implementation.`;
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+      <div className={`rounded-lg shadow-sm border p-8 ${
+        isDarkMode 
+          ? 'bg-gray-800 border-gray-700' 
+          : 'bg-white border-gray-200'
+      }`}>
         <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Download My Information</h1>
-          <p className="text-gray-600">Please choose which information you would like to download</p>
+          <h1 className={`text-2xl font-semibold mb-2 ${
+            isDarkMode ? 'text-white' : 'text-gray-900'
+          }`}>Download My Information</h1>
+          <p className={`${
+            isDarkMode ? 'text-gray-300' : 'text-gray-600'
+          }`}>Please choose which information you would like to download</p>
         </div>
         
         {/* Data Options Grid */}
@@ -223,8 +233,12 @@ The actual data would be processed and included in a real implementation.`;
               onClick={() => handleOptionToggle(option.id)}
               className={`relative p-6 border-2 rounded-lg cursor-pointer transition-all duration-200 hover:shadow-md ${
                 option.selected 
-                  ? 'border-blue-500 bg-blue-50 shadow-md' 
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? isDarkMode
+                    ? 'border-blue-500 bg-blue-900/20 shadow-md'
+                    : 'border-blue-500 bg-blue-50 shadow-md'
+                  : isDarkMode
+                    ? 'border-gray-600 hover:border-gray-500'
+                    : 'border-gray-200 hover:border-gray-300'
               }`}
             >
               {/* Selection Indicator */}
@@ -242,7 +256,9 @@ The actual data would be processed and included in a real implementation.`;
                 <div className={`w-16 h-16 rounded-full ${option.bgColor} flex items-center justify-center mb-4`}>
                   {option.icon}
                 </div>
-                <h3 className="text-gray-900 font-medium">{option.title}</h3>
+                <h3 className={`font-medium ${
+                  isDarkMode ? 'text-white' : 'text-gray-900'
+                }`}>{option.title}</h3>
               </div>
             </div>
           ))}
@@ -250,8 +266,14 @@ The actual data would be processed and included in a real implementation.`;
 
         {/* Selection Summary */}
         {selectedCount > 0 && (
-          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-blue-800 text-sm">
+          <div className={`mb-6 p-4 rounded-lg border ${
+            isDarkMode 
+              ? 'bg-blue-900/20 border-blue-700' 
+              : 'bg-blue-50 border-blue-200'
+          }`}>
+            <p className={`text-sm ${
+              isDarkMode ? 'text-blue-300' : 'text-blue-800'
+            }`}>
               <span className="font-medium">{selectedCount}</span> data type{selectedCount !== 1 ? 's' : ''} selected for download
             </p>
           </div>
@@ -269,9 +291,17 @@ The actual data would be processed and included in a real implementation.`;
         </div>
 
         {/* Information Note */}
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <h4 className="text-sm font-medium text-gray-900 mb-2">Information:</h4>
-          <ul className="text-sm text-gray-600 space-y-1">
+        <div className={`mt-6 p-4 rounded-lg border ${
+          isDarkMode 
+            ? 'bg-gray-700 border-gray-600' 
+            : 'bg-gray-50 border-gray-200'
+        }`}>
+          <h4 className={`text-sm font-medium mb-2 ${
+            isDarkMode ? 'text-white' : 'text-gray-900'
+          }`}>Information:</h4>
+          <ul className={`text-sm space-y-1 ${
+            isDarkMode ? 'text-gray-300' : 'text-gray-600'
+          }`}>
             <li>• Your data will be compiled into a downloadable file</li>
             <li>• Processing may take a few minutes for large amounts of data</li>
             <li>• The file will contain all selected information in a readable format</li>

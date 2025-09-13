@@ -25,24 +25,15 @@ export const DarkModeProvider: React.FC<DarkModeProviderProps> = ({ children }) 
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
-    // Check localStorage first
-    const savedMode = localStorage.getItem('darkMode');
-    if (savedMode !== null) {
-      setIsDarkMode(savedMode === 'true');
-    } else {
-      // Check system preference
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setIsDarkMode(systemPrefersDark);
-    }
+    // Always follow system theme preference
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setIsDarkMode(systemPrefersDark);
 
     // Listen for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleSystemThemeChange = (e: MediaQueryListEvent) => {
-      // Only update if user hasn't manually set a preference
-      const savedMode = localStorage.getItem('darkMode');
-      if (savedMode === null) {
-        setIsDarkMode(e.matches);
-      }
+      // Always follow system theme changes
+      setIsDarkMode(e.matches);
     };
 
     mediaQuery.addEventListener('change', handleSystemThemeChange);
@@ -59,9 +50,6 @@ export const DarkModeProvider: React.FC<DarkModeProviderProps> = ({ children }) 
     } else {
       document.documentElement.classList.remove('dark');
     }
-    
-    // Save to localStorage
-    localStorage.setItem('darkMode', isDarkMode.toString());
   }, [isDarkMode]);
 
   const toggleDarkMode = () => {

@@ -1658,11 +1658,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   <div className="mb-4">
                     <button 
                       onClick={() => setSettingsOpen(!settingsOpen)} 
-                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                      className={`flex items-center justify-between w-full mb-2 p-2 rounded-lg transition-colors focus:outline-none ${
+                        isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-[#eaf0fb]'
+                      }`}
                     >
-                      <h3 className="text-[#022e8a] font-bold text-sm">SETTINGS</h3>
+                      <h3 className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-[#022e8a]'}`}>SETTINGS</h3>
                       {!isMobile && (
-                      <span className={`text-[#022e8a] transition-transform duration-200 ${settingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                      <span className={`transition-transform duration-200 ${settingsOpen ? 'rotate-180' : ''} ${isDarkMode ? 'text-gray-300' : 'text-[#022e8a]'}`}>▼</span>
                       )}
                     </button>
                     {(settingsOpen || isMobile) && (
@@ -1676,11 +1678,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   <div className="mb-4">
                     <button 
                       onClick={() => setProfileSettingsOpen(!profileSettingsOpen)} 
-                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                      className={`flex items-center justify-between w-full mb-2 p-2 rounded-lg transition-colors focus:outline-none ${
+                        isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-[#eaf0fb]'
+                      }`}
                     >
-                      <h3 className="text-[#022e8a] font-bold text-sm">PROFILE</h3>
+                      <h3 className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-[#022e8a]'}`}>PROFILE</h3>
                       {!isMobile && (
-                      <span className={`text-[#022e8a] transition-transform duration-200 ${profileSettingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                      <span className={`transition-transform duration-200 ${profileSettingsOpen ? 'rotate-180' : ''} ${isDarkMode ? 'text-gray-300' : 'text-[#022e8a]'}`}>▼</span>
                       )}
                     </button>
                     {(profileSettingsOpen || isMobile) && (
@@ -1694,11 +1698,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                   <div className="mb-4">
                     <button 
                       onClick={() => setSecuritySettingsOpen(!securitySettingsOpen)} 
-                      className="flex items-center justify-between w-full mb-2 p-2 rounded-lg hover:bg-[#eaf0fb] transition-colors focus:outline-none"
+                      className={`flex items-center justify-between w-full mb-2 p-2 rounded-lg transition-colors focus:outline-none ${
+                        isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-[#eaf0fb]'
+                      }`}
                     >
-                      <h3 className="text-[#022e8a] font-bold text-sm">SECURITY</h3>
+                      <h3 className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-[#022e8a]'}`}>SECURITY</h3>
                       {!isMobile && (
-                      <span className={`text-[#022e8a] transition-transform duration-200 ${securitySettingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                      <span className={`transition-transform duration-200 ${securitySettingsOpen ? 'rotate-180' : ''} ${isDarkMode ? 'text-gray-300' : 'text-[#022e8a]'}`}>▼</span>
                       )}
                     </button>
                     {(securitySettingsOpen || isMobile) && (
@@ -1800,10 +1806,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       {!sidebarCollapsed && (
                         <button 
                           onClick={() => setSettingsOpen(!settingsOpen)} 
-                          className="flex items-center justify-between w-full mb-1 p-1.5 rounded-md hover:bg-gray-50 transition-colors focus:outline-none"
+                          className={`flex items-center justify-between w-full mb-1 p-1.5 rounded-md transition-colors focus:outline-none ${
+                            isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                          }`}
                         >
-                          <h3 className="text-gray-900 font-semibold text-xs">SETTINGS</h3>
-                          <span className={`text-gray-500 transition-transform duration-200 text-xs ${settingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                          <h3 className={`font-semibold text-xs ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>SETTINGS</h3>
+                          <span className={`transition-transform duration-200 text-xs ${settingsOpen ? 'rotate-180' : ''} ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>▼</span>
                         </button>
                       )}
                       {(settingsOpen || sidebarCollapsed) && (
@@ -1844,10 +1852,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       {!sidebarCollapsed && (
                         <button 
                           onClick={() => setProfileSettingsOpen(!profileSettingsOpen)} 
-                          className="flex items-center justify-between w-full mb-1 p-1.5 rounded-md hover:bg-gray-50 transition-colors focus:outline-none"
+                          className={`flex items-center justify-between w-full mb-1 p-1.5 rounded-md transition-colors focus:outline-none ${
+                            isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                          }`}
                         >
-                          <h3 className="text-gray-900 font-semibold text-xs">PROFILE</h3>
-                          <span className={`text-gray-500 transition-transform duration-200 text-xs ${profileSettingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                          <h3 className={`font-semibold text-xs ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>PROFILE</h3>
+                          <span className={`transition-transform duration-200 text-xs ${profileSettingsOpen ? 'rotate-180' : ''} ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>▼</span>
                         </button>
                       )}
                       {(profileSettingsOpen || sidebarCollapsed) && (
@@ -1888,10 +1898,12 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
                       {!sidebarCollapsed && (
                         <button 
                           onClick={() => setSecuritySettingsOpen(!securitySettingsOpen)} 
-                          className="flex items-center justify-between w-full mb-1 p-1.5 rounded-md hover:bg-gray-50 transition-colors focus:outline-none"
+                          className={`flex items-center justify-between w-full mb-1 p-1.5 rounded-md transition-colors focus:outline-none ${
+                            isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
+                          }`}
                         >
-                          <h3 className="text-gray-900 font-semibold text-xs">SECURITY</h3>
-                          <span className={`text-gray-500 transition-transform duration-200 text-xs ${securitySettingsOpen ? 'rotate-180' : ''}`}>▼</span>
+                          <h3 className={`font-semibold text-xs ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>SECURITY</h3>
+                          <span className={`transition-transform duration-200 text-xs ${securitySettingsOpen ? 'rotate-180' : ''} ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>▼</span>
                         </button>
                       )}
                       {(securitySettingsOpen || sidebarCollapsed) && (

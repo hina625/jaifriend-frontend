@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from 'react';
 import Popup from '@/components/Popup';
+import { useDarkMode } from '@/contexts/DarkModeContext';
 
 interface ImageSettings {
   avatar: string | null;
@@ -18,6 +19,7 @@ interface PopupState {
 }
 
 const AvatarCoverSettingsPage = () => {
+  const { isDarkMode } = useDarkMode();
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<ImageSettings>({
     avatar: null,
@@ -266,11 +268,19 @@ const AvatarCoverSettingsPage = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-8">Avatar & Cover Settings</h1>
+      <div className={`rounded-lg shadow-sm border p-8 ${
+        isDarkMode 
+          ? 'bg-gray-800 border-gray-700' 
+          : 'bg-white border-gray-200'
+      }`}>
+        <h1 className={`text-2xl font-semibold mb-8 ${
+          isDarkMode ? 'text-white' : 'text-gray-900'
+        }`}>Avatar & Cover Settings</h1>
         
         {/* Cover and Avatar Upload Area */}
-        <div className="relative bg-gray-100 rounded-lg overflow-hidden mb-8" style={{ height: '400px' }}>
+        <div className={`relative rounded-lg overflow-hidden mb-8 ${
+          isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
+        }`} style={{ height: '400px' }}>
           {/* Cover Photo Area */}
           <div 
             className="w-full h-full cursor-pointer relative group"
@@ -283,14 +293,20 @@ const AvatarCoverSettingsPage = () => {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center bg-gray-200">
+              <div className={`w-full h-full flex flex-col items-center justify-center ${
+                isDarkMode ? 'bg-gray-700' : 'bg-gray-200'
+              }`}>
                 <div className="mb-4">
-                  <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className={`w-12 h-12 ${
+                    isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                  }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16.5L12 9l8 7.5M4 9l8-7.5L20 9" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16.5h16v2H4v-2z" />
                   </svg>
                 </div>
-                <p className="text-gray-500 text-sm">Click to upload cover photo</p>
+                <p className={`text-sm ${
+                  isDarkMode ? 'text-gray-400' : 'text-gray-500'
+                }`}>Click to upload cover photo</p>
               </div>
             )}
             

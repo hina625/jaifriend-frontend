@@ -12,25 +12,25 @@ const AdminFAQs = () => {
   ];
 
   return (
-    <div className="p-6">
+    <div className="p-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">
           Frequently Asked Questions
         </h1>
-        <div className="text-sm text-gray-600">
-          Home {'>'} Admin {'>'} <span className="text-red-500 font-semibold">FAQS</span>
+        <div className="text-sm text-gray-600 dark:text-gray-400">
+          Home {'>'} Admin {'>'} <span className="text-red-500 dark:text-red-400 font-semibold">FAQS</span>
         </div>
       </div>
 
       {/* FAQs List */}
       <div className="space-y-4">
         {faqs.map((faq, index) => (
-          <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">
+          <div key={index} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-2">
               {faq.question}
             </h3>
-            <p className="text-gray-600">{faq.answer}</p>
+            <p className="text-gray-600 dark:text-gray-300">{faq.answer}</p>
           </div>
         ))}
       </div>
