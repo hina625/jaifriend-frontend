@@ -1032,7 +1032,7 @@ const FeedPost: React.FC<FeedPostProps> = ({
         let badgeColor = 'bg-orange-400';
         let badgeIcon = '⭐';
         
-        // Different badge types based on engagement level
+       
         if (totalEngagement >= 10) {
           badgeType = 'TRENDING POST';
           badgeColor = 'bg-purple-500';
@@ -1064,11 +1064,11 @@ const FeedPost: React.FC<FeedPostProps> = ({
         );
       })()}
       
-      {/* Post Header - Matching the image structure */}
+    
       <div className="p-3 sm:p-4 border-b border-gray-100 dark:border-gray-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2 sm:space-x-3">
-            {/* Profile Picture with Online Status */}
+          
             <div className="relative">
               <div 
                 className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
@@ -1208,19 +1208,18 @@ const FeedPost: React.FC<FeedPostProps> = ({
                     const words = text.split(/\s+/);
                     if (words.length <= maxWords) return text;
                     
-                    // Take first maxWords words
+                  
                     let truncatedWords = words.slice(0, maxWords);
-                    
-                    // Try to find a good breaking point (end of sentence, paragraph, or bullet point)
+                 
                     let truncatedText = truncatedWords.join(' ');
                     
-                    // Look for natural break points in the last few words
+                
                     const breakPatterns = [
-                      /[.!?]\s*$/,           // End of sentence
-                      /\n\n\s*$/,            // End of paragraph
-                      /[•·▪▫‣⁃]\s*$/,       // End of bullet point
-                      /\n\s*$/,              // End of line
-                      /\s*$/,                // End of word
+                        /[.!?]\s*$/,          
+                      /\n\n\s*$/,           
+                      /[•·▪▫‣⁃]\s*$/,      
+                      /\n\s*$/,             
+                      /\s*$/,               
                     ];
                     
                     let foundBreak = false;
@@ -1230,8 +1229,8 @@ const FeedPost: React.FC<FeedPostProps> = ({
                         break;
                       }
                     }
-                    
-                    // If no natural break found, try to find the last complete sentence
+                      
+                      // If no natural break found, try to find the last complete sentence
                     if (!foundBreak) {
                       const lastSentenceMatch = truncatedText.match(/.*[.!?]\s*$/);
                       if (lastSentenceMatch) {
@@ -1239,15 +1238,13 @@ const FeedPost: React.FC<FeedPostProps> = ({
                       }
                     }
                     
-                    // IMPORTANT: Ensure truncated content is actually shorter than original
-                    // If the smart truncation didn't reduce the content enough, force a shorter version
-                    if (truncatedText.length >= text.length * 0.9) { // If truncated is 90% or more of original
+                    if (truncatedText.length >= text.length * 0.9) { 
                       // Force truncation to be more aggressive
-                      const forceTruncateWords = Math.floor(maxWords * 0.7); // Use 70% of max words
+                      const forceTruncateWords = Math.floor(maxWords * 0.7); 
                       const forcedWords = words.slice(0, forceTruncateWords);
                       truncatedText = forcedWords.join(' ');
                       
-                      // Try to find a natural break in this shorter version
+                     
                       for (const pattern of breakPatterns) {
                         const match = truncatedText.match(new RegExp(`.*${pattern.source}`));
                         if (match) {
@@ -1261,9 +1258,8 @@ const FeedPost: React.FC<FeedPostProps> = ({
                     return truncatedText;
                   };
               
-              // For collapsed view, preserve original formatting but limit to first few lines
               const lines = plainTextForPreview.split('\n');
-              const maxLines = 4; // Show only first 4 lines in collapsed view
+              const maxLines = 4; 
               const truncatedContentPlain = lines.slice(0, maxLines).join('\n');
               
               return (

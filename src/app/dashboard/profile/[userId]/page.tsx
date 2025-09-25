@@ -169,6 +169,10 @@ const UserProfile: React.FC = () => {
     message: ''
   });
 
+  // Follow by ID states
+  const [followById, setFollowById] = useState<string>('');
+  const [isFollowingById, setIsFollowingById] = useState<boolean>(false);
+
   // Add post dropdown state
   const [postDropdownOpen, setPostDropdownOpen] = useState<string | null>(null);
 
@@ -765,6 +769,51 @@ const UserProfile: React.FC = () => {
     } catch (error) {
       console.error('Error blocking/unblocking user:', error);
       showPopup('error', 'Error', 'Failed to block/unblock user');
+    }
+  };
+
+  // Follow by ID handler
+  const handleFollowById = async () => {
+    if (!followById.trim()) {
+      showPopup('error', 'Invalid Input', 'Please enter a valid user ID');
+      return;
+    }
+
+    try {
+      setIsFollowingById(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showPopup('error', 'Authentication Error', 'Please login to follow users');
+        return;
+      }
+
+      console.log('🔗 Frontend: Following user by ID:', followById);
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/users/${followById.trim()}/follow`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const action = data.isFollowing ? 'followed' : 'unfollowed';
+        showPopup('success', 'Success!', `User ${action} successfully`);
+        
+        // Clear the input
+        setFollowById('');
+      } else {
+        const errorData = await response.json();
+        showPopup('error', 'Error', errorData.error || 'Failed to follow user');
+      }
+
+    } catch (error: any) {
+      console.error('❌ Error following user by ID:', error);
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to follow user';
+      showPopup('error', 'Error', errorMessage);
+    } finally {
+      setIsFollowingById(false);
     }
   };
 
@@ -1529,6 +1578,59 @@ const UserProfile: React.FC = () => {
                     }`}
                 />
               </div>
+                </div>
+
+                {/* Follow by ID Section */}
+                <div className={`rounded-xl shadow-sm p-3 transition-colors duration-200 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                  <div className="mb-3">
+                    <h3 className={`text-sm font-semibold transition-colors duration-200 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      Follow by User ID
+                    </h3>
+                    <p className={`text-xs transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      Enter a user ID to follow them directly
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <UserPlus className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-colors duration-200 ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`} />
+                      <input
+                        type="text"
+                        placeholder="Enter User ID"
+                        value={followById}
+                        onChange={(e) => setFollowById(e.target.value)}
+                        className={`w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-colors duration-200 ${
+                          isDarkMode 
+                            ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500' 
+                            : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500'
+                        }`}
+                      />
+                    </div>
+                    
+                    <button
+                      onClick={handleFollowById}
+                      disabled={isFollowingById || !followById.trim()}
+                      className={`w-full py-2 px-4 rounded-lg text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+                        isFollowingById || !followById.trim()
+                          ? isDarkMode
+                            ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-blue-500 hover:bg-blue-600 text-white hover:shadow-lg transform hover:scale-105'
+                      }`}
+                    >
+                      {isFollowingById ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <span>Following...</span>
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="w-4 h-4" />
+                          <span>Follow User</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 {/* User Details Card */}

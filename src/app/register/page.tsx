@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDarkMode } from '../../contexts/DarkModeContext';
 
-// Type definitions for form and errors
+
 interface RegisterForm {
   username: string;
   email: string;
@@ -75,8 +75,7 @@ export default function Register(): React.ReactElement {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
     const target = e.target;
     const { name, value, type } = target;
-    
-    // Type guard to check if target is an input element and handle checked property
+
     const checked = target instanceof HTMLInputElement ? target.checked : false;
     
     setFormData(prev => ({

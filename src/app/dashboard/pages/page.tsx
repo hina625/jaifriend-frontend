@@ -269,6 +269,269 @@ const MyPagesView: React.FC<MyPagesComponentProps> = ({ loading, userPages, onCr
   );
 };
 
+const EditPageFormView: React.FC<CreatePageFormProps & { updating: boolean }> = ({ formData, categories, creating, isFormValid, onInputChange, onCreate, onGoBack, updating }) => {
+  const { isDarkMode } = useDarkMode();
+  
+  return (
+    <div className={`rounded-2xl border p-8 max-w-3xl mx-auto shadow-lg transition-colors duration-200 ${
+      isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'
+    }`}>
+    {/* Form Header */}
+    <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl flex items-center justify-center">
+          <Edit className="w-6 h-6 text-white" />
+        </div>
+        <div>
+          <h2 className={`text-2xl font-bold transition-colors duration-200 ${
+            isDarkMode ? 'text-white' : 'text-gray-900'
+          }`}>Edit Page</h2>
+          <p className={`mt-1 transition-colors duration-200 ${
+            isDarkMode ? 'text-gray-300' : 'text-gray-500'
+          }`}>Update your page information</p>
+        </div>
+      </div>
+      <button
+        onClick={onGoBack}
+        className={`sm:hidden p-3 rounded-xl transition-colors ${
+          isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+        }`}
+      >
+        <X className={`w-6 h-6 transition-colors duration-200 ${
+          isDarkMode ? 'text-gray-300' : 'text-gray-600'
+        }`} />
+      </button>
+    </div>
+
+    <form onSubmit={(e) => e.preventDefault()} noValidate className="space-y-6">
+      {/* Page Name */}
+      <div>
+        <label className={`block text-sm font-semibold mb-3 transition-colors duration-200 ${
+          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+        }`}>
+          Page Name <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          name="pageName"
+          value={formData.pageName}
+          onChange={onInputChange}
+          placeholder="Enter your page name"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
+          data-lpignore="true"
+          data-form-type="other"
+          className={`w-full p-4 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base transition-all duration-200 ${
+            formData.pageName.length > 0 
+              ? formData.pageName.length >= 3 
+                ? isDarkMode
+                  ? 'border-green-500 bg-green-900/20 text-white'
+                  : 'border-green-300 bg-green-50'
+                : isDarkMode
+                  ? 'border-red-500 bg-red-900/20 text-white'
+                : 'border-red-300 bg-red-50'
+              : isDarkMode
+                ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500'
+              : 'border-gray-200 hover:border-gray-300'
+          }`}
+        />
+        {formData.pageName.length > 0 && (
+          <div className={`text-sm mt-2 transition-colors duration-200 ${
+            formData.pageName.length >= 3 
+              ? isDarkMode ? 'text-green-400' : 'text-green-600'
+              : 'text-red-500'
+          }`}>
+            {formData.pageName.length >= 3 
+              ? '✓ Page name is valid' 
+              : `Page name must be at least 3 characters (${formData.pageName.length}/3)`
+            }
+          </div>
+        )}
+      </div>
+
+      {/* Page URL */}
+      <div>
+        <label className={`block text-sm font-semibold mb-3 transition-colors duration-200 ${
+          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+        }`}>Page URL <span className="text-red-500">*</span></label>
+        <div className="flex">
+          <span className={`inline-flex items-center px-4 py-4 rounded-l-xl border border-r-0 text-sm font-medium transition-colors duration-200 ${
+            isDarkMode 
+              ? 'border-gray-600 bg-gray-700 text-gray-300' 
+              : 'border-gray-200 bg-gray-50 text-gray-600'
+          }`}>
+            https://jaifriend.com/
+          </span>
+          <input
+            type="text"
+            name="pageURL"
+            value={formData.pageURL}
+            onChange={onInputChange}
+            placeholder="your-page-url"
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
+            data-lpignore="true"
+            data-form-type="other"
+            className={`flex-1 p-4 border rounded-r-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base transition-all duration-200 ${
+              formData.pageURL.length > 0 
+                ? formData.pageURL.length >= 3 && /^[a-z0-9-]+$/.test(formData.pageURL)
+                  ? isDarkMode
+                    ? 'border-green-500 bg-green-900/20 text-white'
+                    : 'border-green-300 bg-green-50'
+                  : isDarkMode
+                    ? 'border-red-500 bg-red-900/20 text-white'
+                  : 'border-red-300 bg-red-50'
+                : isDarkMode
+                  ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500'
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          />
+        </div>
+        {formData.pageURL.length > 0 && (
+          <div className={`text-sm mt-2 transition-colors duration-200 ${
+            formData.pageURL.length >= 3 && /^[a-z0-9-]+$/.test(formData.pageURL) 
+              ? isDarkMode ? 'text-green-400' : 'text-green-600'
+              : 'text-red-500'
+          }`}>
+            {formData.pageURL.length >= 3 && /^[a-z0-9-]+$/.test(formData.pageURL)
+              ? '✓ URL is valid' 
+              : formData.pageURL.length < 3
+              ? `URL must be at least 3 characters (${formData.pageURL.length}/3)`
+              : 'URL can only contain lowercase letters, numbers, and hyphens'
+            }
+          </div>
+        )}
+      </div>
+
+      {/* Page Description */}
+      <div>
+        <label className={`block text-sm font-semibold mb-3 transition-colors duration-200 ${
+          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+        }`}>Page Description <span className="text-red-500">*</span></label>
+        <textarea
+          name="pageDescription"
+          value={formData.pageDescription}
+          onChange={onInputChange}
+          rows={4}
+          placeholder="Describe what your page is about..."
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
+          data-lpignore="true"
+          data-form-type="other"
+          className={`w-full p-4 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-base transition-all duration-200 ${
+            formData.pageDescription.length > 0 
+              ? formData.pageDescription.length >= 10 && formData.pageDescription.length <= 200
+                ? isDarkMode
+                  ? 'border-green-500 bg-green-900/20 text-white'
+                  : 'border-green-300 bg-green-50'
+                : isDarkMode
+                  ? 'border-red-500 bg-red-900/20 text-white'
+                : 'border-red-300 bg-red-50'
+              : isDarkMode
+                ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500'
+              : 'border-gray-200 hover:border-gray-300'
+          }`}
+        />
+        <div className="flex items-center justify-between mt-2">
+          <p className={`text-sm transition-colors duration-200 ${
+            isDarkMode ? 'text-gray-400' : 'text-gray-500'
+          }`}>
+            Between 10 and 200 characters
+          </p>
+          <span className={`text-sm font-medium transition-colors duration-200 ${
+            formData.pageDescription.length > 200 ? 'text-red-500' : 
+            formData.pageDescription.length >= 10 ? isDarkMode ? 'text-green-400' : 'text-green-500' : isDarkMode ? 'text-gray-500' : 'text-gray-400'
+          }`}>
+            {formData.pageDescription.length}/200
+          </span>
+        </div>
+        {formData.pageDescription.length > 0 && (
+          <div className={`text-sm mt-2 transition-colors duration-200 ${
+            formData.pageDescription.length >= 10 && formData.pageDescription.length <= 200 
+              ? isDarkMode ? 'text-green-400' : 'text-green-600'
+              : 'text-red-500'
+          }`}>
+            {formData.pageDescription.length >= 10 && formData.pageDescription.length <= 200
+              ? '✓ Description is valid' 
+              : formData.pageDescription.length < 10
+              ? `Description must be at least 10 characters (${formData.pageDescription.length}/10)`
+              : 'Description must be less than 200 characters'
+            }
+          </div>
+        )}
+      </div>
+
+      {/* Page Category */}
+      <div>
+        <label className={`block text-sm font-semibold mb-3 transition-colors duration-200 ${
+          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+        }`}>Page Category <span className="text-red-500">*</span></label>
+        <select
+          name="pageCategory"
+          value={formData.pageCategory}
+          onChange={onInputChange}
+          className={`w-full p-4 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base transition-all duration-200 ${
+            isDarkMode 
+              ? 'border-gray-600 bg-gray-700 text-white hover:border-gray-500' 
+              : 'border-gray-200 hover:border-gray-300'
+          }`}
+        >
+          {categories.map((category: string) => (
+            <option key={category} value={category}>{category}</option>
+          ))}
+        </select>
+        <p className={`text-sm mt-2 transition-colors duration-200 ${
+          isDarkMode ? 'text-gray-400' : 'text-gray-500'
+        }`}>
+          Choose the category that best describes your page
+        </p>
+      </div>
+
+      {/* Form Actions */}
+      <div className={`flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-4 mt-8 pt-6 border-t transition-colors duration-200 ${
+        isDarkMode ? 'border-gray-700' : 'border-gray-100'
+      }`}>
+        <button
+          onClick={onGoBack}
+          disabled={updating}
+          className={`hidden sm:flex items-center gap-2 transition-colors disabled:opacity-50 px-6 py-3 rounded-xl ${
+            isDarkMode 
+              ? 'text-gray-300 hover:text-white hover:bg-gray-700' 
+              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+          }`}
+        >
+          <ArrowLeft className="w-5 h-5" />
+          Go back
+        </button>
+        <button
+          onClick={onCreate}
+          disabled={updating || !isFormValid}
+          className="w-full sm:w-auto bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-4 rounded-xl font-semibold hover:from-green-700 hover:to-emerald-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-3"
+        >
+          {updating ? (
+            <>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Updating Page...
+            </>
+          ) : (
+            <>
+              <Edit className="w-5 h-5" />
+              Update Page
+            </>
+          )}
+        </button>
+      </div>
+    </form>
+  </div>
+);
+};
+
 const CreatePageFormView: React.FC<CreatePageFormProps> = ({ formData, categories, creating, isFormValid, onInputChange, onCreate, onGoBack }) => {
   const { isDarkMode } = useDarkMode();
   
@@ -974,6 +1237,8 @@ const PagesInterface: React.FC = () => {
   const { isDarkMode } = useDarkMode();
   const [activeTab, setActiveTab] = useState<string>('My Pages');
   const [showCreateForm, setShowCreateForm] = useState<boolean>(false);
+  const [showEditForm, setShowEditForm] = useState<boolean>(false);
+  const [editingPage, setEditingPage] = useState<Page | null>(null);
   const [showMobileMenu, setShowMobileMenu] = useState<boolean>(false);
   const [pages, setPages] = useState<Page[]>([]);
   const [userPages, setUserPages] = useState<Page[]>([]);
@@ -983,6 +1248,7 @@ const PagesInterface: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [loadingOtherPages, setLoadingOtherPages] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [updating, setUpdating] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     pageName: '',
     pageURL: '',
@@ -1244,12 +1510,135 @@ const PagesInterface: React.FC = () => {
 
   const handleGoBack = (): void => {
     setShowCreateForm(false);
+    setShowEditForm(false);
+    setEditingPage(null);
     setFormData({
       pageName: '',
       pageURL: '',
       pageDescription: '',
       pageCategory: 'Cars and Vehicles'
     });
+  };
+
+  const handleEditPage = (page: Page): void => {
+    setEditingPage(page);
+    setFormData({
+      pageName: page.name,
+      pageURL: page.url,
+      pageDescription: page.description,
+      pageCategory: page.category
+    });
+    setShowEditForm(true);
+  };
+
+  const handleUpdatePage = async (): Promise<void> => {
+    if (!editingPage) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      if (!token || token === 'null' || token === 'undefined') {
+        alert('Please log in to update a page');
+        return;
+      }
+
+      // Validation
+      if (!formData.pageName.trim()) {
+        alert('Page name is required');
+        return;
+      }
+
+      if (formData.pageName.trim().length < 3) {
+        alert('Page name must be at least 3 characters long');
+        return;
+      }
+
+      if (!formData.pageURL.trim()) {
+        alert('Page URL is required');
+        return;
+      }
+
+      if (formData.pageURL.trim().length < 3) {
+        alert('Page URL must be at least 3 characters long');
+        return;
+      }
+
+      if (!/^[a-z0-9-]+$/.test(formData.pageURL.trim())) {
+        alert('Page URL can only contain lowercase letters, numbers, and hyphens');
+        return;
+      }
+
+      if (!formData.pageDescription.trim()) {
+        alert('Page description is required');
+        return;
+      }
+
+      if (formData.pageDescription.length < 10) {
+        alert('Page description must be at least 10 characters long');
+        return;
+      }
+
+      if (formData.pageDescription.length > 200) {
+        alert('Page description must be less than 200 characters');
+        return;
+      }
+
+      setUpdating(true);
+      console.log('Updating page with data:', formData);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com'}/api/pages/${editingPage._id}`, { 
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: formData.pageName,
+          url: formData.pageURL,
+          description: formData.pageDescription,
+          category: formData.pageCategory,
+        }),
+      });
+
+      console.log('Update response status:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Server error details:', errorData);
+        alert('Error: ' + (errorData.error || 'Failed to update page'));
+        return;
+      }
+
+      const data = await response.json();
+      console.log('Page updated successfully:', data);
+      
+      alert('Page updated successfully!');
+      
+      // Reset form data
+      setFormData({
+        pageName: '',
+        pageURL: '',
+        pageDescription: '',
+        pageCategory: 'Cars and Vehicles'
+      });
+      
+      // Close edit form
+      setShowEditForm(false);
+      setEditingPage(null);
+      
+      // Refresh pages list
+      await fetchPages();
+      
+    } catch (error: unknown) {
+      console.error('Network error:', error);
+      if (error instanceof Error) {
+        alert('Error: ' + error.message);
+      } else {
+        alert('Network error occurred. Please check your connection and try again.');
+      }
+    } finally {
+      setUpdating(false);
+    }
   };
 
   const handleLikePage = async (pageId: string) => {
@@ -1435,9 +1824,27 @@ const PagesInterface: React.FC = () => {
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
+                        handleEditPage(page);
+                      }}
+                      className={`p-2 rounded-lg transition-all duration-200 ${
+                        isDarkMode 
+                          ? 'text-gray-400 hover:text-blue-400 hover:bg-gray-700' 
+                          : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
+                      }`}
+                      title="Edit Page"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
                         // Handle message functionality
                       }}
-                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                      className={`p-2 rounded-lg transition-all duration-200 ${
+                        isDarkMode 
+                          ? 'text-gray-400 hover:text-blue-400 hover:bg-gray-700' 
+                          : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
+                      }`}
                     >
                       <MessageCircle className="w-4 h-4" />
                     </button>
@@ -1446,11 +1853,17 @@ const PagesInterface: React.FC = () => {
                         e.stopPropagation();
                         // Handle share functionality
                       }}
-                      className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all duration-200"
+                      className={`p-2 rounded-lg transition-all duration-200 ${
+                        isDarkMode 
+                          ? 'text-gray-400 hover:text-green-400 hover:bg-gray-700' 
+                          : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
+                      }`}
                     >
                       <Share2 className="w-4 h-4" />
                     </button>
-                    <div className="w-6 h-6 text-gray-400 group-hover:text-blue-500 transition-colors">
+                    <div className={`w-6 h-6 transition-colors ${
+                      isDarkMode ? 'text-gray-400 group-hover:text-blue-400' : 'text-gray-400 group-hover:text-blue-500'
+                    }`}>
                       <ArrowRight className="w-4 h-4" />
                     </div>
                   </div>
@@ -1680,6 +2093,21 @@ const PagesInterface: React.FC = () => {
       );
     }
 
+    if (showEditForm) {
+      return (
+        <EditPageFormView
+          formData={formData}
+          categories={categories}
+          creating={creating}
+          isFormValid={isFormValid()}
+          onInputChange={handleInputChange}
+          onCreate={handleUpdatePage}
+          onGoBack={handleGoBack}
+          updating={updating}
+        />
+      );
+    }
+
     switch (activeTab) {
       case 'My Pages':
         return (
@@ -1725,21 +2153,25 @@ const PagesInterface: React.FC = () => {
         <div className="px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {showCreateForm && (
+              {(showCreateForm || showEditForm) && (
                 <button
                   onClick={handleGoBack}
-                  className="sm:hidden p-2 hover:bg-gray-100 rounded-xl transition-colors"
+                  className={`sm:hidden p-2 rounded-xl transition-colors ${
+                    isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'
+                  }`}
                 >
-                  <ArrowLeft className="w-6 h-6 text-gray-600" />
+                  <ArrowLeft className={`w-6 h-6 transition-colors duration-200 ${
+                    isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                  }`} />
                 </button>
               )}
               <div>
                 <h1 className={`text-2xl font-bold transition-colors duration-200 ${
                   isDarkMode ? 'text-white' : 'text-gray-900'
                 }`}>
-                {showCreateForm ? 'Create Page' : 'Pages'}
+                {showCreateForm ? 'Create Page' : showEditForm ? 'Edit Page' : 'Pages'}
               </h1>
-                {!showCreateForm && (
+                {!showCreateForm && !showEditForm && (
                   <p className={`text-sm mt-1 transition-colors duration-200 ${
                     isDarkMode ? 'text-gray-300' : 'text-gray-500'
                   }`}>Manage and discover amazing pages</p>
@@ -1810,7 +2242,7 @@ const PagesInterface: React.FC = () => {
       )}
 
       {/* Navigation Tabs - Desktop Only */}
-      {!showCreateForm && (
+      {!showCreateForm && !showEditForm && (
         <nav className={`hidden sm:block border-b transition-colors duration-200 ${
           isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'
         }`}>
@@ -1841,8 +2273,8 @@ const PagesInterface: React.FC = () => {
         {renderContent()}
       </main>
 
-      {/* Floating Action Button - Only show if not in create form */}
-      {!showCreateForm && (
+      {/* Floating Action Button - Only show if not in create or edit form */}
+      {!showCreateForm && !showEditForm && (
         <button 
           onClick={() => setShowCreateForm(true)}
           className="fixed bottom-6 right-6 w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center z-20 group hover:scale-110"

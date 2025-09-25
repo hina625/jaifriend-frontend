@@ -288,11 +288,19 @@ const NotificationsPage = () => {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+      <div className={`rounded-lg shadow-sm border transition-colors duration-200 ${
+        isDarkMode 
+          ? 'bg-dark-800 border-dark-700' 
+          : 'bg-white border-gray-200'
+      }`}>
         {/* Header */}
-        <div className="p-6 border-b border-gray-200">
+        <div className={`p-6 border-b transition-colors duration-200 ${
+          isDarkMode ? 'border-dark-700' : 'border-gray-200'
+        }`}>
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold text-gray-900">Notifications</h1>
+            <h1 className={`text-2xl font-semibold transition-colors duration-200 ${
+              isDarkMode ? 'text-white' : 'text-gray-900'
+            }`}>Notifications</h1>
             <div className="flex items-center space-x-4">
               {unreadCount > 0 && (
                 <button
@@ -304,7 +312,11 @@ const NotificationsPage = () => {
               )}
               <button
                 onClick={() => fetchNotifications()}
-                className="text-sm text-gray-600 hover:text-gray-800"
+                className={`text-sm transition-colors duration-200 ${
+                  isDarkMode 
+                    ? 'text-gray-400 hover:text-gray-300' 
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
               >
                 Refresh
               </button>
@@ -313,13 +325,19 @@ const NotificationsPage = () => {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-gray-200">
+        <div className={`flex border-b transition-colors duration-200 ${
+          isDarkMode ? 'border-dark-700' : 'border-gray-200'
+        }`}>
           <button
             onClick={() => setActiveTab('notifications')}
             className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'notifications'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                : `border-transparent ${
+                    isDarkMode 
+                      ? 'text-gray-400 hover:text-gray-300' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`
             }`}
           >
             Notifications {unreadCount > 0 && `(${unreadCount})`}
@@ -329,7 +347,11 @@ const NotificationsPage = () => {
             className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'settings'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                : `border-transparent ${
+                    isDarkMode 
+                      ? 'text-gray-400 hover:text-gray-300' 
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`
             }`}
           >
             Settings
@@ -342,29 +364,41 @@ const NotificationsPage = () => {
             <div className="space-y-4">
               {notifications.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-200 ${
+                    isDarkMode ? 'bg-dark-700' : 'bg-gray-100'
+                  }`}>
                     <span className="text-2xl">🔔</span>
                   </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No notifications</h3>
-                  <p className="text-gray-600">You're all caught up!</p>
+                  <h3 className={`text-lg font-medium mb-2 transition-colors duration-200 ${
+                    isDarkMode ? 'text-white' : 'text-gray-900'
+                  }`}>No notifications</h3>
+                  <p className={`transition-colors duration-200 ${
+                    isDarkMode ? 'text-gray-400' : 'text-gray-600'
+                  }`}>You're all caught up!</p>
                 </div>
               ) : (
                 notifications.map((notification) => (
                   <div
                     key={notification._id}
-                    className={`p-4 rounded-lg border transition-colors ${
+                    className={`p-4 rounded-lg border transition-colors duration-200 ${
                       notification.isRead 
-                        ? 'bg-gray-50 border-gray-200' 
-                        : 'bg-blue-50 border-blue-200'
+                        ? (isDarkMode ? 'bg-dark-700 border-dark-600' : 'bg-gray-50 border-gray-200')
+                        : (isDarkMode ? 'bg-blue-900/30 border-blue-700' : 'bg-blue-50 border-blue-200')
                     }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start space-x-3 flex-1">
                         <span className="text-xl">{getNotificationIcon(notification.type)}</span>
                         <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">{notification.title}</h4>
-                          <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
-                          <p className="text-xs text-gray-500 mt-2">{formatDate(notification.createdAt)}</p>
+                          <h4 className={`font-medium transition-colors duration-200 ${
+                            isDarkMode ? 'text-white' : 'text-gray-900'
+                          }`}>{notification.title}</h4>
+                          <p className={`text-sm mt-1 transition-colors duration-200 ${
+                            isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                          }`}>{notification.message}</p>
+                          <p className={`text-xs mt-2 transition-colors duration-200 ${
+                            isDarkMode ? 'text-gray-500' : 'text-gray-500'
+                          }`}>{formatDate(notification.createdAt)}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -391,7 +425,9 @@ const NotificationsPage = () => {
           ) : (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Notify me when</h3>
+                <h3 className={`text-lg font-medium mb-4 transition-colors duration-200 ${
+                  isDarkMode ? 'text-white' : 'text-gray-900'
+                }`}>Notify me when</h3>
                 
                 <div className="space-y-4">
                   {notificationOptions.map((option) => (
@@ -420,7 +456,9 @@ const NotificationsPage = () => {
                       </div>
                       <label 
                         htmlFor={option.key}
-                        className="ml-3 text-sm text-gray-700 cursor-pointer"
+                        className={`ml-3 text-sm cursor-pointer transition-colors duration-200 ${
+                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                        }`}
                       >
                         {option.label}
                       </label>
