@@ -2,7 +2,7 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://jaifriend-backend.hgdjlive.com';
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Camera, Edit, Search, Video, Image, Hash, AtSign, Link, Plus, Heart, MessageCircle, Share2, MoreHorizontal, Users, FileText, Diamond, X, Upload, Smile, MapPin, Globe } from 'lucide-react';
+import { ArrowLeft, Camera, Search, Video, Image, Hash, AtSign, Link, Plus, Heart, MessageCircle, Share2, MoreHorizontal, Users, FileText, Diamond, X, Upload, Smile, MapPin, Globe, Edit } from 'lucide-react';
 import { useDarkMode } from '@/contexts/DarkModeContext';
 import FeedPost from '@/components/FeedPost';
 
